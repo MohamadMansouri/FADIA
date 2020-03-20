@@ -14,16 +14,36 @@
 //
 
 
-import inet.node.inet.SensorNode;
+import inet.node.base.NodeBase;
 //import inet.node.inet.WirelessHost;
 
 
-module Prover extends SensorNode
+
+simple AProver
 {
-    
-	parameters:
-		numWlanInterfaces = 1;    // set number of wlan interfaces to 1
-		
-		wlan[*].typename = default("Ieee80211Interface");
-		mobility.typename = default("StationaryMobility");	       
+    gates:
+        input radioIn @directIn;
 }
+
+module Prover extends NodeBase
+{
+    parameters:
+
+        @display("i=misc/sensor3,is,s;bgb=589.05,603.225");
+        mobility.typename = default("StaticMobility");
+
+    gates:
+        //        inout gate[]	@allowunconnected;
+        input radioIn @directIn;
+
+    submodules:
+        proverapp: AProver {
+
+            @display("i=block/app,p,625.27496,466.19998;p=348.07498,398.47498");
+        }
+    connections:
+        proverapp.radioIn <-- radioIn;
+
+
+}
+

@@ -1,0 +1,44 @@
+Prover
+--------
+
+1) Initialize:
+	a) Initialization
+	- get a key ring
+	- derive a key from the keyring
+	
+	b) Joining
+	- Send join request to the collector ( send battery level )
+	- Receive Join response ( set p and v and n  ) 
+	- Send back an ack
+	
+2) handleMessage:
+	a) NeighborDiscover (active)
+	- send request as broadcast to all provers ( UID, keyids)
+	- receive response ( UID, keyid), add to table
+	- send ack 
+	
+	b) NeighborDiscover (passive)
+	- receive a request from a prover (UID, keyids) check if keyids match 
+	- send responds (UID, keyid)
+	- receive ack, add to the table
+	
+	c) Prove (set timer and counter)
+	- send pull req as broadcast to each neighbot (UID, r1)
+	- receive p1 challenges ( UID, c, r2)
+	- solve challenge and respond
+	- receive ack, increment counter
+	
+	d) verify ( set timer and counter) 
+	- recive pull request ( UID, r1)
+	- send challenge (UID,c, r2)
+	- receive challenge solution, and validate add to ListUID, increment counter
+	- send ack  
+	- if counter == v or timeout, send update (UID, ListUID, fcounter)
+
+	e) revocation:
+	- receive revocation message from controller ({keyid}) 	
+	- remove these keys from the keyring
+
+	
+Collector
+--------------

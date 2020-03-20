@@ -30,7 +30,7 @@ PROJECTRELATIVE_PATH =
 O = $(PROJECT_OUTPUT_DIR)/$(CONFIGNAME)/$(PROJECTRELATIVE_PATH)
 
 # Object files for local .cpp, .msg and .sm files
-OBJS = $O/src/Collector.o $O/src/Prover.o
+OBJS = $O/src/ACollector.o $O/src/AProver.o $O/src/common.o
 
 # Message files
 MSGFILES =

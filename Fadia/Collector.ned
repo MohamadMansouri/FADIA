@@ -13,8 +13,30 @@
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 //
 
-import inet.node.wireless.AccessPoint;
+import inet.node.base.NodeBase;
 
-module Collector extends AccessPoint{
-    
+
+
+
+simple ACollector
+{
+    gates:
+        input radioIn @directIn;
+}
+
+module Collector extends NodeBase
+{
+    parameters:
+        @display("i=device/accesspoint;bgb=573.3,680.39996");
+
+    gates:
+        input radioIn @directIn;
+
+    submodules:
+        collectorapp: ACollector {
+
+            @display("i=block/app,p=330.75,491.4");
+        }
+    connections:
+        collectorapp.radioIn <-- radioIn;
 }
