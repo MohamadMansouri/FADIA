@@ -9,28 +9,27 @@
 #include <string.h>
 #include <omnetpp.h>
 #include <map>
+#include <iterator>
 
 #include "common.h"
 
 using namespace omnetpp;
 
-static int seed = 0;
-
 static KEYRNG keyPool;
+static const UID baseID = 0xFFFF;
 
-
-const KEYRNG getKeyPool(cRNG* kidrng, cRNG* krng, size_t KPsize){
+static const KEYRNG
+getKeyPool(cRNG* rng, size_t KPsize)
+{
 
     if (keyPool.size() == KPsize)
         return keyPool;
 
-    cUniform* poolIdGen = new cUniform(kidrng, 0, 1);
-    cUniform* poolKeyGen = new cUniform(krng, 0, 1);
     KEYID keyid;
     do {
-        keyid = (KEYID) (poolIdGen->draw() * MAXUID);
+        keyid = (KEYID) intrand(rng, MAXUID);
         if (keyid != NOID)
-            keyPool[keyid] = (KEY) (poolKeyGen->draw() * MAXUID);
+            keyPool[keyid] = (KEY) intrand(rng, MAXUID);
     }
     while (keyPool.size() != KPsize);
 
@@ -38,3 +37,26 @@ const KEYRNG getKeyPool(cRNG* kidrng, cRNG* krng, size_t KPsize){
 }
 
 
+KEYRNG
+getKeyRing(cRNG* rng, size_t KPsize, size_t KRsize)
+{
+    const KEYRNG KeyPool = getKeyPool(rng, KPsize);
+    KEYRNG KeyRing;
+    do
+    {
+        auto it = KeyPool.begin();
+        std::advance(it, intrand(rng, KeyPool.size()));
+        KeyRing.insert(*it);
+    }
+    while (KeyRing.size() != KRsize);
+
+    return KeyRing;
+
+}
+
+
+const UID
+getBaseID()
+{
+    return baseID;
+}
