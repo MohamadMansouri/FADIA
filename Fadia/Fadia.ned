@@ -27,8 +27,8 @@ network Fadia
 		int keyRingSize;
 		int keyPoolSize;
         
-        int keyidseed = default(0);
-        int keyseed = default(1);
+        int keyIdSeed = default(0);
+        int keySeed = default(1);
         
         int width = default(1000);
         int height = default(500);
@@ -52,4 +52,3 @@ network Fadia
         }
 
 }
-

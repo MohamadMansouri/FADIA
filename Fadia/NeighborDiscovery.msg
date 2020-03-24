@@ -11,39 +11,29 @@
 // 
 // You should have received a copy of the GNU Lesser General Public License
 // along with this program.  If not, see http://www.gnu.org/licenses/.
+// 
+
+//
+// TODO generated message class
 //
 
+// This file contains the messages exchanged in 
+// the neighbor discovery procedure
 
-import inet.node.base.NodeBase;
-//import inet.node.inet.WirelessHost;
-
-
-
-simple AProver
-{
-    gates:
-        input radioIn @directIn;
+message NDiscoverReq {
+    int source;
+    int kid[];
 }
 
-module Prover extends NodeBase
-{
-    parameters:
-
-        @display("i=misc/sensor3,is,s;bgb=589.05,603.225;r=100");
-        mobility.typename = default("StationaryMobility");
-
-    gates:
-        //        inout gate[]	@allowunconnected;
-        input radioIn @directIn;
-
-    submodules:
-        proverapp: AProver {
-
-            @display("i=block/app,p,625.27496,466.19998;p=348.07498,398.47498");
-        }
-    connections:
-        proverapp.radioIn <-- radioIn;
-
-
+message NDiscoverResp {
+    int source;
+    int destination;
+    int kid;
+    int mac;
 }
 
+message NDiscoverAck {
+    int source;
+    int destination;
+    int mac;
+}
