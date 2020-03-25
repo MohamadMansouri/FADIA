@@ -42,19 +42,19 @@ AProver::initialize()
 {
     initUID();
     initKeyRing();
-    EV << "Initializing prover: " << getParentModule()->getIndex() << endl;
+
     if (getParentModule()->getIndex() == 0)
     {
         cMessage* msg = new cMessage("new");
         scheduleAt(simTime() + uniform(0,1), msg);
     }
-    if (DEBUG)
-    {
-        for (KEYRNG_IT it = KeyRing.begin(); it != KeyRing.end(); ++it)
-        {
-            EV << "0x" << setfill('0') << setw(8) << hex << it->first << " " << it->second  << endl;
-        }
-    }
+//    if (DEBUG)
+//    {
+//        for (KEYRNG_IT it = KeyRing.begin(); it != KeyRing.end(); ++it)
+//        {
+//            EV << "0x" << setfill('0') << setw(8) << hex << it->first << " " << it->second  << endl;
+//        }
+//    }
 }
 
 void
@@ -62,14 +62,37 @@ AProver::handleMessage(cMessage *msg)
 {
     const char* msgname = msg->getName();
 
-    if(!strncmp(msgname, "new", 4))
+    if(!strncmp(msgname, "new", 4) && false)
     {
-        EV << "Prover " << getParentModule()->getIndex() << " performing Neighbor discovery" << endl;
+        logInfo("Performing Neighbor discovery");
         sendNDReq();
     }
 
-    if(!strncmp(msgname,"ND", 2))
+
+    else if(!strncmp(msgname, "JN", 2))
+    {
+        logDebug("Received a join message");
+        handleJoinMsg(msg);
+    }
+
+    else if(!strncmp(msgname, "ND", 2))
+    {
+        logDebug("Received a neighbor discovery message");
         handleNDMsg(msg);
+    }
+
+
+    else if(!strncmp(msgname, "ATT", 3))
+    {
+        logDebug("Received an attestation message");
+        handleAttMsg(msg);
+    }
+
+    else if(!strncmp(msgname, "RVK", 3))
+    {
+        logDebug("Received a revocation message");
+        handleRevMsg(msg);
+    }
 
 }
 
@@ -95,24 +118,97 @@ AProver::initKeyRing()
 
 
 void
+AProver::handleJoinMsg(cMessage* msg)
+{
+    char msgtype[3];
+    strncpy(msgtype, msg->getName()+2, 2);
+
+    if(!strcmp(msgtype, "RP"))
+        handleJoinResp(msg);
+
+    else if(!strcmp(msgtype, "RQ"))
+        logError("Received a join request message!!!! This should never happen");
+
+    else if(!strcmp(msgtype, "AK"))
+        logError("Received a join Ack message!!!! This should never happen");
+
+    else
+        logError("Received a join message of unknown type!!!");
+}
+
+void
 AProver::handleNDMsg(cMessage* msg)
 {
     char msgtype[3];
     strncpy(msgtype, msg->getName()+2, 2);
 
-    static KEYID kid = NOID;
-
     if(!strcmp(msgtype, "RQ"))
         handleNDReq(msg);
+
     else if(!strcmp(msgtype, "RP"))
         handleNDResp(msg);
+
     else if(!strcmp(msgtype, "AK"))
-    {
         handleNDAck(msg);
-        kid = NOID;
-    }
+
+    else
+        logError("Received a ND message of unknown type!!!");
 }
 
+void
+AProver::handleAttMsg(cMessage* msg)
+{
+    char msgtype[3];
+    strncpy(msgtype, msg->getName()+3, 2);
+
+    if(!strcmp(msgtype, "PR"))
+        handlePullAttReq(msg);
+
+    else if(!strcmp(msgtype, "RQ"))
+        handleAttReq(msg);
+
+    else if(!strcmp(msgtype, "RP"))
+        handleAttResp(msg);
+
+    else if(!strcmp(msgtype, "AK"))
+        handleAttAck(msg);
+
+    else
+        logError("Received an attest message of unknown type!!!");
+}
+
+void
+AProver::handleRevMsg(cMessage* msg)
+{
+    char msgtype[3];
+    strncpy(msgtype, msg->getName()+3, 2);
+
+    if(!strcmp(msgtype, "RQ"))
+        handleRevReq(msg);
+
+    else
+        logError("Received a Revocation message of unknown type!!!");
+}
+
+void
+AProver::sendPullAttReq()
+{
+
+}
+
+
+void
+AProver::handlePullAttReq(cMessage* msg)
+{
+
+}
+
+
+void
+AProver::sendJoinReq()
+{
+
+}
 
 void
 AProver::sendNDReq()
@@ -131,6 +227,14 @@ AProver::sendNDReq()
 
 
 }
+
+
+void
+AProver::sendAttReq(UID target, KEYID kid)
+{
+
+}
+
 
 void
 AProver::handleNDReq(cMessage* msg)
@@ -155,6 +259,19 @@ AProver::handleNDReq(cMessage* msg)
     return;
 }
 
+void
+AProver::handleAttReq(cMessage* msg)
+{
+
+}
+
+void
+AProver::handleRevReq(cMessage* msg)
+{
+
+}
+
+
 void AProver::sendNDResp(UID target, KEYID kid)
 {
     char msgname[5];
@@ -165,6 +282,17 @@ void AProver::sendNDResp(UID target, KEYID kid)
     msg->setKid(kid);
     msg->setMac(generateMAC(msg));
     sendProver(target, msg);
+}
+
+void AProver::sendAttResp(UID target, KEYID kid)
+{
+
+}
+
+void
+AProver::handleJoinResp(cMessage* msg)
+{
+
 }
 
 void
@@ -182,6 +310,17 @@ AProver::handleNDResp(cMessage* msg)
     sendNDAck(senderid);
 }
 
+void
+AProver::handleAttResp(cMessage* msg)
+{
+
+}
+
+void
+AProver::sendJoinAck(UID target)
+{
+
+}
 
 void
 AProver::sendNDAck(UID target)
@@ -196,6 +335,12 @@ AProver::sendNDAck(UID target)
 }
 
 void
+AProver::sendAttAck(UID target)
+{
+
+}
+
+void
 AProver::handleNDAck(cMessage* msg)
 {
     NDiscoverAck* ackmsg = check_and_cast<NDiscoverAck *>(msg);
@@ -206,6 +351,13 @@ AProver::handleNDAck(cMessage* msg)
     {
         addNeighbor(senderid);
     }
+}
+
+
+void
+AProver::handleAttAck(cMessage* msg)
+{
+
 }
 
 //template<class T, class U>
@@ -289,3 +441,31 @@ AProver::addNeighbor(UID uid)
     NTable[uid] = NTableTmp[uid];
     NTableTmp.erase(uid);
 }
+
+
+void
+AProver::logDebug(string m)
+{
+    EV_DEBUG << "Prover [Index=" << getParentModule()->getIndex()
+             << ", UID=" << hex <<  UId << "]: " << dec<< m << endl;
+}
+
+void
+AProver::logInfo(string m)
+{
+    EV << "Prover [Index=" << getParentModule()->getIndex()
+             << ", UID=" << hex <<  UId << "]: " << dec<< m << endl;
+}
+
+
+void
+AProver::logError(string m)
+{
+    ostringstream oss;
+    oss << "Prover [Index=" << getParentModule()->getIndex()
+        << ", UID=" << hex <<  UId << "]: " << dec<< m << endl;
+    EV_ERROR << oss.str();
+    getSimulation()->getActiveEnvir()->alert(oss.str().c_str());
+
+}
+

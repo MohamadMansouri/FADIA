@@ -36,13 +36,6 @@ private:
     void initUID();
     void initKeyRing();
 
-    // utilities
-    template<class T, class U> T* getIds(U list);
-    void sendProver(UID target, cMessage* msg);            // This message does not consume the message ;)
-    void sendProverBroadcast(cMessage* msg);                // This message does not consume the message ;)
-    int generateMAC(cMessage* msg);
-    template <class T> bool checkMAC(T* msg);
-
     // Core
     void Join();
     void NeighborDiscover() ;
@@ -51,11 +44,12 @@ private:
     void Revoke();
 
     // Join
+    void handleJoinMsg(cMessage* msg);
     void sendJoinReq();
-    void sendJoinResp();
-    void sendJoinAck();
+    void handleJoinResp(cMessage* msg);
+    void sendJoinAck(UID target);
 
-    // ND
+    // ND ( DEPRECIATED )
     void handleNDMsg(cMessage* msg);
     void sendNDReq();
     void handleNDReq(cMessage* msg);
@@ -64,13 +58,33 @@ private:
     void sendNDAck(UID target);
     void handleNDAck(cMessage* msg);
     void addNeighbor(UID uid);
-    // Prove
 
-    // Verify
+    // Attest
+    void handleAttMsg(cMessage* msg);
+    void sendPullAttReq();
+    void handlePullAttReq(cMessage* msg);
+    void sendAttReq(UID target, KEYID kid);
+    void handleAttReq(cMessage* msg);
+    void sendAttResp(UID target, KEYID kid);
+    void handleAttResp(cMessage* msg);
+    void sendAttAck(UID target);
+    void handleAttAck(cMessage* msg);
 
     // Revoke
+    void handleRevMsg(cMessage* msg);
+    void handleRevReq(cMessage* msg);
 
-//public:
+    // utilities
+    template<class T, class U> T* getIds(U list);
+    void sendProver(UID target, cMessage* msg);            // This method does not consume the message ;)
+    void sendProverBroadcast(cMessage* msg);               // This method does not consume the message ;)
+    int generateMAC(cMessage* msg);
+    template <class T> bool checkMAC(T* msg);
+    void logInfo(string m);
+    void logDebug(string m);
+    void logError(string m);
+
+    //public:
 //    AProver();
 
 protected:
