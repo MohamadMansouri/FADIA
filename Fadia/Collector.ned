@@ -27,7 +27,7 @@ simple ACollector
 module Collector extends NodeBase
 {
     parameters:
-        @display("i=device/accesspoint;bgb=573.3,680.39996");
+        @display("i=device/accesspoint;is=l;bgb=573.3,680.39996");
 
     gates:
         input radioIn @directIn;
@@ -35,7 +35,7 @@ module Collector extends NodeBase
     submodules:
         collectorapp: ACollector {
 
-            @display("i=block/app,p=330.75,491.4");
+            @display("i=block/app,p,330.75,491.4;p=357.048,521.208");
         }
     connections:
         collectorapp.radioIn <-- radioIn;

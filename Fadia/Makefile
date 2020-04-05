@@ -30,11 +30,22 @@ PROJECTRELATIVE_PATH =
 O = $(PROJECT_OUTPUT_DIR)/$(CONFIGNAME)/$(PROJECTRELATIVE_PATH)
 
 # Object files for local .cpp, .msg and .sm files
-OBJS = $O/src/ACollector.o $O/src/AProver.o $O/src/common.o $O/NeighborDiscovery_m.o
+OBJS = \
+    $O/src/ACollector.o \
+    $O/src/ADevice.o \
+    $O/src/AProver.o \
+    $O/src/NetworkOwner.o \
+    $O/Attest_m.o \
+    $O/Join_m.o \
+    $O/NeighborDiscovery_m.o \
+    $O/Update_m.o
 
 # Message files
 MSGFILES = \
-    NeighborDiscovery.msg
+    Attest.msg \
+    Join.msg \
+    NeighborDiscovery.msg \
+    Update.msg
 
 # SM files
 SMFILES =

@@ -11,39 +11,47 @@
 // 
 // You should have received a copy of the GNU Lesser General Public License
 // along with this program.  If not, see http://www.gnu.org/licenses/.
+// 
+
+//
+// TODO generated message class
 //
 
 
-import inet.node.base.NodeBase;
-//import inet.node.inet.WirelessHost;
-
-
-
-simple AProver
+message PullAttestReq
 {
-    gates:
-        input radioIn @directIn;
+    int source;
+    int kid[];
+    double seniority;
 }
 
-module Prover extends NodeBase
+message AttestReq 
 {
-    parameters:
-
-        @display("i=misc/sensor3,is=s;bgb=589.05,603.225");
-        mobility.typename = default("StationaryMobility");
-
-    gates:
-        //        inout gate[]	@allowunconnected;
-        input radioIn @directIn;
-
-    submodules:
-        proverapp: AProver {
-
-            @display("i=block/app,p,625.27496,466.19998;p=348.07498,398.47498");
-        }
-    connections:
-        proverapp.radioIn <-- radioIn;
-
-
+    int source;
+    int destination;
+    int kid;
+    int challenge;
+    int mac;
 }
 
+
+message AttestResp
+{
+    int source;
+    int destination;
+	int response;
+    int mac;
+}
+
+message AttestAck
+{
+    int source;
+    int destination;
+    int mac;
+}
+
+message AttestTimeOut
+{
+    int correspondent;
+}
+    
