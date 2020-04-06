@@ -24,6 +24,7 @@
 #include "Attest_m.h"
 #include "Update_m.h"
 
+#include "../inet/src/inet/power/contract/IEpEnergyStorage.h"
 
 #define DEBUG 1
 
@@ -43,6 +44,7 @@ AProver::initialize()
     scheduleAt(simTime() + uniform(0,1), msg);
     ptime = ((unsigned int) getSystemModule()->par("htime")) / 2;
     vtime = ((unsigned int) getSystemModule()->par("htime")) / 2;
+    range = ((double) getParentModule()->par("range"));
 }
 
 void
@@ -512,7 +514,7 @@ AProver::handleAttResp(cMessage* msg)
     UID senderid = (UID) resmsg->getSource();
     if (vsessions.find(senderid) == vsessions.end())
     {
-        logError("handleAttResp: session is already closed with this target");
+        logInfo("handleAttResp: session is already closed with this target");
     }
 
     if(!checkMAC<AttestResp>(resmsg))
@@ -659,7 +661,14 @@ AProver::findClosestCollector()
 const double
 AProver::getBatteryLevel()
 {
-    return 0.0;
+    using namespace inet;
+    using namespace power;
+    IEpEnergyStorage *es = check_and_cast<IEpEnergyStorage *>(getParentModule()->getSubmodule("energyStorage"));
+    J res = es->getResidualEnergyCapacity();
+    J nom = es->getNominalEnergyCapacity();
+    double percent =  res.get() / nom.get() ;
+    logInfo("Battery level = " + to_string(percent));
+    return percent;
 }
 
 

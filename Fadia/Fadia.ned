@@ -38,10 +38,7 @@ network Fadia
 		
         @display("bgb=$width,$height;bgg=100,1,grey95");
         @figure[title](type=label; pos=0,-1; anchor=sw; color=darkblue);
-
-        @figure[rcvdPkText](type=indicatorText; pos=380,20; anchor=w; font=,18; textFormat="packets received: %g"; initialValue=0);
-      //  @statistic[packetReceived](source=hostB.app[0].packetReceived; record=figure(count); targetFigure=rcvdPkText);
-
+	
     types:
         channel C extends ned.DatarateChannel
         {
@@ -50,11 +47,11 @@ network Fadia
 
     submodules:
         collector[numCollectors]: Collector {
-            @display("p=500,50");
+            @display("p=25,5");
         }
         prover[numProvers]: Prover;
         visualizer: <default("IntegratedCanvasVisualizer")> like IIntegratedVisualizer if hasVisualizer() {
-            @display("p=21,22");
+            @display("p=5,5");
         }
 
 }

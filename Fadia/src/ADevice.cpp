@@ -14,12 +14,14 @@
 #include "ADevice.h"
 #include "ADevice_template.h"
 
+#include "../inet/src/inet/mobility/contract/IMobility.h"
+
+
+
 using namespace omnetpp;
 
 NetworkOwner ADevice::NO = NetworkOwner();
 const int ADevice::baseID = 0x1;
-
-
 
 
 void
@@ -45,13 +47,24 @@ ADevice::sendProverBroadcast(cMessage* msg)
 {
     int size = getParentModule()->getVectorSize();
     assert(size);
+
+    inet::IMobility* mobility = check_and_cast<inet::IMobility *> (getParentModule()->getSubmodule("mobility"));
+    inet::Coord spos = mobility->getCurrentPosition();
+
     for(int i = 0; i < size; ++i)
     {
+
         if((int)i != getParentModule()->getIndex())
         {
             cModule* mod = getSystemModule()->getSubmodule("prover", i);
-            cMessage* msgd = msg->dup();
-            sendDirect(msgd, uniform(0.2,0.2), 0, mod, "radioIn");
+
+            inet::IMobility* mobility = check_and_cast<inet::IMobility *> (mod->getSubmodule("mobility"));
+            inet::Coord dpos = mobility->getCurrentPosition();
+            if(spos.sqrdist(dpos) <= range*range)
+            {
+                cMessage* msgd = msg->dup();
+                sendDirect(msgd, uniform(0.2,0.2), 0, mod, "radioIn");
+            }
         }
     }
 }

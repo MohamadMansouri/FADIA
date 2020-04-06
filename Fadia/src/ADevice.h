@@ -43,6 +43,7 @@ protected:
     size_t KPsize;
     static NetworkOwner NO;
     static const int baseID;
+    double range;
 
     // Inits
     virtual void initUID() {};
