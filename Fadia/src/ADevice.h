@@ -24,6 +24,8 @@
 
 using namespace omnetpp;
 
+
+typedef unsigned int TREEID;
 typedef int CHLNG;
 typedef int SOLV;
 typedef map<UID, KEYID> NTBL;
@@ -34,6 +36,25 @@ typedef map<UID, pair<KEYID, CHLNG>> SEST;
 KEYRNG getKeyRing(cRNG* rng, size_t KPsize, size_t KRsize);
 const UID getBaseID();
 
+enum MSG : short  
+{ 
+    UNKOWN,
+    JOIN,
+    MKTREE, 
+    REVOKE, 
+    SYNC, 
+    JNRQ, 
+    JNRP, 
+    JNAK, 
+    CMRQ, 
+    CMRP, 
+    CMAK, 
+    UP, 
+    RVK,
+    CMRPTO,
+    CMAKTO,
+    CMR
+};
 
 class ADevice : public cSimpleModule
 {
@@ -46,65 +67,60 @@ protected:
     double range;
 
     // Inits
-    virtual void initUID() {};
-    virtual void initKeyRing() {};
-
-    // Core
-    void Join() {};
-    void NeighborDiscover()  {};
-    void Prove() {};
-    void Verify() {};
-    void Revoke() {};
+    virtual void initUID() = 0;
+    virtual void initKeyRing() = 0;
 
     // Join
-    virtual void handleJoinMsg(cMessage* msg) {};
-    virtual void sendJoinReq() {};
-    virtual void handleJoinReq(cMessage* msg) {};
-    virtual void sendJoinResp(UID target, double batttery) {};
-    virtual void handleJoinResp(cMessage* msg) {};
-    virtual void sendJoinAck(UID target) {};
-    virtual void handleJoinAck(cMessage* msg) {};
+    virtual void handleJoinMsg(cMessage* msg);
+    virtual void handleJoinReq(cMessage* msg) = 0;
+    virtual void handleJoinResp(cMessage* msg) = 0;
+    virtual void handleJoinAck(cMessage* msg) = 0;
+    virtual void sendJoinReq() = 0;
+    virtual void sendJoinResp(UID target, double battery) = 0;
+    virtual void sendJoinAck(UID target) = 0;
 
 
-    // ND ( DEPRECIATED )
-    virtual void handleNDMsg(cMessage* msg) {};
-    virtual void sendNDReq() {};
-    virtual void handleNDReq(cMessage* msg) {};
-    virtual void sendNDResp(UID target, KEYID kid) {};
-    virtual void handleNDResp(cMessage* msg) {};
-    virtual void sendNDAck(UID target, KEYID kid) {};
-    virtual void handleNDAck(cMessage* msg) {};
-    virtual void addNeighbor(UID uid) {};
+    // Make Spanning Tree
+    virtual void handleCommitMsg(cMessage* msg);
+    virtual void handleCommitReq(cMessage* msg) = 0;
+    virtual void handleCommitResp(cMessage* msg) = 0;
+    virtual void handleCommitAck(cMessage* msg) = 0;
+    virtual void sendCommitReq(TREEID tid) = 0;
+    virtual void sendCommitResp(UID target, KEYID kid, TREEID tid) = 0;
+    virtual void sendCommitAck(UID target, KEYID kid, TREEID tid) = 0;
 
-    // Attest
-    virtual void handleAttMsg(cMessage* msg) {};
-    virtual void sendPullAttReq() {};
-    virtual void handlePullAttReq(cMessage* msg) {};
-    virtual void sendAttReq(UID target, KEYID kid) {};
-    virtual void handleAttReq(cMessage* msg) {};
-    virtual void sendAttResp(UID target) {};
-    virtual void handleAttResp(cMessage* msg) {};
-    virtual void sendAttAck(UID target) {};
-    virtual void handleAttAck(cMessage* msg) {};
-    virtual void handlePTimeOut(cMessage* msg) {};
-    virtual void handleVTimeOut(cMessage* msg) {};
+    // // Attest
+    // virtual void handleAttMsg(cMessage* msg) = 0;
+    // virtual void sendPullAttReq() = 0;
+    // virtual void handlePullAttReq(cMessage* msg) = 0;
+    // virtual void sendAttReq(UID target, KEYID kid) = 0;
+    // virtual void handleAttReq(cMessage* msg) = 0;
+    // virtual void sendAttResp(UID target) = 0;
+    // virtual void handleAttResp(cMessage* msg) = 0;
+    // virtual void sendAttAck(UID target) = 0;
+    // virtual void handleAttAck(cMessage* msg) = 0;
+    // virtual void handlePTimeOut(cMessage* msg) = 0;
+    // virtual void handleVTimeOut(cMessage* msg) = 0;
+
     // Update
-    virtual void handleUpMsg(cMessage* msg) {};
-    virtual void sendUpReq(CID target) {};
-    virtual void handleUpReq(cMessage* msg) {};
+    virtual void handleUpMsg(cMessage* msg);
+    virtual void handleUpReq(cMessage* msg) = 0;
+    virtual void sendUpReq() = 0;
 
     // Revoke
-    virtual void handleRevMsg(cMessage* msg) {};
-    virtual void sendRevReq(UID comdev) {};
-    virtual void handleRevReq(cMessage* msg) {};
+    virtual void handleRevMsg(cMessage* msg);
+    virtual void handleRevReq(cMessage* msg) = 0;
+    virtual void sendRevReq(UID comdev) = 0;
 
-    // Revoke
-    virtual void handleSyncMsg(cMessage* msg) {};
-    virtual void sendSyncReq() {};
-    virtual void handleSyncReq(cMessage* msg) {};
+    // Sync
+    virtual void handleSyncMsg(cMessage* msg);
+    virtual void sendSyncReq() = 0;
+    virtual void handleSyncReq(cMessage* msg) = 0;
 
     // utilities
-    template<class T, class U> T* getIds(U list);
+    virtual void logInfo(string m) = 0;
+    virtual void logDebug(string m) = 0;
+    virtual  void logError(string m) = 0;
     void sendProver(UID target, cMessage* msg);                     // This method does not consume the message ;)
     void sendProverBroadcast(cMessage* msg);                        // This method does not consume the message ;)
     void sendCollector(CID target, cMessage* msg);                  // This method does not consume the message ;)
@@ -116,6 +132,8 @@ protected:
 public:
     ADevice() {}
     ~ADevice() {}
+    virtual void handleMessage(cMessage *msg) override;
+
 };
 
 #endif /* ADEVICE_H_ */

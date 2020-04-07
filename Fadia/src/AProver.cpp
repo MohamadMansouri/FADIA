@@ -23,12 +23,24 @@
 #include "Join_m.h"
 #include "Attest_m.h"
 #include "Update_m.h"
+#include "Commit_m.h"
 
 #include "../inet/src/inet/power/contract/IEpEnergyStorage.h"
 
 #define DEBUG 1
 
 #define Bubble(_text_) getParentModule()->bubble(_text_)
+
+
+session_t::session_t(TREEID t, UID uid, KEYID k, unsigned int d, bool v = false)
+{
+    treeID = t; 
+    deviceID = uid;
+    kid = k;
+    depth = d;
+    v = false;
+}
+
 
 // The module class needs to be registered with OMNeT++
 Define_Module(AProver);
@@ -40,7 +52,7 @@ AProver::initialize()
     initNO();
     initUID();
     initKeyRing();
-    cMessage* msg = new cMessage("join");
+    cMessage* msg = new cMessage("Join", JOIN);
     scheduleAt(simTime() + uniform(0,1), msg);
     ptime = ((unsigned int) getSystemModule()->par("htime")) / 2;
     vtime = ((unsigned int) getSystemModule()->par("htime")) / 2;
@@ -74,150 +86,21 @@ AProver::initKeyRing()
     KeyRing = NO.getKeyRing();
 }
 
-void
-AProver::handleMessage(cMessage *msg)
-{
-    const char* msgname = msg->getName();
-
-    if(!strncmp(msgname, "join", 4))
-    {
-        logInfo("Performing Join Request");
-        sendJoinReq();
-    }
-
-    else if(!strncmp(msgname, "prove", 5))
-    {
-        scheduleAt(simTime() + ptime, msg);
-        pcounter = 0;
-        sendPullAttReq();
-    }
-
-    else if(!strncmp(msgname, "verify", 6))
-    {
-        scheduleAt(simTime() + ptime, msg);
-        vcounter = 0;
-    }
-
-    else if(!strncmp(msgname, "JN", 2))
-    {
-        logDebug("Received a join message");
-        handleJoinMsg(msg);
-    }
-
-//    else if(!strncmp(msgname, "ND", 2))
-//    {
-//        logDebug("Received a neighbor discovery message");
-//        handleNDMsg(msg);
-//    }
 
 
-    else if(!strncmp(msgname, "ATT", 3))
-    {
-        logDebug("Received an attestation message");
-        handleAttMsg(msg);
-    }
-
-    else if(!strncmp(msgname, "RVK", 3))
-    {
-        logDebug("Received a revocation message");
-        handleRevMsg(msg);
-    }
-
-    else
-        logError("Received message of unknown type");
-
-}
-
-void
-AProver::handleJoinMsg(cMessage* msg)
-{
-    char msgtype[3];
-    strncpy(msgtype, msg->getName()+2, 2);
-
-    if(!strcmp(msgtype, "RP"))
-        handleJoinResp(msg);
-
-    else if(!strcmp(msgtype, "RQ"))
-        logError("Received a join request message!!!! This should never happen");
-
-    else if(!strcmp(msgtype, "AK"))
-        logError("Received a join Ack message!!!! This should never happen");
-
-    else
-        logError("Received a join message of unknown type!!! (" + string(msg->getName()) + ")" );
-}
-
-//void
-//AProver::handleNDMsg(cMessage* msg)
-//{
-//    char msgtype[3];
-//    strncpy(msgtype, msg->getName()+2, 2);
-//
-//    if(!strcmp(msgtype, "RQ"))
-//        handleNDReq(msg);
-//
-//    else if(!strcmp(msgtype, "RP"))
-//        handleNDResp(msg);
-//
-//    else if(!strcmp(msgtype, "AK"))
-//        handleNDAck(msg);
-//
-//    else
-//        logError("Received a ND message of unknown type!!!");
-//}
-
-void
-AProver::handleAttMsg(cMessage* msg)
-{
-
-    char msgtype[4];
-    strncpy(msgtype, msg->getName()+3, 3);
-
-    if(!strncmp(msgtype, "PR", 2))
-        handlePullAttReq(msg);
-
-    else if(!strncmp(msgtype, "RQ", 2))
-        handleAttReq(msg);
-
-    else if(!strncmp(msgtype, "RP", 2))
-        handleAttResp(msg);
-
-    else if(!strncmp(msgtype, "AK", 2))
-        handleAttAck(msg);
-
-    else if(!strncmp(msgtype, "PTO", 3))
-        handlePTimeOut(msg);
-
-    else if(!strncmp(msgtype, "VTO", 3))
-        handleVTimeOut(msg);
-
-    else
-        logError("Received an attest message of unknown type!!!");
-}
-
-void
-AProver::handleRevMsg(cMessage* msg)
-{
-    char msgtype[3];
-    strncpy(msgtype, msg->getName()+3, 2);
-
-    if(!strcmp(msgtype, "RQ"))
-        handleRevReq(msg);
-
-    else
-        logError("Received a Revocation message of unknown type!!!");
-}
 
 void
 AProver::sendJoinReq()
 {
-    char msgname[6];
+    // char msgname[6];
     cid = findClosestCollector();
     if (cid == NOID)
         return;
 
-    sprintf(msgname, "JNRQ");
-    JoinReq* msg = new JoinReq(msgname);
+
+    // sprintf(msgname, "JNRQ");
+    JoinReq* msg = new JoinReq();
+    msg->setKind(JNRQ);
     msg->setSource(UId);
     msg->setDestination(cid);
     msg->setBattery(getBatteryLevel());
@@ -245,19 +128,20 @@ AProver::handleJoinResp(cMessage* msg)
     }
     sendJoinAck(senderid);
 
-    cMessage* pmsg = new cMessage("prove");
-    cMessage* vmsg = new cMessage("verify");
+    // cMessage* pmsg = new cMessage("prove");
+    // cMessage* vmsg = new cMessage("verify");
 
-    scheduleAt(simTime(), vmsg);
-    scheduleAt(simTime(), pmsg);
+    // scheduleAt(simTime(), vmsg);
+    // scheduleAt(simTime(), pmsg);
 }
 
 void
 AProver::sendJoinAck(UID target)
 {
-    char msgname[5];
-    sprintf(msgname, "JNAK");
-    JoinAck* msg = new JoinAck(msgname);
+    // char msgname[5];
+    // sprintf(msgname, "JNAK");
+    JoinAck* msg = new JoinAck();
+    msg->setKind(JNAK);
     msg->setSource(UId);
     msg->setDestination(target);
     msg->setMac(generateMAC(msg, ckey));
@@ -265,108 +149,80 @@ AProver::sendJoinAck(UID target)
 
 }
 
-//
-//void
-//AProver::sendNDReq()
-//{
-//    char msgname[6];
-//    sprintf(msgname, "NDRQ");
-//    NDiscoverReq* msg = new NDiscoverReq(msgname);
-//    msg->setSource(UId);
-//    msg->setKidArraySize(KeyRing.size());
-//    size_t i = 0;
-//    for(KEYRNG_IT it = KeyRing.begin(); it != KeyRing.end(); ++it)
-//    {
-//        msg->setKid(i++, it->first);
-//    }
-//    sendProverBroadcast(msg);
-//
-//
-//}
-//
-//void
-//AProver::handleNDReq(cMessage* msg)
-//{
-//    NDiscoverReq* reqmsg = check_and_cast<NDiscoverReq *>(msg);
-//    UID senderid = (UID) reqmsg->getSource();
-//
-//    if(NTable.find(senderid) != NTable.end())
-//        return;
-//
-//    size_t kidsize = (size_t) reqmsg->getKidArraySize();
-//    for(int i=0; i < kidsize; ++i)
-//    {
-//        KEYRNG_IT it = KeyRing.find((KEYID)reqmsg->getKid(i));
-//        if( it != KeyRing.end())
-//        {
-//            sendNDResp(senderid, it->first);
-//            NTableTmp[senderid] = it->first;
-//            return;
-//        }
-//    }
-//    return;
-//}
-//
-//void
-//AProver::sendNDResp(UID target, KEYID kid)
-//{
-//    char msgname[5];
-//    sprintf(msgname, "aRP");
-//    NDiscoverResp* msg = new NDiscoverResp(msgname);
-//    msg->setSource(UId);
-//    msg->setDestination(target);
-//    msg->setKid(kid);
-//    msg->setMac(generateMAC(msg, kid));
-//    sendProver(target, msg);
-//}
-//
-//void
-//AProver::handleNDResp(cMessage* msg)
-//{
-//    NDiscoverResp* resmsg = check_and_cast<NDiscoverResp *>(msg);
-//    if(resmsg->getDestination() != UId)
-//    {
-//            logError("handleNDResp: received message with wrong destination");
-//            return;
-//    }
-//
-//    UID senderid = (UID) resmsg->getSource();
-//    KEYID kid = (KEYID) resmsg->getKid();
-//    if(checkMAC<NDiscoverResp>(resmsg))
-//    {
-//        addNeighbor(senderid);
-//    }
-//    sendNDAck(senderid, kid);
-//}
-//
-//void
-//AProver::sendNDAck(UID target, KEYID kid)
-//{
-//    char msgname[5];
-//    sprintf(msgname, "NDAK");
-//    NDiscoverAck* msg = new NDiscoverAck(msgname);
-//    msg->setSource(UId);
-//    msg->setDestination(target);
-//    msg->setMac(generateMAC(msg, kid));
-//    sendProver(target, msg);
-//}
-//
-//void
-//AProver::handleNDAck(cMessage* msg)
-//{
-//    NDiscoverAck* ackmsg = check_and_cast<NDiscoverAck *>(msg);
-//    if(ackmsg->getDestination() != UId)
-//    {
-//            logError("handleNDAck: received message with wrong destination");
-//            return;
-//    }
-//
-//    UID senderid = (UID) ackmsg->getSource();
-//    if(checkMAC<NDiscoverAck>(ackmsg))
-//    {
-//        addNeighbor(senderid);
-//    }
-//}
+void
+AProver::handleCommitReq(cMessage* msg)
+{
+    if (pcounter >= prove)
+        return;
+
+    CommitReq* rmsg = check_and_cast<CommitReq *>(msg); 
+    UID senderid = (UID) rms->getSource();
+    TREEID tid = (TREEID) rms->getTreeID();
+    
+    if(psessions_bytree.find(tid) != psessions_bytree.end()
+        && psessions_bydev.find(senderid) != psessions_bydev.end())
+        return;
+
+
+
+    size_t kidsize = (size_t) reqmsg->getKidArraySize();
+
+    for(size_t i=0; i < kidsize; ++i)
+    {
+        KEYRNG_IT it = KeyRing.find((KEYID)reqmsg->getKid(i));
+        if( it != KeyRing.end())
+        {
+            session_t pses(tid, senderid, it->first, depth);
+            CommitTimeout* tomsg = new CommitTimeout();
+            tomsg->setKind(CMRPTO);
+            scheduleAt(simTime() + timeout, tomsg);
+            pses.tomsg = tomsg;
+            psessions_bydev[senderid] = pses;
+            psessions_bytree[tid] = pses;
+            sendCommitResp(senderid, tid);
+            return;
+        }
+    }
+    return;
+}
+void
+AProver::sendCommitReq(TREEID tid)
+{
+    CommitReq* msg = new CommitReq();
+    msg->setKind(CMRQ);
+    msg->setSource(UId);
+    msg->setKidArraySize(KeyRing.size());
+    size_t i = 0;
+    for(KEYRNG_IT it = KeyRing.begin(); it != KeyRing.end(); ++it)
+    {
+        msg->setKid(i++, it->first);
+    }
+    msg->setDepth(getDepth());
+    msg->setTreeID(tid);
+    sendProverBroadcast(msg);
+}
+void
+AProver::handleCommitResp()
+{
+ 
+}
+void
+AProver::sendCommitResp(UID target, TREEID tid)
+{
+
+}
+
+void
+AProver::handleCommitAck()
+{
+
+}
+
+void
+AProver::sendCommitAck(UID target, KEYID kid, TREEID tid)
+{
+
+}
 
 void
 AProver::sendPullAttReq()
@@ -375,14 +231,7 @@ AProver::sendPullAttReq()
     sprintf(msgname, "ATTPR");
     PullAttestReq* msg = new PullAttestReq(msgname);
     msg->setSource(UId);
-    msg->setKidArraySize(KeyRing.size());
-    size_t i = 0;
-    for(KEYRNG_IT it = KeyRing.begin(); it != KeyRing.end(); ++it)
-    {
-        msg->setKid(i++, it->first);
-    }
-    msg->setSeniority(0);
-    sendProverBroadcast(msg);
+
 }
 
 void
@@ -537,7 +386,7 @@ AProver::handleAttResp(cMessage* msg)
     sendAttAck(senderid);
     if(++vcounter >= verify)
     {
-        sendUpReq(findClosestCollector());;
+        sendUpReq();
     }
 
 }
@@ -593,14 +442,14 @@ void AProver::handleVTimeOut(cMessage* msg)
 }
 
 void
-AProver::sendUpReq(CID cid)
+AProver::sendUpReq()
 {
     Bubble("sending my report to the collector");
     char msgname[5];
     sprintf(msgname, "UPRQ");
     UpdateReq* msg = new UpdateReq(msgname);
     msg->setSource(UId);
-    msg->setDestination(cid);
+    // msg->setDestination(cid);
     msg->setMac(generateMAC(msg,ckey));
     sendCollector(cid, msg);
 }

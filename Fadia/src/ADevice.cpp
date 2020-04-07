@@ -23,6 +23,100 @@ using namespace omnetpp;
 NetworkOwner ADevice::NO = NetworkOwner();
 const int ADevice::baseID = 0x1;
 
+void
+ADevice::handleMessage(cMessage *msg)
+{
+    switch(msg->getKind())
+    {
+    case JOIN:
+        logInfo("Joining the network");
+        sendJoinReq();
+        break;
+    case MKTREE:
+        logInfo("Creating a spanning tree");
+        // sendCommitReq();
+        break;
+    case UP:
+        logDebug("Sending Updates to the collector");
+        sendUpReq();
+        break;
+    case REVOKE:
+        logDebug("Received a revocation message");
+        handleRevMsg(msg);
+        break;
+    case JNRQ:
+    case JNRP:
+    case JNAK: 
+        logDebug("Received a join message");
+        handleJoinMsg(msg);
+        break;
+    case CMRQ: 
+    case CMRP: 
+    case CMAK: 
+        logDebug("Received a commitment message");
+        handleCommitMsg(msg);
+        break;
+    case UNKOWN:
+    default:
+        logError("Received message of unknown type");
+    }
+
+
+}
+
+void
+ADevice::handleJoinMsg(cMessage* msg)
+{
+    switch(msg->getKind())
+    {
+    case JNRQ: 
+        handleJoinReq(msg);
+        break;
+    case JNRP:
+        handleJoinResp(msg);
+        break;
+    case JNAK:
+        handleJoinAck(msg);
+        break;
+    }
+}
+
+
+void
+ADevice::handleCommitMsg(cMessage* msg)
+{
+    switch(msg->getKind())
+    {
+    case CMRQ: 
+        handleCommitReq(msg);
+        break;
+    case CMRP:
+        handleCommitResp(msg);
+        break;
+    case CMAK:
+        handleCommitAck(msg);
+        break;
+    }
+}
+
+void
+ADevice::handleUpMsg(cMessage* msg)
+{
+    handleUpReq(msg);
+}
+
+void
+ADevice::handleRevMsg(cMessage* msg)
+{
+    handleRevReq(msg);
+}
+
+void
+ADevice::handleSyncMsg(cMessage* msg)
+{
+    handleSyncReq(msg);
+}
+
 
 void
 ADevice::sendProver(UID uid, cMessage* msg)

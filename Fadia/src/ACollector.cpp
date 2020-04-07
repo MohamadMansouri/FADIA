@@ -27,98 +27,15 @@ Define_Module(ACollector);
 
 void ACollector::initialize()
 {
-    initCID();
+    initUID();
 }
 
-void ACollector::initCID()
+void ACollector::initUID()
 {
     do
     {
         CId = (getBaseID<CID>() + getParentModule()->getIndex()) % MAXCID;
     } while(!CId);
-}
-
-void ACollector::handleMessage(cMessage *msg)
-{
-    const char* msgname = msg->getName();
-
-    if(!strncmp(msgname, "new", 4) && false)
-    {
-        logInfo("new msg received");
-    }
-
-    else if(!strncmp(msgname, "JN", 2))
-    {
-        logDebug("Received a join message");
-        handleJoinMsg(msg);
-    }
-
-    else if(!strncmp(msgname, "UP", 2))
-    {
-        logDebug("Received a update message");
-        handleUpMsg(msg);
-    }
-
-    else if(!strncmp(msgname, "SYN", 3))
-    {
-        logDebug("Received a sync message");
-        handleSyncMsg(msg);
-    }
-
-
-    else if(!strncmp(msgname, "RVK", 3))
-    {
-        logDebug("Received a revocation message");
-        handleRevMsg(msg);
-    }
-
-    else
-        logError("Received message of unknown type");
-}
-
-void
-ACollector::handleJoinMsg(cMessage* msg)
-{
-    char msgtype[3];
-    strncpy(msgtype, msg->getName()+2, 2);
-
-    if(!strcmp(msgtype, "RQ"))
-      handleJoinReq(msg);
-
-    else if(!strcmp(msgtype, "RP"))
-      logError("Received a join response message!!!! This should never happen");
-
-    else if(!strcmp(msgtype, "AK"))
-      handleJoinAck(msg);
-
-    else
-      logError("Received a join message of unknown type!!!");
-}
-
-void
-ACollector::handleSyncMsg(cMessage* msg)
-{
-    char msgtype[3];
-    strncpy(msgtype, msg->getName() + 3, 2);
-
-    if(!strcmp(msgtype, "RQ"))
-        handleSyncReq(msg);
-
-    else
-        logError("Received a sync message of unknown type!!!");
-}
-
-void
-ACollector::handleUpMsg(cMessage* msg)
-{
-
-}
-
-
-void
-ACollector::handleRevMsg(cMessage* msg)
-{
-
 }
 
 void
@@ -144,9 +61,8 @@ ACollector::handleJoinReq(cMessage* msg)
 void
 ACollector::sendJoinResp(UID target, double battery)
 {
-    char msgname[6];
-    sprintf(msgname, "JNRP");
-    JoinResp* msg = new JoinResp(msgname);
+    JoinResp* msg = new JoinResp();
+    msg->setKind(JNRP);
     msg->setSource(CId);
     msg->setDestination(target);
     msg->setVerify(chooseVerify(battery));

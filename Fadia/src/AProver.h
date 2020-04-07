@@ -12,10 +12,33 @@
 
 #include "ADevice.h"
 #include "ADevice_template.h"
+#include "Commit_m.h"
 
 using namespace std;
 using namespace omnetpp;
 
+#ifndef depreciated
+#define depreciated {logError("function is not implemented for the prover");}
+#endif
+
+struct session_t
+{
+    TREEID treeID;
+    UID deviceID;
+    KEYID keyID; 
+    unsigned int depth;
+    bool valid;
+    CommitTimeOut* tomsg = nullptr;
+
+    session_t(TREEID t, UID uid, KEYID k, unsigned int d, bool v = false);
+};
+
+
+typedef struct session_t session_t; 
+typedef map<UID, session_t> SESS_DEV;
+typedef map<UID, session_t>::iterator SESS_DEV_IT;
+typedef multi_map<TREEID, session_t> SESS_TREE;
+typedef multi_map<TREEID, session_t>::iterator SESS_TREE_IT;
 
 
 class AProver : public ADevice
@@ -31,6 +54,10 @@ private:
     NTBL NTableTmp;
     SEST vsessions;
     SEST psessions;
+    SESS_DEV psessions_bydev;
+    SESS_TREE psessions_bytree;
+    SESS_DEV csessions_bydev;
+    SESS_TREE csessions_bytree;
     CID cid;
     KEY ckey = 0xCAFED00D;
     unsigned int pcounter = 0;
@@ -43,61 +70,61 @@ private:
     vector<UID> badDevices;
 
     // Inits
-    void initUID();
+    virtual void initUID() override;
+    virtual void initKeyRing() override;
     void initNO();
-    void initKeyRing();
-
-    // Core
-    void Join();
-    void NeighborDiscover() ;
-    void Prove();
-    void Verify();
-    void Revoke();
 
     // Join
-    virtual void handleJoinMsg(cMessage* msg) override;
-    virtual void sendJoinReq() override;
+    virtual void handleJoinReq(cMessage* msg) depreciated;
     virtual void handleJoinResp(cMessage* msg) override;
+    virtual void handleJoinAck(cMessage* msg) depreciated;
+    virtual void sendJoinReq() override;
+    virtual void sendJoinResp(UID target, double battery) depreciated;
     virtual void sendJoinAck(UID target) override;
 
-//    // ND ( DEPRECIATED )
-//    void handleNDMsg(cMessage* msg);
-//    void sendNDReq();
-//    void handleNDReq(cMessage* msg);
-//    void sendNDResp(UID target, KEYID kid);
-//    void handleNDResp(cMessage* msg);
-//    void sendNDAck(UID target, KEYID kid);
-//    void handleNDAck(cMessage* msg);
-//    void addNeighbor(UID uid);
 
-    // Attest
-    virtual void handleAttMsg(cMessage* msg) override;
-    virtual void sendPullAttReq() override;
-    virtual void handlePullAttReq(cMessage* msg) override;
-    virtual void sendAttReq(UID target, KEYID kid) override;
-    virtual void handleAttReq(cMessage* msg) override;
-    virtual void sendAttResp(UID target) override;
-    virtual void handleAttResp(cMessage* msg) override;
-    virtual void sendAttAck(UID target) override;
-    virtual void handleAttAck(cMessage* msg) override;
-    virtual void handlePTimeOut(cMessage* msg) override;
-    virtual void handleVTimeOut(cMessage* msg) override;
+    // Make Spanning Tree
+    virtual void handleCommitReq(cMessage* msg) override;
+    virtual void handleCommitResp(cMessage* msg) override;
+    virtual void handleCommitAck(cMessage* msg) override;
+    virtual void sendCommitReq(TREEID tid) override;
+    virtual void sendCommitResp(UID target, TREEID tid) override;
+    virtual void sendCommitAck(UID target, TREEID tid) override;
 
     // Update
-    virtual void sendUpReq(CID target) override;
+    virtual void handleUpReq(cMessage* msg) depreciated;
+    virtual void sendUpReq() override;
 
     // Revoke
-    virtual void handleRevMsg(cMessage* msg) override;
     virtual void handleRevReq(cMessage* msg) override;
+    virtual void sendRevReq(UID comdev) depreciated;
+
+    // Sync
+    virtual void sendSyncReq() depreciated;
+    virtual void handleSyncReq(cMessage* msg) depreciated;
+
+    // Attest
+    virtual void handleAttMsg(cMessage* msg) depreciated;
+    virtual void sendPullAttReq() ;
+    virtual void handlePullAttReq(cMessage* msg) ;
+    virtual void sendAttReq(UID target, KEYID kid) ;
+    virtual void handleAttReq(cMessage* msg) ;
+    virtual void sendAttResp(UID target) ;
+    virtual void handleAttResp(cMessage* msg) ;
+    virtual void sendAttAck(UID target) ;
+    virtual void handleAttAck(cMessage* msg) ;
+    virtual void handlePTimeOut(cMessage* msg) ;
+    virtual void handleVTimeOut(cMessage* msg) ;
+
 
     // utilities
     const CID findClosestCollector();
     const double getBatteryLevel();
     CHLNG generateChallenge();
     SOLV solveChallenge(UID target);
-    void logInfo(string m);
-    void logDebug(string m);
-    void logError(string m);
+    virtual void logInfo(string m) override;
+    virtual void logDebug(string m) override;
+    virtual void logError(string m) override;
     void postponeMsg(cMessage* msg);
 
     //public:
@@ -105,7 +132,6 @@ private:
 
 protected:
     virtual void initialize() override;
-    virtual void handleMessage(cMessage *msg) override;
     virtual void refreshDisplay() const override;
 
 public:
