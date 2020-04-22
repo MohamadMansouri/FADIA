@@ -33,12 +33,14 @@ network Fadia
         int width = default(1000);
         int height = default(500);
 		
+		double  posy = 5;
+		double posx = width / 2;	
 
-		int htime = default(120);
-		
+        int htime = default(120);
+
         @display("bgb=$width,$height;bgg=100,1,grey95");
         @figure[title](type=label; pos=0,-1; anchor=sw; color=darkblue);
-	
+
     types:
         channel C extends ned.DatarateChannel
         {
@@ -47,7 +49,7 @@ network Fadia
 
     submodules:
         collector[numCollectors]: Collector {
-            @display("p=25,5");
+            @display("p=$posx,$posy");
         }
         prover[numProvers]: Prover;
         visualizer: <default("IntegratedCanvasVisualizer")> like IIntegratedVisualizer if hasVisualizer() {

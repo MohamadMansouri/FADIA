@@ -19,13 +19,21 @@
 #define NOID 0
 #define MAXUID INT32_MAX
 #define MAXCID INT32_MAX
+#define MAXTREEID INT32_MAX
 
-typedef uint32_t CID;
-typedef uint32_t UID;                                       // Unique ID of a device
-typedef uint32_t KEYID;                                     // ID of a key
-typedef uint32_t KEY;                                       // A key (We suppose it is SHA256 for now... can be changed later)
-typedef std::map<KEYID, KEY> KEYRNG;                        // A KeyRing, pair of Key ID and Key.
-typedef std::map<KEYID, KEY>::iterator KEYRNG_IT;           // Iterator for KEYRNG.
+typedef struct sha256_t
+{
+    unsigned char byte[32];
+    // TODO: overload parameters and create constructors
+} sha256_t;
+
+typedef uint32_t mac_t;
+typedef uint32_t cid_t;
+typedef uint32_t uid_t;                                       // Unique ID of a device
+typedef uint32_t keyid_t;                                     // ID of a key
+typedef uint32_t keyv_t;                                       // A key (We suppose it is SHA256 for now... can be changed later)
+typedef uint32_t treeid_t;                                    // Tree ID type
+typedef std::map<keyid_t, keyv_t> keyrng_t;                        // A KeyRing, pair of Key ID and Key.
 
 using namespace omnetpp;
 using namespace std;
@@ -38,7 +46,7 @@ private:
     cRNG* rng;
     size_t KPsize;
     size_t KRsize;
-    KEYRNG keyPool;
+    keyrng_t keyPool;
 
 public:
 
@@ -55,7 +63,7 @@ public:
         generateKeyPool();
     }
 
-    KEYRNG getKeyRing();
+    keyrng_t getKeyRing();
 };
 
 #endif /* SRC_NETWORKOWNER_H_ */

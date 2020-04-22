@@ -20,8 +20,10 @@ message UpdateReq
 {
     int source;
     int destination;
-    int report[];
-    int seqno;
+    int report1[];
+    int report2[];
+    int treeID;
     int mac;
+    int proof;
 }
     

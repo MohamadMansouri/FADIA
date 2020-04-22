@@ -14,6 +14,10 @@
 #include "ADevice.h"
 #include "ADevice_template.h"
 
+#include "Join_m.h"
+#include "Update_m.h"
+#include "Commit_m.h"
+
 #include "../inet/src/inet/mobility/contract/IMobility.h"
 
 
@@ -26,42 +30,110 @@ const int ADevice::baseID = 0x1;
 void
 ADevice::handleMessage(cMessage *msg)
 {
-    switch(msg->getKind())
+    if(msg->isSelfMessage())
     {
-    case JOIN:
-        logInfo("Joining the network");
-        sendJoinReq();
-        break;
-    case MKTREE:
-        logInfo("Creating a spanning tree");
-        // sendCommitReq();
-        break;
-    case UP:
-        logDebug("Sending Updates to the collector");
-        sendUpReq();
-        break;
-    case REVOKE:
-        logDebug("Received a revocation message");
-        handleRevMsg(msg);
-        break;
-    case JNRQ:
-    case JNRP:
-    case JNAK: 
-        logDebug("Received a join message");
-        handleJoinMsg(msg);
-        break;
-    case CMRQ: 
-    case CMRP: 
-    case CMAK: 
-        logDebug("Received a commitment message");
-        handleCommitMsg(msg);
-        break;
-    case UNKOWN:
-    default:
-        logError("Received message of unknown type");
+        switch(msg->getKind())
+        {
+            case JOIN:
+                logInfo("Joining the network");
+                sendJoinReq();
+                break;
+            case MKTREE:
+                logInfo("Creating a spanning tree");
+                sendCommitReq(NOID);
+                break;
+            case CHECK: 
+                logInfo("Checking the current software configuration");
+                checkSoftConfig();
+                break;
+            case ATTEST: 
+                logInfo("Entering a new attestation period");
+                startAttestation();
+                break;
+            // case UPDATE:
+            //     logInfo("Sending Updates to my parent");
+            //     sendUpReq();
+            //     break;
+            case SYNC:
+                logInfo("Synchronizating with other collectors");
+                sendSyncReq();
+
+            //JOIN
+            case JNRQ:
+                sendCollector<JoinReq>(msg);
+                break;
+            case JNRP:
+                sendProver<JoinResp>(msg);
+                break;
+            case JNAK: 
+                sendCollector<JoinAck>(msg);
+                break;
+            case JNRPTO: 
+                handleJoinRespTimeOut(msg);
+                break;
+            case JNAKTO: 
+                handleJoinAckTimeOut(msg);
+                break;                
+            
+            //COMMIT
+            case CMRQ: 
+                sendProverBroadcast(msg);
+                break;
+            case CMRP: 
+                sendProver<CommitResp>(msg);
+                break;
+            case CMAK: 
+                sendProver<CommitAck>(msg);
+                break;
+            case CMRPTO: 
+                handleCommitRespTimeOut(msg);
+                break;
+            case CMAKTO: 
+                handleCommitAckTimeOut(msg);
+                break;    
+
+            // UPDATE
+            case UPRQ:
+                sendProver<UpdateReq>(msg);
+                break;
+            case UPRQC:
+                sendCollector<UpdateReq>(msg);
+                break;
+            case UPTO:  
+                handleUpdateTimeOut(msg);
+                break;
+
+
+            case UNKOWN:
+            default:
+                logError("Received message of unknown type");
+                break;
+        }
     }
-
-
+    else
+    {
+        switch(msg->getKind())
+        {
+        case JNRQ:
+        case JNRP:
+        case JNAK: 
+            handleJoinMsg(msg);
+            break;
+        case CMRQ: 
+        case CMRP: 
+        case CMAK: 
+            handleCommitMsg(msg);
+            break;
+        case UPRQ:
+        case UPRQC:
+            handleUpMsg(msg);
+            break;
+        case UNKOWN:
+        default:
+            logError("Received message of unknown type");
+            break;
+        }
+    }
 }
 
 void
@@ -70,12 +142,15 @@ ADevice::handleJoinMsg(cMessage* msg)
     switch(msg->getKind())
     {
     case JNRQ: 
+        logDebug("Received a join Request");
         handleJoinReq(msg);
         break;
     case JNRP:
+        logDebug("Received a join Response");
         handleJoinResp(msg);
         break;
     case JNAK:
+        logDebug("Received a join Acknowledgment");
         handleJoinAck(msg);
         break;
     }
@@ -88,12 +163,15 @@ ADevice::handleCommitMsg(cMessage* msg)
     switch(msg->getKind())
     {
     case CMRQ: 
+        logDebug("Received a commitment Request");
         handleCommitReq(msg);
         break;
     case CMRP:
+        logDebug("Received a commitment Response");
         handleCommitResp(msg);
         break;
     case CMAK:
+        logDebug("Received a commitment Acknowledgment");
         handleCommitAck(msg);
         break;
     }
@@ -118,23 +196,6 @@ ADevice::handleSyncMsg(cMessage* msg)
 }
 
 
-void
-ADevice::sendProver(UID uid, cMessage* msg)
-{
-    size_t indx = ( uid - getBaseID<UID>()) % MAXUID;
-    cModule* mod = getSystemModule()->getSubmodule("prover", indx);
-    cMessage* msgd = msg->dup();
-    sendDirect(msgd, uniform(0.2,0.2), 0, mod, "radioIn");
-}
-
-void
-ADevice::sendCollector(CID target, cMessage* msg)
-{
-    size_t indx = ( target - getBaseID<CID>()) % MAXUID;
-    cModule* mod = getSystemModule()->getSubmodule("collector", indx);
-    cMessage* msgd = msg->dup();
-    sendDirect(msgd, 0.2, 0, mod, "radioIn");
-}
 
 void
 ADevice::sendProverBroadcast(cMessage* msg)
@@ -157,14 +218,14 @@ ADevice::sendProverBroadcast(cMessage* msg)
             if(spos.sqrdist(dpos) <= range*range)
             {
                 cMessage* msgd = msg->dup();
-                sendDirect(msgd, uniform(0.2,0.2), 0, mod, "radioIn");
+                sendDirect(msgd, ndelay, 0, mod, "radioIn");
             }
         }
     }
 }
 
 int
-ADevice::generateMAC(cMessage* msg, KEYID kid)
+ADevice::generateMAC(cMessage* msg, keyid_t kid)
 {
     return 0;
 }

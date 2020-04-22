@@ -21,53 +21,115 @@ using namespace omnetpp;
 #define depreciated {logError("function is not implemented for the prover");}
 #endif
 
+enum status_e
+{
+    OFFLINE,
+    JOINING,
+    CHECKING,
+    READY, 
+    ATTESTING,
+    ATTESTING_CREATING,
+    CREATING,
+    COLLECTING,
+    FINISHED
+};
+
 struct session_t
 {
-    TREEID treeID;
-    UID deviceID;
-    KEYID keyID; 
+    treeid_t treeID;
+    uid_t deviceID;
+    keyid_t keyID; 
     unsigned int depth;
     bool valid;
     CommitTimeOut* tomsg = nullptr;
+    
+    session_t() :
+    treeID(NOID),
+    deviceID(NOID),
+    keyID(NOID),
+    depth(0),
+    valid(false)
+    {};
 
-    session_t(TREEID t, UID uid, KEYID k, unsigned int d, bool v = false);
+    session_t(treeid_t t, uid_t uid, keyid_t k, unsigned int d, bool v = false) :
+    treeID(t),
+    deviceID(uid),
+    keyID(k),
+    depth(d),
+    valid(v)
+    {};
 };
 
+struct report_t 
+{
+    map<uid_t, unsigned int> devices;
+    treeid_t tid;
+    mac_t mac;
+    
+    report_t() : tid(NOID), mac(0)
+    {};
+};
 
-typedef struct session_t session_t; 
-typedef map<UID, session_t> SESS_DEV;
-typedef map<UID, session_t>::iterator SESS_DEV_IT;
-typedef multi_map<TREEID, session_t> SESS_TREE;
-typedef multi_map<TREEID, session_t>::iterator SESS_TREE_IT;
-
+typedef struct session_t session_t;
+typedef pair<uid_t, session_t *> session_dev_pair_t; 
+// typedef pair<treeid_t, session_t *> session_tree_pair_t; 
+typedef map<uid_t, session_t *> session_dev_map_t;
+// typedef multimap<treeid_t, session_t *> session_tree_map_t;
 
 class AProver : public ADevice
 {
 
 private:
-    UID UId;
-    const int seed = 0;
-    const double postponetime = 0.1;
-    const double timeout = 1;
-    KEYRNG KeyRing;
-    NTBL NTable;
-    NTBL NTableTmp;
-    SEST vsessions;
-    SEST psessions;
-    SESS_DEV psessions_bydev;
-    SESS_TREE psessions_bytree;
-    SESS_DEV csessions_bydev;
-    SESS_TREE csessions_bytree;
-    CID cid;
-    KEY ckey = 0xCAFED00D;
-    unsigned int pcounter = 0;
-    unsigned int prove = 3;
-    unsigned int vcounter = 0;
-    unsigned int verify = 1;
-    unsigned int ptime;
-    unsigned int vtime;
-    vector<UID> goodDevices;
-    vector<UID> badDevices;
+    // Unique ID of prover
+    uid_t UId;
+
+    // prover's key ring
+    keyrng_t KeyRing;
+  
+    // parent and children open sessions
+    session_dev_pair_t psessions = {NOID, nullptr};
+    // session_tree_pair_t* psessions_bytree;
+    session_dev_map_t csessions;
+    // session_tree_map_t csessions_bytree;
+  
+    // active collector id and key
+    cid_t cid;
+    keyv_t ckey = 0xCAFED00D;
+
+    // attestion counter for each prover
+    int attestcount = 0;
+
+    // device status
+    status_e status = OFFLINE;
+
+    // max number of children
+    unsigned int maxchildren = 10;
+
+    // max depth of the tree
+    unsigned int maxdepth = 5;
+
+    // delta time for a prover to attest within
+    double deltah;
+
+    // delta time for a prover to attest within
+    double deltag;
+
+    // aggregated report at each delta h
+    report_t aggreport;
+
+    // messages
+    cMessage* startmsg = nullptr;
+    
+    cMessage* jointomsg = nullptr;
+
+    cMessage* mktreetimer = nullptr;
+    cMessage* attesttimer = nullptr;
+    cMessage* checkdelaymsg = nullptr;
+
+    CommitReq* creqmsg = nullptr;
+
+    CommitTimeOut* cresptomsg = nullptr;
+    CommitTimeOut* cacktomsg = nullptr;
 
     // Inits
     virtual void initUID() override;
@@ -79,60 +141,56 @@ private:
     virtual void handleJoinResp(cMessage* msg) override;
     virtual void handleJoinAck(cMessage* msg) depreciated;
     virtual void sendJoinReq() override;
-    virtual void sendJoinResp(UID target, double battery) depreciated;
-    virtual void sendJoinAck(UID target) override;
+    virtual void sendJoinResp(uid_t target) depreciated;
+    virtual void sendJoinAck(uid_t target) depreciated;
+    virtual void handleJoinRespTimeOut(cMessage* msg) override;
+    virtual void handleJoinAckTimeOut(cMessage* msg) depreciated;
 
 
     // Make Spanning Tree
+    virtual void startAttestation() override;
     virtual void handleCommitReq(cMessage* msg) override;
     virtual void handleCommitResp(cMessage* msg) override;
     virtual void handleCommitAck(cMessage* msg) override;
-    virtual void sendCommitReq(TREEID tid) override;
-    virtual void sendCommitResp(UID target, TREEID tid) override;
-    virtual void sendCommitAck(UID target, TREEID tid) override;
+    virtual void sendCommitReq(treeid_t tid) override;
+    virtual void sendCommitResp(uid_t target, treeid_t tid) override;
+    virtual void sendCommitAck(uid_t target, treeid_t tid) override;
+    virtual void handleCommitRespTimeOut(cMessage* msg) override;
+    virtual void handleCommitAckTimeOut(cMessage* msg) override;
 
     // Update
-    virtual void handleUpReq(cMessage* msg) depreciated;
-    virtual void sendUpReq() override;
+    virtual void handleUpReq(cMessage* msg) override;
+    virtual void sendUpReq(treeid_t tid) override;
 
     // Revoke
     virtual void handleRevReq(cMessage* msg) override;
-    virtual void sendRevReq(UID comdev) depreciated;
+    virtual void sendRevReq(uid_t comdev) depreciated;
 
     // Sync
     virtual void sendSyncReq() depreciated;
-    virtual void handleSyncReq(cMessage* msg) depreciated;
-
-    // Attest
-    virtual void handleAttMsg(cMessage* msg) depreciated;
-    virtual void sendPullAttReq() ;
-    virtual void handlePullAttReq(cMessage* msg) ;
-    virtual void sendAttReq(UID target, KEYID kid) ;
-    virtual void handleAttReq(cMessage* msg) ;
-    virtual void sendAttResp(UID target) ;
-    virtual void handleAttResp(cMessage* msg) ;
-    virtual void sendAttAck(UID target) ;
-    virtual void handleAttAck(cMessage* msg) ;
-    virtual void handlePTimeOut(cMessage* msg) ;
-    virtual void handleVTimeOut(cMessage* msg) ;
-
+    virtual void handleSyncReq(cMessage* msg) depreciated;  
+    virtual void handleUpdateTimeOut(cMessage* msg) override;
 
     // utilities
-    const CID findClosestCollector();
+    const cid_t findClosestCollector();
     const double getBatteryLevel();
-    CHLNG generateChallenge();
-    SOLV solveChallenge(UID target);
     virtual void logInfo(string m) override;
     virtual void logDebug(string m) override;
-    virtual void logError(string m) override;
-    void postponeMsg(cMessage* msg);
+    virtual void logWarn(string m);
 
+    virtual void logError(string m) override;
+    virtual void checkSoftConfig() override;
+    void postponeMsg(cMessage* msg);
+    void createProof();
+    void aggregateProof();
+    
     //public:
 //    AProver();
 
 protected:
     virtual void initialize() override;
-    virtual void refreshDisplay() const override;
+    virtual void finish() override;
+    // virtual void refreshDisplay() const override;
 
 public:
     AProver() {}

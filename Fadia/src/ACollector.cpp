@@ -28,81 +28,97 @@ Define_Module(ACollector);
 void ACollector::initialize()
 {
     initUID();
+    // initPorverKeys();
 }
 
 void ACollector::initUID()
 {
     do
     {
-        CId = (getBaseID<CID>() + getParentModule()->getIndex()) % MAXCID;
+        CId = (getBaseID<cid_t>() + getParentModule()->getIndex()) % MAXCID;
     } while(!CId);
 }
+
 
 void
 ACollector::handleJoinReq(cMessage* msg)
 {
     JoinReq* reqmsg = check_and_cast<JoinReq *>(msg);
-    if((CID)reqmsg->getDestination() != CId)
+    if((cid_t)reqmsg->getDestination() != CId)
     {
         logError("handleJoinReq: received message with wrong dest");
+        delete msg;
         return;
     }
 
-    UID senderid = (UID) reqmsg->getSource();
+    uid_t senderid = (uid_t) reqmsg->getSource();
 
-    if(!checkMAC<JoinReq>(reqmsg))
+    if(!checkMAC<JoinReq>(reqmsg, proverKeys[senderid]))
     {
         logError("handleJoinReq: Invalid MAC");
+        delete msg;
+        return;
     }
+    
+    size_t kidsize = (size_t) reqmsg->getKidArraySize();
+    for(size_t i=0; i < kidsize; ++i)
+    {
+        proverKeyIds[senderid].push_back((keyid_t)reqmsg->getKid(i));
+    }
+    updateProverKey(senderid);
+
     jsessions.push_back(senderid);
-    sendJoinResp(senderid, reqmsg->getBattery());
+    statusTable[senderid] = make_pair(true, SimTime());
+    sendJoinResp(senderid);
+    delete msg;
+    
 }
 
 void
-ACollector::sendJoinResp(UID target, double battery)
+ACollector::sendJoinResp(uid_t target)
 {
     JoinResp* msg = new JoinResp();
     msg->setKind(JNRP);
     msg->setSource(CId);
     msg->setDestination(target);
-    msg->setVerify(chooseVerify(battery));
-    msg->setProve(chooseProve(battery));
-    msg->setMac(generateMAC(msg, channelKeys[target]));
-    sendProver(target, msg);
+    msg->setDepth(maxdepth);
+    msg->setDeltah(deltah);
+    msg->setMac(generateMAC(msg, proverKeys[target]));
+    scheduleAt(simTime() + macdelay*2, msg);
 }
 
-void
-ACollector::handleJoinAck(cMessage* msg)
-{
-    JoinAck* ackmsg = check_and_cast<JoinAck *>(msg);
-    if((CID)ackmsg->getDestination() != CId)
-    {
-        logError("handleJoinReq: received message with wrong dest");
-        return;
-    }
-    if(find(jsessions.begin(),jsessions.end(),(UID)ackmsg->getSource()) == jsessions.end())
-    {
-        logError("handleJoinReq: session is not open");
-        return;
-    }
+// void
+// ACollector::handleJoinAck(cMessage* msg)
+// {
+//     JoinAck* ackmsg = check_and_cast<JoinAck *>(msg);
+//     if((cid_t)ackmsg->getDestination() != CId)
+//     {
+//         logError("handleJoinReq: received message with wrong dest");
+//         return;
+//     }
+//     if(find(jsessions.begin(),jsessions.end(),(uid_t)ackmsg->getSource()) == jsessions.end())
+//     {
+//         logError("handleJoinReq: session is not open");
+//         return;
+//     }
 
-    UID senderid = (UID) ackmsg->getSource();
+//     uid_t senderid = (uid_t) ackmsg->getSource();
 
-    if(!checkMAC<JoinAck>(ackmsg))
-    {
-        logError("handleJoinReq: Invalid MAC");
-    }
-    statusTable[senderid] = make_pair(true, SimTime());
-}
+//     if(!checkMAC<JoinAck>(ackmsg))
+//     {
+//         logError("handleJoinReq: Invalid MAC");
+//     }
+//     statusTable[senderid] = make_pair(true, SimTime());
+// }
 
 void
 ACollector::handleUpReq(cMessage* msg)
 {
-
+    delete msg;
 }
 
 void
-ACollector::sendRevReq(UID comdev)
+ACollector::sendRevReq(uid_t comdev)
 {
 
 }
@@ -156,4 +172,10 @@ int
 ACollector::chooseVerify(double p)
 {
     return 2;
+}
+
+void ACollector::updateProverKey(uid_t uid)
+{
+    // TODO: compute ckey from proverKeyIds
+    proverKeys[uid] = 0xCAFED00D;
 }

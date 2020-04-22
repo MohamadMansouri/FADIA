@@ -20,7 +20,7 @@ message JoinReq
 {
     int source;
     int destination;
-    double battery;
+    int kid[];
     int mac;
 }
 
@@ -29,8 +29,8 @@ message JoinResp
 {
     int source;
     int destination;
-    int prove;
-    int verify;
+    int depth;
+    double deltah;
     int mac;
 }
 

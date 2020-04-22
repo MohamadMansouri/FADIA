@@ -27,20 +27,20 @@ NetworkOwner::generateKeyPool()
     if (keyPool.size() == KPsize)
         return;
 
-    KEYID keyid;
+    keyid_t keyid;
     do {
-        keyid = (KEYID) intrand(rng, MAXUID);
+        keyid = (keyv_t) intrand(rng, MAXUID);
         if (keyid != NOID)
-            keyPool[keyid] = (KEY) intrand(rng, MAXUID);
+            keyPool[keyid] = (keyv_t) intrand(rng, MAXUID);
     }
     while (keyPool.size() != KPsize);
 }
 
 
-KEYRNG
+keyrng_t
 NetworkOwner::getKeyRing()
 {
-    KEYRNG KeyRing;
+    keyrng_t KeyRing;
     do
     {
         auto it = keyPool.begin();

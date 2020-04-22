@@ -29,7 +29,8 @@ module Prover extends NodeBase
 {
     parameters:
         double range;
-        @display("i=misc/sensor3,is=s;bgb=589.05,603.225;r=$range");
+        int maxdepth;
+        @display("i=misc/sensoroff;is=s;bgb=589.05,603.225;r=$range");
         mobility.typename = default("StationaryMobility");
 
     gates:

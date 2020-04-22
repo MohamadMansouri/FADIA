@@ -21,8 +21,8 @@
 message CommitReq
 {
     int source;
-    int kid[];
     int depth;
+    int kid[];
     int treeID;
 }
 

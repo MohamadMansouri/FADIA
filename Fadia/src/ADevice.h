@@ -24,42 +24,50 @@
 
 using namespace omnetpp;
 
+// typedef int CHLNG;
+// typedef int SOLV;
+// typedef map<uid_t, KEYID> NTBL;
+// typedef map<uid_t, pair<KEYID, CHLNG>> SEST;
 
-typedef unsigned int TREEID;
-typedef int CHLNG;
-typedef int SOLV;
-typedef map<UID, KEYID> NTBL;
-typedef map<UID, pair<KEYID, CHLNG>> SEST;
-
-
-
-KEYRNG getKeyRing(cRNG* rng, size_t KPsize, size_t KRsize);
-const UID getBaseID();
 
 enum MSG : short  
 { 
     UNKOWN,
     JOIN,
+    CHECK,
+    ATTEST,
     MKTREE, 
     REVOKE, 
-    SYNC, 
+    SYNC,
+    UPDATE, 
     JNRQ, 
     JNRP, 
     JNAK, 
     CMRQ, 
     CMRP, 
     CMAK, 
-    UP, 
-    RVK,
+    UPRQ, 
+    UPRQC, 
+    UPTO, 
+    RVKRQ,
     CMRPTO,
     CMAKTO,
-    CMR
+    JNRPTO,
+    JNAKTO
 };
 
 class ADevice : public cSimpleModule
 {
 
 protected:
+    // configuration parameters
+    double ndelay = 0.04;  // 40 ms network delay
+    const int seed = 0;
+    const double postponetime = 0.1;
+    const double timeout = 0.6;
+    const double macdelay = 0.0001;
+    const double checkDelay = 0.013; 
+
     size_t KRsize;
     size_t KPsize;
     static NetworkOwner NO;
@@ -76,28 +84,32 @@ protected:
     virtual void handleJoinResp(cMessage* msg) = 0;
     virtual void handleJoinAck(cMessage* msg) = 0;
     virtual void sendJoinReq() = 0;
-    virtual void sendJoinResp(UID target, double battery) = 0;
-    virtual void sendJoinAck(UID target) = 0;
-
+    virtual void sendJoinResp(uid_t target) = 0;
+    virtual void sendJoinAck(uid_t target) = 0;
+    virtual void handleJoinRespTimeOut(cMessage* msg) = 0;
+    virtual void handleJoinAckTimeOut(cMessage* msg) = 0;
 
     // Make Spanning Tree
+    virtual void startAttestation() = 0;
     virtual void handleCommitMsg(cMessage* msg);
     virtual void handleCommitReq(cMessage* msg) = 0;
     virtual void handleCommitResp(cMessage* msg) = 0;
     virtual void handleCommitAck(cMessage* msg) = 0;
-    virtual void sendCommitReq(TREEID tid) = 0;
-    virtual void sendCommitResp(UID target, KEYID kid, TREEID tid) = 0;
-    virtual void sendCommitAck(UID target, KEYID kid, TREEID tid) = 0;
+    virtual void sendCommitReq(treeid_t tid) = 0;
+    virtual void sendCommitResp(uid_t target, treeid_t tid) = 0;
+    virtual void sendCommitAck(uid_t target, treeid_t tid) = 0;
+    virtual void handleCommitRespTimeOut(cMessage* msg) = 0;
+    virtual void handleCommitAckTimeOut(cMessage* msg) = 0;
 
     // // Attest
     // virtual void handleAttMsg(cMessage* msg) = 0;
     // virtual void sendPullAttReq() = 0;
     // virtual void handlePullAttReq(cMessage* msg) = 0;
-    // virtual void sendAttReq(UID target, KEYID kid) = 0;
+    // virtual void sendAttReq(uid_t target, KEYID kid) = 0;
     // virtual void handleAttReq(cMessage* msg) = 0;
-    // virtual void sendAttResp(UID target) = 0;
+    // virtual void sendAttResp(uid_t target) = 0;
     // virtual void handleAttResp(cMessage* msg) = 0;
-    // virtual void sendAttAck(UID target) = 0;
+    // virtual void sendAttAck(uid_t target) = 0;
     // virtual void handleAttAck(cMessage* msg) = 0;
     // virtual void handlePTimeOut(cMessage* msg) = 0;
     // virtual void handleVTimeOut(cMessage* msg) = 0;
@@ -105,12 +117,13 @@ protected:
     // Update
     virtual void handleUpMsg(cMessage* msg);
     virtual void handleUpReq(cMessage* msg) = 0;
-    virtual void sendUpReq() = 0;
+    virtual void sendUpReq(treeid_t tid) = 0;
+    virtual void handleUpdateTimeOut(cMessage* msg) = 0;
 
     // Revoke
     virtual void handleRevMsg(cMessage* msg);
     virtual void handleRevReq(cMessage* msg) = 0;
-    virtual void sendRevReq(UID comdev) = 0;
+    virtual void sendRevReq(uid_t comdev) = 0;
 
     // Sync
     virtual void handleSyncMsg(cMessage* msg);
@@ -121,19 +134,20 @@ protected:
     virtual void logInfo(string m) = 0;
     virtual void logDebug(string m) = 0;
     virtual  void logError(string m) = 0;
-    void sendProver(UID target, cMessage* msg);                     // This method does not consume the message ;)
-    void sendProverBroadcast(cMessage* msg);                        // This method does not consume the message ;)
-    void sendCollector(CID target, cMessage* msg);                  // This method does not consume the message ;)
-    void sendCollectorBroadcast(CID target, cMessage* msg);         // This method does not consume the message ;)
-    int generateMAC(cMessage* msg,KEYID kid);
-    template <class T> bool checkMAC(T* msg);
+    virtual void checkSoftConfig() = 0;
+    template <typename T> void sendProver(cMessage* msg);               // This method consume the message ;)
+    void sendProverBroadcast(cMessage* msg);                            // This method does not consume the message ;)
+    template <typename T> void sendCollector(cMessage* msg);            // This method consume the message ;)
+    void sendCollectorBroadcast(cMessage* msg);                         // This method does not consume the message ;)
+    int generateMAC(cMessage* msg, keyid_t kid);
+    template <class T> bool checkMAC(T* MSGg, keyid_t kid);
     template <typename T> const T getBaseID();
+
 
 public:
     ADevice() {}
     ~ADevice() {}
     virtual void handleMessage(cMessage *msg) override;
-
 };
 
 #endif /* ADEVICE_H_ */
