@@ -23,6 +23,7 @@ simple AProver
 {
     gates:
         input radioIn @directIn;
+        inout appio[];
 }
 
 module Prover extends NodeBase
@@ -30,13 +31,15 @@ module Prover extends NodeBase
     parameters:
         double range;
         int maxdepth;
-        @display("i=misc/sensoroff;is=s;bgb=589.05,603.225;r=$range");
+        
+        int neighbors = default(2);
+        @display("i=misc/sensoroff;is=s;bgb=589.05,603.225;");
         mobility.typename = default("StationaryMobility");
 
     gates:
         //        inout gate[]	@allowunconnected;
         input radioIn @directIn;
-
+		inout gate[neighbors + 1] @loose;
     submodules:
         proverapp: AProver {
 
@@ -44,7 +47,9 @@ module Prover extends NodeBase
         }
     connections:
         proverapp.radioIn <-- radioIn;
-
+        for i=0..neighbors {
+			proverapp.appio++ <--> gate[i];
+        }
 
 }
 

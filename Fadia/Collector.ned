@@ -22,6 +22,7 @@ simple ACollector
 {
     gates:
         input radioIn @directIn;
+        inout appio;
 }
 
 module Collector extends NodeBase
@@ -31,7 +32,8 @@ module Collector extends NodeBase
 
     gates:
         input radioIn @directIn;
-
+		inout gate;
+		
     submodules:
         collectorapp: ACollector {
 
@@ -39,4 +41,5 @@ module Collector extends NodeBase
         }
     connections:
         collectorapp.radioIn <-- radioIn;
+        collectorapp.appio <--> gate;
 }

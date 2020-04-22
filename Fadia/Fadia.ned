@@ -30,14 +30,17 @@ network Fadia
         int keyIdSeed = default(0);
         int keySeed = default(1);
 
-        int width = default(1000);
-        int height = default(500);
+        double width = default(1000);
+        double height = default(500);
 		
 		double  posy = 5;
 		double posx = width / 2;	
 
         int htime = default(120);
 
+		int neighbors = default(2);
+		int treeh = 3;
+		
         @display("bgb=$width,$height;bgg=100,1,grey95");
         @figure[title](type=label; pos=0,-1; anchor=sw; color=darkblue);
 
@@ -51,9 +54,16 @@ network Fadia
         collector[numCollectors]: Collector {
             @display("p=$posx,$posy");
         }
-        prover[numProvers]: Prover;
+        prover[neighbors^treeh -1]: Prover;
         visualizer: <default("IntegratedCanvasVisualizer")> like IIntegratedVisualizer if hasVisualizer() {
             @display("p=5,5");
         }
+   connections:
+       collector[0].gate <--> C <--> prover[0].gate++;
+       
+       for i=0..neighbors^(treeh -1) - 2, for j=1..neighbors
+       {
+       		prover[i].gate++ <--> prover[2*i+j].gate++;
+       }
 
 }
