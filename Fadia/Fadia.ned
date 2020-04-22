@@ -1,4 +1,4 @@
-	//
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -24,31 +24,36 @@ network Fadia
         int numCollectors;
         int numProvers;
         double connectionProb = default(1);
-		int keyRingSize;
-		int keyPoolSize;
-        
+        int keyRingSize;
+        int keyPoolSize;
+
         int keyIdSeed = default(0);
         int keySeed = default(1);
-        
+
         int width = default(1000);
         int height = default(500);
+		
+		double  posy = 5;
+		double posx = width / 2;	
+
+        int htime = default(120);
 
         @display("bgb=$width,$height;bgg=100,1,grey95");
         @figure[title](type=label; pos=0,-1; anchor=sw; color=darkblue);
 
-        @figure[rcvdPkText](type=indicatorText; pos=380,20; anchor=w; font=,18; textFormat="packets received: %g"; initialValue=0);
-      //  @statistic[packetReceived](source=hostB.app[0].packetReceived; record=figure(count); targetFigure=rcvdPkText);
-            
     types:
-        channel C extends ned.DatarateChannel {    
+        channel C extends ned.DatarateChannel
+        {
             datarate = 100Mbps;
         }
 
     submodules:
-        collector[numCollectors]: Collector;
+        collector[numCollectors]: Collector {
+            @display("p=$posx,$posy");
+        }
         prover[numProvers]: Prover;
         visualizer: <default("IntegratedCanvasVisualizer")> like IIntegratedVisualizer if hasVisualizer() {
-            @display("p=21,22");
+            @display("p=5,5");
         }
 
 }

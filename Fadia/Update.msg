@@ -11,32 +11,19 @@
 // 
 // You should have received a copy of the GNU Lesser General Public License
 // along with this program.  If not, see http://www.gnu.org/licenses/.
+// 
+
 //
-
-import inet.node.base.NodeBase;
-
-
-
-
-simple ACollector
+// TODO generated message class
+//
+message UpdateReq 
 {
-    gates:
-        input radioIn @directIn;
+    int source;
+    int destination;
+    int report1[];
+    int report2[];
+    int treeID;
+    int mac;
+    int proof;
 }
-
-module Collector extends NodeBase
-{
-    parameters:
-        @display("i=device/accesspoint;is=l;bgb=573.3,680.39996");
-
-    gates:
-        input radioIn @directIn;
-
-    submodules:
-        collectorapp: ACollector {
-
-            @display("i=block/app,p,330.75,491.4;p=357.048,521.208");
-        }
-    connections:
-        collectorapp.radioIn <-- radioIn;
-}
+    

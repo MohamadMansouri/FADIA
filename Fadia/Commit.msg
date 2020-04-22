@@ -11,32 +11,41 @@
 // 
 // You should have received a copy of the GNU Lesser General Public License
 // along with this program.  If not, see http://www.gnu.org/licenses/.
+// 
+
+//
+// TODO generated message class
 //
 
-import inet.node.base.NodeBase;
 
-
-
-
-simple ACollector
+message CommitReq
 {
-    gates:
-        input radioIn @directIn;
+    int source;
+    int depth;
+    int kid[];
+    int treeID;
 }
 
-module Collector extends NodeBase
+message CommitResp 
 {
-    parameters:
-        @display("i=device/accesspoint;is=l;bgb=573.3,680.39996");
-
-    gates:
-        input radioIn @directIn;
-
-    submodules:
-        collectorapp: ACollector {
-
-            @display("i=block/app,p,330.75,491.4;p=357.048,521.208");
-        }
-    connections:
-        collectorapp.radioIn <-- radioIn;
+    int source;
+    int destination;
+    int kid;
+    int treeID;
+    int mac;
 }
+
+message CommitAck
+{
+    int source;
+    int destination;
+	int treeID;
+    int mac;
+}
+
+message CommitTimeOut
+{
+    int device;
+    int treeID;
+}
+    

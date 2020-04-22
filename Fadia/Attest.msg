@@ -11,32 +11,47 @@
 // 
 // You should have received a copy of the GNU Lesser General Public License
 // along with this program.  If not, see http://www.gnu.org/licenses/.
+// 
+
+//
+// TODO generated message class
 //
 
-import inet.node.base.NodeBase;
 
-
-
-
-simple ACollector
+message PullAttestReq
 {
-    gates:
-        input radioIn @directIn;
+    int source;
+    int kid[];
+    double seniority;
 }
 
-module Collector extends NodeBase
+message AttestReq 
 {
-    parameters:
-        @display("i=device/accesspoint;is=l;bgb=573.3,680.39996");
-
-    gates:
-        input radioIn @directIn;
-
-    submodules:
-        collectorapp: ACollector {
-
-            @display("i=block/app,p,330.75,491.4;p=357.048,521.208");
-        }
-    connections:
-        collectorapp.radioIn <-- radioIn;
+    int source;
+    int destination;
+    int kid;
+    int challenge;
+    int mac;
 }
+
+
+message AttestResp
+{
+    int source;
+    int destination;
+	int response;
+    int mac;
+}
+
+message AttestAck
+{
+    int source;
+    int destination;
+    int mac;
+}
+
+message AttestTimeOut
+{
+    int correspondent;
+}
+    
