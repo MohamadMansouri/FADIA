@@ -115,17 +115,32 @@ ADevice::handleMessage(cMessage *msg)
         switch(msg->getKind())
         {
         case JNRQ:
-        case JNRP:
-        case JNAK: 
+            updateGates<JoinReq>(msg);
             handleJoinMsg(msg);
             break;
+        case JNRP:
+            updateGates<JoinResp>(msg);
+            handleJoinMsg(msg);
+            break;
+        case JNAK:
+            updateGates<JoinAck>(msg);
+            handleJoinMsg(msg);
+            break; 
         case CMRQ: 
+            updateGates<CommitReq>(msg);
+            handleCommitMsg(msg);
+            break; 
         case CMRP: 
+            updateGates<CommitResp>(msg);
+            handleCommitMsg(msg);
+            break; 
         case CMAK: 
+            updateGates<CommitAck>(msg);
             handleCommitMsg(msg);
             break;
         case UPRQ:
         case UPRQC:
+            updateGates<UpdateReq>(msg);
             handleUpMsg(msg);
             break;
         case UNKOWN:
@@ -196,7 +211,21 @@ ADevice::handleSyncMsg(cMessage* msg)
 }
 
 
+void
+ADevice::sendProverBroadcast(cMessage* msg)
+{
+    size_t gsize = gateSize("appio$o");
+    while(gsize > 1)
+    {
+        if(getParentModule()->gate("gate$o", --gsize)->isConnected())
+        {
+            cMessage* msgd = msg->dup();
+            send(msgd, "appio$o", gsize);
+        }
+    }
+}
 
+#if 0
 void
 ADevice::sendProverBroadcast(cMessage* msg)
 {
@@ -223,11 +252,11 @@ ADevice::sendProverBroadcast(cMessage* msg)
         }
     }
 }
+#endif
 
 int
 ADevice::generateMAC(cMessage* msg, keyid_t kid)
 {
     return 0;
 }
-
 

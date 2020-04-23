@@ -57,12 +57,17 @@ AProver::initialize()
     initNO();
     initUID();
     initKeyRing();
-    deltah = ((unsigned int) getSystemModule()->par("htime"));
-    range = ((double) getParentModule()->par("range"));
-    maxdepth = ((unsigned int) getParentModule()->par("maxdepth"));
+    reportsent = registerSignal("reportSent");
 
-    startmsg = new cMessage("Join", JOIN);
-    scheduleAt(simTime() + uniform(0,23), startmsg);
+    // deltah = ((unsigned int) getSystemModule()->par("htime"));
+    range = ((double) getParentModule()->par("range"));
+    rootidx = ((int) getSystemModule()->par("root"));
+    // maxdepth = ((unsigned int) getParentModule()->par("maxdepth"));
+
+
+    startmsg = new cMessage("start", ATTEST);
+    scheduleAt(simTime(), startmsg);   
+    status = JOINING;
 
     jointomsg = new cMessage();
     jointomsg->setKind(JNRPTO);
@@ -352,7 +357,8 @@ AProver::handleCommitAck(cMessage* msg)
         cancelEvent(cacktomsg);
 
     psessions.second->valid = true;
-    if(psessions.second->depth == 1 || maxchildren == 0)
+    if(psessions.second->depth == 1 || maxchildren == 0 
+        || !getParentModule()->gate("gate$o", 1)->isConnected())
     {
         status = FINISHED;
         sendUpReq(tid);
@@ -439,7 +445,7 @@ AProver::sendCommitReq(treeid_t tid)
     cresptomsg->setKind(CMRPTO);
     cresptomsg->setTreeID(treeid);
     //TODO: check the time out here
-    scheduleAt(simTime() + timeout*maxchildren, cresptomsg);
+    scheduleAt(simTime() + timeout, cresptomsg);
 
 }
 
@@ -567,7 +573,7 @@ AProver::sendCommitAck(uid_t target, treeid_t tid)
     uptomsg->setDevice(target);
     uptomsg->setTreeID(tid);
     unsigned int depth =  psessions.second->depth;
-    scheduleAt(simTime() + macdelay + timeout * depth *2, uptomsg);
+    scheduleAt(simTime() + macdelay + timeout * depth, uptomsg);
 
     csessions[target]->tomsg = uptomsg;
 }
@@ -628,6 +634,9 @@ AProver::sendUpReq(treeid_t tid)
         ofstream ofs("/tmp/output", ios::app);
         ofs << "sending a report of " << aggreport.devices.size() << " records" << endl;
     }
+
+    emit(reportsent, 1);
+
 
     scheduleAt(simTime() + macdelay*2, msg);
 
@@ -808,6 +817,14 @@ void AProver::postponeMsg(cMessage* msg)
 void AProver::checkSoftConfig()
 {
     status = READY;
+    if(getParentModule()->getIndex() == rootidx)
+    {
+        startmsg->setKind(MKTREE);
+        scheduleAt(simTime(), startmsg);
+
+        if(mktreetimer->isScheduled())
+            cancelEvent(mktreetimer);
+    }
 }
 
 

@@ -28,6 +28,7 @@ Define_Module(ACollector);
 void ACollector::initialize()
 {
     initUID();
+    elapsedtimesig = registerSignal("elapsedTime");
     // initPorverKeys();
 }
 
@@ -114,7 +115,19 @@ ACollector::sendJoinResp(uid_t target)
 void
 ACollector::handleUpReq(cMessage* msg)
 {
+    UpdateReq* umsg = check_and_cast<UpdateReq *> (msg);
+
+    size_t s = umsg->getReport1ArraySize();
+    logInfo("handleUpReq: received a report of size " + to_string(s));
+    cout << "Collector: received a report of size " + to_string(s) << endl;
+    // ostringstream oss;
+    // while(s)
+    //     oss << umsg->getReport1(--s) << ", ";
+    // logDetail("handleUpReq: GOOD devices= " + oss.str());
+    // cout << "handleUpReq: GOOD devices= " << oss.str() << endl;
     delete msg;
+    emit(elapsedtimesig, simTime().dbl());
+    endSimulation();
 }
 
 void
@@ -148,6 +161,13 @@ void
 ACollector::logInfo(string m)
 {
     EV << "Collector [Index=" << getParentModule()->getIndex()
+             << ", CID=" << hex <<  CId << "]: " << dec<< m << endl;
+}
+
+void
+ACollector::logDetail(string m)
+{
+    EV_DETAIL << "Collector [Index=" << getParentModule()->getIndex()
              << ", CID=" << hex <<  CId << "]: " << dec<< m << endl;
 }
 

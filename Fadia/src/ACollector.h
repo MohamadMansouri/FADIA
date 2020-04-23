@@ -52,8 +52,12 @@ private:
     devstat_map_t statusTable;
 
     // configuration parameters
-    double deltah = 120;
-    int maxdepth = 10;
+    double deltah = 600;
+    int maxdepth = INT_MAX;
+
+    //Signals
+    simsignal_t elapsedtimesig;
+
     // Inits
     virtual void initUID() override;
     virtual void initKeyRing() depreciated;
@@ -97,6 +101,7 @@ private:
 
     // Utility
     void logInfo(string m);
+    void logDetail(string m);
     void logDebug(string m);
     void logError(string m);
     void checkSoftConfig() depreciated;

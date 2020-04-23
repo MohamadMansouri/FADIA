@@ -61,10 +61,10 @@ class ADevice : public cSimpleModule
 
 protected:
     // configuration parameters
-    double ndelay = 0.04;  // 40 ms network delay
+    double ndelay = 0.0023;  // 40 ms network delay
     const int seed = 0;
     const double postponetime = 0.1;
-    const double timeout = 0.6;
+    const double timeout = 0.1;
     const double macdelay = 0.0001;
     const double checkDelay = 0.013; 
 
@@ -74,6 +74,7 @@ protected:
     static const int baseID;
     double range;
 
+    map<uid_t, int> deviceg;
     // Inits
     virtual void initUID() = 0;
     virtual void initKeyRing() = 0;
@@ -142,6 +143,7 @@ protected:
     int generateMAC(cMessage* msg, keyid_t kid);
     template <class T> bool checkMAC(T* MSGg, keyid_t kid);
     template <typename T> const T getBaseID();
+    template <typename T> void updateGates(cMessage* msg);
 
 
 public:

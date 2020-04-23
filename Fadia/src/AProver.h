@@ -103,20 +103,21 @@ private:
     status_e status = OFFLINE;
 
     // max number of children
-    unsigned int maxchildren = 10;
+    unsigned int maxchildren = 100;
 
     // max depth of the tree
-    unsigned int maxdepth = 5;
+    unsigned int maxdepth = 100;
 
     // delta time for a prover to attest within
-    double deltah;
+    double deltah = 600;
 
     // delta time for a prover to attest within
-    double deltag;
+    double deltag = 500;
 
     // aggregated report at each delta h
     report_t aggreport;
 
+    int rootidx = 0;
     // messages
     cMessage* startmsg = nullptr;
     
@@ -130,6 +131,9 @@ private:
 
     CommitTimeOut* cresptomsg = nullptr;
     CommitTimeOut* cacktomsg = nullptr;
+
+    simsignal_t reportsent;
+    
 
     // Inits
     virtual void initUID() override;
