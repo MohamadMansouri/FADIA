@@ -107,6 +107,7 @@ private:
 
     // max depth of the tree
     unsigned int maxdepth = 100;
+    bool ignoredepth = true;
 
     // delta time for a prover to attest within
     double deltah = 600;
@@ -117,7 +118,6 @@ private:
     // aggregated report at each delta h
     report_t aggreport;
 
-    int rootidx = 0;
     // messages
     cMessage* startmsg = nullptr;
     
@@ -133,7 +133,7 @@ private:
     CommitTimeOut* cacktomsg = nullptr;
 
     simsignal_t reportsent;
-    
+
 
     // Inits
     virtual void initUID() override;

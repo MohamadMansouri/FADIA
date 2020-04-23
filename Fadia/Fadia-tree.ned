@@ -18,7 +18,7 @@
 //import inet.physicallayer.energyconsumer.SensorStateBasedEpEnergyConsumer;
 import inet.visualizer.contract.IIntegratedVisualizer;
 
-network Fadia
+network Fadiatree
 {
     parameters:
         int numCollectors;
@@ -33,13 +33,14 @@ network Fadia
         double width = default(1000);
         double height = default(500);
 		
-		double  posy = 5;
-		double posx = width / 2;	
+//		double  posy = 5;
+//		double posx = width / 2;	
 
         int htime = default(120);
 
 		int neighbors = default(2);
-		int treeh = 3;
+		
+		int root = 0;
 		
         @display("bgb=$width,$height;bgg=100,1,grey95");
         @figure[title](type=label; pos=0,-1; anchor=sw; color=darkblue);
@@ -52,18 +53,17 @@ network Fadia
 
     submodules:
         collector[numCollectors]: Collector {
-            @display("p=$posx,$posy");
+//            @display("p=$posx,$posy");
         }
-        prover[neighbors^treeh -1]: Prover;
-        visualizer: <default("IntegratedCanvasVisualizer")> like IIntegratedVisualizer if hasVisualizer() {
-            @display("p=5,5");
-        }
+        prover[numProvers]: Prover;
+//        visualizer: <default("IntegratedCanvasVisualizer")> like IIntegratedVisualizer if hasVisualizer() {
+//            @display("p=5,5");
+//        }
    connections:
-       collector[0].gate <--> C <--> prover[0].gate++;
+       collector[0].gate <--> C <--> prover[root].gate++;
        
-       for i=0..neighbors^(treeh -1) - 2, for j=1..neighbors
+       for i=0..numProvers - 1, for j=1..neighbors
        {
-       		prover[i].gate++ <--> prover[2*i+j].gate++;
+       		prover[i].gate++ <--> prover[neighbors*i+j].gate++ if neighbors*i+j < numProvers;
        }
-
 }

@@ -20,6 +20,9 @@ import inet.node.base.NodeBase;
 
 simple ACollector
 {
+    parameters:
+        @signal[elapsedTime](type=double);
+        @statistic[elapsedtimesig](title="Elapsed Time"; source="elapsedTime"; record=last);
     gates:
         input radioIn @directIn;
         inout appio;
@@ -29,7 +32,6 @@ module Collector extends NodeBase
 {
     parameters:
         @display("i=device/accesspoint;is=l;bgb=573.3,680.39996");
-
     gates:
         input radioIn @directIn;
 		inout gate;

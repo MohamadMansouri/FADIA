@@ -238,8 +238,8 @@ AProver::startAttestation()
     }
     psessions.first = NOID;
 
-    scheduleAt(simTime() + deltah, attesttimer);
-    scheduleAt(simTime() + deltag, mktreetimer);
+    // scheduleAt(simTime() + deltah, attesttimer);
+    // scheduleAt(simTime() + deltag, mktreetimer);
     scheduleAt(simTime() + checkDelay, checkdelaymsg);
 
 }
@@ -357,8 +357,7 @@ AProver::handleCommitAck(cMessage* msg)
         cancelEvent(cacktomsg);
 
     psessions.second->valid = true;
-    if(psessions.second->depth == 1 || maxchildren == 0 
-        || !getParentModule()->gate("gate$o", 1)->isConnected())
+    if((psessions.second->depth == 1 && !ignoredepth) || maxchildren == 0)
     {
         status = FINISHED;
         sendUpReq(tid);
@@ -376,6 +375,7 @@ AProver::handleCommitAck(cMessage* msg)
 void
 AProver::handleCommitAckTimeOut(cMessage* msg)
 {
+    cout << "ack timeout happended !!!" << endl;
     logWarn("handleCommitAckTimeOut: Ack not received");
     CommitTimeOut* tomsg = check_and_cast<CommitTimeOut*>(msg);
     uid_t dev = tomsg->getDevice();
@@ -568,14 +568,14 @@ AProver::sendCommitAck(uid_t target, treeid_t tid)
     // TODO: Continue here
 
 
-    CommitTimeOut* uptomsg = new CommitTimeOut();
-    uptomsg->setKind(UPTO);
-    uptomsg->setDevice(target);
-    uptomsg->setTreeID(tid);
-    unsigned int depth =  psessions.second->depth;
-    scheduleAt(simTime() + macdelay + timeout * depth, uptomsg);
+    // CommitTimeOut* uptomsg = new CommitTimeOut();
+    // uptomsg->setKind(UPTO);
+    // uptomsg->setDevice(target);
+    // uptomsg->setTreeID(tid);
+    // unsigned int depth =  psessions.second->depth;
+    // scheduleAt(simTime() + macdelay + timeout * depth, uptomsg);
 
-    csessions[target]->tomsg = uptomsg;
+    // csessions[target]->tomsg = uptomsg;
 }
 
 void 
@@ -712,7 +712,7 @@ AProver::handleUpReq(cMessage* msg)
         aggreport.devices[(uid_t)upmsg->getReport1(i)] = (unsigned int)upmsg->getReport2(i);
     }
 
-    if(csessions[senderid]->tomsg->isScheduled())
+    if(csessions[senderid]->tomsg && csessions[senderid]->tomsg->isScheduled())
         cancelAndDelete(csessions[senderid]->tomsg);
 
     aggreport.mac ^= upmsg->getProof();
@@ -844,5 +844,7 @@ void AProver::finish()
         cancelAndDelete(cresptomsg);
         cancelAndDelete(cacktomsg);
         cancelAndDelete(creqmsg);
+        cancelAndDelete(txmsg);
+        cancelAndDelete(cbusymsg);
 
 }

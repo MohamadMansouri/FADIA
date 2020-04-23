@@ -103,6 +103,12 @@ ADevice::handleMessage(cMessage *msg)
                 handleUpdateTimeOut(msg);
                 break;
 
+            case TXDONE:
+                handleTxDoneMsg(msg);
+                break;
+            case CBUSYMSG:
+                handlePostponeDoneMsg(msg);
+                break;
 
             case UNKOWN:
             default:
@@ -143,6 +149,7 @@ ADevice::handleMessage(cMessage *msg)
             updateGates<UpdateReq>(msg);
             handleUpMsg(msg);
             break;
+
         case UNKOWN:
         default:
             logError("Received message of unknown type");
@@ -214,16 +221,61 @@ ADevice::handleSyncMsg(cMessage* msg)
 void
 ADevice::sendProverBroadcast(cMessage* msg)
 {
+    if(txrxstat == TRANSMITING || chanstat == BUSY)
+    {
+        msgqueue.push(msg);
+        return;
+    }
+
+    if(isChannelBusy(drange, -1))
+    {
+        chanstat = BUSY;
+        msgqueue.push(msg);
+        scheduleAt(simTime() + postponetime, cbusymsg);
+        return;
+    }
+
     size_t gsize = gateSize("appio$o");
-    while(gsize > 1)
+    bool t = false;
+    while(gsize > 0)
     {
         if(getParentModule()->gate("gate$o", --gsize)->isConnected())
         {
+
             cMessage* msgd = msg->dup();
             send(msgd, "appio$o", gsize);
+            t = true;
         }
     }
+    if(t)
+    {
+        txrxstat = TRANSMITING;
+        scheduleAt(simTime() + ndelay, txmsg);
+    }
+
 }
+
+void 
+ADevice::handleTxDoneMsg(cMessage* msg)
+{
+    txrxstat = DIDLE;
+    if(msgqueue.size() > 0)
+    {
+        handleMessage(msgqueue.front());
+        msgqueue.pop();
+    }
+}   
+
+void 
+ADevice::handlePostponeDoneMsg(cMessage* msg)
+{
+    chanstat = CIDLE;
+    if(msgqueue.size() > 0)
+    {
+        handleMessage(msgqueue.front());
+        msgqueue.pop();
+    }
+}   
 
 #if 0
 void
@@ -260,3 +312,29 @@ ADevice::generateMAC(cMessage* msg, keyid_t kid)
     return 0;
 }
 
+bool 
+ADevice::isChannelBusy(int far, int gid)
+{
+    if(isTransmiting())
+        return true;
+
+    if(far == 0)
+        return false;
+
+
+    size_t gsize = gateSize("appio$o");
+    while(gsize > 0)
+    {
+        cGate* pgate = getParentModule()->gate("gate$o", --gsize);
+        if(pgate->isConnected() && pgate->getNextGate()->isVector() && pgate->getId() != gid)
+        {
+            ADevice* mod = dynamic_cast<ADevice *>(pgate->getNextGate()->getNextGate()->getOwnerModule());
+            int gidx = pgate->getNextGate()->getIndex();
+            int gateid = mod->getParentModule()->gate("gate$o", gidx)->getId();
+            if(mod->isChannelBusy(far - 1, gateid))
+                return true;
+        }
+    }
+
+    return false;
+}

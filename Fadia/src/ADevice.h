@@ -15,6 +15,7 @@
 #include <map>
 #include <utility>
 #include <vector>
+#include <queue>
 
 #include "NetworkOwner.h"
 #include "Join_m.h"
@@ -53,7 +54,22 @@ enum MSG : short
     CMRPTO,
     CMAKTO,
     JNRPTO,
-    JNAKTO
+    JNAKTO,
+    TXDONE,
+    CBUSYMSG
+};
+
+enum txrx_e : short
+{
+    TRANSMITING, 
+    DIDLE
+};
+
+
+enum cstat_e : short
+{
+    BUSY, 
+    CIDLE
 };
 
 class ADevice : public cSimpleModule
@@ -63,7 +79,7 @@ protected:
     // configuration parameters
     double ndelay = 0.0023;  // 40 ms network delay
     const int seed = 0;
-    const double postponetime = 0.1;
+    const double postponetime = ndelay / 2;
     const double timeout = 0.1;
     const double macdelay = 0.0001;
     const double checkDelay = 0.013; 
@@ -73,8 +89,19 @@ protected:
     static NetworkOwner NO;
     static const int baseID;
     double range;
+    int drange = 1;
 
     map<uid_t, int> deviceg;
+
+    int rootidx = 0;
+    txrx_e txrxstat = DIDLE;
+    cstat_e chanstat = CIDLE;
+    cMessage* txmsg = new cMessage("txdone", TXDONE);
+    cMessage* cbusymsg = new cMessage("channelBusy", CBUSYMSG);
+
+    queue<cMessage*> msgqueue;
+
+
     // Inits
     virtual void initUID() = 0;
     virtual void initKeyRing() = 0;
@@ -131,6 +158,9 @@ protected:
     virtual void sendSyncReq() = 0;
     virtual void handleSyncReq(cMessage* msg) = 0;
 
+    virtual void handleTxDoneMsg(cMessage *msg);     
+    virtual void handlePostponeDoneMsg(cMessage *msg);     
+
     // utilities
     virtual void logInfo(string m) = 0;
     virtual void logDebug(string m) = 0;
@@ -145,11 +175,15 @@ protected:
     template <typename T> const T getBaseID();
     template <typename T> void updateGates(cMessage* msg);
 
+protected:
+    virtual void handleMessage(cMessage *msg) override;
+
 
 public:
     ADevice() {}
     ~ADevice() {}
-    virtual void handleMessage(cMessage *msg) override;
+    bool isTransmiting() {return txrxstat == TRANSMITING;};
+    bool isChannelBusy(int far, int gid);
 };
 
 #endif /* ADEVICE_H_ */

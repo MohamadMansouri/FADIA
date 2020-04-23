@@ -199,3 +199,10 @@ void ACollector::updateProverKey(uid_t uid)
     // TODO: compute ckey from proverKeyIds
     proverKeys[uid] = 0xCAFED00D;
 }
+
+void ACollector::finish()
+{
+        cancelAndDelete(txmsg);
+        cancelAndDelete(cbusymsg);
+        
+}

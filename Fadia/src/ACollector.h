@@ -23,7 +23,7 @@
 #include "NetworkOwner.h"
 
 #ifndef depreciated
-#define depreciated {logError("function is not implemented for a collector");}
+#define depreciated {return;} //{logError("function is not implemented for a collector");}
 #endif
 
 using namespace omnetpp;
@@ -111,6 +111,8 @@ private:
 
 protected:
     virtual void initialize() override;
+    virtual void finish() override;
+
 
 public:
     ACollector() {}

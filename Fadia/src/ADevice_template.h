@@ -19,23 +19,50 @@ template <typename T>
 void
 ADevice::sendProver(cMessage* msg)
 {
-    if(gateSize("appio$o") < 2)
+    if(txrxstat == TRANSMITING || chanstat == BUSY)
     {
+        msgqueue.push(msg);
         return;
     }
-	T *smsg = check_and_cast<T *>(msg);
-    uid_t target = (uid_t) smsg->getDestination();
+
     // size_t indx = ( target - getBaseID<uid_t>()) % MAXUID;
     // cModule* mod = getSystemModule()->getSubmodule("prover", indx);
     // cMessage* msgd = smsg->dup();
     // sendDirect(msg, ndelay, 0, mod, "radioIn");
+    if(isChannelBusy(drange, -1))
+    {
+        chanstat = BUSY;
+        msgqueue.push(msg);
+        scheduleAt(simTime() + postponetime, cbusymsg);
+        return;
+    }
+
+	T *smsg = check_and_cast<T *>(msg);
+    uid_t target = (uid_t) smsg->getDestination();
     send(msg, "appio$o", deviceg[target]);
+    txrxstat = TRANSMITING;
+    scheduleAt(simTime() + ndelay, txmsg);
+
 }
 
 template <typename T>
 void
 ADevice::sendCollector(cMessage* msg)
 {
+    if(txrxstat == TRANSMITING || chanstat == BUSY)
+    {
+        msgqueue.push(msg);
+        return;
+    }
+
+    if(isChannelBusy(drange, -1))
+    {
+        chanstat = BUSY;
+        msgqueue.push(msg);
+        scheduleAt(simTime() + postponetime, cbusymsg);
+        return;
+    }
+
 	T *smsg = check_and_cast<T *>(msg);
     cid_t target = (cid_t) smsg->getDestination();
     // size_t indx = ( target - getBaseID<cid_t>()) % MAXUID;
@@ -43,7 +70,8 @@ ADevice::sendCollector(cMessage* msg)
     // // cMessage* msgd = smsg->dup();
     // sendDirect(msg, ndelay, 0, mod, "radioIn");
     send(msg, "appio$o", deviceg[target]);
-
+    txrxstat = TRANSMITING;
+    scheduleAt(simTime() + ndelay, txmsg);
 }
 
 template <typename T>
@@ -61,5 +89,6 @@ ADevice::updateGates(cMessage* msg)
 }
 
 #endif
+
 
 

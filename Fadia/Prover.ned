@@ -21,6 +21,9 @@ import inet.node.base.NodeBase;
 
 simple AProver
 {
+	parameters:
+        @signal[reportSent](type=long);
+        @statistic[reportsent](title="Reports Sent"; source=constant1(reportSent); record=vector);
     gates:
         input radioIn @directIn;
         inout appio[];
@@ -30,11 +33,9 @@ module Prover extends NodeBase
 {
     parameters:
         double range;
-        int maxdepth;
         
         int neighbors = default(2);
-        @display("i=misc/sensoroff;is=s;bgb=589.05,603.225;");
-        mobility.typename = default("StationaryMobility");
+        @display("i=misc/sensoroff;is=s;bgb=589.05,603.225;r=$range");
 
     gates:
         //        inout gate[]	@allowunconnected;
