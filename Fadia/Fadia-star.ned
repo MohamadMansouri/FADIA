@@ -55,7 +55,8 @@ network Fadiastar
     types:
         channel C extends ned.DatarateChannel
         {
-            datarate = 100Mbps;
+            datarate = 12.51Mbps;
+            delay = 2.3ms;
         }
 
     submodules:
@@ -74,7 +75,7 @@ network Fadiastar
        
        for i=0..numProvers - 1
        {
-       		prover[i].gate++ <--> prover[i + 1].gate++ if i + 1 < numProvers && fmod(i+1,sqprovers) != 0;
-       		prover[i].gate++ <--> prover[i+sqprovers].gate++ if i + sqprovers < numProvers;
+       		prover[i].gate++ <--> C <--> prover[i + 1].gate++ if i + 1 < numProvers && fmod(i+1,sqprovers) != 0;
+       		prover[i].gate++ <--> C <--> prover[i+sqprovers].gate++ if i + sqprovers < numProvers;
        }
 }

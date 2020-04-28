@@ -18,7 +18,7 @@
 //
 
 
-message CommitReq
+packet CommitReq
 {
     int source;
     int depth;
@@ -26,7 +26,7 @@ message CommitReq
     int treeID;
 }
 
-message CommitResp 
+packet CommitResp 
 {
     int source;
     int destination;
@@ -35,7 +35,7 @@ message CommitResp
     int mac;
 }
 
-message CommitAck
+packet CommitAck
 {
     int source;
     int destination;
@@ -43,7 +43,7 @@ message CommitAck
     int mac;
 }
 
-message CommitTimeOut
+packet CommitTimeOut
 {
     int device;
     int treeID;

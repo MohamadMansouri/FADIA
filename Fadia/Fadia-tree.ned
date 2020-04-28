@@ -48,7 +48,8 @@ network Fadiatree
     types:
         channel C extends ned.DatarateChannel
         {
-            datarate = 100Mbps;
+            datarate = 12.51Mbps;
+            delay = 2.3ms;
         }
 
     submodules:
@@ -64,6 +65,6 @@ network Fadiatree
        
        for i=0..numProvers - 1, for j=1..neighbors
        {
-       		prover[i].gate++ <--> prover[neighbors*i+j].gate++ if neighbors*i+j < numProvers;
+       		prover[i].gate++ <--> C <--> prover[neighbors*i+j].gate++ if neighbors*i+j < numProvers;
        }
 }

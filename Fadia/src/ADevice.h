@@ -77,10 +77,10 @@ class ADevice : public cSimpleModule
 
 protected:
     // configuration parameters
-    double ndelay = 0.0023;  // 40 ms network delay
+    double ndelay = 0.0023;  // 2.3 ms network delay
     const int seed = 0;
-    const double postponetime = ndelay / 2;
-    const double timeout = 0.1;
+    const double postponetime = ndelay / 4;
+    const double timeout = 0.2;
     const double macdelay = 0.0001;
     const double checkDelay = 0.013; 
 
@@ -89,7 +89,7 @@ protected:
     static NetworkOwner NO;
     static const int baseID;
     double range;
-    int drange = 1;
+    int drange = 2;
 
     map<uid_t, int> deviceg;
 

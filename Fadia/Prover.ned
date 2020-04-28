@@ -35,7 +35,7 @@ module Prover extends NodeBase
         double range;
         
         int neighbors = default(2);
-        @display("i=misc/sensoroff;is=s;bgb=589.05,603.225;r=$range");
+        @display("i=misc/sensoroff;is=s;bgb=589.05,603.225");
 
     gates:
         //        inout gate[]	@allowunconnected;

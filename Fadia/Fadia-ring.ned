@@ -49,7 +49,8 @@ network Fadiaring
     types:
         channel C extends ned.DatarateChannel
         {
-            datarate = 100Mbps;
+            datarate = 12.51Mbps;
+            delay = 2.3ms;
         }
 
     submodules:
@@ -67,7 +68,7 @@ network Fadiaring
        
        for i=0..numProvers - 2
        {
-       		prover[i].gate++ <--> prover[i+1].gate++;
+       		prover[i].gate++ <--> C <--> prover[i+1].gate++;
        }
-       prover[0].gate++ <--> prover[numProvers - 1].gate++ ;
+       prover[0].gate++ <--> C <--> prover[numProvers - 1].gate++ ;
 }
