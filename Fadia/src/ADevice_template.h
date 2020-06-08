@@ -1,10 +1,16 @@
 #ifndef ADEVICE_TMP_H
 #define ADEVICE_TMP_H
 
+#include <omnetpp.h>
+#include "../inet/src/inet/mobility/contract/IMobility.h"
+#include "../inet/src/inet/power/storage/SimpleEpEnergyStorage.h"
+#include "../inet/src/inet/common/Units.h"
+
 template <class T>
 bool
 ADevice::checkMAC(T* msg, keyid_t kid)
 {
+    macdelays.push(macDelay<T>(msg));
     return msg->getMac() == 0;
 }
 
@@ -14,6 +20,32 @@ ADevice::getBaseID()
 {
     return (T)baseID;
 }
+
+
+
+template <typename T>
+bool
+ADevice::isWithinRange(cMessage* msg)
+{
+
+    T *smsg = check_and_cast<T *>(msg);
+    uid_t target = (uid_t) smsg->getDestination();
+
+    inet::IMobility* mobility = check_and_cast<inet::IMobility *> (getParentModule()->getSubmodule("mobility"));
+    inet::Coord spos = mobility->getCurrentPosition();
+    
+    size_t indx = ( target - getBaseID<uid_t>()) % MAXUID;
+    
+    cModule* mod = getSystemModule()->getSubmodule("prover", indx);
+
+    mobility = check_and_cast<inet::IMobility *> (mod->getSubmodule("mobility"));
+    inet::Coord dpos = mobility->getCurrentPosition();
+    if(spos.sqrdist(dpos) <= range*range)
+        return true;
+    return false;
+
+}
+
 
 template <typename T>
 void
@@ -25,10 +57,6 @@ ADevice::sendProver(cMessage* msg)
         return;
     }
 
-    // size_t indx = ( target - getBaseID<uid_t>()) % MAXUID;
-    // cModule* mod = getSystemModule()->getSubmodule("prover", indx);
-    // cMessage* msgd = smsg->dup();
-    // sendDirect(msg, ndelay, 0, mod, "radioIn");
     if(isChannelBusy(drange, -1))
     {
         chanstat = BUSY;
@@ -39,10 +67,37 @@ ADevice::sendProver(cMessage* msg)
 
 	T *smsg = check_and_cast<T *>(msg);
     uid_t target = (uid_t) smsg->getDestination();
-    send(msg, "appio$o", deviceg[target]);
-    txrxstat = TRANSMITING;
-    scheduleAt(simTime() + ndelay, txmsg);
+    cPacket* pkt = (cPacket*)msg;
+    double bl = pkt->getByteLength();
 
+#ifdef WIRELESS
+    inet::IMobility* mobility = check_and_cast<inet::IMobility *> (getParentModule()->getSubmodule("mobility"));
+    inet::Coord spos = mobility->getCurrentPosition();
+    
+    size_t indx = ( target - getBaseID<uid_t>()) % MAXUID;
+    
+    cModule* mod = getSystemModule()->getSubmodule("prover", indx);
+
+    mobility = check_and_cast<inet::IMobility *> (mod->getSubmodule("mobility"));
+    inet::Coord dpos = mobility->getCurrentPosition();
+    if(spos.sqrdist(dpos) <= range*range)
+    {
+        if(this->checkRecordTime() && device != SERV)
+        {
+            emit(txsig, bl);
+        }
+        sendDirect(msg, ndelay + bl / byterate , 0, mod, "radioIn");
+    }
+#else
+    send(msg, "appio$o", deviceg[target]);
+#endif
+    txrxstat = TRANSMITING;
+#ifdef ENERGY_TEST
+    energy->updateResidualCapacity();
+    energy->totalPowerConsumption = inet::units::values::mW(TRANSMITION_CONSUMPTION);
+    scheduleAt(simTime() + bl / byterate, entxmsg);
+#endif
+    scheduleAt(simTime() + ndelay + bl / byterate, txmsg);
 }
 
 template <typename T>
@@ -65,19 +120,34 @@ ADevice::sendCollector(cMessage* msg)
 
 	T *smsg = check_and_cast<T *>(msg);
     cid_t target = (cid_t) smsg->getDestination();
-    // size_t indx = ( target - getBaseID<cid_t>()) % MAXUID;
-    // cModule* mod = getSystemModule()->getSubmodule("collector", indx);
-    // // cMessage* msgd = smsg->dup();
-    // sendDirect(msg, ndelay, 0, mod, "radioIn");
+    cPacket* pkt = (cPacket*)msg;
+    double bl = pkt->getByteLength();
+#ifdef WIRELESS
+    size_t indx = ( target - getBaseID<cid_t>()) % MAXUID;
+    cModule* mod = getSystemModule()->getSubmodule("collector", indx);
+    if(this->checkRecordTime())
+    {
+        emit(txsig, bl);
+    }
+    sendDirect(msg, ndelay + bl / byterate , 0, mod, "radioIn");
+#else
     send(msg, "appio$o", deviceg[target]);
+#endif
     txrxstat = TRANSMITING;
-    scheduleAt(simTime() + ndelay, txmsg);
+#ifdef ENERGY_TEST
+    energy->updateResidualCapacity();
+    energy->totalPowerConsumption = inet::units::values::mW(TRANSMITION_CONSUMPTION);
+    scheduleAt(simTime() + bl / byterate, entxmsg);
+#endif
+    scheduleAt(simTime() + ndelay + bl / byterate, txmsg);
 }
 
 template <typename T>
 void
 ADevice::updateGates(cMessage* msg)
 {
+#ifndef WIRELESS
+
     T* rmsg = check_and_cast<T *>(msg);
     uid_t uid = rmsg->getSource();
     if (deviceg.find(uid) == deviceg.end())
@@ -86,6 +156,26 @@ ADevice::updateGates(cMessage* msg)
         deviceg[uid] = k;
     }
 
+#endif
+}
+
+
+template <typename T>
+double
+ADevice::macDelay(T* msg)
+{
+    switch (device)
+    {
+        case SKY:
+            return HMAC_DELAY_S(msg->getByteLength());
+        case PI2:
+            return HMAC_DELAY_P(msg->getByteLength());
+        case SERV:
+            return 0.0;
+        case NA:
+        default:
+            return HMAC_DELAY(msg->getByteLength());
+    }
 }
 
 #endif

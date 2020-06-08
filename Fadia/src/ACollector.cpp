@@ -28,7 +28,9 @@ Define_Module(ACollector);
 void ACollector::initialize()
 {
     initUID();
+    device = SERV;
     elapsedtimesig = registerSignal("elapsedTime");
+    reportsizesig = registerSignal("reportSize");
     // initPorverKeys();
 }
 
@@ -85,7 +87,9 @@ ACollector::sendJoinResp(uid_t target)
     msg->setDepth(maxdepth);
     msg->setDeltah(deltah);
     msg->setMac(generateMAC(msg, proverKeys[target]));
-    scheduleAt(simTime() + macdelay*2, msg);
+    msg->setByteLength(JRP_SIZE);
+    // TODO: fix mac delay
+    scheduleAt(simTime(), msg);
 }
 
 // void
@@ -116,18 +120,32 @@ void
 ACollector::handleUpReq(cMessage* msg)
 {
     UpdateReq* umsg = check_and_cast<UpdateReq *> (msg);
-
-    size_t s = umsg->getReport1ArraySize();
+    // TODO: check if the update is a fix
+    size_t size = umsg->getReport1ArraySize();
+    size_t s = 0;
+    while(size--)
+    {
+        if(umsg->getReport1(size) != NOID)
+            s++;
+    }
     logInfo("handleUpReq: received a report of size " + to_string(s));
-    cout << "Collector: received a report of size " + to_string(s) << endl;
+    sum += s;
+    logInfo("handleUpReq: Total attested devices = " + to_string(sum));
+    // cout << "Collector: received a report of size " + to_string(s) << endl;
     // ostringstream oss;
     // while(s)
     //     oss << umsg->getReport1(--s) << ", ";
     // logDetail("handleUpReq: GOOD devices= " + oss.str());
     // cout << "handleUpReq: GOOD devices= " << oss.str() << endl;
     delete msg;
+    if(checkRecordTime())
+    {
+        emit(reportsizesig, s);
+    }
+#ifdef RUNTIME_TEST
     emit(elapsedtimesig, simTime().dbl());
     endSimulation();
+#endif
 }
 
 void
@@ -203,6 +221,7 @@ void ACollector::updateProverKey(uid_t uid)
 void ACollector::finish()
 {
         cancelAndDelete(txmsg);
+        cancelAndDelete(entxmsg);
         cancelAndDelete(cbusymsg);
         
 }

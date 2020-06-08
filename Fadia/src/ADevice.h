@@ -15,13 +15,17 @@
 #include <map>
 #include <utility>
 #include <vector>
+#include <stack>
 #include <queue>
 
 #include "NetworkOwner.h"
 #include "Join_m.h"
 #include "Attest_m.h"
 #include "Update_m.h"
+#include "constants.h"
 
+#include "../inet/src/inet/power/contract/IEpEnergyStorage.h"
+#include "../inet/src/inet/power/storage/SimpleEpEnergyStorage.h"
 
 using namespace omnetpp;
 
@@ -49,6 +53,7 @@ enum MSG : short
     CMAK, 
     UPRQ, 
     UPRQC, 
+    UPRQF,
     UPTO, 
     RVKRQ,
     CMRPTO,
@@ -56,7 +61,9 @@ enum MSG : short
     JNRPTO,
     JNAKTO,
     TXDONE,
-    CBUSYMSG
+    CBUSYMSG,
+    ENTXDONE, 
+    ENRXDONE, 
 };
 
 enum txrx_e : short
@@ -72,32 +79,70 @@ enum cstat_e : short
     CIDLE
 };
 
+
+enum device_t : short
+{
+    NA,
+    SERV, 
+    SKY, 
+    PI2
+};
+
 class ADevice : public cSimpleModule
 {
 
 protected:
     // configuration parameters
-    double ndelay = 0.0023;  // 2.3 ms network delay
-    const int seed = 0;
-    const double postponetime = ndelay / 4;
-    const double timeout = 0.2;
-    const double macdelay = 0.0001;
-    const double checkDelay = 0.013; 
+    const int seed = 0; 
+    const double ndelay = NDELAY;  
+    const double postponetime = PDELAY;
+    const double timeoutresp = TIMEOUT_RSP;
+    const double timeoutack = TIMEOUT_ACK;
+    const double byterate = BYTERATE;
+    device_t device = NA;
+    size_t maxdepth; 
+    size_t maxchildren = MAXCHILDREN; 
+    double deltah = DELTAH; 
+    double deltag;
+    size_t aggsize;
+#ifdef ENERGY_TEST    
+    bool statadapt;
+#endif
+    double range;
+
+#ifdef ENERGY_TEST
+    inet::power::SimpleEpEnergyStorage* energy;
+#endif    
+
+#ifdef WIRELESS 
+    int drange = -1;
+#else
+    int drange = NEIGHBOR_DISTANCE;
+#endif
+    int rootidx = 0;
+    // bool ignoredepth = (SCENARIO == PASTA);
+    
+
+    static size_t countcrash;
 
     size_t KRsize;
     size_t KPsize;
     static NetworkOwner NO;
     static const int baseID;
-    double range;
-    int drange = 2;
+
+    queue<double> macdelays;
 
     map<uid_t, int> deviceg;
 
-    int rootidx = 0;
+    simsignal_t txsig;
+    simsignal_t rxsig;
+    simsignal_t crashsig;
+
     txrx_e txrxstat = DIDLE;
     cstat_e chanstat = CIDLE;
     cMessage* txmsg = new cMessage("txdone", TXDONE);
     cMessage* cbusymsg = new cMessage("channelBusy", CBUSYMSG);
+    cMessage* entxmsg = new cMessage("EnergyTransmitionDone", ENTXDONE);
 
     queue<cMessage*> msgqueue;
 
@@ -171,9 +216,17 @@ protected:
     template <typename T> void sendCollector(cMessage* msg);            // This method consume the message ;)
     void sendCollectorBroadcast(cMessage* msg);                         // This method does not consume the message ;)
     int generateMAC(cMessage* msg, keyid_t kid);
+    double getMacDelays();
     template <class T> bool checkMAC(T* MSGg, keyid_t kid);
     template <typename T> const T getBaseID();
     template <typename T> void updateGates(cMessage* msg);
+    template <typename T> double macDelay(T* msg);
+    template <typename T> bool isWithinRange(cMessage* msg);
+    double checkFirmwareDelay();
+    bool isChannelBusy();
+    bool checkRecordTime();
+    void handleDoneEnMsg(cMessage* msg);
+
 
 protected:
     virtual void handleMessage(cMessage *msg) override;

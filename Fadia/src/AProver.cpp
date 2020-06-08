@@ -57,18 +57,28 @@ AProver::initialize()
     initNO();
     initUID();
     initKeyRing();
-    reportsent = registerSignal("reportSent");
+
+    txsig = registerSignal("dataSent");
+    rxsig = registerSignal("dataRcvd");
+    crashsig = registerSignal("crashTime");
 
     // deltah = ((unsigned int) getSystemModule()->par("htime"));
     range = ((double) getParentModule()->par("range"));
     rootidx = ((int) getSystemModule()->par("root"));
+    aggsize = ((size_t) getParentModule()->par("aggsize"));
+    maxdepth = ((size_t) getSystemModule()->par("maxdepth"));
+#ifdef ENERGY_TEST
+    statadapt = ((bool) getSystemModule()->par("statadapt"));
+#endif
+    device = ((device_t) getParentModule()->par("type").intValue());
     // maxdepth = ((unsigned int) getParentModule()->par("maxdepth"));
+    deltag = deltah - (timeoutresp + timeoutack) * maxdepth - timeoutack; 
 
-
-    startmsg = new cMessage("start", ATTEST);
-    scheduleAt(simTime(), startmsg);   
-    status = JOINING;
-
+#ifdef ENERGY_TEST
+    energy = check_and_cast<inet::power::SimpleEpEnergyStorage *> (getParentModule()->getSubmodule("energyStorage"));
+    energy->totalPowerConsumption = inet::units::values::mW(IDLE_CONSUMPTION);
+#endif
+    
     jointomsg = new cMessage();
     jointomsg->setKind(JNRPTO);
 
@@ -90,6 +100,7 @@ AProver::initialize()
     {
         creqmsg->setKid(i++, it->first);
     }
+    creqmsg->setByteLength(CRQ_SIZE(KeyRing.size()));
 
     cresptomsg = new CommitTimeOut();
     cresptomsg->setKind(CMRPTO);
@@ -101,7 +112,15 @@ AProver::initialize()
     cacktomsg = new CommitTimeOut();
     cacktomsg->setKind(CMAKTO);
 
-
+#ifdef RUNTIME_TEST
+    startmsg = new cMessage("start", ATTEST);
+    scheduleAt(simTime(), startmsg);   
+    status = JOINING;
+#else
+    status = FINISHED;
+    startmsg = new cMessage("start", ATTEST);
+    scheduleAt(simTime(), startmsg);   
+#endif
 }
 
 void
@@ -153,9 +172,10 @@ AProver::sendJoinReq()
     }
     // msg->setBattery(getBatteryLevel());
     msg->setMac(generateMAC(msg, ckey));
-    scheduleAt(simTime() + macdelay, msg);
+    msg->setByteLength(JRQ_SIZE(KeyRing.size()));
+    scheduleAt(simTime() + macDelay<JoinReq>(msg) + getMacDelays(), msg);
 
-    scheduleAt(simTime() + timeout + macdelay, jointomsg);
+    scheduleAt(simTime() + timeoutack + macDelay<JoinReq>(msg) + getMacDelays(), jointomsg);
 }
 
 void
@@ -177,9 +197,9 @@ AProver::handleJoinResp(cMessage* msg)
     // uid_t senderid = (uid_t) resmsg->getSource();
     maxdepth = (unsigned int) resmsg->getDepth();
     deltah = (double) resmsg->getDeltah();
-    deltag = deltah * 0.2;
+    deltag = deltah - (timeoutresp + timeoutack) * maxdepth - timeoutack;
     if(checkMAC<JoinResp>(resmsg, ckey))
-        scheduleAt(simTime() +  macdelay, attesttimer);
+        scheduleAt(simTime() +  macDelay<JoinResp>(resmsg) + getMacDelays(), attesttimer);
 
     // sendJoinAck(senderid);
     delete msg;
@@ -205,7 +225,7 @@ AProver::handleJoinRespTimeOut(cMessage* msg)
 //     msg->setSource(UId);
 //     msg->setDestination(target);
 //     msg->setMac(generateMAC(msg, ckey));
-//     scheduleAt(simTime() + macdelay, msg);
+//     scheduleAt(simTime() + macDelay(msg), msg);
 
 // }
 
@@ -215,9 +235,10 @@ AProver::startAttestation()
 
     if(status != FINISHED && status != JOINING)
     {
-        logWarn("Device didn't attest last deltah!!!");
+        logWarn("Device didn't attest last deltah!!! (status = " + to_string(status) + ")");
         // TODO: take action here
     }
+    logInfo("Start attesting");
 
     status = CHECKING;
     
@@ -237,25 +258,52 @@ AProver::startAttestation()
         psessions.second = nullptr;
     }
     psessions.first = NOID;
+    aggreport.uids.clear();
+    aggreport.counters.clear();
+    aggreport.proofs.clear();
 
-    // scheduleAt(simTime() + deltah, attesttimer);
-    // scheduleAt(simTime() + deltag, mktreetimer);
-    scheduleAt(simTime() + checkDelay, checkdelaymsg);
+#ifdef ENERGY_TEST
+    if(statadapt)
+        updateMaxChildren();
+#endif
+
+    scheduleAt(simTime() + deltah, attesttimer);
+#ifndef RUNTIME_TEST
+    double d = uniform(0, deltag);
+    if(maxchildren)
+        scheduleAt(simTime() + checkFirmwareDelay() + d, mktreetimer);
+#endif
+    scheduleAt(simTime() + checkFirmwareDelay() , checkdelaymsg);
 
 }
 
 void
 AProver::handleCommitReq(cMessage* msg)
 {
+    CommitReq* rmsg = check_and_cast<CommitReq *>(msg); 
+    uid_t senderid = (uid_t) rmsg->getSource();
+
+    logDebug("Received a commitment request from (UID = " + to_string(senderid) + ")");
+
     if (status != READY)
     {
+        logDebug("Status is not READY yet. Discarding commitment request");
         delete msg;
         return;
     }
 
+#ifdef ENERGY_TEST
+    if(energy)
+    {
+        cPacket* pkt = (cPacket*) msg;
+        double bl = pkt->getByteLength();
+        energy->updateResidualCapacity();
+        energy->totalPowerConsumption = inet::units::values::mW(RECEPTION_CONSUMPTION);
+        cMessage* enrxmsg = new cMessage("enrxdone", ENRXDONE);
+        scheduleAt(simTime() + bl / byterate, enrxmsg);
+    }
+#endif  
 
-    CommitReq* rmsg = check_and_cast<CommitReq *>(msg); 
-    uid_t senderid = (uid_t) rmsg->getSource();
     treeid_t tid = (treeid_t) rmsg->getTreeID();
     
     // // chek if this you are already
@@ -303,11 +351,13 @@ AProver::sendCommitResp(uid_t target, treeid_t tid)
     keyid_t kid = psessions.second->keyID;
     crespmsg->setKid(kid);
     crespmsg->setMac(generateMAC(crespmsg, kid));
-    scheduleAt(simTime() + macdelay, crespmsg);
+    crespmsg->setByteLength(CRP_SIZE);
+    double macd = getMacDelays();
+    scheduleAt(simTime() + macDelay<CommitResp>(crespmsg) + macd , crespmsg);
 
     cacktomsg->setDevice(target);
     cacktomsg->setTreeID(tid);
-    scheduleAt(simTime() + macdelay + timeout, cacktomsg);
+    scheduleAt(simTime() + timeoutack, cacktomsg);
 
 }
 
@@ -315,8 +365,24 @@ AProver::sendCommitResp(uid_t target, treeid_t tid)
 void
 AProver::handleCommitAck(cMessage* msg)
 {
+
     CommitAck* rmsg = check_and_cast<CommitAck *>(msg); 
     uid_t senderid = (uid_t) rmsg->getSource();
+
+    logDebug("Received a commitment acknowledgment from (UID = " + to_string(senderid) + ")");
+
+#ifdef ENERGY_TEST
+    if(energy)
+    {
+        cPacket* pkt = (cPacket*) msg;
+        double bl = pkt->getByteLength();
+        energy->updateResidualCapacity();
+        energy->totalPowerConsumption = inet::units::values::mW(RECEPTION_CONSUMPTION);
+        cMessage* enrxmsg = new cMessage("enrxdone", ENRXDONE);
+        scheduleAt(simTime() + bl / byterate, enrxmsg);
+    }
+#endif  
+    
     treeid_t tid = (treeid_t) rmsg->getTreeID();
 
     if(psessions.first != senderid)
@@ -357,7 +423,7 @@ AProver::handleCommitAck(cMessage* msg)
         cancelEvent(cacktomsg);
 
     psessions.second->valid = true;
-    if((psessions.second->depth == 1 && !ignoredepth) || maxchildren == 0)
+    if((psessions.second->depth == 1 /*&& !ignoredepth*/) || maxchildren == 0)
     {
         status = FINISHED;
         sendUpReq(tid);
@@ -375,8 +441,7 @@ AProver::handleCommitAck(cMessage* msg)
 void
 AProver::handleCommitAckTimeOut(cMessage* msg)
 {
-    cout << "ack timeout happended !!!" << endl;
-    logWarn("handleCommitAckTimeOut: Ack not received");
+    logDebug("handleCommitAckTimeOut: Ack not received");
     CommitTimeOut* tomsg = check_and_cast<CommitTimeOut*>(msg);
     uid_t dev = tomsg->getDevice();
     if (dev != psessions.first)
@@ -414,6 +479,9 @@ AProver::sendCommitReq(treeid_t tid)
 
     if(maxchildren == 0)
     {
+        session_t* sess = new session_t(treeid, NOID, ckey, maxdepth, true);
+        psessions.second = sess;
+        depth = maxdepth;
         sendUpReq(treeid);
         return;
     }
@@ -445,7 +513,8 @@ AProver::sendCommitReq(treeid_t tid)
     cresptomsg->setKind(CMRPTO);
     cresptomsg->setTreeID(treeid);
     //TODO: check the time out here
-    scheduleAt(simTime() + timeout, cresptomsg);
+    cancelEvent(cresptomsg);
+    scheduleAt(simTime() + timeoutresp, cresptomsg);
 
 }
 
@@ -455,7 +524,7 @@ AProver::sendCommitReq(treeid_t tid)
 void
 AProver::handleCommitRespTimeOut(cMessage* msg)
 {
-    logDebug("handleCommitRespTimeOut: No more responses can be accepted");
+    logDebug("handleCommitRespTimeOut: No more responses can be accepted. Number of children = " + to_string(csessions.size()));
     status = COLLECTING;
     // delete csessions[NOID];
     if (csessions.size() == 1)
@@ -479,7 +548,12 @@ AProver::handleCommitRespTimeOut(cMessage* msg)
 void
 AProver::handleCommitResp(cMessage* msg)
 {
-    if(status == COLLECTING)
+    CommitResp* rmsg = check_and_cast<CommitResp *>(msg); 
+    uid_t senderid = (uid_t) rmsg->getSource();
+    
+    logDebug("Received a commitment Response from (UID = " + to_string(senderid) + ")");
+
+    if(status == COLLECTING || status == FINISHED || status == READY)
     {
         logDebug("handleCommitResp: Request has already timedout!!!");
         delete msg;
@@ -500,8 +574,18 @@ AProver::handleCommitResp(cMessage* msg)
         return;
     }
 
-    CommitResp* rmsg = check_and_cast<CommitResp *>(msg); 
-    uid_t senderid = (uid_t) rmsg->getSource();
+#ifdef ENERGY_TEST
+    if(energy)
+    {
+        cPacket* pkt = (cPacket*) msg;
+        double bl = pkt->getByteLength();
+        energy->updateResidualCapacity();
+        energy->totalPowerConsumption = inet::units::values::mW(RECEPTION_CONSUMPTION);
+        cMessage* enrxmsg = new cMessage("enrxdone", ENRXDONE);
+        scheduleAt(simTime() + bl / byterate, enrxmsg);
+    }
+#endif  
+
     treeid_t tid = (treeid_t) rmsg->getTreeID();
 
 
@@ -562,20 +646,22 @@ AProver::sendCommitAck(uid_t target, treeid_t tid)
     cackmsg->setTreeID(tid);
     keyid_t kid = csessions[target]->keyID;
     cackmsg->setMac(generateMAC(cackmsg, kid));
-    scheduleAt(simTime() + macdelay, cackmsg);
+    cackmsg->setByteLength(CAK_SIZE);
+    double macd = macDelay<CommitAck>(cackmsg) + getMacDelays();
+    scheduleAt(simTime() + macd , cackmsg);
 
     
-    // TODO: Continue here
+#ifdef WIRELESS
+    CommitTimeOut* uptomsg = new CommitTimeOut();
+    uptomsg->setKind(UPTO);
+    uptomsg->setDevice(target);
+    uptomsg->setTreeID(tid);
+    unsigned int depth =  psessions.second->depth - 1;
+    double delaytime =  (timeoutack + timeoutresp) * depth + timeoutack;
+    scheduleAt(simTime() + delaytime, uptomsg);
 
-
-    // CommitTimeOut* uptomsg = new CommitTimeOut();
-    // uptomsg->setKind(UPTO);
-    // uptomsg->setDevice(target);
-    // uptomsg->setTreeID(tid);
-    // unsigned int depth =  psessions.second->depth;
-    // scheduleAt(simTime() + macdelay + timeout * depth, uptomsg);
-
-    // csessions[target]->tomsg = uptomsg;
+    csessions[target]->tomsg = uptomsg;
+#endif
 }
 
 void 
@@ -584,7 +670,7 @@ AProver::handleUpdateTimeOut(cMessage* msg)
     CommitTimeOut* tomsg = check_and_cast<CommitTimeOut *>(msg);
     treeid_t tid = tomsg->getTreeID();
     uid_t uid = tomsg->getDevice();
-    logDebug("handleUpdateTimeOut: update session of prover (id = " + to_string(uid) + ") timed out");
+    logWarn("handleUpdateTimeOut: update session of prover (UID = " + to_string(uid) + ") timed out");
     if(csessions[uid])
         delete csessions[uid];
     csessions.erase(uid);
@@ -600,8 +686,7 @@ void
 AProver::sendUpReq(treeid_t tid)
 {
     aggreport.tid = tid;
-    aggreport.devices[UId] = ++attestcount;
-    aggregateProof();
+    addOwnReport();
     // Bubble("sending report to parent");
     UpdateReq* msg = new UpdateReq();
     if(psessions.first)
@@ -615,30 +700,31 @@ AProver::sendUpReq(treeid_t tid)
         msg->setKind(UPRQC);
     }
     msg->setSource(UId);
-    msg->setReport1ArraySize(aggreport.devices.size());
-    msg->setReport2ArraySize(aggreport.devices.size());
-    int i=0;
-    for (auto it =  aggreport.devices.begin(); it != aggreport.devices.end(); ++it)
+    msg->setReport1ArraySize(aggreport.uids.size());
+    msg->setReport2ArraySize(aggreport.uids.size());
+    
+    for (size_t i=0; i < aggreport.uids.size(); ++i)
     {
-        msg->setReport1(i, it->first);
-        msg->setReport2(i++, it->second);
+        msg->setReport1(i, aggreport.uids[i]);
+        msg->setReport2(i, aggreport.counters[i]);
     }
     msg->setTreeID(tid);
-    msg->setProof(aggreport.mac);
+    int j=0;
+    msg->setProofArraySize(aggreport.proofs.size());
+    for (auto it =  aggreport.proofs.begin(); it != aggreport.proofs.end(); ++it)
+    {
+        msg->setProof(j++,*it);
+    }
     msg->setMac(generateMAC(msg, psessions.second->keyID));
+    msg->setByteLength(URQ_SIZE(aggreport.size - aggreport.sepsize,j));
 
-    // TODO: update macdelay 
     if(!psessions.first)
     {
-        logInfo("sending a report of " + to_string(aggreport.devices.size()) + " records");
-        ofstream ofs("/tmp/output", ios::app);
-        ofs << "sending a report of " << aggreport.devices.size() << " records" << endl;
+        logInfo("sending a report of " + to_string(aggreport.size) + " records");
     }
 
-    emit(reportsent, 1);
 
-
-    scheduleAt(simTime() + macdelay*2, msg);
+    scheduleAt(simTime() + macDelay<UpdateReq>(msg) + getMacDelays(), msg);
 
     if(csessions[NOID])
         delete csessions[NOID];
@@ -658,17 +744,9 @@ void
 AProver::handleUpReq(cMessage* msg)
 {
 
-    if(status == FINISHED)
+    if(msg->getKind() == UPRQF)
     {
-        logWarn("handleUpReq: session is timedout!!!");
-        delete msg;
-        return;
-    }
-
-    if(status != COLLECTING && status != CREATING)
-    {
-        logError("handleUpReq: Unexpected state!!!");
-        delete msg;
+        sendCollector<UpdateReq>(msg);
         return;
     }
 
@@ -680,6 +758,39 @@ AProver::handleUpReq(cMessage* msg)
         delete msg;
         return;
     }
+
+    cPacket* pkt = (cPacket*) msg;
+    double bl = pkt->getByteLength();
+    if(checkRecordTime()  && device != SERV)
+    {
+        emit(rxsig, bl);
+    }
+#ifdef ENERGY_TEST
+    if(energy)
+    {
+        energy->updateResidualCapacity();
+        energy->totalPowerConsumption = inet::units::values::mW(RECEPTION_CONSUMPTION);
+        cMessage* enrxmsg = new cMessage("enrxdone", ENRXDONE);
+        scheduleAt(simTime() + bl / byterate, enrxmsg);
+    }
+#endif 
+
+    if(status == FINISHED)
+    {
+        logWarn("handleUpReq: session of child (UID = " + to_string(upmsg->getSource()) + ") is already timedout!!! ");
+        upmsg->setKind(UPRQF);
+        upmsg->setDestination(findClosestCollector());
+        sendCollector<UpdateReq>(upmsg);
+        return;
+    }
+
+    if(status != COLLECTING && status != CREATING)
+    {
+        logError("handleUpReq: Unexpected state!!!");
+        delete msg;
+        return;
+    }
+
 
     uid_t senderid = (uid_t) upmsg->getSource();
 
@@ -706,16 +817,89 @@ AProver::handleUpReq(cMessage* msg)
         delete msg;
         return;
     }
+    
+
+    // remove unfinialized proof aggregates
+
+    size_t a = aggreport.uids.size();
+    size_t uncompleted = 0;
+    while (a && aggreport.uids[a-1] != NOID)
+    {
+        --a;
+        ++uncompleted;
+    }
+
+    vector<uid_t> tmpuids(aggreport.uids.begin() + a, aggreport.uids.end());
+    vector<size_t> tmpcounters(aggreport.counters.begin() + a, aggreport.counters.end());
+    mac_t tmpproof;
+    if(uncompleted) 
+    {
+        tmpproof = aggreport.proofs.back();
+        aggreport.uids.erase(aggreport.uids.begin() + a, aggreport.uids.end());
+        aggreport.counters.erase(aggreport.counters.begin() + a, aggreport.counters.end());
+        aggreport.size -= uncompleted;
+        aggreport.proofs.pop_back();
+    }
+
+
+    // add finalized proof aggregates
     size_t reportsize = (size_t) upmsg->getReport1ArraySize();
     for(size_t i=0; i < reportsize; ++i)
     {
-        aggreport.devices[(uid_t)upmsg->getReport1(i)] = (unsigned int)upmsg->getReport2(i);
+        aggreport.uids.push_back((uid_t)upmsg->getReport1(i));
+        aggreport.counters.push_back((size_t)upmsg->getReport2(i));
+
+        if((uid_t)upmsg->getReport1(i) == NOID)
+            aggreport.sepsize++;
+        else
+            aggreport.size++;
     }
+    size_t proofsize = (size_t) upmsg->getProofArraySize();
+
+    for(size_t j=0 ; j < proofsize; ++j)
+    {
+        aggreport.proofs.push_back((size_t)upmsg->getProof(j));
+    }
+
+    // aggregate unfinalized proof aggregates
+    if(uncompleted)
+    {
+        a = aggreport.uids.size();
+        uncompleted = 0;
+        while (a && aggreport.uids[a-1] != NOID)
+        {
+            --a;
+            ++uncompleted;
+        }
+
+        size_t r = uncompleted % aggsize;
+        if(r + tmpuids.size() <= aggsize)
+        {
+            aggreport.uids.insert(aggreport.uids.end(), tmpuids.begin(), tmpuids.end());
+            aggreport.counters.insert(aggreport.counters.end(), tmpcounters.begin(), tmpcounters.end());
+            aggreport.size += tmpuids.size();
+            if(r)
+                aggreport.proofs.back() ^= tmpproof;
+            else
+                aggreport.proofs.push_back(tmpproof);
+            fixProofs();
+        }
+        else
+        {
+            aggreport.uids.push_back(NOID);
+            aggreport.counters.push_back(0);
+            aggreport.sepsize++;
+            aggreport.uids.insert(aggreport.uids.end(), tmpuids.begin(), tmpuids.end());
+            aggreport.counters.insert(aggreport.counters.end(), tmpcounters.begin(), tmpcounters.end());
+            aggreport.size += tmpuids.size();
+            aggreport.proofs.push_back(tmpproof);
+        }
+    }
+
 
     if(csessions[senderid]->tomsg && csessions[senderid]->tomsg->isScheduled())
         cancelAndDelete(csessions[senderid]->tomsg);
 
-    aggreport.mac ^= upmsg->getProof();
     if(csessions[senderid])
         delete csessions[senderid];
     csessions.erase(senderid);
@@ -750,21 +934,21 @@ void
 AProver::logDebug(string m)
 {
     EV_DEBUG << "Prover [Index=" << getParentModule()->getIndex()
-             << ", UID=0x" << hex <<  UId << "]: " << dec<< m << endl;
+             << ", UID=" <<  UId << "]: " << dec<< m << endl;
 }
 
 void
 AProver::logInfo(string m)
 {
     EV << "Prover [Index=" << getParentModule()->getIndex()
-             << ", UID=0x" << hex <<  UId << "]: " << dec<< m << endl;
+             << ", UID=" <<  UId << "]: " << dec<< m << endl;
 }
 
 void
 AProver::logWarn(string m)
 {
     EV_WARN << "Prover [Index=" << getParentModule()->getIndex()
-             << ", UID=0x" << hex <<  UId << "]: " << dec<< m << endl;
+             << ", UID=" <<  UId << "]: " << dec<< m << endl;
 }
 
 
@@ -773,7 +957,7 @@ AProver::logError(string m)
 {
     ostringstream oss;
     oss << "Prover [Index=" << getParentModule()->getIndex()
-        << ", UID=0x" << hex <<  UId << "]: " << dec<< m << endl;
+        << ", UID=" <<  UId << "]: " << dec<< m << endl;
     EV_ERROR << oss.str();
     getSimulation()->getActiveEnvir()->alert(oss.str().c_str());
 
@@ -817,6 +1001,8 @@ void AProver::postponeMsg(cMessage* msg)
 void AProver::checkSoftConfig()
 {
     status = READY;
+
+#ifdef RUNTIME_TEST
     if(getParentModule()->getIndex() == rootidx)
     {
         startmsg->setKind(MKTREE);
@@ -825,16 +1011,72 @@ void AProver::checkSoftConfig()
         if(mktreetimer->isScheduled())
             cancelEvent(mktreetimer);
     }
+#endif
 }
 
 
-void AProver::aggregateProof()
+void AProver::addOwnReport()
 {
-    // compute mac of: UID || counter || TID
-    aggreport.mac ^=  0;
+    mac_t mac = 0; // compute mac of: UID || counter || TID
+
+    
+    int a = aggreport.uids.size() % aggsize ;
+    if(a == 0)
+    {
+        aggreport.proofs.push_back(mac);
+    }
+    else 
+    {
+        aggreport.proofs.back() ^= mac;
+    }
+    
+    aggreport.uids.push_back(UId);
+    aggreport.counters.push_back(++attestcount);
+    aggreport.size++;
+    fixProofs();
 }
 
-void AProver::finish()
+void
+AProver::fixProofs()
+{
+    int a = aggreport.uids.size();
+    size_t s = 0;
+    while(a && aggreport.uids[a-1] != NOID)
+    {
+        --a; ++s;
+    }
+    if(s == aggsize)
+    {
+        aggreport.uids.push_back(NOID);
+        aggreport.counters.push_back(0);
+        aggreport.sepsize++;
+    }
+}
+
+void
+AProver::finalizeProofs()
+{
+    if(aggreport.uids.size() % aggsize > (size_t)floor(aggsize / 2))
+    {
+        aggreport.proofs[aggreport.size-2] ^= aggreport.proofs.back();
+        aggreport.proofs.pop_back();
+    }
+}
+
+#ifdef ENERGY_TEST
+void
+AProver::updateMaxChildren()
+{
+
+    double per = inet::power::unit(energy->getResidualEnergyCapacity() / energy->getNominalEnergyCapacity()).get();
+    double v = CHILDREN(per);
+    v = v<1?0:v;
+    maxchildren = (int)ceil(v);
+}
+#endif
+
+void 
+AProver::finish()
 {
         cancelAndDelete(startmsg);
         cancelAndDelete(jointomsg);
@@ -845,6 +1087,7 @@ void AProver::finish()
         cancelAndDelete(cacktomsg);
         cancelAndDelete(creqmsg);
         cancelAndDelete(txmsg);
+        cancelAndDelete(entxmsg);
         cancelAndDelete(cbusymsg);
 
 }

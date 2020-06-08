@@ -28,7 +28,7 @@ namespace power {
 
 class INET_API EpEnergySourceBase : public EnergySourceBase, public virtual IEpEnergySource, public cListener
 {
-  protected:
+  public:
     W totalPowerConsumption = W(NaN);
 
   protected:

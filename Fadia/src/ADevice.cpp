@@ -18,14 +18,12 @@
 #include "Update_m.h"
 #include "Commit_m.h"
 
-#include "../inet/src/inet/mobility/contract/IMobility.h"
-
-
 
 using namespace omnetpp;
 
 NetworkOwner ADevice::NO = NetworkOwner();
 const int ADevice::baseID = 0x1;
+size_t ADevice::countcrash = 0;
 
 void
 ADevice::handleMessage(cMessage *msg)
@@ -63,7 +61,7 @@ ADevice::handleMessage(cMessage *msg)
                 sendCollector<JoinReq>(msg);
                 break;
             case JNRP:
-                sendProver<JoinResp>(msg);
+                (void)sendProver<JoinResp>(msg);
                 break;
             case JNAK: 
                 sendCollector<JoinAck>(msg);
@@ -80,10 +78,11 @@ ADevice::handleMessage(cMessage *msg)
                 sendProverBroadcast(msg);
                 break;
             case CMRP: 
-                sendProver<CommitResp>(msg);
+                (void)sendProver<CommitResp>(msg);
                 break;
             case CMAK: 
-                sendProver<CommitAck>(msg);
+                (void)sendProver<CommitAck>(msg);
+
                 break;
             case CMRPTO: 
                 handleCommitRespTimeOut(msg);
@@ -94,9 +93,23 @@ ADevice::handleMessage(cMessage *msg)
 
             // UPDATE
             case UPRQ:
+#ifndef RUNTIME_TEST
+                if(isWithinRange<UpdateReq>(msg))
+                    sendProver<UpdateReq>(msg);
+                else
+                {
+                    UpdateReq* smsg = check_and_cast<UpdateReq *> (msg);
+                    smsg->setKind(UPRQF);
+                    smsg->setDestination(getBaseID<cid_t>());
+                    sendCollector<UpdateReq>(smsg);
+                }
+#else
                 sendProver<UpdateReq>(msg);
+#endif
+
                 break;
             case UPRQC:
+            case UPRQF:
                 sendCollector<UpdateReq>(msg);
                 break;
             case UPTO:  
@@ -109,7 +122,12 @@ ADevice::handleMessage(cMessage *msg)
             case CBUSYMSG:
                 handlePostponeDoneMsg(msg);
                 break;
-
+#ifdef ENERGY_TEST                
+            case ENTXDONE:
+            case ENRXDONE:
+                handleDoneEnMsg(msg);
+                break;
+#endif
             case UNKOWN:
             default:
                 logError("Received message of unknown type");
@@ -146,14 +164,14 @@ ADevice::handleMessage(cMessage *msg)
             break;
         case UPRQ:
         case UPRQC:
+        case UPRQF:
             updateGates<UpdateReq>(msg);
             handleUpMsg(msg);
             break;
-
         case UNKOWN:
         default:
             logError("Received message of unknown type");
-            break;
+            return;
         }
     }
 }
@@ -182,18 +200,21 @@ ADevice::handleJoinMsg(cMessage* msg)
 void
 ADevice::handleCommitMsg(cMessage* msg)
 {
+    cPacket* pkt = (cPacket*) msg;
+    double bl = pkt->getByteLength();
+    if(checkRecordTime() && device != SERV)
+    {
+        emit(rxsig, bl);
+    }    
     switch(msg->getKind())
     {
     case CMRQ: 
-        logDebug("Received a commitment Request");
         handleCommitReq(msg);
         break;
     case CMRP:
-        logDebug("Received a commitment Response");
         handleCommitResp(msg);
         break;
     case CMAK:
-        logDebug("Received a commitment Acknowledgment");
         handleCommitAck(msg);
         break;
     }
@@ -201,7 +222,7 @@ ADevice::handleCommitMsg(cMessage* msg)
 
 void
 ADevice::handleUpMsg(cMessage* msg)
-{
+{        
     handleUpReq(msg);
 }
 
@@ -217,6 +238,111 @@ ADevice::handleSyncMsg(cMessage* msg)
     handleSyncReq(msg);
 }
 
+
+
+void 
+ADevice::handleTxDoneMsg(cMessage* msg)
+{
+    txrxstat = DIDLE;
+    if(msgqueue.size() > 0)
+    {
+        handleMessage(msgqueue.front());
+        msgqueue.pop();
+    }
+}   
+
+#ifdef ENERGY_TEST
+void 
+ADevice::handleDoneEnMsg(cMessage* msg)
+{
+    energy->updateResidualCapacity();
+    energy->totalPowerConsumption = inet::units::values::mW(IDLE_CONSUMPTION);
+    if(msg->getKind() == ENRXDONE)
+        delete msg;
+    if((energy->getResidualEnergyCapacity()).get() <=0 )
+    {
+        emit(crashsig, simTime().dbl());
+        if(++countcrash == MAX_CRASH)
+            endSimulation();
+    }
+}
+
+#endif
+
+void 
+ADevice::handlePostponeDoneMsg(cMessage* msg)
+{
+    chanstat = CIDLE;
+    if(msgqueue.size() > 0)
+    {
+        handleMessage(msgqueue.front());
+        msgqueue.pop();
+    }
+}   
+
+#ifdef WIRELESS
+void
+ADevice::sendProverBroadcast(cMessage* msg)
+{
+
+    if(txrxstat == TRANSMITING || chanstat == BUSY)
+    {
+        msgqueue.push(msg);
+        return;
+    }
+
+    if(isChannelBusy(drange, -1))
+    {
+        chanstat = BUSY;
+        msgqueue.push(msg);
+        scheduleAt(simTime() + postponetime, cbusymsg);
+        return;
+    }
+
+    int size = getParentModule()->getVectorSize();
+    assert(size);
+
+    inet::IMobility* mobility = check_and_cast<inet::IMobility *> (getParentModule()->getSubmodule("mobility"));
+    inet::Coord spos = mobility->getCurrentPosition();
+    bool t = false;
+    
+    cPacket* pkt = (cPacket*)msg;
+    double bl = pkt->getByteLength();
+
+    for(int i = 0; i < size; ++i)
+    {
+
+        if((int)i != getParentModule()->getIndex())
+        {
+            cModule* mod = getSystemModule()->getSubmodule("prover", i);
+
+            inet::IMobility* mobility = check_and_cast<inet::IMobility *> (mod->getSubmodule("mobility"));
+            inet::Coord dpos = mobility->getCurrentPosition();
+            if(spos.sqrdist(dpos) <= range*range)
+            {
+                cMessage* msgd = msg->dup();
+                sendDirect(msgd, ndelay + bl / byterate , 0, mod, "radioIn");
+                t = true;
+            }
+        }
+    }
+    if(t)
+    {
+        if(checkRecordTime() && device != SERV)
+        {
+            emit(txsig, bl);
+        }
+        txrxstat = TRANSMITING;
+#ifdef ENERGY_TEST
+        energy->updateResidualCapacity();
+        energy->totalPowerConsumption = inet::units::values::mW(TRANSMITION_CONSUMPTION);
+        scheduleAt(simTime() + bl / byterate, entxmsg);
+#endif
+        scheduleAt(simTime() + ndelay + bl / byterate, txmsg);
+    }
+}
+
+#else
 
 void
 ADevice::sendProverBroadcast(cMessage* msg)
@@ -255,55 +381,6 @@ ADevice::sendProverBroadcast(cMessage* msg)
 
 }
 
-void 
-ADevice::handleTxDoneMsg(cMessage* msg)
-{
-    txrxstat = DIDLE;
-    if(msgqueue.size() > 0)
-    {
-        handleMessage(msgqueue.front());
-        msgqueue.pop();
-    }
-}   
-
-void 
-ADevice::handlePostponeDoneMsg(cMessage* msg)
-{
-    chanstat = CIDLE;
-    if(msgqueue.size() > 0)
-    {
-        handleMessage(msgqueue.front());
-        msgqueue.pop();
-    }
-}   
-
-#if 0
-void
-ADevice::sendProverBroadcast(cMessage* msg)
-{
-    int size = getParentModule()->getVectorSize();
-    assert(size);
-
-    inet::IMobility* mobility = check_and_cast<inet::IMobility *> (getParentModule()->getSubmodule("mobility"));
-    inet::Coord spos = mobility->getCurrentPosition();
-
-    for(int i = 0; i < size; ++i)
-    {
-
-        if((int)i != getParentModule()->getIndex())
-        {
-            cModule* mod = getSystemModule()->getSubmodule("prover", i);
-
-            inet::IMobility* mobility = check_and_cast<inet::IMobility *> (mod->getSubmodule("mobility"));
-            inet::Coord dpos = mobility->getCurrentPosition();
-            if(spos.sqrdist(dpos) <= range*range)
-            {
-                cMessage* msgd = msg->dup();
-                sendDirect(msgd, ndelay, 0, mod, "radioIn");
-            }
-        }
-    }
-}
 #endif
 
 int
@@ -313,8 +390,43 @@ ADevice::generateMAC(cMessage* msg, keyid_t kid)
 }
 
 bool 
+ADevice::isChannelBusy()
+{
+    if(isTransmiting())
+        return true;
+
+    int size = getParentModule()->getVectorSize();
+    assert(size);
+
+    inet::IMobility* mobility = check_and_cast<inet::IMobility *> (getParentModule()->getSubmodule("mobility"));
+    inet::Coord spos = mobility->getCurrentPosition();
+
+    for(int i = 0; i < size; ++i)
+    {
+        if((int)i != getParentModule()->getIndex())
+        {
+            cModule* mod = getSystemModule()->getSubmodule("prover", i);
+
+            inet::IMobility* mobility = check_and_cast<inet::IMobility *> (mod->getSubmodule("mobility"));
+            inet::Coord dpos = mobility->getCurrentPosition();
+            if(spos.sqrdist(dpos) <= range*range)
+            {
+                ADevice* adev = (ADevice*) mod->getSubmodule("proverapp");
+                assert(adev);
+                if(adev->isTransmiting())
+                    return true;
+            }
+        }
+    }
+    return false;
+}
+
+bool 
 ADevice::isChannelBusy(int far, int gid)
 {
+    if(far == -1 && gid == -1)
+        return isChannelBusy();
+
     if(isTransmiting())
         return true;
 
@@ -337,4 +449,44 @@ ADevice::isChannelBusy(int far, int gid)
     }
 
     return false;
+}
+
+
+double
+ADevice::getMacDelays()
+{
+    double sum = 0.0;
+    while(!macdelays.empty())
+    {
+        sum += macdelays.front();
+        macdelays.pop();
+    }
+    return sum;
+}
+
+
+bool
+ADevice::checkRecordTime()
+{
+    if(simTime().dbl() >= 0 && simTime().dbl() <= deltah * 3 )
+        return true;
+    return false;
+}
+
+
+double
+ADevice::checkFirmwareDelay()
+{
+    switch (device)
+    {
+        case SKY:
+            return (double) FIRMWARE_CHECK_DELAY_S;
+        case PI2:
+            return (double) FIRMWARE_CHECK_DELAY_P;
+        case SERV:
+            return 0.0;
+        case NA:
+        default:
+            return (double) FIRMWARE_CHECK_DELAY;
+    }
 }

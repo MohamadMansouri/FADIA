@@ -18,7 +18,7 @@
 //import inet.physicallayer.energyconsumer.SensorStateBasedEpEnergyConsumer;
 import inet.visualizer.contract.IIntegratedVisualizer;
 
-network Fadiastar
+network Fadia
 {
     parameters:
         int numCollectors;
@@ -29,27 +29,22 @@ network Fadiastar
 
         int keyIdSeed = default(0);
         int keySeed = default(1);
-//
-//        double width = default(1000);
-//        double height = default(500);
-//		
-//		double  posy = 5;
-//		double posx = width / 2;	
+
+        double width = default(1000);
+        double height = default(500);
+		
+		double  posy = 5;
+		double posx = width / 2;	
 
         int htime = default(120);
 
-		int neighbors = default(2);
-		
-		int sqprovers = int(floor(sqrt(numProvers)));
-		
-		int root = int(sqprovers/2 + numProvers /2); 
-//		int(floor(numProvers / 2));
-//		int root = 0;
-		
+		int root = 0;
 		int maxdepth = default(5);
+		int maxchildren = default(5);
 		
+		bool statadapt = default(false);
 		
-//        @display("bgb=$width,$height;bgg=100,1,grey95");
+        @display("bgb=$width,$height;bgg=100,1,grey95");
         @figure[title](type=label; pos=0,-1; anchor=sw; color=darkblue);
 
     types:
@@ -61,21 +56,10 @@ network Fadiastar
 
     submodules:
         collector[numCollectors]: Collector {
-//            @display("p=$posx,$posy");
+            @display("p=$posx,$posy");
         }
-        prover[numProvers]: Prover {
-            @display("p=,,m,$sqprovers,30,30");
+        prover[numProvers]: Prover;
+        visualizer: <default("IntegratedCanvasVisualizer")> like IIntegratedVisualizer if hasVisualizer() {
+            @display("p=5,5");
         }
-            
-//        visualizer: <default("IntegratedCanvasVisualizer")> like IIntegratedVisualizer if hasVisualizer() {
-//            @display("p=5,5");
-//        }
-   connections:
-       collector[0].gate <--> C <--> prover[root].gate++;
-       
-       for i=0..numProvers - 1
-       {
-       		prover[i].gate++ <--> C <--> prover[i + 1].gate++ if i + 1 < numProvers && fmod(i+1,sqprovers) != 0;
-       		prover[i].gate++ <--> C <--> prover[i+sqprovers].gate++ if i + sqprovers < numProvers;
-       }
 }

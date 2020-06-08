@@ -23,6 +23,9 @@ simple ACollector
     parameters:
         @signal[elapsedTime](type=double);
         @statistic[elapsedtimesig](title="Elapsed Time"; source="elapsedTime"; record=last);
+        @signal[reportSize](type=unsigned long);
+        @statistic[reportsize](title="Report Size"; source="reportSize"; record=vector);
+        
     gates:
         input radioIn @directIn;
         inout appio;
@@ -34,7 +37,7 @@ module Collector extends NodeBase
         @display("i=device/accesspoint;is=l;bgb=573.3,680.39996");
     gates:
         input radioIn @directIn;
-		inout gate;
+		inout gate @loose;
 		
     submodules:
         collectorapp: ACollector {

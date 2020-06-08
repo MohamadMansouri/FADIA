@@ -16,7 +16,7 @@
 //
 // TODO generated message class
 //
-message UpdateReq 
+packet UpdateReq 
 {
     int source;
     int destination;
@@ -24,6 +24,6 @@ message UpdateReq
     int report2[];
     int treeID;
     int mac;
-    int proof;
+    int proof[];
 }
     

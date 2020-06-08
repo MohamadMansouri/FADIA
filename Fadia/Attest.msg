@@ -18,14 +18,14 @@
 //
 
 
-message PullAttestReq
+packet PullAttestReq
 {
     int source;
     int kid[];
     double seniority;
 }
 
-message AttestReq 
+packet AttestReq 
 {
     int source;
     int destination;
@@ -35,7 +35,7 @@ message AttestReq
 }
 
 
-message AttestResp
+packet AttestResp
 {
     int source;
     int destination;
@@ -43,14 +43,14 @@ message AttestResp
     int mac;
 }
 
-message AttestAck
+packet AttestAck
 {
     int source;
     int destination;
     int mac;
 }
 
-message AttestTimeOut
+packet AttestTimeOut
 {
     int correspondent;
 }

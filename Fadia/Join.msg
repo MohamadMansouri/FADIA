@@ -16,7 +16,7 @@
 //
 // TODO generated message class
 //
-message JoinReq 
+packet JoinReq 
 {
     int source;
     int destination;
@@ -25,7 +25,7 @@ message JoinReq
 }
 
 
-message JoinResp
+packet JoinResp
 {
     int source;
     int destination;
@@ -34,7 +34,7 @@ message JoinResp
     int mac;
 }
 
-message JoinAck
+packet JoinAck
 {
     int source;
     int destination;

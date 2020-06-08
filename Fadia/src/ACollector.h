@@ -21,9 +21,11 @@
 #include "ADevice.h"
 #include "ADevice_template.h"
 #include "NetworkOwner.h"
+#include "constants.h"
 
 #ifndef depreciated
-#define depreciated {return;} //{logError("function is not implemented for a collector");}
+#define depreciated {logError("function is not implemented for a collector");}
+#define ignored(_MSG_) {delete _MSG_;}
 #endif
 
 using namespace omnetpp;
@@ -51,12 +53,11 @@ private:
     // status table holding provers statuses
     devstat_map_t statusTable;
 
-    // configuration parameters
-    double deltah = 600;
-    int maxdepth = INT_MAX;
-
+    size_t sum = 0;
+    
     //Signals
     simsignal_t elapsedtimesig;
+    simsignal_t reportsizesig;
 
     // Inits
     virtual void initUID() override;
@@ -65,8 +66,8 @@ private:
 
     // Join
     virtual void handleJoinReq(cMessage* msg) override;
-    virtual void handleJoinResp(cMessage* msg) depreciated;
-    virtual void handleJoinAck(cMessage* msg) depreciated;
+    virtual void handleJoinResp(cMessage* msg) ignored(msg);
+    virtual void handleJoinAck(cMessage* msg) ignored(msg);
     virtual void sendJoinReq() depreciated;
     virtual void sendJoinResp(uid_t target) override;
     virtual void sendJoinAck(uid_t target) depreciated;
@@ -77,9 +78,9 @@ private:
 
     // Make Spanning Tree
     virtual void startAttestation() depreciated;
-    virtual void handleCommitReq(cMessage* msg) depreciated;
-    virtual void handleCommitResp(cMessage* msg) depreciated;
-    virtual void handleCommitAck(cMessage* msg) depreciated;
+    virtual void handleCommitReq(cMessage* msg) ignored(msg);
+    virtual void handleCommitResp(cMessage* msg) ignored(msg);
+    virtual void handleCommitAck(cMessage* msg) ignored(msg);
     virtual void sendCommitReq(treeid_t tid) depreciated;
     virtual void sendCommitResp(uid_t target, treeid_t tid) depreciated;
     virtual void sendCommitAck(uid_t target, treeid_t tid)  depreciated;
@@ -92,7 +93,7 @@ private:
     virtual void handleUpdateTimeOut(cMessage* msg) depreciated;
 
     // Revoke
-    virtual void handleRevReq(cMessage* msg) depreciated;
+    virtual void handleRevReq(cMessage* msg) ignored(msg);
     virtual void sendRevReq(uid_t comdev) override;
 
     // Sync

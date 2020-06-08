@@ -22,8 +22,12 @@ import inet.node.base.NodeBase;
 simple AProver
 {
 	parameters:
-        @signal[reportSent](type=long);
-        @statistic[reportsent](title="Reports Sent"; source=constant1(reportSent); record=vector);
+        @signal[dataSent](type=double);
+        @statistic[datasent](title="Data Sent"; source=dataSent; record=vector);
+        @signal[dataRcvd](type=double);
+        @statistic[datarcvd](title="Data Received"; source=dataRcvd; record=vector);
+        @signal[crashTime](type=double);
+        @statistic[crashtime](title="Crash Time"; source="crashTime"; record=vector);
     gates:
         input radioIn @directIn;
         inout appio[];
@@ -32,10 +36,11 @@ simple AProver
 module Prover extends NodeBase
 {
     parameters:
-        double range;
-        
-        int neighbors = default(2);
-        @display("i=misc/sensoroff;is=s;bgb=589.05,603.225");
+        double range = default(50);
+        int aggsize = default(99999999);
+        int neighbors = default(0);
+        int type = default(0);			// NA = 0, SERV = 1, SKY = 2, PI2 = 3
+        @display("i=misc/sensoroff;is=s;bgb=589.05,603.225;r=$range");
 
     gates:
         //        inout gate[]	@allowunconnected;

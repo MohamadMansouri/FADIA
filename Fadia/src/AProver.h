@@ -62,11 +62,14 @@ struct session_t
 
 struct report_t 
 {
-    map<uid_t, unsigned int> devices;
+    vector<uid_t> uids;
+    vector<size_t> counters;
+    vector<mac_t> proofs;
     treeid_t tid;
-    mac_t mac;
+    size_t size;
+    size_t sepsize;
     
-    report_t() : tid(NOID), mac(0)
+    report_t() : tid(NOID), size(0), sepsize(0)
     {};
 };
 
@@ -102,19 +105,6 @@ private:
     // device status
     status_e status = OFFLINE;
 
-    // max number of children
-    unsigned int maxchildren = 100;
-
-    // max depth of the tree
-    unsigned int maxdepth = 100;
-    bool ignoredepth = true;
-
-    // delta time for a prover to attest within
-    double deltah = 600;
-
-    // delta time for a prover to attest within
-    double deltag = 500;
-
     // aggregated report at each delta h
     report_t aggreport;
 
@@ -131,9 +121,6 @@ private:
 
     CommitTimeOut* cresptomsg = nullptr;
     CommitTimeOut* cacktomsg = nullptr;
-
-    simsignal_t reportsent;
-
 
     // Inits
     virtual void initUID() override;
@@ -185,8 +172,12 @@ private:
     virtual void logError(string m) override;
     virtual void checkSoftConfig() override;
     void postponeMsg(cMessage* msg);
-    void createProof();
-    void aggregateProof();
+    void addOwnReport();
+    void fixProofs();
+    void finalizeProofs();
+#ifdef ENERGY_TEST
+    void updateMaxChildren();
+#endif
     
     //public:
 //    AProver();
@@ -200,6 +191,5 @@ public:
     AProver() {}
     ~AProver() {}
 };
-
 
 #endif
