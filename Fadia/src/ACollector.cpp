@@ -200,6 +200,13 @@ ACollector::logError(string m)
 
 }
 
+void
+ACollector::logWarn(string m)
+{
+    EV_WARN << "Collector [Index=" << getParentModule()->getIndex()
+             << ", CID=" <<  CId << "]: " << dec<< m << endl;
+}
+
 int
 ACollector::chooseProve(double p)
 {

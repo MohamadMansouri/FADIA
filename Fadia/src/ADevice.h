@@ -107,6 +107,7 @@ protected:
     size_t aggsize;
 #ifdef ENERGY_TEST    
     bool statadapt;
+    bool crashed = false;
 #endif
     double range;
 
@@ -210,6 +211,7 @@ protected:
     virtual void logInfo(string m) = 0;
     virtual void logDebug(string m) = 0;
     virtual  void logError(string m) = 0;
+    virtual  void logWarn(string m) = 0;
     virtual void checkSoftConfig() = 0;
     template <typename T> void sendProver(cMessage* msg);               // This method consume the message ;)
     void sendProverBroadcast(cMessage* msg);                            // This method does not consume the message ;)

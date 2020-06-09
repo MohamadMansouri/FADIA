@@ -47,6 +47,7 @@ network Fadiastar
 //		int root = 0;
 		
 		int maxdepth = default(5);
+		bool statadapt = default(false);
 		
 		
 //        @display("bgb=$width,$height;bgg=100,1,grey95");

@@ -28,6 +28,8 @@ size_t ADevice::countcrash = 0;
 void
 ADevice::handleMessage(cMessage *msg)
 {
+    if(crashed)
+        return;
     if(msg->isSelfMessage())
     {
         switch(msg->getKind())
@@ -262,8 +264,12 @@ ADevice::handleDoneEnMsg(cMessage* msg)
     if((energy->getResidualEnergyCapacity()).get() <=0 )
     {
         emit(crashsig, simTime().dbl());
-        if(++countcrash == MAX_CRASH)
+        crashed = true;
+        logWarn("Device energy depleted!"); 
+        if(++countcrash >= MAX_CRASH)
+        {
             endSimulation();
+        }
     }
 }
 

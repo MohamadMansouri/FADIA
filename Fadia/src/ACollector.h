@@ -104,6 +104,7 @@ private:
     void logInfo(string m);
     void logDetail(string m);
     void logDebug(string m);
+    void logWarn(string m);
     void logError(string m);
     void checkSoftConfig() depreciated;
     int chooseProve(double p);

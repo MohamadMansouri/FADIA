@@ -43,6 +43,7 @@ network Fadiaring
 		int root = 0;
 		int maxdepth = default(5);
 		double raduis= 15*numProvers/3.14;
+		bool statadapt = default(false);
 //        @display("bgb=$width,$height;bgg=100,1,grey95");
         @figure[title](type=label; pos=0,-1; anchor=sw; color=darkblue);
 
