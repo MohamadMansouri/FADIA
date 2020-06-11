@@ -72,7 +72,7 @@ AProver::initialize()
 #endif
     device = ((device_t) getParentModule()->par("type").intValue());
     // maxdepth = ((unsigned int) getParentModule()->par("maxdepth"));
-    deltag = deltah - (timeoutresp + timeoutack) * maxdepth - timeoutack; 
+    deltag = deltah - (timeoutresp + timeoutack) * maxdepth - timeoutup; 
 
 #ifdef ENERGY_TEST
     energy = check_and_cast<inet::power::SimpleEpEnergyStorage *> (getParentModule()->getSubmodule("energyStorage"));
@@ -119,7 +119,7 @@ AProver::initialize()
 #else
     status = FINISHED;
     startmsg = new cMessage("start", ATTEST);
-    scheduleAt(simTime(), startmsg);   
+    scheduleAt(simTime() + uniform(0,deltah), startmsg);   
 #endif
 }
 
@@ -197,7 +197,7 @@ AProver::handleJoinResp(cMessage* msg)
     // uid_t senderid = (uid_t) resmsg->getSource();
     maxdepth = (unsigned int) resmsg->getDepth();
     deltah = (double) resmsg->getDeltah();
-    deltag = deltah - (timeoutresp + timeoutack) * maxdepth - timeoutack;
+    deltag = deltah - (timeoutresp + timeoutack) * maxdepth - timeoutup;
     if(checkMAC<JoinResp>(resmsg, ckey))
         scheduleAt(simTime() +  macDelay<JoinResp>(resmsg) + getMacDelays(), attesttimer);
 
@@ -264,16 +264,30 @@ AProver::startAttestation()
 
 #ifdef ENERGY_TEST
     if(statadapt)
+    {
         updateMaxChildren();
+    }
+
+    energy->updateResidualCapacity();
+    energy->totalPowerConsumption = inet::units::values::mW(LISTENING_CONSUMPTION);
+
 #endif
 
     scheduleAt(simTime() + deltah, attesttimer);
 #ifndef RUNTIME_TEST
+#ifdef ENERGY_TEST
+    double d;
+    if(statadapt)
+        d = chooseTreeDelay();
+    else
+        d = uniform(0, deltag);
+#else
     double d = uniform(0, deltag);
-    if(maxchildren)
-        scheduleAt(simTime() + checkFirmwareDelay() + d, mktreetimer);
+#endif
+    scheduleAt(simTime() + checkFirmwareDelay() + d, mktreetimer);
 #endif
     scheduleAt(simTime() + checkFirmwareDelay() , checkdelaymsg);
+
 
 }
 
@@ -287,7 +301,25 @@ AProver::handleCommitReq(cMessage* msg)
 
     if (status != READY)
     {
-        logDebug("Status is not READY yet. Discarding commitment request");
+        switch (status)
+        {
+            case ATTESTING:
+            case ATTESTING_CREATING:
+                logDebug("Device is currently attesting. Discarding commitment request");
+                break;
+            case CREATING:
+                logDebug("Device is currently creating a tree. Discarding commitment request");
+                break;
+            case COLLECTING:
+                logDebug("Device is currently collecting. Discarding commitment request");
+                break;
+                logDebug("Device is not listening. Discarding commitment request");
+                break;
+            case FINISHED:
+            case CHECKING:
+            default:
+                logDebug("Device is not listening. Discarding commitment request");
+        }
         delete msg;
         return;
     }
@@ -341,6 +373,9 @@ AProver::handleCommitReq(cMessage* msg)
 void
 AProver::sendCommitResp(uid_t target, treeid_t tid)
 {
+
+    logDebug("Sending a commitment response to (UID = " + to_string(target) + ")");
+
     status = ATTESTING;
 
     CommitResp* crespmsg = new CommitResp();
@@ -352,8 +387,12 @@ AProver::sendCommitResp(uid_t target, treeid_t tid)
     crespmsg->setKid(kid);
     crespmsg->setMac(generateMAC(crespmsg, kid));
     crespmsg->setByteLength(CRP_SIZE);
-    double macd = getMacDelays();
-    scheduleAt(simTime() + macDelay<CommitResp>(crespmsg) + macd , crespmsg);
+
+    double macd = macDelay<CommitResp>(crespmsg) + getMacDelays();
+    cMessage* enmacmsg = new cMessage("MAC Energy consumption");
+    enmacmsg->setKind(ENMAC);
+    scheduleAt(simTime() + macd , enmacmsg);
+    scheduleAt(simTime() +  macd , crespmsg);
 
     cacktomsg->setDevice(target);
     cacktomsg->setTreeID(tid);
@@ -387,7 +426,7 @@ AProver::handleCommitAck(cMessage* msg)
 
     if(psessions.first != senderid)
     {
-        logDebug("handleCommitAck: Unexpected Ack (probably from a timedout session)");
+        logWarn("handleCommitAck: Unexpected Ack (probably from a timedout session)");
         delete msg;
         return;
     }
@@ -403,14 +442,14 @@ AProver::handleCommitAck(cMessage* msg)
 
     if(KeyRing.find(kid) == KeyRing.end())
     {
-        logDebug("handleCommitAck: I dont have this key!!!");
+        logError("handleCommitAck: I dont have this key!!!");
         delete msg;
         return;
     }
 
     if(!checkMAC<CommitAck>(rmsg, kid))    
     {
-        logDebug("handleCommitAck: Invalid MAC!!!");
+        logError("handleCommitAck: Invalid MAC!!!");
         delete msg;
         return;
     }
@@ -441,9 +480,9 @@ AProver::handleCommitAck(cMessage* msg)
 void
 AProver::handleCommitAckTimeOut(cMessage* msg)
 {
-    logDebug("handleCommitAckTimeOut: Ack not received");
     CommitTimeOut* tomsg = check_and_cast<CommitTimeOut*>(msg);
     uid_t dev = tomsg->getDevice();
+    logDebug("handleCommitAckTimeOut: Ack not received from " + to_string(dev));
     if (dev != psessions.first)
     {
         logError("handleCommitAckTimeOut: timeout with wrong data received!!!");
@@ -562,7 +601,7 @@ AProver::handleCommitResp(cMessage* msg)
 
     if (status != CREATING)
     {
-        logError("handleCommitResp: Unexpected status");
+        logError("handleCommitResp: Unexpected status. Expected " + to_string(CREATING) + " but got " + to_string(status));
         delete msg;
         return;
     }
@@ -638,6 +677,7 @@ AProver::handleCommitResp(cMessage* msg)
 void
 AProver::sendCommitAck(uid_t target, treeid_t tid)
 {
+    logDebug("Sending a commitment acknowledgment to (UID = " + to_string(target) + ")");
 
     CommitAck* cackmsg = new CommitAck();
     cackmsg->setKind(CMAK);
@@ -648,6 +688,9 @@ AProver::sendCommitAck(uid_t target, treeid_t tid)
     cackmsg->setMac(generateMAC(cackmsg, kid));
     cackmsg->setByteLength(CAK_SIZE);
     double macd = macDelay<CommitAck>(cackmsg) + getMacDelays();
+    cMessage* enmacmsg = new cMessage("MAC Energy consumption");
+    enmacmsg->setKind(ENMAC);
+    scheduleAt(simTime() + macd , enmacmsg);
     scheduleAt(simTime() + macd , cackmsg);
 
     
@@ -657,7 +700,7 @@ AProver::sendCommitAck(uid_t target, treeid_t tid)
     uptomsg->setDevice(target);
     uptomsg->setTreeID(tid);
     unsigned int depth =  psessions.second->depth - 1;
-    double delaytime =  (timeoutack + timeoutresp) * depth + timeoutack;
+    double delaytime =  (timeoutack + timeoutresp) * depth + timeoutup;
     scheduleAt(simTime() + delaytime, uptomsg);
 
     csessions[target]->tomsg = uptomsg;
@@ -722,9 +765,16 @@ AProver::sendUpReq(treeid_t tid)
     {
         logInfo("sending a report of " + to_string(aggreport.size) + " records");
     }
+    else
+    {
+        logDebug("sending a report of " + to_string(aggreport.size) + " records to " + to_string(psessions.first));
+    }
 
-
-    scheduleAt(simTime() + macDelay<UpdateReq>(msg) + getMacDelays(), msg);
+    double macd = macDelay<UpdateReq>(msg) + getMacDelays();
+    cMessage* enmacmsg = new cMessage("MAC Energy consumption");
+    enmacmsg->setKind(ENMAC);
+    scheduleAt(simTime() + macd , enmacmsg);
+    scheduleAt(simTime() + macd, msg);
 
     if(csessions[NOID])
         delete csessions[NOID];
@@ -1073,7 +1123,19 @@ AProver::updateMaxChildren()
     v = v<1?0:v;
     maxchildren = (int)ceil(v);
 }
+
+
+double
+AProver::chooseTreeDelay()
+{
+
+    double per = inet::power::unit(energy->getResidualEnergyCapacity() / energy->getNominalEnergyCapacity()).get();
+    double v = DELTAG(per,deltag);
+    v = v<0?0:v;
+    return v;
+}
 #endif
+
 
 void 
 AProver::finish()

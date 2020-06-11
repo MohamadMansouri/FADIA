@@ -21,18 +21,6 @@ using namespace omnetpp;
 #define depreciated {logError("function is not implemented for the prover");}
 #endif
 
-enum status_e
-{
-    OFFLINE,
-    JOINING,
-    CHECKING,
-    READY, 
-    ATTESTING,
-    ATTESTING_CREATING,
-    CREATING,
-    COLLECTING,
-    FINISHED
-};
 
 struct session_t
 {
@@ -101,9 +89,6 @@ private:
 
     // attestion counter for each prover
     int attestcount = 0;
-
-    // device status
-    status_e status = OFFLINE;
 
     // aggregated report at each delta h
     report_t aggreport;
@@ -177,6 +162,7 @@ private:
     void finalizeProofs();
 #ifdef ENERGY_TEST
     void updateMaxChildren();
+    double chooseTreeDelay();
 #endif
     
     //public:

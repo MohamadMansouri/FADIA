@@ -64,6 +64,7 @@ enum MSG : short
     CBUSYMSG,
     ENTXDONE, 
     ENRXDONE, 
+    ENMAC,
 };
 
 enum txrx_e : short
@@ -88,6 +89,20 @@ enum device_t : short
     PI2
 };
 
+enum status_e
+{
+    OFFLINE,
+    JOINING,
+    CHECKING,
+    READY, 
+    ATTESTING,
+    ATTESTING_CREATING,
+    CREATING,
+    COLLECTING,
+    FINISHED
+};
+
+
 class ADevice : public cSimpleModule
 {
 
@@ -98,6 +113,7 @@ protected:
     const double postponetime = PDELAY;
     const double timeoutresp = TIMEOUT_RSP;
     const double timeoutack = TIMEOUT_ACK;
+    const double timeoutup = TIMEOUT_UP;
     const double byterate = BYTERATE;
     device_t device = NA;
     size_t maxdepth; 
@@ -110,6 +126,9 @@ protected:
     bool crashed = false;
 #endif
     double range;
+
+    // device status
+    status_e status = OFFLINE;
 
 #ifdef ENERGY_TEST
     inet::power::SimpleEpEnergyStorage* energy;

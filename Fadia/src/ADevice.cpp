@@ -95,11 +95,12 @@ ADevice::handleMessage(cMessage *msg)
 
             // UPDATE
             case UPRQ:
-#ifndef RUNTIME_TEST
+#ifdef WIRELESS
                 if(isWithinRange<UpdateReq>(msg))
                     sendProver<UpdateReq>(msg);
                 else
                 {
+                    logInfo("Parent not within range, sending to collector instead!");
                     UpdateReq* smsg = check_and_cast<UpdateReq *> (msg);
                     smsg->setKind(UPRQF);
                     smsg->setDestination(getBaseID<cid_t>());
@@ -127,6 +128,7 @@ ADevice::handleMessage(cMessage *msg)
 #ifdef ENERGY_TEST                
             case ENTXDONE:
             case ENRXDONE:
+            case ENMAC:
                 handleDoneEnMsg(msg);
                 break;
 #endif
@@ -258,8 +260,12 @@ void
 ADevice::handleDoneEnMsg(cMessage* msg)
 {
     energy->updateResidualCapacity();
-    energy->totalPowerConsumption = inet::units::values::mW(IDLE_CONSUMPTION);
-    if(msg->getKind() == ENRXDONE)
+    if (status == FINISHED)
+        energy->totalPowerConsumption = inet::units::values::mW(IDLE_CONSUMPTION);
+    else
+        energy->totalPowerConsumption = inet::units::values::mW(LISTENING_CONSUMPTION);
+
+    if(msg->getKind() == ENRXDONE || msg->getKind() == ENMAC)
         delete msg;
     if((energy->getResidualEnergyCapacity()).get() <=0 )
     {

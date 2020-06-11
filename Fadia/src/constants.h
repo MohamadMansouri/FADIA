@@ -36,13 +36,21 @@
 #define MAX_CRASH 100
 
 #ifdef ENERGY_TEST
-#define TRANSMITION_CONSUMPTION 100
-#define RECEPTION_CONSUMPTION 10
-#define IDLE_CONSUMPTION 0.001
+#define TRANSMITION_CONSUMPTION 58.5
+#define RECEPTION_CONSUMPTION 65.4
+#define LISTENING_CONSUMPTION 65.4
+#define MCU_CONSUMPTION 5.4
+#define IDLE_CONSUMPTION 0.16
+
 #define CRITICAL_ENERGY 0.1
 #define FULL_ENERGY 0.9
 #define CHILDREN(_PER_) SLOPE(CRITICAL_ENERGY,0, FULL_ENERGY, MAXCHILDREN) * per + \
 						 INTERCEPT(CRITICAL_ENERGY,0, FULL_ENERGY, MAXCHILDREN)
+
+#define CRITICAL_ENERGYD 0
+#define FULL_ENERGYD 1 
+#define DELTAG(_PER_, _DELTAGMAX_) SLOPE(CRITICAL_ENERGYD,0, FULL_ENERGYD, _DELTAGMAX_) * per + \
+						 INTERCEPT(CRITICAL_ENERGYD,0, FULL_ENERGYD, _DELTAGMAX_)						 
 #endif //ENERGY_TEST
 
 
@@ -55,6 +63,7 @@
 #define BYTERATE BITRATE / 8
 #define TIMEOUT_ACK 2																	// timeout for acknowledgement to be received 2 s
 #define TIMEOUT_RSP 6																	// timeout for commitment response to be received 6 s
+#define TIMEOUT_UP 6																	// timeout for commitment response to be received 6 s
 #define HMAC_DELAY_S(_SIZE_) 1 * 0													// should never be used (raise an error)
 #define HMAC_DELAY_P(_SIZE_) 1 * 0													// should never be used (raise an error)
 #define HMAC_DELAY(_SIZE_) (0.000256944 * _SIZE_ + 0.037888889) * 0.001
@@ -68,6 +77,7 @@
 #define BYTERATE BITRATE / 8
 #define TIMEOUT_ACK 2																	// timeout for acknowledgement to be received 2 s
 #define TIMEOUT_RSP 6																	// timeout for commitment response to be received 6 s
+#define TIMEOUT_UP 6																	// timeout for commitment response to be received 6 s
 #define HMAC_DELAY_S(_SIZE_) 1 * 0													// should never be used (raise an error)
 #define HMAC_DELAY_P(_SIZE_) 1 * 0													// should never be used (raise an error)
 #define HMAC_DELAY(_SIZE_) (0.001210594 * _SIZE_ + 0.191260997) * 0.001
@@ -79,8 +89,9 @@
 #define PDELAY NDELAY / 4
 #define BITRATE 25.2 * 1024 															// bitrate 25.2 kbps
 #define BYTERATE BITRATE / 8
-#define TIMEOUT_ACK 2																	// timeout for acknowledgement to be received 2 s
+#define TIMEOUT_ACK 4																	// timeout for acknowledgement to be received 2 s
 #define TIMEOUT_RSP 6																	// timeout for commitment response to be received 6 s
+#define TIMEOUT_UP 6																	// timeout for commitment response to be received 6 s
 #define HMAC_DELAY_S(_SIZE_) (0.237098 * _SIZE_ + 55.6929) * 0.001
 #define HMAC_DELAY_P(_SIZE_) (0.000246304 * _SIZE_ + 0.0601183) * 0.001
 #define HMAC_DELAY(_SIZE_) 1 * 0													// should never be used (raise an error)
