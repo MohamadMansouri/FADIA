@@ -44,7 +44,15 @@ void SimpleEpEnergyStorage::initialize(int stage)
             if (!nodeStatus)
                 throw cRuntimeError("Cannot find node status");
         }
-        setResidualCapacity(J(par("initialCapacity")));
+        J initcap = J(par("initialCapacity"));
+        
+        if(initcap < J(0.0))
+            setResidualCapacity(J(0.0));
+        else if(initcap > nominalCapacity)
+            setResidualCapacity(nominalCapacity);
+        else setResidualCapacity(initcap);
+        
+
         scheduleTimer();
         WATCH(residualCapacity);
     }
