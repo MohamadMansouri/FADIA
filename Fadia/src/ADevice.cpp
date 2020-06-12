@@ -480,9 +480,9 @@ ADevice::getMacDelays()
 bool
 ADevice::checkRecordTime()
 {
-    if(simTime().dbl() >= 0 && simTime().dbl() <= deltah * 3 )
+    // if(simTime().dbl() >= 0 && simTime().dbl() <= deltah * 3 )
         return true;
-    return false;
+    // return false;
 }
 
 
