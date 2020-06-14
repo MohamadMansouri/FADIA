@@ -280,7 +280,7 @@ AProver::startAttestation()
     if(statadapt)
         d = chooseTreeDelay();
     else
-        d = uniform(0, deltag);
+        d = deltag;
 #else
     double d = uniform(0, deltag);
 #endif
