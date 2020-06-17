@@ -433,6 +433,20 @@ ADevice::isChannelBusy()
     return false;
 }
 
+int
+ADevice::connectedGates()
+{
+    int c = 0;
+    size_t gsize = gateSize("appio$o");
+    while(gsize > 0)
+    {
+        cGate* pgate = getParentModule()->gate("gate$o", --gsize);
+        if(pgate->isConnected())    
+            c++;
+    }
+    return c;
+}
+
 bool 
 ADevice::isChannelBusy(int far, int gid)
 {

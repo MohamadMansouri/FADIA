@@ -62,11 +62,17 @@ network Fadiatree
 //        visualizer: <default("IntegratedCanvasVisualizer")> like IIntegratedVisualizer if hasVisualizer() {
 //            @display("p=5,5");
 //        }
-   connections:
+   connections allowunconnected:
        collector[0].gate <--> C <--> prover[root].gate++;
        
        for i=0..numProvers - 1, for j=1..neighbors
        {
        		prover[i].gate++ <--> C <--> prover[neighbors*i+j].gate++ if neighbors*i+j < numProvers;
        }
+       
+//       for i=0..numProvers - 1, for j=1..neighbors
+//       {
+//            prover[i].gate++ <--> C <--> prover[int(floor(double(i/2)))*(neighbors+1) + 1].gate++ if prover[i].type == 2 && floor(double(i/2))*(neighbors+1) + 1 < numProvers;
+//       		prover[i].gate++ <--> C <--> prover[int(floor(double(i/2)))*(neighbors+1)+1+j].gate++ if prover[i].type == 3 && floor(double(i/2))*(neighbors+1)+1+j < numProvers;
+//       }
 }

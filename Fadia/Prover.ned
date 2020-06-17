@@ -30,7 +30,7 @@ simple AProver
         @statistic[crashtime](title="Crash Time"; source="crashTime"; record=vector);
     gates:
         input radioIn @directIn;
-        inout appio[];
+        inout appio[] @loose;
 }
 
 module Prover extends NodeBase
@@ -45,7 +45,7 @@ module Prover extends NodeBase
     gates:
         //        inout gate[]	@allowunconnected;
         input radioIn @directIn;
-		inout gate[neighbors + 1] @loose;
+		inout gate[neighbors * 2 + 1] @loose;
     submodules:
         proverapp: AProver {
 
@@ -53,7 +53,7 @@ module Prover extends NodeBase
         }
     connections:
         proverapp.radioIn <-- radioIn;
-        for i=0..neighbors {
+        for i=0..sizeof(gate) - 1 {
 			proverapp.appio++ <--> gate[i];
         }
 

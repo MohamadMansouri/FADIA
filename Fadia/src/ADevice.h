@@ -121,9 +121,12 @@ protected:
     double deltah = DELTAH; 
     double deltag;
     size_t aggsize;
+    bool crashed = false;
+#ifdef RUNTIME_TEST
+    size_t gatsz = 0;
+#endif    
 #ifdef ENERGY_TEST    
     bool statadapt;
-    bool crashed = false;
 #endif
     double range;
 
@@ -247,7 +250,7 @@ protected:
     bool isChannelBusy();
     bool checkRecordTime();
     void handleDoneEnMsg(cMessage* msg);
-
+    int connectedGates();
 
 protected:
     virtual void handleMessage(cMessage *msg) override;
