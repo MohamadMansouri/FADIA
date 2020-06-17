@@ -70,7 +70,13 @@ AProver::initialize()
 #ifdef ENERGY_TEST
     statadapt = ((bool) getSystemModule()->par("statadapt"));
 #endif
+#if SCENARIO == PASTA
+    device = NA;
+#elif SCENARIO == SALADS
+    device = NA;
+#elif SCENARIO == FADIA
     device = ((device_t) getParentModule()->par("type").intValue());
+#endif
     // maxdepth = ((unsigned int) getParentModule()->par("maxdepth"));
     deltag = deltah - (timeoutresp + timeoutack) * maxdepth - timeoutup; 
 
@@ -116,6 +122,7 @@ AProver::initialize()
     startmsg = new cMessage("start", ATTEST);
     scheduleAt(simTime(), startmsg);   
     status = JOINING;
+
 #else
     status = FINISHED;
     startmsg = new cMessage("start", ATTEST);
@@ -273,6 +280,12 @@ AProver::startAttestation()
 
 #endif
 
+#ifdef TREE
+    gatsz = connectedGates();
+    if(gatsz == MINGSIZE)
+        maxchildren = 0;
+#endif
+
     scheduleAt(simTime() + deltah, attesttimer);
 #ifndef RUNTIME_TEST
 #ifdef ENERGY_TEST
@@ -389,9 +402,11 @@ AProver::sendCommitResp(uid_t target, treeid_t tid)
     crespmsg->setByteLength(CRP_SIZE);
 
     double macd = macDelay<CommitResp>(crespmsg) + getMacDelays();
+#ifdef ENERGY_TEST
     cMessage* enmacmsg = new cMessage("MAC Energy consumption");
     enmacmsg->setKind(ENMAC);
     scheduleAt(simTime() + macd , enmacmsg);
+#endif    
     scheduleAt(simTime() +  macd , crespmsg);
 
     cacktomsg->setDevice(target);
@@ -688,9 +703,13 @@ AProver::sendCommitAck(uid_t target, treeid_t tid)
     cackmsg->setMac(generateMAC(cackmsg, kid));
     cackmsg->setByteLength(CAK_SIZE);
     double macd = macDelay<CommitAck>(cackmsg) + getMacDelays();
+
+#ifdef ENERGY_TEST    
     cMessage* enmacmsg = new cMessage("MAC Energy consumption");
     enmacmsg->setKind(ENMAC);
     scheduleAt(simTime() + macd , enmacmsg);
+#endif
+
     scheduleAt(simTime() + macd , cackmsg);
 
     
@@ -771,9 +790,11 @@ AProver::sendUpReq(treeid_t tid)
     }
 
     double macd = macDelay<UpdateReq>(msg) + getMacDelays();
+#ifdef ENERGY_TEST
     cMessage* enmacmsg = new cMessage("MAC Energy consumption");
     enmacmsg->setKind(ENMAC);
     scheduleAt(simTime() + macd , enmacmsg);
+#endif
     scheduleAt(simTime() + macd, msg);
 
     if(csessions[NOID])
@@ -953,9 +974,14 @@ AProver::handleUpReq(cMessage* msg)
     if(csessions[senderid])
         delete csessions[senderid];
     csessions.erase(senderid);
+#ifdef TREE
+    --gatsz;
+    if(csessions.size() == 1 &&  gatsz == MINGSIZE)
+        sendUpReq(tid);
+#else
     if(csessions.size() == 1)
         sendUpReq(tid);
-
+#endif
     delete msg;
 }
 
