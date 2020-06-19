@@ -14,6 +14,7 @@
 #include <iomanip>
 #include <type_traits>
 #include <assert.h>
+#include <algorithm>
 
 #include <fstream>
 
@@ -50,6 +51,7 @@
 // The module class needs to be registered with OMNeT++
 Define_Module(AProver);
 
+double AProver::rvkd;
 
 void
 AProver::initialize()
@@ -61,6 +63,7 @@ AProver::initialize()
     txsig = registerSignal("dataSent");
     rxsig = registerSignal("dataRcvd");
     crashsig = registerSignal("crashTime");
+    revokesig = registerSignal("keyRevoked");
 
     // deltah = ((unsigned int) getSystemModule()->par("htime"));
     range = ((double) getParentModule()->par("range"));
@@ -70,6 +73,7 @@ AProver::initialize()
 #ifdef ENERGY_TEST
     statadapt = ((bool) getSystemModule()->par("statadapt"));
 #endif
+    int drop = ((int) getSystemModule()->par("drop"));
 #if SCENARIO == PASTA
     device = NA;
 #elif SCENARIO == SALADS
@@ -127,6 +131,15 @@ AProver::initialize()
     status = FINISHED;
     startmsg = new cMessage("start", ATTEST);
     scheduleAt(simTime() + uniform(0,deltah), startmsg);   
+    if(UId == 1)
+    {
+        rvkd = uniform(deltah,deltah * 2);
+    }
+    if(UId <= drop)
+    {
+        cMessage* rvkmsg = new cMessage("takeoff", REVOKE);
+        scheduleAt(simTime() + rvkd, rvkmsg);   
+    }
 #endif
 }
 
@@ -988,8 +1001,53 @@ AProver::handleUpReq(cMessage* msg)
 void
 AProver::handleRevReq(cMessage* msg)
 {
+    RevokeReq* rmsg = check_and_cast<RevokeReq *>(msg); 
+
+
+
+    if((uid_t)rmsg->getDestination() != UId)
+    {
+        logError("handleRevokeReq: wrong destination!!!");
+        delete msg;
+        return;
+    }
+
+    if(!checkMAC<RevokeReq>(rmsg,0))    
+    {
+        logDebug("handleCommitResp: Invalid MAC!!!");
+        delete msg;
+        return;
+    }
+
+
+    size_t size = rmsg->getKidArraySize();
+    emit(revokesig, (long)size);
+
+    delete msg;
 
 }
+
+void
+AProver::sendRevReq(uid_t target, vector<keyid_t> kids)
+{
+
+    logInfo("Going offline! ByeBye!!");
+
+    status = OFFLINE;
+
+    RevokeReq* rreq = new RevokeReq();
+    rreq->setKind(RVKRQ);
+    rreq->setKidArraySize(KeyRing.size());
+    int i=0;
+    for(auto it = KeyRing.begin(); it != KeyRing.end(); ++it)
+    {
+        rreq->setKid(i++,it->first);
+    }
+    rreq->setByteLength(RVK_SIZE(KeyRing.size()));
+    cModule* mod = getSystemModule()->getSubmodule("collector", 0);
+    sendDirect(rreq, mod, "radioIn");
+}
+
 
 // CHLNG
 // AProver::generateChallenge()
@@ -1162,6 +1220,29 @@ AProver::chooseTreeDelay()
 }
 #endif
 
+vector<keyid_t> AProver::getKeyRingIds()
+{
+    vector<keyid_t> v1;   
+    for(auto it = this->KeyRing.begin(); it != this->KeyRing.end(); ++it)
+    {
+        v1.push_back(it->first);
+    }
+    return v1;
+
+}
+
+vector<keyid_t> AProver::sharedKeys(vector<keyid_t> &v2)
+{
+    vector<keyid_t> v3, v1 = getKeyRingIds();
+
+    sort(v1.begin(), v1.end());
+    sort(v2.begin(), v2.end());
+
+    set_intersection(v1.begin(),v1.end(),
+                          v2.begin(),v2.end(),
+                          back_inserter(v3));
+    return v3;
+}
 
 void 
 AProver::finish()

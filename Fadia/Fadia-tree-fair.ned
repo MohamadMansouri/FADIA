@@ -18,7 +18,7 @@
 //import inet.physicallayer.energyconsumer.SensorStateBasedEpEnergyConsumer;
 import inet.visualizer.contract.IIntegratedVisualizer;
 
-network Fadiatree
+network Fadiatreefair
 {
     parameters:
         int numCollectors;
@@ -65,14 +65,18 @@ network Fadiatree
    connections allowunconnected:
        collector[0].gate <--> C <--> prover[root].gate++;
        
-       for i=0..numProvers - 1, for j=1..neighbors
-       {
-       		prover[i].gate++ <--> C <--> prover[neighbors*i+j].gate++ if neighbors*i+j < numProvers;
-       }
-       
 //       for i=0..numProvers - 1, for j=1..neighbors
 //       {
-//            prover[i].gate++ <--> C <--> prover[int(floor(double(i/2)))*(neighbors+1) + 1].gate++ if prover[i].type == 2 && floor(double(i/2))*(neighbors+1) + 1 < numProvers;
-//       		prover[i].gate++ <--> C <--> prover[int(floor(double(i/2)))*(neighbors+1)+1+j].gate++ if prover[i].type == 3 && floor(double(i/2))*(neighbors+1)+1+j < numProvers;
+//       		prover[i].gate++ <--> C <--> prover[neighbors*i+j].gate++ if neighbors*i+j < numProvers;
 //       }
+
+	   for i=0..numProvers - 1
+	   {
+	        prover[i].gate++ <--> C <--> prover[int(floor(double(i/2)))*(neighbors+1) + 1].gate++ if prover[i].type == 2 && floor(double(i/2))*(neighbors+1) + 1 < numProvers;
+	   }
+       
+       for i=0..numProvers - 1, for j=1..neighbors
+       {
+       		prover[i].gate++ <--> C <--> prover[int(floor(double(i/2)))*(neighbors+1)+1+j].gate++ if prover[i].type == 3 && floor(double(i/2))*(neighbors+1)+1+j < numProvers;
+       }
 }

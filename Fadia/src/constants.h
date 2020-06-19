@@ -2,14 +2,15 @@
 #define CONTSANTS_H_
 
 
-#define RUNTIME_TEST
+// #define RUNTIME_TEST
 // #define ENERGY_TEST
 
 #define PASTA 0
 #define SALADS 1 
 #define FADIA 2
 
-#define SCENARIO PASTA
+#define SCENARIO FADIA
+// #define TREE 
 
 #define REALLEN(_N_,_R_) _N_* _R_ / (1 + _R_)  
 #define FAKELEN(_N_,_R_) _N_ / (1 + _R_)  
@@ -20,6 +21,7 @@
 #define CRP_SIZE 48
 #define CAK_SIZE 44
 #define URQ_SIZE(_RSIZE_, _MSIZE_) 44 + (_RSIZE_ * 4 * 2) +  (_RSIZE_ * 1/8)  + (32 * _MSIZE_)
+#define RVK_SIZE(_KSIZE_) 32 + (_KSIZE_ * 4) 
 
 
 #define SLOPE(X1,Y1,X2,Y2) (Y2 - Y1) / (X2 - X1)
@@ -63,7 +65,7 @@
 #define BITRATE 12.51 * 1024 * 1024																		// bitrate not needed (configured in the channel)
 #define BYTERATE BITRATE / 8
 #define TIMEOUT_ACK 999																	// timeout for acknowledgement to be received 2 s
-#define TIMEOUT_RSP 0.1																	// timeout for commitment response to be received 6 s
+#define TIMEOUT_RSP 11																	// timeout for commitment response to be received 6 s
 #define TIMEOUT_UP 999																	// timeout for commitment response to be received 6 s
 #define HMAC_DELAY_S(_SIZE_) 1 * 0													// should never be used (raise an error)
 #define HMAC_DELAY_P(_SIZE_) 1 * 0													// should never be used (raise an error)
@@ -90,9 +92,9 @@
 #define PDELAY NDELAY / 4
 #define BITRATE 25.2 * 1024 															// bitrate 25.2 kbps
 #define BYTERATE BITRATE / 8
-#define TIMEOUT_ACK 4																	// timeout for acknowledgement to be received 2 s
-#define TIMEOUT_RSP 6																	// timeout for commitment response to be received 6 s
-#define TIMEOUT_UP 6																	// timeout for commitment response to be received 6 s
+#define TIMEOUT_ACK 1																	// timeout for acknowledgement to be received 2 s
+#define TIMEOUT_RSP 3																	// timeout for commitment response to be received 6 s
+#define TIMEOUT_UP 1																	// timeout for commitment response to be received 6 s
 #define HMAC_DELAY_S(_SIZE_) (0.237098 * _SIZE_ + 55.6929) * 0.001
 #define HMAC_DELAY_P(_SIZE_) (0.000246304 * _SIZE_ + 0.0601183) * 0.001
 #define HMAC_DELAY(_SIZE_) 1 / 0													// should never be used (raise an error)

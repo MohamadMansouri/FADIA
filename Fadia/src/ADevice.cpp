@@ -54,6 +54,11 @@ ADevice::handleMessage(cMessage *msg)
             //     logInfo("Sending Updates to my parent");
             //     sendUpReq();
             //     break;
+            case REVOKE:
+                logInfo("Revoking a device");
+                sendRevReq(0, vector<uid_t>());
+                delete msg;
+                break;
             case SYNC:
                 logInfo("Synchronizating with other collectors");
                 sendSyncReq();
@@ -84,7 +89,10 @@ ADevice::handleMessage(cMessage *msg)
                 break;
             case CMAK: 
                 (void)sendProver<CommitAck>(msg);
+                break;
 
+            case RVKRQ:
+                sendProver<RevokeReq>(msg);
                 break;
             case CMRPTO: 
                 handleCommitRespTimeOut(msg);
@@ -171,6 +179,9 @@ ADevice::handleMessage(cMessage *msg)
         case UPRQF:
             updateGates<UpdateReq>(msg);
             handleUpMsg(msg);
+            break;
+        case RVKRQ:
+            handleRevMsg(msg);
             break;
         case UNKOWN:
         default:
