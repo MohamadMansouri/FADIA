@@ -25,6 +25,8 @@ simple ACollector
         @statistic[elapsedtimesig](title="Elapsed Time"; source="elapsedTime"; record=last);
         @signal[reportSize](type=unsigned long);
         @statistic[reportsize](title="Report Size"; source="reportSize"; record=vector);
+        @signal[keyRevoked](type=long);
+        @statistic[keyrevokedsig](title="Key revoked"; source="keyRevoked"; record=vector);
         
     gates:
         input radioIn @directIn;

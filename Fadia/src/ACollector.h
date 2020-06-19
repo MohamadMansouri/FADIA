@@ -93,8 +93,8 @@ private:
     virtual void handleUpdateTimeOut(cMessage* msg) depreciated;
 
     // Revoke
-    virtual void handleRevReq(cMessage* msg) ignored(msg);
-    virtual void sendRevReq(uid_t comdev) override;
+    virtual void handleRevReq(cMessage* msg) override;
+    virtual void sendRevReq(uid_t target, vector<keyid_t> kids) override;
 
     // Sync
     virtual void sendSyncReq() override;
@@ -110,6 +110,7 @@ private:
     int chooseProve(double p);
     int chooseVerify(double p);
     void updateProverKey(uid_t uid);
+    bool isChannelBusyServ(int far, int gid, uid_t target);
 
 protected:
     virtual void initialize() override;

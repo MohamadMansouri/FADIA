@@ -22,6 +22,7 @@
 #include "Join_m.h"
 #include "Attest_m.h"
 #include "Update_m.h"
+#include "Revoke_m.h"
 #include "constants.h"
 
 #include "../inet/src/inet/power/contract/IEpEnergyStorage.h"
@@ -160,6 +161,7 @@ protected:
     simsignal_t txsig;
     simsignal_t rxsig;
     simsignal_t crashsig;
+    simsignal_t revokesig;
 
     txrx_e txrxstat = DIDLE;
     cstat_e chanstat = CIDLE;
@@ -219,7 +221,7 @@ protected:
     // Revoke
     virtual void handleRevMsg(cMessage* msg);
     virtual void handleRevReq(cMessage* msg) = 0;
-    virtual void sendRevReq(uid_t comdev) = 0;
+    virtual void sendRevReq(uid_t target, vector<keyid_t> kids) = 0;
 
     // Sync
     virtual void handleSyncMsg(cMessage* msg);
@@ -261,6 +263,7 @@ public:
     ~ADevice() {}
     bool isTransmiting() {return txrxstat == TRANSMITING;};
     bool isChannelBusy(int far, int gid);
+    virtual bool isChannelBusyServ(int far, int gid, uid_t target) = 0;
 };
 
 #endif /* ADEVICE_H_ */

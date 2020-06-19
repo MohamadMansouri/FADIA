@@ -107,6 +107,8 @@ private:
     CommitTimeOut* cresptomsg = nullptr;
     CommitTimeOut* cacktomsg = nullptr;
 
+    static double rvkd;
+
     // Inits
     virtual void initUID() override;
     virtual void initKeyRing() override;
@@ -140,7 +142,7 @@ private:
 
     // Revoke
     virtual void handleRevReq(cMessage* msg) override;
-    virtual void sendRevReq(uid_t comdev) depreciated;
+    virtual void sendRevReq(uid_t target, vector<keyid_t> kids) override;
 
     // Sync
     virtual void sendSyncReq() depreciated;
@@ -164,6 +166,8 @@ private:
     void updateMaxChildren();
     double chooseTreeDelay();
 #endif
+    bool isChannelBusyServ(int far, int gid, uid_t target) {return false;}
+
     
     //public:
 //    AProver();
@@ -176,6 +180,9 @@ protected:
 public:
     AProver() {}
     ~AProver() {}
+    vector<keyid_t> sharedKeys(vector<keyid_t> &keyids);
+    uid_t getUID() {return UId;}
+    vector<keyid_t> getKeyRingIds();
 };
 
 #endif

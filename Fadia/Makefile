@@ -39,7 +39,8 @@ OBJS = \
     $O/Commit_m.o \
     $O/Join_m.o \
     $O/NeighborDiscovery_m.o \
-    $O/Update_m.o
+    $O/Update_m.o \
+    $O/src/Revoke_m.o
 
 # Message files
 MSGFILES = \
@@ -47,7 +48,8 @@ MSGFILES = \
     Commit.msg \
     Join.msg \
     NeighborDiscovery.msg \
-    Update.msg
+    Update.msg \
+    src/Revoke.msg
 
 # SM files
 SMFILES =

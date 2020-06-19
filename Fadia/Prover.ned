@@ -28,6 +28,9 @@ simple AProver
         @statistic[datarcvd](title="Data Received"; source=dataRcvd; record=vector);
         @signal[crashTime](type=double);
         @statistic[crashtime](title="Crash Time"; source="crashTime"; record=vector);
+        @signal[keyRevoked](type=long);
+        @statistic[keyrevokedsig](title="Key revoked"; source="keyRevoked"; record=vector);
+        
     gates:
         input radioIn @directIn;
         inout appio[] @loose;
@@ -45,7 +48,7 @@ module Prover extends NodeBase
     gates:
         //        inout gate[]	@allowunconnected;
         input radioIn @directIn;
-		inout gate[neighbors * 2 + 1] @loose;
+		inout gate[neighbors + 1] @loose;
     submodules:
         proverapp: AProver {
 

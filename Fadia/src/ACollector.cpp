@@ -17,6 +17,7 @@
 #include "Join_m.h"
 #include "Attest_m.h"
 #include "Update_m.h"
+#include "AProver.h"
 
 using namespace omnetpp;
 
@@ -31,6 +32,7 @@ void ACollector::initialize()
     device = SERV;
     elapsedtimesig = registerSignal("elapsedTime");
     reportsizesig = registerSignal("reportSize");
+    revokesig = registerSignal("keyRevoked");
     // initPorverKeys();
 }
 
@@ -149,10 +151,52 @@ ACollector::handleUpReq(cMessage* msg)
 }
 
 void
-ACollector::sendRevReq(uid_t comdev)
+ACollector::sendRevReq(uid_t target, vector<keyid_t> kids)
 {
-
+    RevokeReq* msg = new RevokeReq();
+    msg->setKind(RVKRQ);
+    msg->setDestination(target);
+    msg->setKidArraySize(kids.size());
+    for(int i = 0; i < kids.size(); ++i)
+    {
+        msg->setKid(i, kids[i]);
+    }
+    msg->setMac(generateMAC(msg, 0));
+    msg->setByteLength(RVK_SIZE(kids.size()));
+    double macd = macDelay<RevokeReq>(msg);
+    scheduleAt(simTime() + macd, msg);
 }
+
+void
+ACollector::handleRevReq(cMessage* msg)
+{
+    emit(revokesig,-1);
+
+    RevokeReq* rreq = check_and_cast<RevokeReq*>(msg);
+    size_t size = rreq->getKidArraySize();
+    vector<keyid_t> keyids;
+    while(size--)
+    {
+        keyids.push_back(rreq->getKid(size));
+    }
+
+
+    int s = getSystemModule()->getSubmodule("prover", 0)->getVectorSize();
+    assert(s);
+
+
+    for(int i = 0; i < s; ++i)
+    {
+        AProver* mod =  check_and_cast<AProver*>(getSystemModule()->getSubmodule("prover", i)->getSubmodule("proverapp"));
+        vector<keyid_t> revkids = mod->sharedKeys(keyids);
+        if(!revkids.empty())
+        {
+            sendRevReq(mod->getUID(), revkids);
+        }
+    }    
+    delete msg; 
+}
+
 
 void
 ACollector::sendSyncReq()
@@ -223,6 +267,13 @@ void ACollector::updateProverKey(uid_t uid)
 {
     // TODO: compute ckey from proverKeyIds
     proverKeys[uid] = 0xCAFED00D;
+}
+
+bool  ACollector::isChannelBusyServ(int far, int gid, uid_t target)
+{
+        int i = target - getBaseID<uid_t>();
+        AProver* mod =  check_and_cast<AProver*>(getSystemModule()->getSubmodule("prover", i)->getSubmodule("proverapp"));
+        return mod->isChannelBusy(far,gid);
 }
 
 void ACollector::finish()
