@@ -2,15 +2,17 @@
 #define CONTSANTS_H_
 
 
-// #define RUNTIME_TEST
+#define RUNTIME_TEST
 // #define ENERGY_TEST
+// #define REVOKE_TEST
 
 #define PASTA 0
 #define SALADS 1 
 #define FADIA 2
+#define PADS 3
 
-#define SCENARIO FADIA
-// #define TREE 
+#define SCENARIO PASTA
+#define TREE 
 
 #define REALLEN(_N_,_R_) _N_* _R_ / (1 + _R_)  
 #define FAKELEN(_N_,_R_) _N_ / (1 + _R_)  
@@ -33,7 +35,7 @@
 #endif // RUNTIME_TEST
 
 #define MAXCHILDREN 20
-#define NEIGHBOR_DISTANCE 2
+#define NEIGHBOR_DISTANCE 1
 #define DELTAH 600
 #define MAX_CRASH 1000
 #define MINGSIZE 1
@@ -73,6 +75,20 @@
 #define FIRMWARE_CHECK_DELAY 13.171 * 0.001
 #define FIRMWARE_CHECK_DELAY_S 1 / 0												// should never be used (raise an error)
 #define FIRMWARE_CHECK_DELAY_P 1 / 0												// should never be used (raise an error)
+#elif SCENARIO == PADS
+#define NDELAY 0.001																	// end-to-end delay 15 ms
+#define PDELAY NDELAY / 4
+#define BITRATE 250 * 1024 																// bitrate 35 kbps
+#define BYTERATE BITRATE / 8
+#define TIMEOUT_ACK 999																	// timeout for acknowledgement to be received 2 s
+#define TIMEOUT_RSP 111																	// timeout for commitment response to be received 6 s
+#define TIMEOUT_UP 999																	// timeout for commitment response to be received 6 s
+#define HMAC_DELAY_S(_SIZE_) 1 / 0													// should never be used (raise an error)
+#define HMAC_DELAY_P(_SIZE_) 1 / 0													// should never be used (raise an error)
+#define HMAC_DELAY(_SIZE_) 48 * 0.001
+#define FIRMWARE_CHECK_DELAY 187 * 0.001
+#define FIRMWARE_CHECK_DELAY_S 1 / 0												// should never be used (raise an error)
+#define FIRMWARE_CHECK_DELAY_P 1 / 0												// should never be used (raise an error)
 #elif SCENARIO == SALADS
 #define NDELAY 0.015																	// end-to-end delay 15 ms
 #define PDELAY NDELAY / 4
@@ -92,9 +108,9 @@
 #define PDELAY NDELAY / 4
 #define BITRATE 25.2 * 1024 															// bitrate 25.2 kbps
 #define BYTERATE BITRATE / 8
-#define TIMEOUT_ACK 1																	// timeout for acknowledgement to be received 2 s
-#define TIMEOUT_RSP 3																	// timeout for commitment response to be received 6 s
-#define TIMEOUT_UP 1																	// timeout for commitment response to be received 6 s
+#define TIMEOUT_ACK 999																	// timeout for acknowledgement to be received 2 s
+#define TIMEOUT_RSP 111																	// timeout for commitment response to be received 6 s
+#define TIMEOUT_UP 999																	// timeout for commitment response to be received 6 s
 #define HMAC_DELAY_S(_SIZE_) (0.237098 * _SIZE_ + 55.6929) * 0.001
 #define HMAC_DELAY_P(_SIZE_) (0.000246304 * _SIZE_ + 0.0601183) * 0.001
 #define HMAC_DELAY(_SIZE_) 1 / 0													// should never be used (raise an error)

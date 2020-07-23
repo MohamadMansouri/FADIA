@@ -73,13 +73,13 @@ AProver::initialize()
 #ifdef ENERGY_TEST
     statadapt = ((bool) getSystemModule()->par("statadapt"));
 #endif
+#ifdef REVOKE_TEST
     int drop = ((int) getSystemModule()->par("drop"));
-#if SCENARIO == PASTA
-    device = NA;
-#elif SCENARIO == SALADS
-    device = NA;
-#elif SCENARIO == FADIA
+#endif
+#if SCENARIO == FADIA
     device = ((device_t) getParentModule()->par("type").intValue());
+#else
+    device = NA;
 #endif
     // maxdepth = ((unsigned int) getParentModule()->par("maxdepth"));
     deltag = deltah - (timeoutresp + timeoutack) * maxdepth - timeoutup; 
@@ -131,6 +131,7 @@ AProver::initialize()
     status = FINISHED;
     startmsg = new cMessage("start", ATTEST);
     scheduleAt(simTime() + uniform(0,deltah), startmsg);   
+#ifdef REVOKE_TEST
     if(UId == 1)
     {
         rvkd = uniform(deltah,deltah * 2);
@@ -140,6 +141,7 @@ AProver::initialize()
         cMessage* rvkmsg = new cMessage("takeoff", REVOKE);
         scheduleAt(simTime() + rvkd, rvkmsg);   
     }
+#endif
 #endif
 }
 
