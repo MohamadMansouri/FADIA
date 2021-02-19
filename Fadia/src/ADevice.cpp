@@ -217,10 +217,10 @@ ADevice::handleCommitMsg(cMessage* msg)
 {
     cPacket* pkt = (cPacket*) msg;
     double bl = pkt->getByteLength();
-    if(checkRecordTime() && device != SERV)
-    {
-        emit(rxsig, bl);
-    }    
+    // if(checkRecordTime() && device != SERV)
+    // {
+    //     emit(rxsig, bl);
+    // }    
     switch(msg->getKind())
     {
     case CMRQ: 
@@ -505,9 +505,9 @@ ADevice::getMacDelays()
 bool
 ADevice::checkRecordTime()
 {
-    // if(simTime().dbl() >= 0 && simTime().dbl() <= deltah * 3 )
+    if(simTime().dbl() >= 0 && simTime().dbl() <= deltah * 6 )
         return true;
-    // return false;
+    return false;
 }
 
 

@@ -310,9 +310,9 @@ AProver::startAttestation()
     else
         d = deltag;
 #else
-    double d = uniform(0, deltag);
+    // double d = uniform(0, deltag);
 #endif
-    scheduleAt(simTime() + checkFirmwareDelay() + d, mktreetimer);
+    scheduleAt(simTime() + checkFirmwareDelay() + deltag, mktreetimer);
 #endif
     scheduleAt(simTime() + checkFirmwareDelay() , checkdelaymsg);
 
@@ -351,6 +351,14 @@ AProver::handleCommitReq(cMessage* msg)
         delete msg;
         return;
     }
+
+    cPacket* pkt = (cPacket*) msg;
+    double bl = pkt->getByteLength();
+
+    if(checkRecordTime() && device != SERV)
+    {
+        emit(rxsig, bl);
+    }  
 
 #ifdef ENERGY_TEST
     if(energy)
@@ -440,6 +448,13 @@ AProver::handleCommitAck(cMessage* msg)
 
     logDebug("Received a commitment acknowledgment from (UID = " + to_string(senderid) + ")");
 
+    cPacket* pkt = (cPacket*) msg;
+    double bl = pkt->getByteLength();
+    
+    if(checkRecordTime() && device != SERV)
+    {
+        emit(rxsig, bl);
+    }  
 #ifdef ENERGY_TEST
     if(energy)
     {
@@ -643,6 +658,14 @@ AProver::handleCommitResp(cMessage* msg)
         return;
     }
 
+    cPacket* pkt = (cPacket*) msg;
+    double bl = pkt->getByteLength();
+
+    if(checkRecordTime() && device != SERV)
+    {
+        emit(rxsig, bl);
+    }  
+
 #ifdef ENERGY_TEST
     if(energy)
     {
@@ -793,7 +816,7 @@ AProver::sendUpReq(treeid_t tid)
         msg->setProof(j++,*it);
     }
     msg->setMac(generateMAC(msg, psessions.second->keyID));
-    msg->setByteLength(URQ_SIZE(aggreport.size - aggreport.sepsize,j));
+    msg->setByteLength(URQ_SIZE(aggreport.size,j));
 
     if(!psessions.first)
     {
