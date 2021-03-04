@@ -2,8 +2,8 @@
 #define CONTSANTS_H_
 
 
-#define RUNTIME_TEST
-// #define ENERGY_TEST
+// #define RUNTIME_TEST
+#define ENERGY_TEST
 // #define REVOKE_TEST
 
 #define PASTA 0
@@ -11,8 +11,8 @@
 #define FADIA 2
 #define PADS 3
 
-#define SCENARIO PASTA
-#define TREE 
+#define SCENARIO FADIA
+// #define TREE 
 
 #define REALLEN(_N_,_R_) _N_* _R_ / (1 + _R_)  
 #define FAKELEN(_N_,_R_) _N_ / (1 + _R_)  
@@ -22,7 +22,7 @@
 #define CRQ_SIZE(_RSIZE_) 12 + _RSIZE_ * 4
 #define CRP_SIZE 48
 #define CAK_SIZE 44
-#define URQ_SIZE(_RSIZE_, _MSIZE_) 44 + (_RSIZE_ * 4 * 2) +  (_RSIZE_ * 1/8)  + (32 * _MSIZE_)
+#define URQ_SIZE(_RSIZE_, _MSIZE_) 44 + (_RSIZE_ * 4 * 2*0) +   (32 * _MSIZE_)
 #define RVK_SIZE(_KSIZE_) 32 + (_KSIZE_ * 4) 
 
 
