@@ -36,7 +36,7 @@
 
 #define MAXCHILDREN 20
 #define NEIGHBOR_DISTANCE 2
-#define DELTAH 300
+#define DELTAH 600
 #define MAX_CRASH 1000
 #define MINGSIZE 1
 
@@ -108,9 +108,9 @@
 #define PDELAY NDELAY / 4
 #define BITRATE 25.2 * 1024 															// bitrate 25.2 kbps
 #define BYTERATE BITRATE / 8
-#define TIMEOUT_ACK 999																	// timeout for acknowledgement to be received 2 s
-#define TIMEOUT_RSP 111																	// timeout for commitment response to be received 6 s
-#define TIMEOUT_UP 999																	// timeout for commitment response to be received 6 s
+#define TIMEOUT_ACK 4																	// timeout for acknowledgement to be received 2 s
+#define TIMEOUT_RSP 12																	// timeout for commitment response to be received 6 s
+#define TIMEOUT_UP 12																	// timeout for commitment response to be received 6 s
 #define HMAC_DELAY_S(_SIZE_) (0.237098 * _SIZE_ + 55.6929) * 0.001
 #define HMAC_DELAY_P(_SIZE_) (0.000246304 * _SIZE_ + 0.0601183) * 0.001
 #define HMAC_DELAY(_SIZE_) 1 / 0													// should never be used (raise an error)
