@@ -312,7 +312,7 @@ AProver::startAttestation()
 #else
     // double d = uniform(0, deltag);
 #endif
-    scheduleAt(simTime() + checkFirmwareDelay() + deltag, mktreetimer);
+    scheduleAt(simTime() + checkFirmwareDelay() + d, mktreetimer);
 #endif
     scheduleAt(simTime() + checkFirmwareDelay() , checkdelaymsg);
 
