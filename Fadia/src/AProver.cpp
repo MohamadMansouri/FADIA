@@ -72,6 +72,7 @@ AProver::initialize()
     maxdepth = ((size_t) getSystemModule()->par("maxdepth"));
 #ifdef ENERGY_TEST
     statadapt = ((bool) getSystemModule()->par("statadapt"));
+    selfish = ((bool) getParentModule()->par("selfish"));
 #endif
 #ifdef REVOKE_TEST
     int drop = ((int) getSystemModule()->par("drop"));
@@ -1226,6 +1227,11 @@ AProver::finalizeProofs()
 void
 AProver::updateMaxChildren()
 {
+    if(selfish)
+    {
+        maxchildren = 0;
+        return;
+    }
 
     double per = inet::power::unit(energy->getResidualEnergyCapacity() / energy->getNominalEnergyCapacity()).get();
     double v = CHILDREN(per);
@@ -1237,6 +1243,10 @@ AProver::updateMaxChildren()
 double
 AProver::chooseTreeDelay()
 {
+    if(selfish)
+    {
+        return 0;
+    }
 
     double per = inet::power::unit(energy->getResidualEnergyCapacity() / energy->getNominalEnergyCapacity()).get();
     double v = DELTAG(per,deltag);
