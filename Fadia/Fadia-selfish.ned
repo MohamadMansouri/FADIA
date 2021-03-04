@@ -23,6 +23,7 @@ network Fadiaselfish
     parameters:
         int numCollectors;
         int numProvers;
+        int numself;
         double connectionProb = default(1);
         int keyRingSize;
         int keyPoolSize;

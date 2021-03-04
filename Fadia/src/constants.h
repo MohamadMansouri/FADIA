@@ -37,7 +37,7 @@
 #define MAXCHILDREN 20
 #define NEIGHBOR_DISTANCE 2
 #define DELTAH 600
-#define MAX_CRASH 1000
+#define MAX_CRASH 5
 #define MINGSIZE 1
 
 #ifdef ENERGY_TEST
