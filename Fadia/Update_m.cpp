@@ -1,5 +1,5 @@
 //
-// Generated file, do not edit! Created by nedtool 5.6 from src/Revoke.msg.
+// Generated file, do not edit! Created by nedtool 5.6 from Update.msg.
 //
 
 // Disable warnings about unused variables, empty switch stmts, etc:
@@ -26,7 +26,7 @@
 
 #include <iostream>
 #include <sstream>
-#include "Revoke_m.h"
+#include "Update_m.h"
 
 namespace omnetpp {
 
@@ -177,29 +177,41 @@ inline std::ostream& operator<<(std::ostream& out, const std::vector<T,A>& vec)
     return out;
 }
 
-Register_Class(RevokeReq)
+Register_Class(UpdateReq)
 
-RevokeReq::RevokeReq(const char *name, short kind) : ::omnetpp::cPacket(name,kind)
+UpdateReq::UpdateReq(const char *name, short kind) : ::omnetpp::cPacket(name,kind)
 {
+    this->source = 0;
     this->destination = 0;
-    kid_arraysize = 0;
-    this->kid = 0;
+    report1_arraysize = 0;
+    this->report1 = 0;
+    report2_arraysize = 0;
+    this->report2 = 0;
+    this->treeID = 0;
     this->mac = 0;
+    proof_arraysize = 0;
+    this->proof = 0;
 }
 
-RevokeReq::RevokeReq(const RevokeReq& other) : ::omnetpp::cPacket(other)
+UpdateReq::UpdateReq(const UpdateReq& other) : ::omnetpp::cPacket(other)
 {
-    kid_arraysize = 0;
-    this->kid = 0;
+    report1_arraysize = 0;
+    this->report1 = 0;
+    report2_arraysize = 0;
+    this->report2 = 0;
+    proof_arraysize = 0;
+    this->proof = 0;
     copy(other);
 }
 
-RevokeReq::~RevokeReq()
+UpdateReq::~UpdateReq()
 {
-    delete [] this->kid;
+    delete [] this->report1;
+    delete [] this->report2;
+    delete [] this->proof;
 }
 
-RevokeReq& RevokeReq::operator=(const RevokeReq& other)
+UpdateReq& UpdateReq::operator=(const UpdateReq& other)
 {
     if (this==&other) return *this;
     ::omnetpp::cPacket::operator=(other);
@@ -207,98 +219,214 @@ RevokeReq& RevokeReq::operator=(const RevokeReq& other)
     return *this;
 }
 
-void RevokeReq::copy(const RevokeReq& other)
+void UpdateReq::copy(const UpdateReq& other)
 {
+    this->source = other.source;
     this->destination = other.destination;
-    delete [] this->kid;
-    this->kid = (other.kid_arraysize==0) ? nullptr : new int[other.kid_arraysize];
-    kid_arraysize = other.kid_arraysize;
-    for (unsigned int i=0; i<kid_arraysize; i++)
-        this->kid[i] = other.kid[i];
+    delete [] this->report1;
+    this->report1 = (other.report1_arraysize==0) ? nullptr : new int[other.report1_arraysize];
+    report1_arraysize = other.report1_arraysize;
+    for (unsigned int i=0; i<report1_arraysize; i++)
+        this->report1[i] = other.report1[i];
+    delete [] this->report2;
+    this->report2 = (other.report2_arraysize==0) ? nullptr : new int[other.report2_arraysize];
+    report2_arraysize = other.report2_arraysize;
+    for (unsigned int i=0; i<report2_arraysize; i++)
+        this->report2[i] = other.report2[i];
+    this->treeID = other.treeID;
     this->mac = other.mac;
+    delete [] this->proof;
+    this->proof = (other.proof_arraysize==0) ? nullptr : new int[other.proof_arraysize];
+    proof_arraysize = other.proof_arraysize;
+    for (unsigned int i=0; i<proof_arraysize; i++)
+        this->proof[i] = other.proof[i];
 }
 
-void RevokeReq::parsimPack(omnetpp::cCommBuffer *b) const
+void UpdateReq::parsimPack(omnetpp::cCommBuffer *b) const
 {
     ::omnetpp::cPacket::parsimPack(b);
+    doParsimPacking(b,this->source);
     doParsimPacking(b,this->destination);
-    b->pack(kid_arraysize);
-    doParsimArrayPacking(b,this->kid,kid_arraysize);
+    b->pack(report1_arraysize);
+    doParsimArrayPacking(b,this->report1,report1_arraysize);
+    b->pack(report2_arraysize);
+    doParsimArrayPacking(b,this->report2,report2_arraysize);
+    doParsimPacking(b,this->treeID);
     doParsimPacking(b,this->mac);
+    b->pack(proof_arraysize);
+    doParsimArrayPacking(b,this->proof,proof_arraysize);
 }
 
-void RevokeReq::parsimUnpack(omnetpp::cCommBuffer *b)
+void UpdateReq::parsimUnpack(omnetpp::cCommBuffer *b)
 {
     ::omnetpp::cPacket::parsimUnpack(b);
+    doParsimUnpacking(b,this->source);
     doParsimUnpacking(b,this->destination);
-    delete [] this->kid;
-    b->unpack(kid_arraysize);
-    if (kid_arraysize==0) {
-        this->kid = 0;
+    delete [] this->report1;
+    b->unpack(report1_arraysize);
+    if (report1_arraysize==0) {
+        this->report1 = 0;
     } else {
-        this->kid = new int[kid_arraysize];
-        doParsimArrayUnpacking(b,this->kid,kid_arraysize);
+        this->report1 = new int[report1_arraysize];
+        doParsimArrayUnpacking(b,this->report1,report1_arraysize);
     }
+    delete [] this->report2;
+    b->unpack(report2_arraysize);
+    if (report2_arraysize==0) {
+        this->report2 = 0;
+    } else {
+        this->report2 = new int[report2_arraysize];
+        doParsimArrayUnpacking(b,this->report2,report2_arraysize);
+    }
+    doParsimUnpacking(b,this->treeID);
     doParsimUnpacking(b,this->mac);
+    delete [] this->proof;
+    b->unpack(proof_arraysize);
+    if (proof_arraysize==0) {
+        this->proof = 0;
+    } else {
+        this->proof = new int[proof_arraysize];
+        doParsimArrayUnpacking(b,this->proof,proof_arraysize);
+    }
 }
 
-int RevokeReq::getDestination() const
+int UpdateReq::getSource() const
+{
+    return this->source;
+}
+
+void UpdateReq::setSource(int source)
+{
+    this->source = source;
+}
+
+int UpdateReq::getDestination() const
 {
     return this->destination;
 }
 
-void RevokeReq::setDestination(int destination)
+void UpdateReq::setDestination(int destination)
 {
     this->destination = destination;
 }
 
-void RevokeReq::setKidArraySize(unsigned int size)
+void UpdateReq::setReport1ArraySize(unsigned int size)
 {
-    int *kid2 = (size==0) ? nullptr : new int[size];
-    unsigned int sz = kid_arraysize < size ? kid_arraysize : size;
+    int *report12 = (size==0) ? nullptr : new int[size];
+    unsigned int sz = report1_arraysize < size ? report1_arraysize : size;
     for (unsigned int i=0; i<sz; i++)
-        kid2[i] = this->kid[i];
+        report12[i] = this->report1[i];
     for (unsigned int i=sz; i<size; i++)
-        kid2[i] = 0;
-    kid_arraysize = size;
-    delete [] this->kid;
-    this->kid = kid2;
+        report12[i] = 0;
+    report1_arraysize = size;
+    delete [] this->report1;
+    this->report1 = report12;
 }
 
-unsigned int RevokeReq::getKidArraySize() const
+unsigned int UpdateReq::getReport1ArraySize() const
 {
-    return kid_arraysize;
+    return report1_arraysize;
 }
 
-int RevokeReq::getKid(unsigned int k) const
+int UpdateReq::getReport1(unsigned int k) const
 {
-    if (k>=kid_arraysize) throw omnetpp::cRuntimeError("Array of size %d indexed by %d", kid_arraysize, k);
-    return this->kid[k];
+    if (k>=report1_arraysize) throw omnetpp::cRuntimeError("Array of size %d indexed by %d", report1_arraysize, k);
+    return this->report1[k];
 }
 
-void RevokeReq::setKid(unsigned int k, int kid)
+void UpdateReq::setReport1(unsigned int k, int report1)
 {
-    if (k>=kid_arraysize) throw omnetpp::cRuntimeError("Array of size %d indexed by %d", kid_arraysize, k);
-    this->kid[k] = kid;
+    if (k>=report1_arraysize) throw omnetpp::cRuntimeError("Array of size %d indexed by %d", report1_arraysize, k);
+    this->report1[k] = report1;
 }
 
-int RevokeReq::getMac() const
+void UpdateReq::setReport2ArraySize(unsigned int size)
+{
+    int *report22 = (size==0) ? nullptr : new int[size];
+    unsigned int sz = report2_arraysize < size ? report2_arraysize : size;
+    for (unsigned int i=0; i<sz; i++)
+        report22[i] = this->report2[i];
+    for (unsigned int i=sz; i<size; i++)
+        report22[i] = 0;
+    report2_arraysize = size;
+    delete [] this->report2;
+    this->report2 = report22;
+}
+
+unsigned int UpdateReq::getReport2ArraySize() const
+{
+    return report2_arraysize;
+}
+
+int UpdateReq::getReport2(unsigned int k) const
+{
+    if (k>=report2_arraysize) throw omnetpp::cRuntimeError("Array of size %d indexed by %d", report2_arraysize, k);
+    return this->report2[k];
+}
+
+void UpdateReq::setReport2(unsigned int k, int report2)
+{
+    if (k>=report2_arraysize) throw omnetpp::cRuntimeError("Array of size %d indexed by %d", report2_arraysize, k);
+    this->report2[k] = report2;
+}
+
+int UpdateReq::getTreeID() const
+{
+    return this->treeID;
+}
+
+void UpdateReq::setTreeID(int treeID)
+{
+    this->treeID = treeID;
+}
+
+int UpdateReq::getMac() const
 {
     return this->mac;
 }
 
-void RevokeReq::setMac(int mac)
+void UpdateReq::setMac(int mac)
 {
     this->mac = mac;
 }
 
-class RevokeReqDescriptor : public omnetpp::cClassDescriptor
+void UpdateReq::setProofArraySize(unsigned int size)
+{
+    int *proof2 = (size==0) ? nullptr : new int[size];
+    unsigned int sz = proof_arraysize < size ? proof_arraysize : size;
+    for (unsigned int i=0; i<sz; i++)
+        proof2[i] = this->proof[i];
+    for (unsigned int i=sz; i<size; i++)
+        proof2[i] = 0;
+    proof_arraysize = size;
+    delete [] this->proof;
+    this->proof = proof2;
+}
+
+unsigned int UpdateReq::getProofArraySize() const
+{
+    return proof_arraysize;
+}
+
+int UpdateReq::getProof(unsigned int k) const
+{
+    if (k>=proof_arraysize) throw omnetpp::cRuntimeError("Array of size %d indexed by %d", proof_arraysize, k);
+    return this->proof[k];
+}
+
+void UpdateReq::setProof(unsigned int k, int proof)
+{
+    if (k>=proof_arraysize) throw omnetpp::cRuntimeError("Array of size %d indexed by %d", proof_arraysize, k);
+    this->proof[k] = proof;
+}
+
+class UpdateReqDescriptor : public omnetpp::cClassDescriptor
 {
   private:
     mutable const char **propertynames;
   public:
-    RevokeReqDescriptor();
-    virtual ~RevokeReqDescriptor();
+    UpdateReqDescriptor();
+    virtual ~UpdateReqDescriptor();
 
     virtual bool doesSupport(omnetpp::cObject *obj) const override;
     virtual const char **getPropertyNames() const override;
@@ -320,24 +448,24 @@ class RevokeReqDescriptor : public omnetpp::cClassDescriptor
     virtual void *getFieldStructValuePointer(void *object, int field, int i) const override;
 };
 
-Register_ClassDescriptor(RevokeReqDescriptor)
+Register_ClassDescriptor(UpdateReqDescriptor)
 
-RevokeReqDescriptor::RevokeReqDescriptor() : omnetpp::cClassDescriptor("RevokeReq", "omnetpp::cPacket")
+UpdateReqDescriptor::UpdateReqDescriptor() : omnetpp::cClassDescriptor("UpdateReq", "omnetpp::cPacket")
 {
     propertynames = nullptr;
 }
 
-RevokeReqDescriptor::~RevokeReqDescriptor()
+UpdateReqDescriptor::~UpdateReqDescriptor()
 {
     delete[] propertynames;
 }
 
-bool RevokeReqDescriptor::doesSupport(omnetpp::cObject *obj) const
+bool UpdateReqDescriptor::doesSupport(omnetpp::cObject *obj) const
 {
-    return dynamic_cast<RevokeReq *>(obj)!=nullptr;
+    return dynamic_cast<UpdateReq *>(obj)!=nullptr;
 }
 
-const char **RevokeReqDescriptor::getPropertyNames() const
+const char **UpdateReqDescriptor::getPropertyNames() const
 {
     if (!propertynames) {
         static const char *names[] = {  nullptr };
@@ -348,19 +476,19 @@ const char **RevokeReqDescriptor::getPropertyNames() const
     return propertynames;
 }
 
-const char *RevokeReqDescriptor::getProperty(const char *propertyname) const
+const char *UpdateReqDescriptor::getProperty(const char *propertyname) const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
     return basedesc ? basedesc->getProperty(propertyname) : nullptr;
 }
 
-int RevokeReqDescriptor::getFieldCount() const
+int UpdateReqDescriptor::getFieldCount() const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
-    return basedesc ? 3+basedesc->getFieldCount() : 3;
+    return basedesc ? 7+basedesc->getFieldCount() : 7;
 }
 
-unsigned int RevokeReqDescriptor::getFieldTypeFlags(int field) const
+unsigned int UpdateReqDescriptor::getFieldTypeFlags(int field) const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
     if (basedesc) {
@@ -370,13 +498,17 @@ unsigned int RevokeReqDescriptor::getFieldTypeFlags(int field) const
     }
     static unsigned int fieldTypeFlags[] = {
         FD_ISEDITABLE,
+        FD_ISEDITABLE,
+        FD_ISARRAY | FD_ISEDITABLE,
         FD_ISARRAY | FD_ISEDITABLE,
         FD_ISEDITABLE,
+        FD_ISEDITABLE,
+        FD_ISARRAY | FD_ISEDITABLE,
     };
-    return (field>=0 && field<3) ? fieldTypeFlags[field] : 0;
+    return (field>=0 && field<7) ? fieldTypeFlags[field] : 0;
 }
 
-const char *RevokeReqDescriptor::getFieldName(int field) const
+const char *UpdateReqDescriptor::getFieldName(int field) const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
     if (basedesc) {
@@ -385,24 +517,32 @@ const char *RevokeReqDescriptor::getFieldName(int field) const
         field -= basedesc->getFieldCount();
     }
     static const char *fieldNames[] = {
+        "source",
         "destination",
-        "kid",
+        "report1",
+        "report2",
+        "treeID",
         "mac",
+        "proof",
     };
-    return (field>=0 && field<3) ? fieldNames[field] : nullptr;
+    return (field>=0 && field<7) ? fieldNames[field] : nullptr;
 }
 
-int RevokeReqDescriptor::findField(const char *fieldName) const
+int UpdateReqDescriptor::findField(const char *fieldName) const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
     int base = basedesc ? basedesc->getFieldCount() : 0;
-    if (fieldName[0]=='d' && strcmp(fieldName, "destination")==0) return base+0;
-    if (fieldName[0]=='k' && strcmp(fieldName, "kid")==0) return base+1;
-    if (fieldName[0]=='m' && strcmp(fieldName, "mac")==0) return base+2;
+    if (fieldName[0]=='s' && strcmp(fieldName, "source")==0) return base+0;
+    if (fieldName[0]=='d' && strcmp(fieldName, "destination")==0) return base+1;
+    if (fieldName[0]=='r' && strcmp(fieldName, "report1")==0) return base+2;
+    if (fieldName[0]=='r' && strcmp(fieldName, "report2")==0) return base+3;
+    if (fieldName[0]=='t' && strcmp(fieldName, "treeID")==0) return base+4;
+    if (fieldName[0]=='m' && strcmp(fieldName, "mac")==0) return base+5;
+    if (fieldName[0]=='p' && strcmp(fieldName, "proof")==0) return base+6;
     return basedesc ? basedesc->findField(fieldName) : -1;
 }
 
-const char *RevokeReqDescriptor::getFieldTypeString(int field) const
+const char *UpdateReqDescriptor::getFieldTypeString(int field) const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
     if (basedesc) {
@@ -414,11 +554,15 @@ const char *RevokeReqDescriptor::getFieldTypeString(int field) const
         "int",
         "int",
         "int",
+        "int",
+        "int",
+        "int",
+        "int",
     };
-    return (field>=0 && field<3) ? fieldTypeStrings[field] : nullptr;
+    return (field>=0 && field<7) ? fieldTypeStrings[field] : nullptr;
 }
 
-const char **RevokeReqDescriptor::getFieldPropertyNames(int field) const
+const char **UpdateReqDescriptor::getFieldPropertyNames(int field) const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
     if (basedesc) {
@@ -431,7 +575,7 @@ const char **RevokeReqDescriptor::getFieldPropertyNames(int field) const
     }
 }
 
-const char *RevokeReqDescriptor::getFieldProperty(int field, const char *propertyname) const
+const char *UpdateReqDescriptor::getFieldProperty(int field, const char *propertyname) const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
     if (basedesc) {
@@ -444,7 +588,7 @@ const char *RevokeReqDescriptor::getFieldProperty(int field, const char *propert
     }
 }
 
-int RevokeReqDescriptor::getFieldArraySize(void *object, int field) const
+int UpdateReqDescriptor::getFieldArraySize(void *object, int field) const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
     if (basedesc) {
@@ -452,14 +596,16 @@ int RevokeReqDescriptor::getFieldArraySize(void *object, int field) const
             return basedesc->getFieldArraySize(object, field);
         field -= basedesc->getFieldCount();
     }
-    RevokeReq *pp = (RevokeReq *)object; (void)pp;
+    UpdateReq *pp = (UpdateReq *)object; (void)pp;
     switch (field) {
-        case 1: return pp->getKidArraySize();
+        case 2: return pp->getReport1ArraySize();
+        case 3: return pp->getReport2ArraySize();
+        case 6: return pp->getProofArraySize();
         default: return 0;
     }
 }
 
-const char *RevokeReqDescriptor::getFieldDynamicTypeString(void *object, int field, int i) const
+const char *UpdateReqDescriptor::getFieldDynamicTypeString(void *object, int field, int i) const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
     if (basedesc) {
@@ -467,13 +613,13 @@ const char *RevokeReqDescriptor::getFieldDynamicTypeString(void *object, int fie
             return basedesc->getFieldDynamicTypeString(object,field,i);
         field -= basedesc->getFieldCount();
     }
-    RevokeReq *pp = (RevokeReq *)object; (void)pp;
+    UpdateReq *pp = (UpdateReq *)object; (void)pp;
     switch (field) {
         default: return nullptr;
     }
 }
 
-std::string RevokeReqDescriptor::getFieldValueAsString(void *object, int field, int i) const
+std::string UpdateReqDescriptor::getFieldValueAsString(void *object, int field, int i) const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
     if (basedesc) {
@@ -481,16 +627,20 @@ std::string RevokeReqDescriptor::getFieldValueAsString(void *object, int field, 
             return basedesc->getFieldValueAsString(object,field,i);
         field -= basedesc->getFieldCount();
     }
-    RevokeReq *pp = (RevokeReq *)object; (void)pp;
+    UpdateReq *pp = (UpdateReq *)object; (void)pp;
     switch (field) {
-        case 0: return long2string(pp->getDestination());
-        case 1: return long2string(pp->getKid(i));
-        case 2: return long2string(pp->getMac());
+        case 0: return long2string(pp->getSource());
+        case 1: return long2string(pp->getDestination());
+        case 2: return long2string(pp->getReport1(i));
+        case 3: return long2string(pp->getReport2(i));
+        case 4: return long2string(pp->getTreeID());
+        case 5: return long2string(pp->getMac());
+        case 6: return long2string(pp->getProof(i));
         default: return "";
     }
 }
 
-bool RevokeReqDescriptor::setFieldValueAsString(void *object, int field, int i, const char *value) const
+bool UpdateReqDescriptor::setFieldValueAsString(void *object, int field, int i, const char *value) const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
     if (basedesc) {
@@ -498,16 +648,20 @@ bool RevokeReqDescriptor::setFieldValueAsString(void *object, int field, int i, 
             return basedesc->setFieldValueAsString(object,field,i,value);
         field -= basedesc->getFieldCount();
     }
-    RevokeReq *pp = (RevokeReq *)object; (void)pp;
+    UpdateReq *pp = (UpdateReq *)object; (void)pp;
     switch (field) {
-        case 0: pp->setDestination(string2long(value)); return true;
-        case 1: pp->setKid(i,string2long(value)); return true;
-        case 2: pp->setMac(string2long(value)); return true;
+        case 0: pp->setSource(string2long(value)); return true;
+        case 1: pp->setDestination(string2long(value)); return true;
+        case 2: pp->setReport1(i,string2long(value)); return true;
+        case 3: pp->setReport2(i,string2long(value)); return true;
+        case 4: pp->setTreeID(string2long(value)); return true;
+        case 5: pp->setMac(string2long(value)); return true;
+        case 6: pp->setProof(i,string2long(value)); return true;
         default: return false;
     }
 }
 
-const char *RevokeReqDescriptor::getFieldStructName(int field) const
+const char *UpdateReqDescriptor::getFieldStructName(int field) const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
     if (basedesc) {
@@ -520,7 +674,7 @@ const char *RevokeReqDescriptor::getFieldStructName(int field) const
     };
 }
 
-void *RevokeReqDescriptor::getFieldStructValuePointer(void *object, int field, int i) const
+void *UpdateReqDescriptor::getFieldStructValuePointer(void *object, int field, int i) const
 {
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
     if (basedesc) {
@@ -528,7 +682,7 @@ void *RevokeReqDescriptor::getFieldStructValuePointer(void *object, int field, i
             return basedesc->getFieldStructValuePointer(object, field, i);
         field -= basedesc->getFieldCount();
     }
-    RevokeReq *pp = (RevokeReq *)object; (void)pp;
+    UpdateReq *pp = (UpdateReq *)object; (void)pp;
     switch (field) {
         default: return nullptr;
     }

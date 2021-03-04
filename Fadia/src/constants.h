@@ -12,7 +12,11 @@
 #define PADS 3
 
 #define SCENARIO FADIA
+<<<<<<< HEAD
 // #define TREE 
+=======
+#define TREE 
+>>>>>>> 795215040f106662b5c28d4ae5040a2f9decafe6
 
 #define REALLEN(_N_,_R_) _N_* _R_ / (1 + _R_)  
 #define FAKELEN(_N_,_R_) _N_ / (1 + _R_)  
@@ -22,7 +26,11 @@
 #define CRQ_SIZE(_RSIZE_) 12 + _RSIZE_ * 4
 #define CRP_SIZE 48
 #define CAK_SIZE 44
+<<<<<<< HEAD
 #define URQ_SIZE(_RSIZE_, _MSIZE_) 44 + (_RSIZE_ * 4 * 2*0) +   (32 * _MSIZE_)
+=======
+#define URQ_SIZE(_RSIZE_, _MSIZE_) 44 + (_RSIZE_ * 4 * 2)  + (32 * _MSIZE_)
+>>>>>>> 795215040f106662b5c28d4ae5040a2f9decafe6
 #define RVK_SIZE(_KSIZE_) 32 + (_KSIZE_ * 4) 
 
 
@@ -35,8 +43,8 @@
 #endif // RUNTIME_TEST
 
 #define MAXCHILDREN 20
-#define NEIGHBOR_DISTANCE 1
-#define DELTAH 600
+#define NEIGHBOR_DISTANCE 2
+#define DELTAH 300
 #define MAX_CRASH 1000
 #define MINGSIZE 1
 
