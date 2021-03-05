@@ -92,9 +92,9 @@ private:
 
     // aggregated report at each delta h
     report_t aggreport;
-
-    // is the prover selfish
-    bool selfish = false;
+//
+//    // is the prover selfish
+//    bool selfish = false;
 
     // messages
     cMessage* startmsg = nullptr;
