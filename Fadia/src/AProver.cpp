@@ -133,7 +133,7 @@ AProver::initialize()
 #else
     status = FINISHED;
     startmsg = new cMessage("start", ATTEST);
-    scheduleAt(simTime() + uniform(0,0.01), startmsg);
+    scheduleAt(simTime() + uniform(0,deltah), startmsg);
 #ifdef REVOKE_TEST
     if(UId == 1)
     {
