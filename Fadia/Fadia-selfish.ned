@@ -60,8 +60,7 @@ network Fadiaselfish
         collector[numCollectors]: Collector {
             @display("p=$posx,$posy");
         }
-        prover[numProvers-numself]: Prover;
-        selfish_prover[numself]: Prover;
+        prover[numProvers]: Prover;
         visualizer: <default("IntegratedCanvasVisualizer")> like IIntegratedVisualizer if hasVisualizer() {
             @display("p=5,5");
         }

@@ -43,7 +43,6 @@ module Prover extends NodeBase
         int aggsize = default(99999999);
         int neighbors = default(0);
         int type = default(0);			// NA = 0, SERV = 1, SKY = 2, PI2 = 3
-        bool selfish = default(false);
         @display("i=misc/sensoroff;is=s;bgb=589.05,603.225;r=$range");
 
     gates:

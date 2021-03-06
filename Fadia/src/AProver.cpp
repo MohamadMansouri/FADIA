@@ -57,9 +57,6 @@ void
 AProver::initialize()
 {
     initNO();
-#ifdef ENERGY_TEST
-    selfish = ((bool) getParentModule()->par("selfish"));
-#endif
     initUID();
     initKeyRing();
 
@@ -74,6 +71,9 @@ AProver::initialize()
     aggsize = ((size_t) getParentModule()->par("aggsize"));
     maxdepth = ((size_t) getSystemModule()->par("maxdepth"));
 #ifdef ENERGY_TEST
+    int numselfish = ((int) getSystemModule()->par("numself"));
+    if (UId <= numselfish )
+        selfish = true; 
     statadapt = ((bool) getSystemModule()->par("statadapt"));
 #endif
 #ifdef REVOKE_TEST
