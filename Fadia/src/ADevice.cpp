@@ -301,8 +301,6 @@ ADevice::handleDoneEnMsg(cMessage* msg)
 void 
 ADevice::handleProcDoneMsg(cMessage* msg)
 {
-    std::cout << "end processing: " << simTime() << std::endl << std::endl;
-
     procstat = PIDLE;
 
 }
@@ -448,7 +446,6 @@ ADevice::isCollectorBusy()
     // get module collector
     cModule* mod =  getSystemModule()->getSubmodule("collector", 0);
     ADevice* dmod = (ADevice *) mod->getSubmodule("collectorapp");
-    std::cout << "sending to collector: " << simTime() << std::endl << std::endl;
     if(dmod->isProcessing())
         return true;
     else
@@ -574,7 +571,5 @@ ADevice::checkFirmwareDelay()
 void
 ADevice::setProcessing()
 {
-    std::cout << "start processing: " << simTime() << std::endl << std::endl;
-
     procstat = PBUSY;
 }
