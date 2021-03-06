@@ -133,7 +133,7 @@ void
 ADevice::sendCollector(cMessage* msg)
 {
     pupmsg = nullptr;
-    
+
     if(txrxstat == TRANSMITING || chanstat == BUSY)
     {
         msgqueue.push(msg);
@@ -151,6 +151,7 @@ ADevice::sendCollector(cMessage* msg)
     if(isCollectorBusy())
     {
         pupmsg = msg;
+        if(!collbusymsg->isScheduled())
         scheduleAt(simTime() + postponeproctime, collbusymsg);
         return;
     }
