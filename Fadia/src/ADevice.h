@@ -140,6 +140,8 @@ protected:
 #endif
     double range;
 
+    // is the prover selfish
+    bool selfish = false;
     // device status
     status_e status = OFFLINE;
 

@@ -449,8 +449,12 @@ ADevice::isChannelBusy()
     {
         if((int)i != getParentModule()->getIndex())
         {
-            cModule* mod = getSystemModule()->getSubmodule("prover", i);
-
+            cModule* mod = 0;
+            if (selfish)
+                mod = getSystemModule()->getSubmodule("selfish_prover", i);
+            else
+                mod = getSystemModule()->getSubmodule("prover", i);
+            assert(mod);
             inet::IMobility* mobility = check_and_cast<inet::IMobility *> (mod->getSubmodule("mobility"));
             inet::Coord dpos = mobility->getCurrentPosition();
             if(spos.sqrdist(dpos) <= range*range)

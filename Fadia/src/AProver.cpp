@@ -57,6 +57,9 @@ void
 AProver::initialize()
 {
     initNO();
+#ifdef ENERGY_TEST
+    selfish = ((bool) getParentModule()->par("selfish"));
+#endif
     initUID();
     initKeyRing();
 
@@ -72,7 +75,6 @@ AProver::initialize()
     maxdepth = ((size_t) getSystemModule()->par("maxdepth"));
 #ifdef ENERGY_TEST
     statadapt = ((bool) getSystemModule()->par("statadapt"));
-    selfish = ((bool) getParentModule()->par("selfish"));
 #endif
 #ifdef REVOKE_TEST
     int drop = ((int) getSystemModule()->par("drop"));
@@ -300,6 +302,7 @@ AProver::startAttestation()
 #endif
 
     scheduleAt(simTime() + deltah, attesttimer);
+    scheduleAt(simTime() + checkFirmwareDelay() , checkdelaymsg);
 #ifndef RUNTIME_TEST
 #ifdef ENERGY_TEST
     double d;
@@ -312,7 +315,7 @@ AProver::startAttestation()
 #endif
     scheduleAt(simTime() + checkFirmwareDelay() + d, mktreetimer);
 #endif
-    scheduleAt(simTime() + checkFirmwareDelay() , checkdelaymsg);
+
 
 
 }
