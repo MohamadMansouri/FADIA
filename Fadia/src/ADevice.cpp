@@ -277,7 +277,7 @@ void
 ADevice::handleDoneEnMsg(cMessage* msg)
 {
     energy->updateResidualCapacity();
-    if (status == FINISHED)
+    if (status == FINISHED && pupmsg == nullptr)
         energy->totalPowerConsumption = inet::units::values::mW(IDLE_CONSUMPTION);
     else
         energy->totalPowerConsumption = inet::units::values::mW(LISTENING_CONSUMPTION);
@@ -323,6 +323,12 @@ ADevice::handlePostponeUpMsg(cMessage* msg)
     if(pupmsg)
     {
         handleMessage(pupmsg);
+        energy->updateResidualCapacity();
+        if (status == FINISHED && pupmsg == nullptr)
+            energy->totalPowerConsumption = inet::units::values::mW(IDLE_CONSUMPTION);
+        else
+            energy->totalPowerConsumption = inet::units::values::mW(LISTENING_CONSUMPTION);
+
     }
     else
     {
