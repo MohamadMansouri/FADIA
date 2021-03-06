@@ -66,6 +66,7 @@ enum MSG : short
     ENTXDONE, 
     ENRXDONE, 
     ENMAC,
+    PROCDONE,
 };
 
 enum txrx_e : short
@@ -79,6 +80,13 @@ enum cstat_e : short
 {
     BUSY, 
     CIDLE
+};
+
+
+enum pstat_e : short
+{
+    PBUSY, 
+    PIDLE
 };
 
 
@@ -116,6 +124,7 @@ protected:
     const double timeoutack = TIMEOUT_ACK;
     const double timeoutup = TIMEOUT_UP;
     const double byterate = BYTERATE;
+    const double processuptime = 1.0;
     device_t device = NA;
     size_t maxdepth; 
     size_t maxchildren = MAXCHILDREN; 
@@ -165,9 +174,12 @@ protected:
 
     txrx_e txrxstat = DIDLE;
     cstat_e chanstat = CIDLE;
+    pstat_e procstat = PIDLE;
+    
     cMessage* txmsg = new cMessage("txdone", TXDONE);
     cMessage* cbusymsg = new cMessage("channelBusy", CBUSYMSG);
     cMessage* entxmsg = new cMessage("EnergyTransmitionDone", ENTXDONE);
+    cMessage* procendmsg = new cMessage("ProcessingDone", PROCDONE);
 
     queue<cMessage*> msgqueue;
 
@@ -230,6 +242,7 @@ protected:
 
     virtual void handleTxDoneMsg(cMessage *msg);     
     virtual void handlePostponeDoneMsg(cMessage *msg);     
+    virtual void handleProcDoneMsg(cMessage* msg);
 
     // utilities
     virtual void logInfo(string m) = 0;
@@ -263,6 +276,7 @@ public:
     ~ADevice() {}
     bool isTransmiting() {return txrxstat == TRANSMITING;};
     bool isChannelBusy(int far, int gid);
+    bool isCollectorBusy();
     virtual bool isChannelBusyServ(int far, int gid, uid_t target) = 0;
 };
 

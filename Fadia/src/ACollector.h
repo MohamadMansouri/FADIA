@@ -120,7 +120,7 @@ protected:
 public:
     ACollector() {}
     ~ACollector() {}
-
+    bool isProcessing() {return procstat==PBUSY;}
 };
 
 

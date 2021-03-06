@@ -121,6 +121,8 @@ ACollector::sendJoinResp(uid_t target)
 void
 ACollector::handleUpReq(cMessage* msg)
 {
+    procstat = PBUSY; 
+    scheduleAt(simTime() + processuptime, procendmsg);
     UpdateReq* umsg = check_and_cast<UpdateReq *> (msg);
     // TODO: check if the update is a fix
     size_t size = umsg->getReport1ArraySize();
@@ -280,6 +282,7 @@ void ACollector::finish()
 {
         cancelAndDelete(txmsg);
         cancelAndDelete(entxmsg);
+        cancelAndDelete(procendmsg);
         cancelAndDelete(cbusymsg);
         
 }

@@ -161,10 +161,7 @@ AProver::initNO()
 void
 AProver::initUID()
 {
-    do
-    {
-        UId = (getBaseID<uid_t>() + getParentModule()->getIndex()) % MAXUID;
-    } while(!UId);
+    UId = (getBaseID<uid_t>() + getParentModule()->getIndex()) % MAXUID;
 }
 
 void
@@ -1292,6 +1289,7 @@ AProver::finish()
         cancelAndDelete(creqmsg);
         cancelAndDelete(txmsg);
         cancelAndDelete(entxmsg);
+        cancelAndDelete(procendmsg);
         cancelAndDelete(cbusymsg);
 
 }

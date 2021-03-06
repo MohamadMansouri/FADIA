@@ -138,7 +138,7 @@ ADevice::sendCollector(cMessage* msg)
         return;
     }
 
-    if(isChannelBusy(drange, -1))
+    if(isChannelBusy(drange, -1) || isCollectorBusy())
     {
         chanstat = BUSY;
         msgqueue.push(msg);

@@ -140,6 +140,9 @@ ADevice::handleMessage(cMessage *msg)
                 handleDoneEnMsg(msg);
                 break;
 #endif
+            case PROCDONE:
+                handleProcDoneMsg(msg):
+                break;
             case UNKOWN:
             default:
                 logError("Received message of unknown type");
@@ -293,6 +296,13 @@ ADevice::handleDoneEnMsg(cMessage* msg)
 #endif
 
 void 
+ADevice::handleProcDoneMsg(cMessage* msg)
+{
+    procstat = PIDLE;
+
+}
+
+void 
 ADevice::handlePostponeDoneMsg(cMessage* msg)
 {
     chanstat = CIDLE;
@@ -410,6 +420,17 @@ int
 ADevice::generateMAC(cMessage* msg, keyid_t kid)
 {
     return 0;
+}
+
+bool
+ADevice::isCollectorBusy()
+{
+    // get module collector
+    cModule* mod = getSystemModule()->getSubmodule("collector", 0);
+    if(mod->isProcessing())
+        return true;
+    else
+        return false;
 }
 
 bool 
