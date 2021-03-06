@@ -126,7 +126,7 @@ protected:
     const double timeoutack = TIMEOUT_ACK;
     const double timeoutup = TIMEOUT_UP;
     const double byterate = BYTERATE;
-    const double processuptime = 1.0;
+    const double processuptime = PROCDELAY;
     device_t device = NA;
     size_t maxdepth; 
     size_t maxchildren = MAXCHILDREN; 

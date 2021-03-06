@@ -62,6 +62,8 @@
 // #define FIRMWARE_SIZE 32 * 1024 														// firmware size 32 KB
 
 #if SCENARIO == PASTA
+#define PROCDELAY 0
+#define PPDELAY PROCDELAY / 2
 #define NDELAY 0.0023																	// end-to-end delay 2.3 ms
 #define PDELAY NDELAY / 4
 #define BITRATE 12.51 * 1024 * 1024																		// bitrate not needed (configured in the channel)
@@ -76,6 +78,8 @@
 #define FIRMWARE_CHECK_DELAY_S 1 / 0												// should never be used (raise an error)
 #define FIRMWARE_CHECK_DELAY_P 1 / 0												// should never be used (raise an error)
 #elif SCENARIO == PADS
+#define PROCDELAY 0
+#define PPDELAY PROCDELAY / 2
 #define NDELAY 0.001																	// end-to-end delay 15 ms
 #define PDELAY NDELAY / 4
 #define BITRATE 250 * 1024 																// bitrate 35 kbps
@@ -90,6 +94,8 @@
 #define FIRMWARE_CHECK_DELAY_S 1 / 0												// should never be used (raise an error)
 #define FIRMWARE_CHECK_DELAY_P 1 / 0												// should never be used (raise an error)
 #elif SCENARIO == SALADS
+#define PROCDELAY 0
+#define PPDELAY PROCDELAY / 2
 #define NDELAY 0.015																	// end-to-end delay 15 ms
 #define PDELAY NDELAY / 4
 #define BITRATE 35 * 1024 																// bitrate 35 kbps
@@ -106,7 +112,8 @@
 #elif SCENARIO == FADIA
 #define NDELAY 0.030725																	// end-to-end delay 30.725 ms
 #define PDELAY NDELAY / 4
-#define PPDELAY 0.5
+#define PROCDELAY 0.5
+#define PPDELAY PROCDELAY / 2
 #define BITRATE 25.2 * 1024 															// bitrate 25.2 kbps
 #define BYTERATE BITRATE / 8
 #define TIMEOUT_ACK 4																	// timeout for acknowledgement to be received 2 s
