@@ -133,6 +133,9 @@ ADevice::handleMessage(cMessage *msg)
             case CBUSYMSG:
                 handlePostponeDoneMsg(msg);
                 break;
+            case COLLBSYMSG: 
+                handlePostponeUpMsg(msg);
+                break;
 #ifdef ENERGY_TEST                
             case ENTXDONE:
             case ENRXDONE:
@@ -141,7 +144,7 @@ ADevice::handleMessage(cMessage *msg)
                 break;
 #endif
             case PROCDONE:
-                handleProcDoneMsg(msg):
+                handleProcDoneMsg(msg);
                 break;
             case UNKOWN:
             default:
@@ -298,6 +301,8 @@ ADevice::handleDoneEnMsg(cMessage* msg)
 void 
 ADevice::handleProcDoneMsg(cMessage* msg)
 {
+    std::cout << "end processing: " << simTime() << std::endl << std::endl;
+
     procstat = PIDLE;
 
 }
@@ -311,6 +316,21 @@ ADevice::handlePostponeDoneMsg(cMessage* msg)
         handleMessage(msgqueue.front());
         msgqueue.pop();
     }
+}   
+
+
+void 
+ADevice::handlePostponeUpMsg(cMessage* msg)
+{
+    if(pupmsg)
+    {
+        handleMessage(pupmsg);
+    }
+    else
+    {
+        logError("handlePostponeUpMsg: update message lost after queued!!!");
+    }
+    
 }   
 
 #ifdef WIRELESS
@@ -426,8 +446,10 @@ bool
 ADevice::isCollectorBusy()
 {
     // get module collector
-    cModule* mod = getSystemModule()->getSubmodule("collector", 0);
-    if(mod->isProcessing())
+    cModule* mod =  getSystemModule()->getSubmodule("collector", 0);
+    ADevice* dmod = (ADevice *) mod->getSubmodule("collectorapp");
+    std::cout << "sending to collector: " << simTime() << std::endl << std::endl;
+    if(dmod->isProcessing())
         return true;
     else
         return false;
@@ -547,4 +569,12 @@ ADevice::checkFirmwareDelay()
         default:
             return (double) FIRMWARE_CHECK_DELAY;
     }
+}
+
+void
+ADevice::setProcessing()
+{
+    std::cout << "start processing: " << simTime() << std::endl << std::endl;
+
+    procstat = PBUSY;
 }

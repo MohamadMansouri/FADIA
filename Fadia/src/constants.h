@@ -106,6 +106,7 @@
 #elif SCENARIO == FADIA
 #define NDELAY 0.030725																	// end-to-end delay 30.725 ms
 #define PDELAY NDELAY / 4
+#define PPDELAY 0.5
 #define BITRATE 25.2 * 1024 															// bitrate 25.2 kbps
 #define BYTERATE BITRATE / 8
 #define TIMEOUT_ACK 4																	// timeout for acknowledgement to be received 2 s

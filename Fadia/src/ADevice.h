@@ -63,6 +63,7 @@ enum MSG : short
     JNAKTO,
     TXDONE,
     CBUSYMSG,
+    COLLBSYMSG,
     ENTXDONE, 
     ENRXDONE, 
     ENMAC,
@@ -120,6 +121,7 @@ protected:
     const int seed = 0; 
     const double ndelay = NDELAY;  
     const double postponetime = PDELAY;
+    const double postponeproctime = PPDELAY;
     const double timeoutresp = TIMEOUT_RSP;
     const double timeoutack = TIMEOUT_ACK;
     const double timeoutup = TIMEOUT_UP;
@@ -177,14 +179,15 @@ protected:
     txrx_e txrxstat = DIDLE;
     cstat_e chanstat = CIDLE;
     pstat_e procstat = PIDLE;
-    
+
     cMessage* txmsg = new cMessage("txdone", TXDONE);
     cMessage* cbusymsg = new cMessage("channelBusy", CBUSYMSG);
+    cMessage* collbusymsg = new cMessage("collectorBusy", COLLBSYMSG);
     cMessage* entxmsg = new cMessage("EnergyTransmitionDone", ENTXDONE);
     cMessage* procendmsg = new cMessage("ProcessingDone", PROCDONE);
 
     queue<cMessage*> msgqueue;
-
+    cMessage* pupmsg = nullptr;
 
     // Inits
     virtual void initUID() = 0;
@@ -245,7 +248,7 @@ protected:
     virtual void handleTxDoneMsg(cMessage *msg);     
     virtual void handlePostponeDoneMsg(cMessage *msg);     
     virtual void handleProcDoneMsg(cMessage* msg);
-
+    virtual void handlePostponeUpMsg(cMessage* msg);
     // utilities
     virtual void logInfo(string m) = 0;
     virtual void logDebug(string m) = 0;
@@ -280,6 +283,8 @@ public:
     bool isChannelBusy(int far, int gid);
     bool isCollectorBusy();
     virtual bool isChannelBusyServ(int far, int gid, uid_t target) = 0;
+    bool isProcessing() {return procstat==PBUSY;}
+    void setProcessing();
 };
 
 #endif /* ADEVICE_H_ */

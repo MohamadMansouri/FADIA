@@ -132,17 +132,26 @@ template <typename T>
 void
 ADevice::sendCollector(cMessage* msg)
 {
+    pupmsg = nullptr;
+    
     if(txrxstat == TRANSMITING || chanstat == BUSY)
     {
         msgqueue.push(msg);
         return;
     }
 
-    if(isChannelBusy(drange, -1) || isCollectorBusy())
+    if(isChannelBusy(drange, -1))
     {
         chanstat = BUSY;
         msgqueue.push(msg);
         scheduleAt(simTime() + postponetime, cbusymsg);
+        return;
+    }
+
+    if(isCollectorBusy())
+    {
+        pupmsg = msg;
+        scheduleAt(simTime() + postponeproctime, collbusymsg);
         return;
     }
 
@@ -158,6 +167,8 @@ ADevice::sendCollector(cMessage* msg)
         emit(txsig, bl);
     }
     sendDirect(msg, ndelay + bl / byterate , 0, mod, "radioIn");
+    ADevice* colmod = (ADevice *) getSystemModule()->getSubmodule("collector", 0)->getSubmodule("collectorapp");
+    colmod->setProcessing();
 #else
     send(msg, "appio$o", deviceg[target]);
 #endif
