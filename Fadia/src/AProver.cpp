@@ -70,12 +70,6 @@ AProver::initialize()
     rootidx = ((int) getSystemModule()->par("root"));
     aggsize = ((size_t) getParentModule()->par("aggsize"));
     maxdepth = ((size_t) getSystemModule()->par("maxdepth"));
-#ifdef ENERGY_TEST
-    int numselfish = ((int) getSystemModule()->par("numself"));
-    if (UId <= numselfish )
-        selfish = true; 
-    statadapt = ((bool) getSystemModule()->par("statadapt"));
-#endif
 #ifdef REVOKE_TEST
     int drop = ((int) getSystemModule()->par("drop"));
 #endif
@@ -90,6 +84,15 @@ AProver::initialize()
 #ifdef ENERGY_TEST
     energy = check_and_cast<inet::power::SimpleEpEnergyStorage *> (getParentModule()->getSubmodule("energyStorage"));
     energy->totalPowerConsumption = inet::units::values::mW(IDLE_CONSUMPTION);
+
+    int numselfish = ((int) getSystemModule()->par("numself"));
+    if (UId <= numselfish )
+    {
+        selfish = true; 
+        if(energy->getResidualEnergyCapacity().get() < 250)
+            energy->setResidualCapacity(inet::units::values::J(250));
+    }
+    statadapt = ((bool) getSystemModule()->par("statadapt"));
 #endif
     
     jointomsg = new cMessage();

@@ -98,7 +98,6 @@ class INET_API SimpleEpEnergyStorage : public EpEnergyStorageBase
     virtual void updateTotalPowerGeneration() override;
 
     virtual void executeNodeOperation(J newResidualCapacity);
-    virtual void setResidualCapacity(J newResidualCapacity);
 
     virtual void scheduleTimer();
 
@@ -107,6 +106,7 @@ class INET_API SimpleEpEnergyStorage : public EpEnergyStorageBase
     virtual void updateResidualCapacity();
     virtual J getNominalEnergyCapacity() const override { return nominalCapacity; }
     virtual J getResidualEnergyCapacity() const override;
+    virtual void setResidualCapacity(J newResidualCapacity);
 };
 
 } // namespace power
