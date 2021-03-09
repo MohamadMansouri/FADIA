@@ -31,6 +31,7 @@
 
 #define Bubble(_text_) getParentModule()->bubble(_text_)
 
+static size_t selfcount = 0;
 
 // session_t::session_t()
 // {
@@ -86,11 +87,13 @@ AProver::initialize()
     energy->totalPowerConsumption = inet::units::values::mW(IDLE_CONSUMPTION);
 
     int numselfish = ((int) getSystemModule()->par("numself"));
-    if (UId <= numselfish )
+    if (selfcount < numselfish )
     {
-        selfish = true; 
-        if(energy->getResidualEnergyCapacity().get() < 250)
-            energy->setResidualCapacity(inet::units::values::J(250));
+        if(energy->getResidualEnergyCapacity().get() > 250 || (((int) getSystemModule()->par("numProvers")) - UId <  numselfish - selfcount))
+        {
+            selfish = true; 
+            selfcount++;
+        }
     }
     statadapt = ((bool) getSystemModule()->par("statadapt"));
 #endif
