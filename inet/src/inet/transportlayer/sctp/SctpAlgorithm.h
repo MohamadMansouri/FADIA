@@ -1,24 +1,13 @@
 //
 // Copyright (C) 2008 Irene Ruengeler
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 #ifndef __INET_SCTPALGORITHM_H
 #define __INET_SCTPALGORITHM_H
 
-#include "inet/common/INETDefs.h"
 #include "inet/transportlayer/sctp/SctpAssociation.h"
 #include "inet/transportlayer/sctp/SctpQueue.h"
 
@@ -34,7 +23,7 @@ namespace sctp {
 class INET_API SctpAlgorithm : public cObject
 {
   protected:
-    SctpAssociation *assoc;    // we belong to this association
+    SctpAssociation *assoc; // we belong to this association
     SctpQueue *transmissionQ;
     SctpQueue *retransmissionQ;
 
@@ -68,19 +57,19 @@ class INET_API SctpAlgorithm : public cObject
 
     virtual void sendCommandInvoked(SctpPathVariables *path) = 0;
 
-    virtual void receivedDataAck(uint32 firstSeqAcked) = 0;
+    virtual void receivedDataAck(uint32_t firstSeqAcked) = 0;
 
     virtual void receivedDuplicateAck() = 0;
 
-    virtual void receivedAckForDataNotYetSent(uint32 seq) = 0;
+    virtual void receivedAckForDataNotYetSent(uint32_t seq) = 0;
 
     virtual void sackSent() = 0;
 
-    virtual void dataSent(uint32 fromseq) = 0;
+    virtual void dataSent(uint32_t fromseq) = 0;
 };
 
 } // namespace sctp
 } // namespace inet
 
-#endif // ifndef __INET_SCTPALGORITHM_H
+#endif
 

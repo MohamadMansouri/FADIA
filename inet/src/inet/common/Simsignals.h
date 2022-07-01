@@ -1,24 +1,13 @@
 //
-// Copyright (C) 2005 Andras Varga
+// Copyright (C) 2005 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 #ifndef __INET_SIMSIGNALS_H
 #define __INET_SIMSIGNALS_H
 
-#include "inet/common/INETDefs.h"
 #include "inet/common/Simsignals_m.h"
 
 namespace inet {
@@ -27,21 +16,24 @@ namespace inet {
  * Signals for publish/subscribe mechanisms.
  */
 // TODO document associated signals detail structs
-extern INET_API simsignal_t    // admin
+extern INET_API simsignal_t // admin
 // - layer 2 (data-link)
-//XXX generalize constants (remove "PP"?) - could be used by 80211 and ethernet as well
+// TODO generalize constants (remove "PP"?) - could be used by 80211 and ethernet as well
 // they generally carry TxNotifDetails as "details" to identify the interface and the frame
-    l2BeaconLostSignal,    // missed several consecutive beacons (currently Ieee80211)
-    l2AssociatedSignal,    // successfully associated with an AP (currently Ieee80211)
-    l2AssociatedNewApSignal,    // successfully associated with an AP (currently Ieee80211)
+    l2BeaconLostSignal, // missed several consecutive beacons (currently Ieee80211)
+    l2AssociatedSignal, // successfully associated with an AP (currently Ieee80211)
+    l2AssociatedNewApSignal, // successfully associated with an AP (currently Ieee80211)
     l2AssociatedOldApSignal,
-    l2DisassociatedSignal,    // same as BEACON_LOST but used in higher layers
-    l2ApAssociatedSignal,    // emitted by the AP, successfully associated with this AP (currently Ieee80211)
-    l2ApDisassociatedSignal,    // emitted by the AP, successfully disassociated from this AP (currently Ieee80211)
+    l2DisassociatedSignal, // same as BEACON_LOST but used in higher layers
+    l2ApAssociatedSignal, // emitted by the AP, successfully associated with this AP (currently Ieee80211)
+    l2ApDisassociatedSignal, // emitted by the AP, successfully disassociated from this AP (currently Ieee80211)
 
-    linkBrokenSignal,    // used for manet link layer feedback
+    linkBrokenSignal, // used for manet link layer feedback
 
     modesetChangedSignal,
+
+    interpacketGapStartedSignal,
+    interpacketGapEndedSignal,
 
 // - layer 3 (network)
     interfaceCreatedSignal,
@@ -86,14 +78,14 @@ extern INET_API simsignal_t    // admin
     ipv6MulticastGroupRegisteredSignal,
     ipv6MulticastGroupUnregisteredSignal,
 
-//layer 3 - ISIS
+// layer 3 - ISIS
     isisAdjChangedSignal,
 
 // - layer 4 (transport)
-//...
+// ...
 
 // - layer 7 (application)
-//...
+// ...
 
 // general
     packetCreatedSignal,
@@ -114,7 +106,31 @@ extern INET_API simsignal_t    // admin
     packetReceivedSignal,
 
     packetPushedSignal,
-    packetPoppedSignal;
+    packetPushedInSignal,
+    packetPushedOutSignal,
+    packetPushStartedSignal,
+    packetPushEndedSignal,
+
+    packetPulledSignal,
+    packetPulledInSignal,
+    packetPulledOutSignal,
+    packetPullStartedSignal,
+    packetPullEndedSignal,
+
+    packetFilteredSignal,
+
+    packetFlowStartedSignal,
+    packetFlowEndedSignal,
+
+    transmissionStartedSignal,
+    transmissionEndedSignal,
+    receptionStartedSignal,
+    receptionEndedSignal,
+
+    tokensChangedSignal,
+    tokensAddedSignal,
+    tokensRemovedSignal,
+    tokensDepletedSignal;
 
 /**
  * Utility function
@@ -124,5 +140,5 @@ void printSignalBanner(simsignal_t signalID, intval_t value, const cObject *deta
 
 } // namespace inet
 
-#endif // ifndef __INET_SIMSIGNALS_H
+#endif
 

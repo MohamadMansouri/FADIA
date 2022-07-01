@@ -1,20 +1,12 @@
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program.  If not, see http://www.gnu.org/licenses/.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-#ifndef __INET_MATH_INTERPOLATORS_H_
-#define __INET_MATH_INTERPOLATORS_H_
+
+#ifndef __INET_INTERPOLATORS_H
+#define __INET_INTERPOLATORS_H
 
 #include "inet/common/math/IInterpolator.h"
 #include "inet/common/math/Point.h"
@@ -29,12 +21,12 @@ class INET_API InterpolatorBase : public IInterpolator<X, Y>
   public:
     virtual Y getMin(const X x1, const Y y1, const X x2, const Y y2) const override {
         ASSERT(x1 <= x2);
-        return std::min(y1, y2);
+        return math::minnan(y1, y2);
     }
 
     virtual Y getMax(const X x1, const Y y1, const X x2, const Y y2) const override {
         ASSERT(x1 <= x2);
-        return std::max(y1, y2);
+        return math::maxnan(y1, y2);
     }
 };
 
@@ -126,7 +118,7 @@ class INET_API MinimumInterpolator : public ConstantInterpolatorBase<X, Y>
   public:
     virtual Y getValue(const X x1, const Y y1, const X x2, const Y y2, const X x) const override {
         ASSERT(x1 <= x && x <= x2);
-        return std::min(y1, y2);
+        return math::minnan(y1, y2);
     }
 };
 
@@ -142,7 +134,7 @@ class INET_API MaximumInterpolator : public ConstantInterpolatorBase<X, Y>
   public:
     virtual Y getValue(const X x1, const Y y1, const X x2, const Y y2, const X x) const override {
         ASSERT(x1 <= x && x <= x2);
-        return std::max(y1, y2);
+        return math::maxnan(y1, y2);
     }
 };
 
@@ -258,5 +250,5 @@ const IInterpolator<X, Y> *createInterpolator(const char *text) {
 
 } // namespace inet
 
-#endif // #ifndef __INET_MATH_INTERPOLATORS_H_
+#endif
 

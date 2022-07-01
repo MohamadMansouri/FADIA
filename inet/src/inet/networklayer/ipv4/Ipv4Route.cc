@@ -1,28 +1,19 @@
 //
-// Copyright (C) 2004-2006 Andras Varga
+// Copyright (C) 2004-2006 OpenSim Ltd.
 // Copyright (C) 2000 Institut fuer Telematik, Universitaet Karlsruhe
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-#include <sstream>
+#include "inet/networklayer/ipv4/Ipv4Route.h"
+
 #include <stdio.h>
 
-#include "inet/networklayer/common/InterfaceEntry.h"
+#include <sstream>
+
+#include "inet/networklayer/common/NetworkInterface.h"
 #include "inet/networklayer/ipv4/IIpv4RoutingTable.h"
 #include "inet/networklayer/ipv4/Ipv4InterfaceData.h"
-#include "inet/networklayer/ipv4/Ipv4Route.h"
 #include "inet/networklayer/ipv4/Ipv4RoutingTable.h"
 
 namespace inet {
@@ -35,12 +26,12 @@ Ipv4Route::~Ipv4Route()
     delete protocolData;
 }
 
-const char* inet::Ipv4Route::getSourceTypeAbbreviation() const {
+const char *inet::Ipv4Route::getSourceTypeAbbreviation() const {
     switch (sourceType) {
         case IFACENETMASK:
             return "C";
         case MANUAL:
-            return (getDestination().isUnspecified() ? "S*": "S");
+            return getDestination().isUnspecified() ? "S*" : "S";
         case ROUTER_ADVERTISEMENT:
             return "ra";
         case RIP:
@@ -80,7 +71,7 @@ std::string Ipv4Route::str() const
         out << "*";
     else
         out << getGateway();
-    if(rt && rt->isAdminDistEnabled())
+    if (rt && rt->isAdminDistEnabled())
         out << " AD:" << adminDist;
     out << " metric:" << metric;
     out << " if:";
@@ -125,7 +116,7 @@ IRoutingTable *Ipv4Route::getRoutingTableAsGeneric() const
 Ipv4MulticastRoute::~Ipv4MulticastRoute()
 {
     delete inInterface;
-    for (auto & elem : outInterfaces)
+    for (auto& elem : outInterfaces)
         delete elem;
     outInterfaces.clear();
 }
@@ -157,7 +148,7 @@ std::string Ipv4MulticastRoute::str() const
         out << inInterface->getInterface()->getInterfaceName() << "  ";
     out << "out:";
     bool first = true;
-    for (auto & elem : outInterfaces) {
+    for (auto& elem : outInterfaces) {
         if (!first)
             out << ",";
         if (elem->isEnabled()) {
@@ -188,7 +179,7 @@ void Ipv4MulticastRoute::setInInterface(InInterface *_inInterface)
 void Ipv4MulticastRoute::clearOutInterfaces()
 {
     if (!outInterfaces.empty()) {
-        for (auto & elem : outInterfaces)
+        for (auto& elem : outInterfaces)
             delete elem;
         outInterfaces.clear();
         changed(F_OUT);
@@ -205,7 +196,7 @@ void Ipv4MulticastRoute::addOutInterface(OutInterface *outInterface)
     ASSERT(outInterface);
 
     auto it = outInterfaces.begin();
-    for ( ; it != outInterfaces.end(); ++it) {
+    for (; it != outInterfaces.end(); ++it) {
         if ((*it)->getInterface() == outInterface->getInterface()) {
             delete *it;
             *it = outInterface;
@@ -218,7 +209,7 @@ void Ipv4MulticastRoute::addOutInterface(OutInterface *outInterface)
     changed(F_OUT);
 }
 
-bool Ipv4MulticastRoute::removeOutInterface(const InterfaceEntry *ie)
+bool Ipv4MulticastRoute::removeOutInterface(const NetworkInterface *ie)
 {
     for (auto it = outInterfaces.begin(); it != outInterfaces.end(); ++it) {
         if ((*it)->getInterface() == ie) {

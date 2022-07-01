@@ -1,20 +1,12 @@
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program.  If not, see http://www.gnu.org/licenses/.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-#ifndef __INET_FIELDSCHUNK_H_
-#define __INET_FIELDSCHUNK_H_
+
+#ifndef __INET_FIELDSCHUNK_H
+#define __INET_FIELDSCHUNK_H
 
 #include "inet/common/packet/chunk/Chunk.h"
 
@@ -26,18 +18,18 @@ namespace inet {
  */
 class INET_API FieldsChunk : public Chunk
 {
-  friend class Chunk;
-  friend class FieldsChunkSerializer;
+    friend class Chunk;
+    friend class FieldsChunkSerializer;
 
   protected:
     b chunkLength;
     /**
-    * The serialized representation of this chunk or nullptr if not available.
-    * When a chunk is serialized, the result is stored here for fast subsequent
-    * serializations. Moreover, if a chunk is created by deserialization, then
-    * the original bytes are also stored here. The serialized representation
-    * is deleted if a chunk is modified.
-    */
+     * The serialized representation of this chunk or nullptr if not available.
+     * When a chunk is serialized, the result is stored here for fast subsequent
+     * serializations. Moreover, if a chunk is created by deserialization, then
+     * the original bytes are also stored here. The serialized representation
+     * is deleted if a chunk is modified.
+     */
     mutable const std::vector<uint8_t> *serializedBytes;
 
   protected:
@@ -59,6 +51,9 @@ class INET_API FieldsChunk : public Chunk
     FieldsChunk();
     FieldsChunk(const FieldsChunk& other);
     virtual ~FieldsChunk();
+
+    virtual void parsimPack(cCommBuffer *buffer) const override;
+    virtual void parsimUnpack(cCommBuffer *buffer) override;
     //@}
 
     virtual void handleChange() override;
@@ -67,13 +62,17 @@ class INET_API FieldsChunk : public Chunk
     //@{
     virtual ChunkType getChunkType() const override { return CT_FIELDS; }
 
+    virtual bool containsSameData(const Chunk& other) const override;
+
     virtual b getChunkLength() const override { CHUNK_CHECK_IMPLEMENTATION(chunkLength >= b(0)); return chunkLength; }
     virtual void setChunkLength(b chunkLength) { handleChange(); this->chunkLength = chunkLength; }
     virtual void addChunkLength(b chunkLength) { handleChange(); this->chunkLength += chunkLength; }
+
+    virtual std::ostream& printFieldsToStream(std::ostream& stream, int level, int evFlags = 0) const override;
     //@}
 };
 
 } // namespace
 
-#endif // #ifndef __INET_FIELDCHUNK_H_
+#endif
 

@@ -1,7 +1,7 @@
 package inet.showcases.emulation.babel;
 
 import inet.node.inet.AdhocHost;
-import inet.physicallayer.ieee80211.packetlevel.Ieee80211ScalarRadioMedium;
+import inet.physicallayer.wireless.ieee80211.packetlevel.Ieee80211ScalarRadioMedium;
 import inet.visualizer.contract.IIntegratedVisualizer;
 
 network BabelShowcase
@@ -10,7 +10,7 @@ network BabelShowcase
         int numHosts;
         @display("bgb=600,400");
     submodules:
-        visualizer: <default("IntegratedMultiCanvasVisualizer")> like IIntegratedVisualizer if hasVisualizer() {
+        visualizer: <default(firstAvailableOrEmpty("IntegratedMultiCanvasVisualizer"))> like IIntegratedVisualizer if typename != "" {
             parameters:
                 @display("p=176,350;is=s");
         }

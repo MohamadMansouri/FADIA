@@ -1,24 +1,13 @@
 //
-// Copyright (C) 2012 OpenSim Ltd
+// Copyright (C) 2012 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
-// @author Zoltan Bojthe
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-#include "inet/linklayer/common/InterfaceTag_m.h"
+
 #include "inet/networklayer/internetcloud/CloudDelayerBase.h"
+
+#include "inet/linklayer/common/InterfaceTag_m.h"
 #include "inet/networklayer/ipv4/Ipv4.h"
 
 namespace inet {
@@ -29,7 +18,6 @@ Define_Module(CloudDelayerBase);
 
 CloudDelayerBase::CloudDelayerBase()
 {
-    networkProtocol = nullptr;
 }
 
 CloudDelayerBase::~CloudDelayerBase()
@@ -41,7 +29,7 @@ void CloudDelayerBase::initialize(int stage)
     cSimpleModule::initialize(stage);
 
     if (stage == INITSTAGE_LOCAL) {
-        networkProtocol = getModuleFromPar<INetfilter>(par("networkProtocolModule"), this);
+        networkProtocol.reference(this, "networkProtocolModule", true);
     }
     else if (stage == INITSTAGE_NETWORK_LAYER) {
         networkProtocol->registerHook(0, this);
@@ -50,7 +38,7 @@ void CloudDelayerBase::initialize(int stage)
 
 void CloudDelayerBase::finish()
 {
-    if (isRegisteredHook(networkProtocol))
+    if (isRegisteredHook(networkProtocol.get()))
         networkProtocol->unregisterHook(this);
 }
 
@@ -78,7 +66,7 @@ INetfilter::IHook::Result CloudDelayerBase::datagramPreRoutingHook(Packet *datag
 
 INetfilter::IHook::Result CloudDelayerBase::datagramForwardHook(Packet *datagram)
 {
-    Enter_Method_Silent();
+    Enter_Method("datagramForwardHook");
 
     auto ifInd = datagram->getTag<InterfaceInd>();
     int srcID = ifInd ? ifInd->getInterfaceId() : -1;
@@ -88,17 +76,17 @@ INetfilter::IHook::Result CloudDelayerBase::datagramForwardHook(Packet *datagram
     bool isDrop;
     calculateDropAndDelay(datagram, srcID, destID, isDrop, propDelay);
     if (isDrop) {
-        //TODO emit?
+        // TODO emit?
         EV_INFO << "Message " << datagram->str() << " dropped in cloud.\n";
         return INetfilter::IHook::DROP;
     }
 
     if (propDelay > SIMTIME_ZERO) {
-        //TODO emit?
+        // TODO emit?
         EV_INFO << "Message " << datagram->str() << " delayed with " << propDelay * 1000.0 << "ms in cloud.\n";
         cMessage *selfmsg = new cMessage("Delay");
-        selfmsg->setContextPointer(datagram);     // datagram owned by INetfilter module (Ipv4, Ipv6, ...)
-        scheduleAt(simTime() + propDelay, selfmsg);
+        selfmsg->setContextPointer(datagram); // datagram owned by INetfilter module (Ipv4, Ipv6, ...)
+        scheduleAfter(propDelay, selfmsg);
         return INetfilter::IHook::QUEUE;
     }
     return INetfilter::IHook::ACCEPT;

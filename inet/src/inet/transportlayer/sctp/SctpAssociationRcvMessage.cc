@@ -2,33 +2,24 @@
 // Copyright (C) 2005-2010 Irene Ruengeler
 // Copyright (C) 2009-2015 Thomas Dreibholz
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 #include <assert.h>
 #include <string.h>
 
-#include "inet/applications/common/SocketTag_m.h"
 #include "inet/common/packet/Message.h"
+#include "inet/common/socket/SocketTag_m.h"
+#include "inet/common/stlutils.h"
 
-#ifdef WITH_IPv4
+#ifdef INET_WITH_IPv4
 #include "inet/networklayer/ipv4/Ipv4InterfaceData.h"
-#endif // ifdef WITH_IPv4
+#endif // ifdef INET_WITH_IPv4
 
-#ifdef WITH_IPv6
+#ifdef INET_WITH_IPv6
 #include "inet/networklayer/ipv6/Ipv6InterfaceData.h"
-#endif // ifdef WITH_IPv6
+#endif // ifdef INET_WITH_IPv6
 
 #include "inet/transportlayer/contract/sctp/SctpCommand_m.h"
 #include "inet/transportlayer/sctp/Sctp.h"
@@ -53,11 +44,12 @@ void SctpAssociation::decreaseOutstandingBytes(SctpDataVariables *chunk)
         auto associter = sendStreams.find(chunk->sid);
         if (associter != sendStreams.end()) {
             stream = associter->second;
-        } else {
+        }
+        else {
             throw cRuntimeError("Stream with id %d not found", chunk->sid);
         }
         stream->setBytesInFlight(stream->getBytesInFlight() - chunk->booksize);
-        assert((int64)state->outstandingBytes >= 0);
+        assert((int64_t)state->outstandingBytes >= 0);
         statisticsOutstandingBytes->record(state->outstandingBytes);
 
         chunk->countsAsOutstanding = false;
@@ -71,7 +63,7 @@ void SctpAssociation::decreaseOutstandingBytes(SctpDataVariables *chunk)
     }
 }
 
-//bool SctpAssociation::process_RCV_Message(const Ptr<const SctpHeader>& sctpmsg,
+// bool SctpAssociation::process_RCV_Message(const Ptr<const SctpHeader>& sctpmsg,
 bool SctpAssociation::process_RCV_Message(SctpHeader *sctpmsg,
         const L3Address& src,
         const L3Address& dest)
@@ -83,12 +75,12 @@ bool SctpAssociation::process_RCV_Message(SctpHeader *sctpmsg,
     state->pktDropSent = false;
 
     SctpPathVariables *path = getPath(src);
-    const uint16 srcPort = sctpmsg->getDestPort();
-    const uint16 destPort = sctpmsg->getSrcPort();
-    const uint32 numberOfChunks = sctpmsg->getSctpChunksArraySize();
+    const uint16_t srcPort = sctpmsg->getDestPort();
+    const uint16_t destPort = sctpmsg->getSrcPort();
+    const uint32_t numberOfChunks = sctpmsg->getSctpChunksArraySize();
     EV_DETAIL << "numberOfChunks=" << numberOfChunks << endl;
 
-   // state->sctpmsg = sctpmsg->dup();
+//    state->sctpmsg = sctpmsg->dup();
     bool authenticationNecessary = state->peerAuth;
     state->sackAlreadySent = false;
 
@@ -112,10 +104,10 @@ bool SctpAssociation::process_RCV_Message(SctpHeader *sctpmsg,
     bool dataChunkReceived = false;
     bool shutdownCalled = false;
     bool sackWasReceived = false;
-    for (uint32 i = 0; i < numberOfChunks; i++) {
-       // SctpChunk *header = (SctpChunk *)(sctpmsg->getSctpChunks(0));
+    for (uint32_t i = 0; i < numberOfChunks; i++) {
+//        SctpChunk *header = (SctpChunk *)(sctpmsg->getSctpChunks(0));
         SctpChunk *header = sctpmsg->removeFirstChunk();
-        const uint8 type = header->getSctpChunkType();
+        const uint8_t type = header->getSctpChunkType();
         EV_DEBUG << "Header length: " << header->getByteLength() << endl;
 
         if ((type != INIT) &&
@@ -136,7 +128,7 @@ bool SctpAssociation::process_RCV_Message(SctpHeader *sctpmsg,
                     sendHMacError(authChunk->getHMacIdentifier());
                     auto it = sctpMain->assocStatMap.find(assocId);
                     it->second.numAuthChunksRejected++;
-                   // delete authChunk;
+                    delete authChunk;
                     return true;
                 }
                 if (authChunk->getHMacOk() == false) {
@@ -148,7 +140,7 @@ bool SctpAssociation::process_RCV_Message(SctpHeader *sctpmsg,
                 authenticationNecessary = false;
                 auto it = sctpMain->assocStatMap.find(assocId);
                 it->second.numAuthChunksAccepted++;
-               // delete authChunk;
+                delete authChunk;
                 continue;
             }
             else {
@@ -160,7 +152,7 @@ bool SctpAssociation::process_RCV_Message(SctpHeader *sctpmsg,
 
         switch (type) {
             case INIT: {
-                EV_INFO<< "INIT received" << endl;
+                EV_INFO << "INIT received" << endl;
                 auto initChunk = check_and_cast<SctpInitChunk *>(header);
                 if ((initChunk->getNoInStreams() != 0) &&
                     (initChunk->getNoOutStreams() != 0) &&
@@ -169,7 +161,7 @@ bool SctpAssociation::process_RCV_Message(SctpHeader *sctpmsg,
                     trans = processInitArrived(initChunk, srcPort, destPort);
                 }
                 i = numberOfChunks - 1;
-                //delete initChunk;
+                delete initChunk;
                 break;
             }
 
@@ -189,7 +181,7 @@ bool SctpAssociation::process_RCV_Message(SctpHeader *sctpmsg,
                         return true;
                     }
                     i = numberOfChunks - 1;
-                   // delete initAckChunk;
+                    delete initAckChunk;
                 }
                 else {
                     EV_INFO << "INIT_ACK will be ignored" << endl;
@@ -200,16 +192,16 @@ bool SctpAssociation::process_RCV_Message(SctpHeader *sctpmsg,
                 EV_INFO << "COOKIE_ECHO received" << endl;
                 auto cookieEchoChunk = check_and_cast<SctpCookieEchoChunk *>(header);
                 trans = processCookieEchoArrived(cookieEchoChunk, src);
-                //delete cookieEchoChunk;
+                delete cookieEchoChunk;
                 break;
             }
 
             case COOKIE_ACK:
                 EV_INFO << "COOKIE_ACK received" << endl;
                 if (fsm->getState() == SCTP_S_COOKIE_ECHOED) {
-                    check_and_cast<SctpCookieAckChunk *>(header);
+                    auto cookieAckChunk = check_and_cast<SctpCookieAckChunk *>(header);
                     trans = processCookieAckArrived();
-                   // delete cookieAckChunk;
+                    delete cookieAckChunk;
                 }
                 break;
 
@@ -226,7 +218,7 @@ bool SctpAssociation::process_RCV_Message(SctpHeader *sctpmsg,
                 }
                 if (state->stopReading) {
                     if (state->shutdownChunk) {
-                      //  delete state->shutdownChunk;
+                        delete state->shutdownChunk;
                         state->shutdownChunk = nullptr;
                     }
                     delete header;
@@ -246,7 +238,7 @@ bool SctpAssociation::process_RCV_Message(SctpHeader *sctpmsg,
                         if (event == SCTP_E_DELIVERED) {
                             if ((state->streamReset) && (state->incomingRequest != nullptr || state->resetRequested) &&
                                 ((state->lastTsnBeforeReset == state->gapList.getHighestTsnReceived()) ||
-                                ((state->lastTsnBeforeReset == state->lastTsnReceived))))
+                                 ((state->lastTsnBeforeReset == state->lastTsnReceived))))
                             {
                                 resetExpectedSsns();
                                 if (state->inOut) {
@@ -258,25 +250,30 @@ bool SctpAssociation::process_RCV_Message(SctpHeader *sctpmsg,
                             }
                             dataChunkReceived = true;
                             state->sackAllowed = true;
-                        } else if (event == SCTP_E_SEND) {
+                        }
+                        else if (event == SCTP_E_SEND) {
                             dataChunkReceived = true;
                             state->sackAllowed = true;
-                        } else if (event == SCTP_E_DUP_RECEIVED) {
+                        }
+                        else if (event == SCTP_E_DUP_RECEIVED) {
                             dupReceived = true;
-                        } else if (event == SCTP_E_ABORT) {
+                        }
+                        else if (event == SCTP_E_ABORT) {
                             sendAbort();
                             sctpMain->removeAssociation(this);
                             return true;
-                        } else {
+                        }
+                        else {
                             dataChunkReceived = false;
                             state->sackAllowed = false;
                         }
-                    } else {
+                    }
+                    else {
                         sendAbort();
                         sctpMain->removeAssociation(this);
                         return true;
                     }
-                   // delete dataChunk;
+                    delete dataChunk;
                 }
                 trans = true;
                 break;
@@ -288,7 +285,7 @@ bool SctpAssociation::process_RCV_Message(SctpHeader *sctpmsg,
                 processSackArrived(sackChunk);
                 trans = true;
                 sendAllowed = true;
-               // delete sackChunk;
+                delete sackChunk;
                 if (getOutstandingBytes() == 0 && transmissionQ->getQueueSize() == 0 && qCounter.roomSumSendStreams == 0) {
                     if (fsm->getState() == SCTP_S_SHUTDOWN_PENDING) {
                         EV_DETAIL << "No more packets: send SHUTDOWN" << endl;
@@ -313,7 +310,7 @@ bool SctpAssociation::process_RCV_Message(SctpHeader *sctpmsg,
                     sendIndicationToApp(SCTP_I_ABORT);
                     trans = performStateTransition(SCTP_E_ABORT);
                 }
-              //  delete abortChunk;
+                delete abortChunk;
                 break;
             }
 
@@ -324,7 +321,7 @@ bool SctpAssociation::process_RCV_Message(SctpHeader *sctpmsg,
                     sendHeartbeatAck(heartbeatChunk, dest, src);
                 }
                 trans = true;
-               // delete heartbeatChunk;
+                delete heartbeatChunk;
                 if (path) {
                     path->numberOfHeartbeatsRcvd++;
                     path->vectorPathRcvdHb->record(path->numberOfHeartbeatsRcvd);
@@ -342,7 +339,7 @@ bool SctpAssociation::process_RCV_Message(SctpHeader *sctpmsg,
                     processHeartbeatAckArrived(heartbeatAckChunk, path);
                 }
                 trans = true;
-               // delete heartbeatAckChunk;
+                delete heartbeatAckChunk;
                 break;
             }
 
@@ -358,7 +355,7 @@ bool SctpAssociation::process_RCV_Message(SctpHeader *sctpmsg,
                 trans = performStateTransition(SCTP_E_RCV_SHUTDOWN);
                 sendIndicationToApp(SCTP_I_SHUTDOWN_RECEIVED);
                 trans = true;
-               // delete shutdownChunk;
+                delete shutdownChunk;
                /* if (state->resetChunk != nullptr) {
                     delete state->resetChunk;
                 }*/
@@ -368,7 +365,7 @@ bool SctpAssociation::process_RCV_Message(SctpHeader *sctpmsg,
             case SHUTDOWN_ACK:
                 EV_INFO << "SHUTDOWN_ACK received" << endl;
                 if (fsm->getState() != SCTP_S_ESTABLISHED) {
-                    check_and_cast<SctpShutdownAckChunk *>(header);
+                    auto shutdownAckChunk = check_and_cast<SctpShutdownAckChunk *>(header);
                     sendShutdownComplete();
                     stopTimers();
                     stopTimer(T2_ShutdownTimer);
@@ -384,7 +381,7 @@ bool SctpAssociation::process_RCV_Message(SctpHeader *sctpmsg,
                             state->shutdownChunk = nullptr;
                         }
                     }
-                   // delete shutdownAckChunk;
+                    delete shutdownAckChunk;
                     if (state->resetChunk != nullptr) {
                         delete state->resetChunk;
                     }
@@ -393,16 +390,16 @@ bool SctpAssociation::process_RCV_Message(SctpHeader *sctpmsg,
 
             case SHUTDOWN_COMPLETE: {
                 EV_INFO << "Shutdown Complete arrived" << endl;
-                check_and_cast<SctpShutdownCompleteChunk *>(header);
+                auto shutdownCompleteChunk = check_and_cast<SctpShutdownCompleteChunk *>(header);
                 trans = performStateTransition(SCTP_E_RCV_SHUTDOWN_COMPLETE);
-                sendIndicationToApp(SCTP_I_PEER_CLOSED);    // necessary for NAT-Rendezvous
+                sendIndicationToApp(SCTP_I_PEER_CLOSED); // necessary for NAT-Rendezvous
                 if (trans == true) {
                     stopTimers();
                 }
                 stopTimer(T2_ShutdownTimer);
                 stopTimer(T5_ShutdownGuardTimer);
                 delete state->shutdownAckChunk;
-               // delete shutdownCompleteChunk;
+                delete shutdownCompleteChunk;
                 break;
             }
 
@@ -413,21 +410,21 @@ bool SctpAssociation::process_RCV_Message(SctpHeader *sctpmsg,
                 trans = true;
                 sendAllowed = true;
                 dataChunkReceived = true;
-               // delete forwChunk;
+                delete forwChunk;
                 break;
             }
 
             case RE_CONFIG: {
                 EV_INFO << "StreamReset received" << endl;
                 if (fsm->getState() != SCTP_S_ESTABLISHED && fsm->getState() != SCTP_S_SHUTDOWN_PENDING) {
-                   // delete header;
+                    delete header;
                     break;
                 }
                 auto strResChunk = check_and_cast<SctpStreamResetChunk *>(header);
                 processStreamResetArrived(strResChunk);
                 trans = true;
                 sendAllowed = true;
-               // delete strResChunk;
+                delete strResChunk;
                 break;
             }
 
@@ -440,7 +437,7 @@ bool SctpAssociation::process_RCV_Message(SctpHeader *sctpmsg,
                 asconfChunk = check_and_cast<SctpAsconfChunk *>(header);
                 processAsconfArrived(asconfChunk);
                 trans = true;
-               // delete asconfChunk;
+                delete asconfChunk;
                 break;
 
             case ASCONF_ACK: {
@@ -449,7 +446,7 @@ bool SctpAssociation::process_RCV_Message(SctpHeader *sctpmsg,
                 processAsconfAckArrived(asconfAckChunk);
                 trans = true;
                 delete state->asconfChunk;
-               // delete asconfAckChunk;
+                delete asconfAckChunk;
                 break;
             }
 
@@ -462,7 +459,7 @@ bool SctpAssociation::process_RCV_Message(SctpHeader *sctpmsg,
 
                     trans = true;
                     sendAllowed = true;
-                   // delete packetDropChunk;
+                    delete packetDropChunk;
                 }
                 break;
 
@@ -471,12 +468,12 @@ bool SctpAssociation::process_RCV_Message(SctpHeader *sctpmsg,
                 auto errorChunk = check_and_cast<SctpErrorChunk *>(header);
                 processErrorArrived(errorChunk);
                 trans = true;
-               // delete errorChunk;
+                delete errorChunk;
                 break;
             }
 
             default:
-                EV_ERROR << "different type" << endl;    // TODO
+                EV_ERROR << "different type" << endl; // TODO
                 break;
         }
 
@@ -501,18 +498,19 @@ bool SctpAssociation::process_RCV_Message(SctpHeader *sctpmsg,
         {
             sendOnAllPaths(state->getPrimaryPath());
         }
-
     } // end of for-loop
     if (state->sendResponse > 0) {
         if (state->sendResponse == PERFORMED_WITH_OPTION) {
             resetExpectedSsns();
             if (state->incomingRequest != nullptr)
                 sendStreamResetResponse(check_and_cast<SctpSsnTsnResetRequestParameter *>(state->incomingRequest), PERFORMED, true);
-        } else if (state->sendResponse == PERFORMED_WITH_ADDOUT) {
+        }
+        else if (state->sendResponse == PERFORMED_WITH_ADDOUT) {
             sendAddOutgoingStreamsRequest(check_and_cast<SctpAddStreamsRequestParameter *>(state->incomingRequest)->getNumberOfStreams());
             state->numResetRequests++;
             sendStreamResetResponse(check_and_cast<SctpAddStreamsRequestParameter *>(state->incomingRequest)->getSrReqSn(), PERFORMED);
-        } else {
+        }
+        else {
             sendStreamResetResponse(state->responseSn, state->sendResponse);
         }
         state->sendResponse = 0;
@@ -524,19 +522,19 @@ bool SctpAssociation::process_RCV_Message(SctpHeader *sctpmsg,
     }
 
     // ====== Clean-up =======================================================
-  /*  if (!state->pktDropSent) {
-        disposeOf(state->sctpmsg);
-        EV_DEBUG << "state->sctpmsg was disposed" << endl;
-    }*/
+    /*  if (!state->pktDropSent) {
+          disposeOf(state->sctpmsg);
+          EV_DEBUG << "state->sctpmsg was disposed" << endl;
+      }*/
     return trans;
 }
 
-bool SctpAssociation::processInitArrived(SctpInitChunk *initchunk, int32 srcPort, int32 destPort)
+bool SctpAssociation::processInitArrived(SctpInitChunk *initchunk, int32_t srcPort, int32_t destPort)
 {
     SctpAssociation *assoc;
     char timerName[64];
     bool trans = false;
-    uint16 type;
+    uint16_t type;
     AddressVector adv;
 
     EV_TRACE << "processInitArrived\n";
@@ -591,19 +589,19 @@ bool SctpAssociation::processInitArrived(SctpInitChunk *initchunk, int32 srcPort
             numberOfRemoteAddresses = initchunk->getAddressesArraySize();
             state->localAddresses.clear();
             if (localAddressList.front().isUnspecified()) {
-                for (int32 i = 0; i < ift->getNumInterfaces(); ++i) {
-#ifdef WITH_IPv4
+                for (int32_t i = 0; i < ift->getNumInterfaces(); ++i) {
+#ifdef INET_WITH_IPv4
                     if (auto ipv4Data = ift->getInterface(i)->findProtocolData<Ipv4InterfaceData>()) {
                         adv.push_back(ipv4Data->getIPAddress());
                     }
                     else
-#endif // ifdef WITH_IPv4
-#ifdef WITH_IPv6
+#endif // ifdef INET_WITH_IPv4
+#ifdef INET_WITH_IPv6
                     if (auto ipv6Data = ift->getInterface(i)->findProtocolData<Ipv6InterfaceData>()) {
                         adv.push_back(ipv6Data->getAddress(0));
                     }
                     else
-#endif // ifdef WITH_IPv6
+#endif // ifdef INET_WITH_IPv6
                         throw cRuntimeError("INET was compiled without IPv4/IPv6 support");
                 }
             }
@@ -615,14 +613,14 @@ bool SctpAssociation::processInitArrived(SctpInitChunk *initchunk, int32 srcPort
                 state->localAddresses.push_back((*adv.begin()));
             }
             else if (rlevel > 0) {
-                for (auto & elem : adv) {
+                for (auto& elem : adv) {
                     if (getAddressLevel((elem)) >= rlevel) {
                         sctpMain->addLocalAddress(this, (elem));
                         state->localAddresses.push_back((elem));
                     }
                 }
             }
-            for (uint32 j = 0; j < initchunk->getAddressesArraySize(); j++) {
+            for (uint32_t j = 0; j < initchunk->getAddressesArraySize(); j++) {
                 // skip IPv6 because we can't send to them yet
                 if (initchunk->getAddresses(j).getType() == L3Address::IPv6)
                     continue;
@@ -630,7 +628,7 @@ bool SctpAssociation::processInitArrived(SctpInitChunk *initchunk, int32 srcPort
                 if (!getPath(initchunk->getAddresses(j))) {
                     SctpPathVariables *path = new SctpPathVariables(initchunk->getAddresses(j), this, rt);
                     EV_INFO << " get new path for " << initchunk->getAddresses(j) << "\n";
-                    for (auto & elem : state->localAddresses) {
+                    for (auto& elem : state->localAddresses) {
                         if (sctpMain->addRemoteAddress(this, (elem), initchunk->getAddresses(j))) {
                             this->remoteAddressList.push_back(initchunk->getAddresses(j));
                         }
@@ -641,8 +639,7 @@ bool SctpAssociation::processInitArrived(SctpInitChunk *initchunk, int32 srcPort
                     qCounter.roomRetransQ[path->remoteAddress] = 0;
                 }
             }
-            auto ite = sctpPathMap.find(remoteAddr);
-            if (ite == sctpPathMap.end()) {
+            if (!containsKey(sctpPathMap, remoteAddr)) {
                 SctpPathVariables *path = new SctpPathVariables(remoteAddr, this, rt);
                 EV_INFO << "Get new path for " << remoteAddr << "\n";
                 sctpPathMap[remoteAddr] = path;
@@ -652,7 +649,7 @@ bool SctpAssociation::processInitArrived(SctpInitChunk *initchunk, int32 srcPort
             }
             if (initchunk->getHmacTypesArraySize() != 0) {
                 state->peerAuth = true;
-                for (uint32 j = 0; j < initchunk->getSctpChunkTypesArraySize(); j++) {
+                for (uint32_t j = 0; j < initchunk->getSctpChunkTypesArraySize(); j++) {
                     type = initchunk->getSctpChunkTypes(j);
                     if (type != INIT && type != INIT_ACK && type != AUTH && type != SHUTDOWN_COMPLETE) {
                         state->peerChunkList.push_back(type);
@@ -661,7 +658,7 @@ bool SctpAssociation::processInitArrived(SctpInitChunk *initchunk, int32 srcPort
             }
             EV_DETAIL << "number supported extensions:" << initchunk->getSepChunksArraySize() << "\n";
             if (initchunk->getSepChunksArraySize() > 0) {
-                for (uint32 i = 0; i < initchunk->getSepChunksArraySize(); i++) {
+                for (uint32_t i = 0; i < initchunk->getSepChunksArraySize(); i++) {
                     if (initchunk->getSepChunks(i) == RE_CONFIG) {
                         state->peerStreamReset = true;
                         continue;
@@ -688,12 +685,12 @@ bool SctpAssociation::processInitArrived(SctpInitChunk *initchunk, int32 srcPort
             trans = true;
         }
     }
-    else if (fsm->getState() == SCTP_S_COOKIE_WAIT) {    //INIT-Collision
+    else if (fsm->getState() == SCTP_S_COOKIE_WAIT) { // INIT-Collision
         EV_INFO << "INIT collision: send Init-Ack\n";
         if (initchunk->getHmacTypesArraySize() != 0) {
             state->peerAuth = true;
             if (state->peerChunkList.size() == 0) {
-                for (uint32 j = 0; j < initchunk->getSctpChunkTypesArraySize(); j++) {
+                for (uint32_t j = 0; j < initchunk->getSctpChunkTypesArraySize(); j++) {
                     type = initchunk->getSctpChunkTypes(j);
                     if (type != INIT && type != INIT_ACK && type != AUTH && type != SHUTDOWN_COMPLETE) {
                         state->peerChunkList.push_back(type);
@@ -707,10 +704,10 @@ bool SctpAssociation::processInitArrived(SctpInitChunk *initchunk, int32 srcPort
     else if (fsm->getState() == SCTP_S_COOKIE_ECHOED || fsm->getState() == SCTP_S_ESTABLISHED) {
         // check, whether a new address has been added
         bool addressPresent = false;
-        for (uint32 j = 0; j < initchunk->getAddressesArraySize(); j++) {
+        for (uint32_t j = 0; j < initchunk->getAddressesArraySize(); j++) {
             if (initchunk->getAddresses(j).getType() == L3Address::IPv6)
                 continue;
-            for (auto & elem : remoteAddressList) {
+            for (auto& elem : remoteAddressList) {
                 if ((elem) == (initchunk->getAddresses(j))) {
                     addressPresent = true;
                     break;
@@ -733,14 +730,14 @@ bool SctpAssociation::processInitArrived(SctpInitChunk *initchunk, int32 srcPort
 bool SctpAssociation::processInitAckArrived(SctpInitAckChunk *initAckChunk)
 {
     bool trans = false;
-    uint16 type;
+    uint16_t type;
 
     if (fsm->getState() == SCTP_S_COOKIE_WAIT) {
         EV_INFO << "State is COOKIE_WAIT, Cookie_Echo has to be sent\n";
         stopTimer(T1_InitTimer);
         state->initRexmitTimeout = SCTP_TIMEOUT_INIT_REXMIT;
         trans = performStateTransition(SCTP_E_RCV_INIT_ACK);
-        //delete state->initChunk; will be deleted when state ESTABLISHED is entered
+//        delete state->initChunk; will be deleted when state ESTABLISHED is entered
         if (trans) {
             initPeerTsn = initAckChunk->getInitTsn();
             localVTag = initAckChunk->getInitTag();
@@ -757,10 +754,10 @@ bool SctpAssociation::processInitAckArrived(SctpInitAckChunk *initAckChunk)
             remoteAddressList.clear();
             numberOfRemoteAddresses = initAckChunk->getAddressesArraySize();
             EV_INFO << "number of remote addresses in initAck=" << numberOfRemoteAddresses << "\n";
-            for (uint32 j = 0; j < numberOfRemoteAddresses; j++) {
+            for (uint32_t j = 0; j < numberOfRemoteAddresses; j++) {
                 if (initAckChunk->getAddresses(j).getType() == L3Address::IPv6)
                     continue;
-                for (auto & elem : state->localAddresses) {
+                for (auto& elem : state->localAddresses) {
                     if (!((elem).isUnspecified())) {
                         EV_INFO << "addPath " << initAckChunk->getAddresses(j) << "\n";
                         if (sctpMain->addRemoteAddress(this, (elem), initAckChunk->getAddresses(j))) {
@@ -770,8 +767,7 @@ bool SctpAssociation::processInitAckArrived(SctpInitAckChunk *initAckChunk)
                     }
                 }
             }
-            auto ite = sctpPathMap.find(remoteAddr);
-            if (ite == sctpPathMap.end()) {
+            if (!containsKey(sctpPathMap, remoteAddr)) {
                 EV_INFO << " get new path for " << remoteAddr << "\n";
                 SctpPathVariables *path = new SctpPathVariables(remoteAddr, this, rt);
                 sctpPathMap[remoteAddr] = path;
@@ -786,7 +782,7 @@ bool SctpAssociation::processInitAckArrived(SctpInitAckChunk *initAckChunk)
             (this->*ssFunctions.ssInitStreams)(inboundStreams, outboundStreams);
             if (initAckChunk->getHmacTypesArraySize() != 0) {
                 state->peerAuth = true;
-                for (uint32 j = 0; j < initAckChunk->getSctpChunkTypesArraySize(); j++) {
+                for (uint32_t j = 0; j < initAckChunk->getSctpChunkTypesArraySize(); j++) {
                     type = initAckChunk->getSctpChunkTypes(j);
                     if (type != INIT && type != INIT_ACK && type != AUTH && type != SHUTDOWN_COMPLETE) {
                         state->peerChunkList.push_back(type);
@@ -794,7 +790,7 @@ bool SctpAssociation::processInitAckArrived(SctpInitAckChunk *initAckChunk)
                 }
             }
             if (initAckChunk->getSepChunksArraySize() > 0) {
-                for (uint32 i = 0; i < initAckChunk->getSepChunksArraySize(); i++) {
+                for (uint32_t i = 0; i < initAckChunk->getSepChunksArraySize(); i++) {
                     if (initAckChunk->getSepChunks(i) == RE_CONFIG) {
                         state->peerStreamReset = true;
                         continue;
@@ -829,7 +825,7 @@ bool SctpAssociation::processCookieEchoArrived(SctpCookieEchoChunk *cookieEcho, 
     if (fsm->getState() == SCTP_S_CLOSED) {
         if (cookie->getLocalTag() != localVTag || cookie->getPeerTag() != peerVTag) {
             bool same = true;
-            for (int32 i = 0; i < 32; i++) {
+            for (int32_t i = 0; i < 32; i++) {
                 if (cookie->getLocalTieTag(i) != state->localTieTag[i]) {
                     same = false;
                     break;
@@ -848,14 +844,14 @@ bool SctpAssociation::processCookieEchoArrived(SctpCookieEchoChunk *cookieEcho, 
         EV_INFO << "State is CLOSED, Cookie_Ack has to be sent\n";
         trans = performStateTransition(SCTP_E_RCV_VALID_COOKIE_ECHO);
         if (trans)
-            sendCookieAck(addr); //send to address
+            sendCookieAck(addr); // send to address
     }
     else if (fsm->getState() == SCTP_S_ESTABLISHED || fsm->getState() == SCTP_S_COOKIE_WAIT || fsm->getState() == SCTP_S_COOKIE_ECHOED) {
         EV_INFO << "State is not CLOSED, but COOKIE_ECHO received. Compare the Tags\n";
         // case A: Peer restarted, retrieve information from cookie
         if (cookie->getLocalTag() != localVTag && cookie->getPeerTag() != peerVTag) {
             bool same = true;
-            for (int32 i = 0; i < 32; i++) {
+            for (int32_t i = 0; i < 32; i++) {
                 if (cookie->getLocalTieTag(i) != state->localTieTag[i]) {
                     same = false;
                     break;
@@ -879,7 +875,7 @@ bool SctpAssociation::processCookieEchoArrived(SctpCookieEchoChunk *cookieEcho, 
             sendCookieAck(addr);
         }
         else if (cookie->getPeerTag() == peerVTag && cookie->getLocalTag() == localVTag) {
-            sendCookieAck(addr);    //send to address src
+            sendCookieAck(addr); // send to address src
         }
         trans = true;
     }
@@ -952,7 +948,7 @@ void SctpAssociation::cucProcessGapReports(const SctpDataVariables *chunk,
             path->pseudoCumAck = chunk->tsn;
             path->findPseudoCumAck = false;
         }
-        if ((isAcked) &&    /* Not acked before and acked now => ack for the first time */
+        if ((isAcked) && /* Not acked before and acked now => ack for the first time */
             (path->pseudoCumAck == chunk->tsn))
         {
             path->newPseudoCumAck = true;
@@ -966,7 +962,7 @@ void SctpAssociation::cucProcessGapReports(const SctpDataVariables *chunk,
             path->rtxPseudoCumAck = chunk->tsn;
             path->findRTXPseudoCumAck = false;
         }
-        if ((isAcked) &&    /* Not acked before and acked now => ack for the first time */
+        if ((isAcked) && /* Not acked before and acked now => ack for the first time */
             (path->rtxPseudoCumAck == chunk->tsn))
         {
             path->newRTXPseudoCumAck = true;
@@ -978,45 +974,45 @@ void SctpAssociation::cucProcessGapReports(const SctpDataVariables *chunk,
 SctpEventCode SctpAssociation::processSackArrived(SctpSackChunk *sackChunk)
 {
     simtime_t rttEstimation = SIMTIME_MAX;
-    const uint64 sendBufferBeforeUpdate = state->sendBuffer;
-    SctpPathVariables *path = getPath(remoteAddr);    // Path for *this* SACK!
-    const uint64 arwnd = sackChunk->getA_rwnd();
-    const uint32 tsna = sackChunk->getCumTsnAck();
-    uint32 highestNewAck = tsna;    // Highest newly acked TSN
-    const uint16 numDups = sackChunk->getNumDupTsns();
+    const uint64_t sendBufferBeforeUpdate = state->sendBuffer;
+    SctpPathVariables *path = getPath(remoteAddr); // Path for *this* SACK!
+    const uint64_t arwnd = sackChunk->getA_rwnd();
+    const uint32_t tsna = sackChunk->getCumTsnAck();
+    uint32_t highestNewAck = tsna; // Highest newly acked TSN
+    const uint16_t numDups = sackChunk->getNumDupTsns();
     Sctp::AssocStat *assocStat = sctpMain->getAssocStat(assocId);
     bool dropFilledGap = false;
-    const uint32 msgRwnd = sackChunk->getMsg_rwnd();
+    const uint32_t msgRwnd = sackChunk->getMsg_rwnd();
 
     // ====== Put information from SACK into GapList =========================
     SctpGapList sackGapList;
     sackGapList.setInitialCumAckTsn(sackChunk->getCumTsnAck());
-    uint32 lastTsn = sackChunk->getCumTsnAck();
-    for (uint32 i = 0; i < sackChunk->getNumGaps(); i++) {
-        uint32 tsn = sackChunk->getGapStart(i);
+    uint32_t lastTsn = sackChunk->getCumTsnAck();
+    for (uint32_t i = 0; i < sackChunk->getNumGaps(); i++) {
+        uint32_t tsn = sackChunk->getGapStart(i);
         assert(tsnLt(lastTsn + 1, tsn));
         lastTsn = tsn;
         while (tsnLe(tsn, sackChunk->getGapStop(i))) {
             bool dummy;
-            sackGapList.updateGapList(tsn, dummy, true);    // revokable TSN
+            sackGapList.updateGapList(tsn, dummy, true); // revokable TSN
             tsn++;
         }
         lastTsn = sackChunk->getGapStop(i);
     }
     if (assocStat) {
         assocStat->sumRGapRanges += ((sackChunk->getCumTsnAck() <= lastTsn) ?
-                                     (uint64)(lastTsn - sackChunk->getCumTsnAck()) :
-                                     (uint64)(sackChunk->getCumTsnAck() - lastTsn));
+                                     (uint64_t)(lastTsn - sackChunk->getCumTsnAck()) :
+                                     (uint64_t)(sackChunk->getCumTsnAck() - lastTsn));
     }
     if (sackChunk->getNrSubtractRGaps() == false) {
         lastTsn = sackChunk->getCumTsnAck();
-        for (uint32 i = 0; i < sackChunk->getNumNrGaps(); i++) {
-            uint32 tsn = sackChunk->getNrGapStart(i);
+        for (uint32_t i = 0; i < sackChunk->getNumNrGaps(); i++) {
+            uint32_t tsn = sackChunk->getNrGapStart(i);
             assert(tsnLt(lastTsn + 1, tsn));
             lastTsn = tsn;
             while (tsnLe(tsn, sackChunk->getNrGapStop(i))) {
                 bool dummy;
-                sackGapList.updateGapList(tsn, dummy, false);    // non-revokable TSN
+                sackGapList.updateGapList(tsn, dummy, false); // non-revokable TSN
                 tsn++;
             }
             lastTsn = sackChunk->getNrGapStop(i);
@@ -1024,14 +1020,14 @@ SctpEventCode SctpAssociation::processSackArrived(SctpSackChunk *sackChunk)
     }
     else {
         lastTsn = sackChunk->getCumTsnAck();
-        for (uint32 i = 0; i < sackChunk->getNumNrGaps(); i++) {
-            uint32 tsn = sackChunk->getNrGapStart(i);
+        for (uint32_t i = 0; i < sackChunk->getNumNrGaps(); i++) {
+            uint32_t tsn = sackChunk->getNrGapStart(i);
             assert(tsnLt(lastTsn + 1, tsn));
             lastTsn = tsn;
             while (tsnLe(tsn, sackChunk->getNrGapStop(i))) {
                 if (sackGapList.tsnIsRevokable(tsn) == false) {
                     bool dummy;
-                    sackGapList.updateGapList(tsn, dummy, false);    // non-revokable TSN
+                    sackGapList.updateGapList(tsn, dummy, false); // non-revokable TSN
                 }
                 tsn++;
             }
@@ -1040,14 +1036,14 @@ SctpEventCode SctpAssociation::processSackArrived(SctpSackChunk *sackChunk)
     }
     if (assocStat) {
         assocStat->sumNRGapRanges += (sackChunk->getCumTsnAck() <= lastTsn) ?
-            (uint64)(lastTsn - sackChunk->getCumTsnAck()) :
-            (uint64)(sackChunk->getCumTsnAck() - lastTsn);
+            (uint64_t)(lastTsn - sackChunk->getCumTsnAck()) :
+            (uint64_t)(sackChunk->getCumTsnAck() - lastTsn);
     }
-    const uint16 numGaps = sackGapList.getNumGaps(SctpGapList::GT_Any);
+    const uint16_t numGaps = sackGapList.getNumGaps(SctpGapList::GT_Any);
 
     // ====== Print some information =========================================
     EV_DETAIL << "##### SACK Processing: TSNa=" << tsna << " #####" << endl;
-    for (auto & elem : sctpPathMap) {
+    for (auto& elem : sctpPathMap) {
         SctpPathVariables *myPath = elem.second;
         EV_DETAIL << "Path " << myPath->remoteAddress << ":\t"
                   << "outstanding=" << path->outstandingBytes << "\t"
@@ -1087,11 +1083,11 @@ SctpEventCode SctpAssociation::processSackArrived(SctpSackChunk *sackChunk)
     }
 
     // ====== Initialize some variables ======================================
-    for (auto & elem : sctpPathMap) {
+    for (auto& elem : sctpPathMap) {
         SctpPathVariables *myPath = elem.second;
         // T.D. 26.03.09: Remember outstanding bytes before this update
         // Values are necessary for updating the congestion window!
-        myPath->outstandingBytesBeforeUpdate = myPath->outstandingBytes;    // copy from myPath, not from path!
+        myPath->outstandingBytesBeforeUpdate = myPath->outstandingBytes; // copy from myPath, not from path!
         myPath->requiresRtx = false;
         myPath->lowestTsnRetransmitted = false;
         myPath->findLowestTsn = true;
@@ -1099,14 +1095,14 @@ SctpEventCode SctpAssociation::processSackArrived(SctpSackChunk *sackChunk)
         myPath->gapNRAckedChunksInLastSACK = 0;
         myPath->gapUnackedChunksInLastSACK = 0;
         myPath->newlyAckedBytes = 0;
-        myPath->newCumAck = false;    // Check whether CumAck affects this path
+        myPath->newCumAck = false; // Check whether CumAck affects this path
         // for all destinations, set newPseudoCumAck to FALSE.
         myPath->newPseudoCumAck = false;
-        myPath->newRTXPseudoCumAck = false;    // CUCv2
+        myPath->newRTXPseudoCumAck = false; // CUCv2
         myPath->sawNewAck = false;
         myPath->lowestNewAckInSack = 0;
         myPath->highestNewAckInSack = 0;
-        myPath->newOldestChunkSendTime = simTime() + 9999.99;    // initialize to more than simTime()
+        myPath->newOldestChunkSendTime = simTime() + 9999.99; // initialize to more than simTime()
         if (myPath == path) {
             myPath->lastAckTime = simTime();
         }
@@ -1124,7 +1120,7 @@ SctpEventCode SctpAssociation::processSackArrived(SctpSackChunk *sackChunk)
     // #### Processing of CumAck                                          ####
     // #######################################################################
 
-    if (tsnGt(tsna, state->lastTsnAck)) {    // Handle new CumAck
+    if (tsnGt(tsna, state->lastTsnAck)) { // Handle new CumAck
         EV_INFO << "===== Handling new CumAck for TSN " << tsna << " =====" << endl;
 
         SctpDataVariables *myChunk = retransmissionQ->getChunk(state->lastTsnAck + 1);
@@ -1138,7 +1134,7 @@ SctpEventCode SctpAssociation::processSackArrived(SctpSackChunk *sackChunk)
         // We have got new chunks acked, and our cum ack point is advanced ...
         // Depending on the parameter osbWithHeader ackedBytes are with or without the header bytes.
         // T.D. 23.03.09: path->newlyAckedBytes is updated in dequeueAckedChunks()!
-        dequeueAckedChunks(tsna, path, rttEstimation);    // chunks with tsn between lastTsnAck and tsna are removed from the transmissionQ and the retransmissionQ; outstandingBytes are decreased
+        dequeueAckedChunks(tsna, path, rttEstimation); // chunks with tsn between lastTsnAck and tsna are removed from the transmissionQ and the retransmissionQ; outstandingBytes are decreased
 
         state->lastTsnAck = tsna;
         if (tsnGt(tsna, state->advancedPeerAckPoint)) {
@@ -1180,9 +1176,9 @@ SctpEventCode SctpAssociation::processSackArrived(SctpSackChunk *sackChunk)
                      ((path->tsnForRTTCalculation == sackGapList.getGapStop(SctpGapList::GT_Any, numGaps - 1)) ||
                       (tsnLt(path->tsnForRTTCalculation, sackGapList.getGapStop(SctpGapList::GT_Any, numGaps - 1)))))
             {
-                for (int32 key = 0; key < numGaps; key++) {
-                    const uint32 lo = sackGapList.getGapStart(SctpGapList::GT_Any, key);
-                    const uint32 hi = sackGapList.getGapStop(SctpGapList::GT_Any, key);
+                for (int32_t key = 0; key < numGaps; key++) {
+                    const uint32_t lo = sackGapList.getGapStart(SctpGapList::GT_Any, key);
+                    const uint32_t hi = sackGapList.getGapStop(SctpGapList::GT_Any, key);
                     if ((path->tsnForRTTCalculation == lo) ||
                         (path->tsnForRTTCalculation == hi) ||
                         (tsnLt(lo, path->tsnForRTTCalculation) &&
@@ -1218,7 +1214,7 @@ SctpEventCode SctpAssociation::processSackArrived(SctpSackChunk *sackChunk)
         //      => new highestTsnAcked = CumAck
         EV_DETAIL << "numGaps=0 && tsna " << tsna
                   << " < highestTsnAcked " << state->highestTsnAcked << endl;
-        uint32 i = state->highestTsnAcked;
+        uint32_t i = state->highestTsnAcked;
         while (i >= tsna + 1) {
             SctpDataVariables *myChunk = retransmissionQ->getChunk(i);
             if (myChunk) {
@@ -1240,7 +1236,7 @@ SctpEventCode SctpAssociation::processSackArrived(SctpSackChunk *sackChunk)
         EV_INFO << "We got " << numGaps << " gap reports" << endl;
 
         // We got fragment reports... check for newly acked chunks.
-        const uint32 queuedChunks = retransmissionQ->payloadQueue.size();
+        const uint32_t queuedChunks = retransmissionQ->payloadQueue.size();
         EV_DETAIL << "Number of chunks in retransmissionQ: " << queuedChunks
                   << " highestGapStop: " << sackGapList.getGapStop(SctpGapList::GT_Any, numGaps - 1)
                   << " highestTsnAcked: " << state->highestTsnAcked << endl;
@@ -1253,7 +1249,7 @@ SctpEventCode SctpAssociation::processSackArrived(SctpSackChunk *sackChunk)
             // This SACK contains a last gap ack < highestTsnAcked
             //      => rereg TSNs from last gap ack to highestTsnAcked
             //      => new highestTsnAcked = last gap ack
-            uint32 i = state->highestTsnAcked;
+            uint32_t i = state->highestTsnAcked;
             while (i >= sackGapList.getGapStop(SctpGapList::GT_Any, numGaps - 1) + 1) {
                 // ====== Looking up TSN in retransmission queue ================
                 SctpDataVariables *myChunk = retransmissionQ->getChunk(i);
@@ -1275,14 +1271,14 @@ SctpEventCode SctpAssociation::processSackArrived(SctpSackChunk *sackChunk)
         // ====== Looking for changes in the gap reports ======================
         EV_INFO << "Looking for changes in gap reports" << endl;
         // Get Pseudo CumAck for paths
-        uint32 lo1 = tsna;
-        uint32 tsnCheck = tsna + 1;    // Just to make sure that no TSN is misssed
-        for (int32 key = 0; key < numGaps; key++) {
-            const uint32 lo = sackGapList.getGapStart(SctpGapList::GT_Any, key);
-            const uint32 hi = sackGapList.getGapStop(SctpGapList::GT_Any, key);
+        uint32_t lo1 = tsna;
+        uint32_t tsnCheck = tsna + 1; // Just to make sure that no TSN is misssed
+        for (int32_t key = 0; key < numGaps; key++) {
+            const uint32_t lo = sackGapList.getGapStart(SctpGapList::GT_Any, key);
+            const uint32_t hi = sackGapList.getGapStop(SctpGapList::GT_Any, key);
 
             // ====== Iterate over TSNs *not* listed in gap reports ============
-            for (uint32 pos = lo1 + 1; pos <= lo - 1; pos++) {
+            for (uint32_t pos = lo1 + 1; pos <= lo - 1; pos++) {
                 assert(tsnCheck == pos);
                 tsnCheck++;
                 SctpDataVariables *myChunk = retransmissionQ->getChunk(pos);
@@ -1296,7 +1292,7 @@ SctpEventCode SctpAssociation::processSackArrived(SctpSackChunk *sackChunk)
             lo1 = sackGapList.getGapStop(SctpGapList::GT_Any, key);
             // ====== Iterate over TSNs in gap reports =========================
             EV_INFO << "Examine TSNs between " << lo << " and " << hi << endl;
-            for (uint32 pos = lo; pos <= hi; pos++) {
+            for (uint32_t pos = lo; pos <= hi; pos++) {
                 bool chunkFirstTime = true;
                 assert(tsnCheck == pos);
                 tsnCheck++;
@@ -1310,7 +1306,7 @@ SctpEventCode SctpAssociation::processSackArrived(SctpSackChunk *sackChunk)
                         // This chunk has been acked newly.
                         // Let's process this new acknowledgement!
                         handleChunkReportedAsAcked(highestNewAck, rttEstimation, myChunk,
-                                path    /* i.e. the SACK path for RTT measurement! */,
+                                path /* i.e. the SACK path for RTT measurement! */,
                                 sackGapList.tsnIsNonRevokable(myChunk->tsn));
                     }
                     else {
@@ -1340,7 +1336,7 @@ SctpEventCode SctpAssociation::processSackArrived(SctpSackChunk *sackChunk)
                     if (myChunk) {
                         // myChunk != nullptr -> R-acked before, but not NR-acked
                         handleChunkReportedAsAcked(highestNewAck, rttEstimation, myChunk,
-                                path    /* i.e. the SACK path for RTT measurement! */,
+                                path /* i.e. the SACK path for RTT measurement! */,
                                 sackGapList.tsnIsNonRevokable(myChunk->tsn));
                         // All NR-acked chunks have chunkMap->getChunk(pos) == nullptr!
                     }
@@ -1351,15 +1347,15 @@ SctpEventCode SctpAssociation::processSackArrived(SctpSackChunk *sackChunk)
 
         // ====== Examine chunks between the gap reports ======================
         // They might have to be retransmitted or they could have been removed
-        uint32 lo = tsna;
-        for (int32 key = 0; key < numGaps; key++) {
-            const uint32 hi = sackGapList.getGapStart(SctpGapList::GT_Any, key);
-            for (uint32 pos = lo + 1; pos <= hi - 1; pos++) {
+        uint32_t lo = tsna;
+        for (int32_t key = 0; key < numGaps; key++) {
+            const uint32_t hi = sackGapList.getGapStart(SctpGapList::GT_Any, key);
+            for (uint32_t pos = lo + 1; pos <= hi - 1; pos++) {
                 bool chunkFirstTime = true;
                 SctpDataVariables *myChunk = retransmissionQ->getChunkFast(pos, chunkFirstTime);
                 if (myChunk) {
                     handleChunkReportedAsMissing(sackChunk, highestNewAck, myChunk,
-                            path    /* i.e. the SACK path for RTT measurement! */);
+                            path /* i.e. the SACK path for RTT measurement! */);
                 }
                 else {
                     EV_INFO << "TSN " << pos << " not found in retransmissionQ" << endl;
@@ -1388,7 +1384,7 @@ SctpEventCode SctpAssociation::processSackArrived(SctpSackChunk *sackChunk)
     }
 
     // ====== Record statistics ==============================================
-    for (auto & elem : sctpPathMap) {
+    for (auto& elem : sctpPathMap) {
         SctpPathVariables *myPath = elem.second;
         myPath->statisticsPathGapAckedChunksInLastSACK->record(myPath->gapAckedChunksInLastSACK);
         myPath->statisticsPathGapNRAckedChunksInLastSACK->record(myPath->gapNRAckedChunksInLastSACK);
@@ -1399,14 +1395,14 @@ SctpEventCode SctpAssociation::processSackArrived(SctpSackChunk *sackChunk)
     // #### Receiver Window Management                                    ####
     // #######################################################################
 
-    const uint32 osb = getOutstandingBytes();
+    const uint32_t osb = getOutstandingBytes();
     if (state->bytesToAddPerPeerChunk > 0) {
         state->peerRwnd = arwnd - osb - (state->outstandingMessages * state->bytesToAddPerPeerChunk);
     }
     else if (state->peerAllowsChunks) {
         state->peerMsgRwnd = msgRwnd - state->outstandingMessages;
         state->peerRwnd = arwnd - osb;
-        if ((int32)(state->peerMsgRwnd) < 0) {
+        if ((int32_t)(state->peerMsgRwnd) < 0) {
             state->peerMsgRwnd = 0;
         }
         if (state->peerMsgRwnd > state->initialPeerMsgRwnd) {
@@ -1416,11 +1412,11 @@ SctpEventCode SctpAssociation::processSackArrived(SctpSackChunk *sackChunk)
     else {
         state->peerRwnd = arwnd - osb;
     }
-    if ((int32)(state->peerRwnd) < 0) {
+    if ((int32_t)(state->peerRwnd) < 0) {
         state->peerRwnd = 0;
     }
     // position of statement changed 20.07.05 I.R.
-    if ((int32)(state->peerRwnd) < 0) {
+    if ((int32_t)(state->peerRwnd) < 0) {
         state->peerRwnd = 0;
     }
     if (state->peerRwnd > state->initialPeerRwnd) {
@@ -1455,7 +1451,7 @@ SctpEventCode SctpAssociation::processSackArrived(SctpSackChunk *sackChunk)
 
     // ======= Update congestion window of each path =========================
     EV_DEBUG << "Before ccUpdateBytesAcked: ";
-    for (auto & elem : sctpPathMap) {
+    for (auto& elem : sctpPathMap) {
         SctpPathVariables *myPath = elem.second;
         const L3Address& myPathId = myPath->remoteAddress;
 
@@ -1527,7 +1523,7 @@ SctpEventCode SctpAssociation::processSackArrived(SctpSackChunk *sackChunk)
     }
 
     // ====== Need to stop or restart T3 timer? ==============================
-    for (auto & elem : sctpPathMap) {
+    for (auto& elem : sctpPathMap) {
         SctpPathVariables *myPath = elem.second;
         const L3Address& myPathId = myPath->remoteAddress;
 
@@ -1557,14 +1553,14 @@ SctpEventCode SctpAssociation::processSackArrived(SctpSackChunk *sackChunk)
                 myPath->oldestChunkSendTime = SIMTIME_ZERO;
             }
         }
-        else if (myPath->newCumAck) {    // Only care for CumAcks here!
+        else if (myPath->newCumAck) { // Only care for CumAcks here!
             // NOTE: Due to the existence of retransmissions *before* PseudoCumAck for CUCv2,
             //       it is *not* possible to check PseudoCumAck here!
             //       This would miss retransmissions -> chunks would never be retransmitted!
             stopTimer(myPath->T3_RtxTimer);
             startTimer(myPath->T3_RtxTimer, myPath->pathRto);
         }
-        else if (updatedOldestChunkSendTime) {    // Smart T3 Reset
+        else if (updatedOldestChunkSendTime) { // Smart T3 Reset
             stopTimer(myPath->T3_RtxTimer);
             startTimer(myPath->T3_RtxTimer, myPath->pathRto);
         }
@@ -1587,7 +1583,7 @@ SctpEventCode SctpAssociation::processSackArrived(SctpSackChunk *sackChunk)
     return SCTP_E_IGNORE;
 }
 
-void SctpAssociation::handleChunkReportedAsAcked(uint32& highestNewAck,
+void SctpAssociation::handleChunkReportedAsAcked(uint32_t& highestNewAck,
         simtime_t& rttEstimation,
         SctpDataVariables *myChunk,
         SctpPathVariables *sackPath,
@@ -1619,13 +1615,13 @@ void SctpAssociation::handleChunkReportedAsAcked(uint32& highestNewAck,
             (state->cmtSmartFastRTX == false))
         {
             if (myChunkLastPath->lowestNewAckInSack == 0) {
-                myChunkLastPath->lowestNewAckInSack = myChunk->tsn;    // The lowest TSN acked
+                myChunkLastPath->lowestNewAckInSack = myChunk->tsn; // The lowest TSN acked
             }
             if (myChunkLastPath->highestNewAckInSack == 0) {
-                myChunkLastPath->highestNewAckInSack = myChunk->tsn;    // The highest TSN acked so far
+                myChunkLastPath->highestNewAckInSack = myChunk->tsn; // The highest TSN acked so far
             }
             else if (tsnLt(myChunkLastPath->highestNewAckInSack, myChunk->tsn)) {
-                myChunkLastPath->highestNewAckInSack = myChunk->tsn;    // The highest TSN acked so far
+                myChunkLastPath->highestNewAckInSack = myChunk->tsn; // The highest TSN acked so far
             }
         }
     }
@@ -1690,7 +1686,7 @@ void SctpAssociation::handleChunkReportedAsAcked(uint32& highestNewAck,
 }
 
 void SctpAssociation::handleChunkReportedAsMissing(const SctpSackChunk *sackChunk,
-        const uint32 highestNewAck,
+        const uint32_t highestNewAck,
         SctpDataVariables *myChunk,
         SctpPathVariables *sackPath)
 {
@@ -1703,11 +1699,11 @@ void SctpAssociation::handleChunkReportedAsMissing(const SctpSackChunk *sackChun
 
         // ===== Check whether a Fast Retransmission is necessary =============
         // Non-CMT behaviour: check for highest TSN
-        uint32 chunkReportedAsMissing = (highestNewAck > myChunk->tsn || (myChunk->getLastDestinationPath()->fastRecoveryActive && state->highestTsnAcked >= myChunk->tsn)) ? 1 : 0;
+        uint32_t chunkReportedAsMissing = (highestNewAck > myChunk->tsn || (myChunk->getLastDestinationPath()->fastRecoveryActive && state->highestTsnAcked >= myChunk->tsn)) ? 1 : 0;
 
         // Split Fast Retransmission (SFR) algorithm for CMT
         if ((state->allowCMT == true) && (state->cmtUseSFR == true)) {
-            chunkReportedAsMissing = 0;    // Default: do not assume chunk as missing.
+            chunkReportedAsMissing = 0; // Default: do not assume chunk as missing.
 
             // If there has been another chunk with highest TSN acked on this path,
             // the current one is missing.
@@ -1721,7 +1717,7 @@ void SctpAssociation::handleChunkReportedAsMissing(const SctpSackChunk *sackChun
                     // ------ DAC algorithm at sender side -----------
                     // Is there a newly acked TSN on another path?
                     bool sawNewAckOnlyOnThisPath = true;
-                    for (auto & elem : sctpPathMap) {
+                    for (auto& elem : sctpPathMap) {
                         const SctpPathVariables *otherPath = elem.second;
                         if ((otherPath != myChunkLastPath) && (otherPath->sawNewAck)) {
                             sawNewAckOnlyOnThisPath = false;
@@ -1746,7 +1742,7 @@ void SctpAssociation::handleChunkReportedAsMissing(const SctpSackChunk *sackChun
                             EV << "   => conservative increment of 1" << endl;
                             chunkReportedAsMissing = 1;
                         }
-                        else if (tsnGt(myChunkLastPath->lowestNewAckInSack, myChunk->tsn)) {    // All newly acked TSNs are larger than myChunk->tsn
+                        else if (tsnGt(myChunkLastPath->lowestNewAckInSack, myChunk->tsn)) { // All newly acked TSNs are larger than myChunk->tsn
                             EV << "   => reported increment of dacPacketsRcvd=" << (unsigned int)sackChunk->getDacPacketsRcvd() << endl;
                             chunkReportedAsMissing = sackChunk->getDacPacketsRcvd();
                         }
@@ -1757,7 +1753,7 @@ void SctpAssociation::handleChunkReportedAsMissing(const SctpSackChunk *sackChun
                         chunkReportedAsMissing = 1;
                     }
                 }
-            }    // else: There is no need to increment the missing count.
+            } // else: There is no need to increment the missing count.
 
             EV << "SplitFastRTX: chunkReportedAsMissing="
                << chunkReportedAsMissing << ", "
@@ -1773,27 +1769,26 @@ void SctpAssociation::handleChunkReportedAsMissing(const SctpSackChunk *sackChun
             if (myChunk->gapReports >= state->numGapReports) {
                 bool fastRtx = false;
                 switch (state->rtxMethod) {
-                    case 0:    // Only one Fast RTX after 3 Gap reports
+                    case 0: // Only one Fast RTX after 3 Gap reports
                         fastRtx = ((myChunk->hasBeenFastRetransmitted == false) &&
                                    ((myChunk->numberOfRetransmissions == 0) ||
                                     ((myChunk->hasBeenMoved) &&
                                      (myChunk->countsAsOutstanding) &&
                                      (state->movedChunkFastRTXFactor > 0) &&
-                                     ((simTime() - myChunk->sendTime) > state->movedChunkFastRTXFactor * myChunkLastPath->srtt))
-                                   ));
+                                     ((simTime() - myChunk->sendTime) > state->movedChunkFastRTXFactor * myChunkLastPath->srtt))));
                         break;
 
-                    case 1:    // Just 1 Fast RTX per RTT
+                    case 1: // Just 1 Fast RTX per RTT
                         fastRtx = ((myChunk->hasBeenFastRetransmitted == false) &&
                                    (myChunk->numberOfRetransmissions == 0 ||
                                     (simTime() - myChunk->sendTime) > myChunkLastPath->srtt));
                         break;
 
-                    case 2:    // Switch off Fast RTX
+                    case 2: // Switch off Fast RTX
                         fastRtx = false;
                         break;
 
-                    case 3:    // Always Fast RTX
+                    case 3: // Always Fast RTX
                         fastRtx = true;
                         break;
                 }
@@ -1801,7 +1796,7 @@ void SctpAssociation::handleChunkReportedAsMissing(const SctpSackChunk *sackChun
                     if (myChunk->hasBeenMoved) {
                         EV << simTime() << ": MovedFastRTX for TSN " << myChunk->tsn << endl;
                     }
-                    myChunk->hasBeenMoved = false;    // Just trigger *one* fast RTX ...
+                    myChunk->hasBeenMoved = false; // Just trigger *one* fast RTX ...
                     // ====== Add chunk to transmission queue ========
                     if (transmissionQ->getChunk(myChunk->tsn) == nullptr) {
                         if (!chunkMustBeAbandoned(myChunk, sackPath)) {
@@ -1981,7 +1976,7 @@ void SctpAssociation::renegablyAckChunk(SctpDataVariables *chunk,
     chunk->gapReports = 0;
 
     // ====== Remove chunk from transmission queue ===========================
-    if (transmissionQ->getChunk(chunk->tsn)) {    // I.R. 02.01.2007
+    if (transmissionQ->getChunk(chunk->tsn)) { // I.R. 02.01.2007
         EV_INFO << "Found TSN " << chunk->tsn << " in transmissionQ -> remote it" << endl;
         transmissionQ->removeMsg(chunk->tsn);
         chunk->enqueuedInTransmissionQ = false;
@@ -1992,30 +1987,29 @@ void SctpAssociation::renegablyAckChunk(SctpDataVariables *chunk,
     }
 }
 
-void SctpAssociation::generateSendQueueAbatedIndication(const uint64 bytes)
+void SctpAssociation::generateSendQueueAbatedIndication(const uint64_t bytes)
 {
     if (state->sendBuffer < state->sendQueueLimit) {
         // Just send SCTP_I_SENDQUEUE_ABATED once, after all newly acked
         // chunks have been dequeued.
         // Only send indication if the sendBuffer size has dropped below the sendQueueLimit
-        // assert(state->lastSendQueueAbated < simTime());
+//        assert(state->lastSendQueueAbated < simTime());
         state->appSendAllowed = true;
         EV_INFO << simTime() << ":\tSCTP_I_SENDQUEUE_ABATED("
-                  << bytes << ") to refill buffer "
-                  << state->sendBuffer << "/" << state->sendQueueLimit << endl;
+                << bytes << ") to refill buffer "
+                << state->sendBuffer << "/" << state->sendQueueLimit << endl;
 
         Indication *msg = new Indication(indicationName(SCTP_I_SENDQUEUE_ABATED), SCTP_I_SENDQUEUE_ABATED);
 
         msg->addTag<SocketInd>()->setSocketId(assocId);
-        SctpSendQueueAbatedReq *sendQueueAbatedIndication = msg->addTag<SctpSendQueueAbatedReq>();
+        auto& sendQueueAbatedIndication = msg->addTag<SctpSendQueueAbatedReq>();
         sendQueueAbatedIndication->setSocketId(assocId);
         sendQueueAbatedIndication->setLocalAddr(localAddr);
         sendQueueAbatedIndication->setRemoteAddr(remoteAddr);
-        sendQueueAbatedIndication->setNumMsgs(bytes);    // NOTE: Legacy API!
+        sendQueueAbatedIndication->setNumMsgs(bytes); // NOTE: Legacy API!
         sendQueueAbatedIndication->setQueuedForStreamArraySize(sendStreams.size());
         unsigned int streamID = 0;
-        for (auto & elem : sendStreams)
-        {
+        for (auto& elem : sendStreams) {
             const SctpSendStream *stream = elem.second;
             sendQueueAbatedIndication->setQueuedForStream(streamID, stream->getUnorderedStreamQ()->getByteLength() + stream->getStreamQ()->getByteLength());
             streamID++;
@@ -2031,7 +2025,7 @@ void SctpAssociation::generateSendQueueAbatedIndication(const uint64 bytes)
     }
 }
 
-void SctpAssociation::dequeueAckedChunks(const uint32 tsna,
+void SctpAssociation::dequeueAckedChunks(const uint32_t tsna,
         SctpPathVariables *sackPath,
         simtime_t& rttEstimation)
 {
@@ -2081,7 +2075,7 @@ SctpEventCode SctpAssociation::processForwardTsnArrived(SctpForwardTsnChunk *fwC
         return SCTP_E_IGNORE;
     }
 
-    for (uint32 i = 0; i < fwChunk->getSidArraySize(); i++) {
+    for (uint32_t i = 0; i < fwChunk->getSidArraySize(); i++) {
         if (fwChunk->getSsn(i) != -1) {
             auto iter = receiveStreams.find(fwChunk->getSid(i));
             SctpReceiveStream *rStream = iter->second;
@@ -2102,7 +2096,7 @@ SctpEventCode SctpAssociation::processForwardTsnArrived(SctpForwardTsnChunk *fwC
         }
     }
     /* Update Gap lists with abandoned TSNs and advance CumTSNAck */
-    for (uint32 i = state->gapList.getCumAckTsn() + 1; i <= fwChunk->getNewCumTsn(); i++) {
+    for (uint32_t i = state->gapList.getCumAckTsn() + 1; i <= fwChunk->getNewCumTsn(); i++) {
         if (i > state->gapList.getCumAckTsn() && !state->gapList.tsnInGapList(i)) {
             bool dummy;
             state->gapList.updateGapList(i, dummy, false);
@@ -2114,14 +2108,14 @@ SctpEventCode SctpAssociation::processForwardTsnArrived(SctpForwardTsnChunk *fwC
 
 SctpEventCode SctpAssociation::processDataArrived(SctpDataChunk *dataChunk)
 {
-    const uint32 tsn = dataChunk->getTsn();
+    const uint32_t tsn = dataChunk->getTsn();
     SctpPathVariables *path = getPath(remoteAddr);
 
     state->newChunkReceived = false;
     state->lastTsnReceived = tsn;
 
     bool found = false;
-    for (auto & elem : state->lastDataSourceList) {
+    for (auto& elem : state->lastDataSourceList) {
         if (elem == path) {
             found = true;
             break;
@@ -2139,7 +2133,7 @@ SctpEventCode SctpAssociation::processDataArrived(SctpDataChunk *dataChunk)
     }
     calculateRcvBuffer();
 
-    const uint32 payloadLength = dataChunk->getByteLength() - SCTP_DATA_CHUNK_LENGTH;
+    const uint32_t payloadLength = dataChunk->getByteLength() - SCTP_DATA_CHUNK_LENGTH;
 
     EV_DETAIL << "state->bytesRcvd=" << state->bytesRcvd << endl;
     if (payloadLength == 0) {
@@ -2189,8 +2183,8 @@ SctpEventCode SctpAssociation::processDataArrived(SctpDataChunk *dataChunk)
     if (((state->messageAcceptLimit > 0) &&
          (state->localMsgRwnd - state->bufferedMessages <= 0)) ||
         ((state->messageAcceptLimit == 0) &&
-         ((int32)(state->localRwnd - state->queuedReceivedBytes
-                  - state->bufferedMessages * state->bytesToAddPerRcvdChunk) <= 0)))
+         ((int32_t)(state->localRwnd - state->queuedReceivedBytes
+                    - state->bufferedMessages * state->bytesToAddPerRcvdChunk) <= 0)))
     {
         state->ackState = sackFrequency;
 
@@ -2251,8 +2245,8 @@ SctpEventCode SctpAssociation::processDataArrived(SctpDataChunk *dataChunk)
                 sendDataArrivedNotification(dataChunk->getSid());
                 putInDeliveryQ(dataChunk->getSid());
                 if (simTime() > state->lastThroughputTime + 1) {
-                    for (uint16 i = 0; i < inboundStreams; i++) {
-                        if (streamThroughputVectors.find(i) == streamThroughputVectors.end()) {
+                    for (uint16_t i = 0; i < inboundStreams; i++) {
+                        if (!containsKey(streamThroughputVectors, i)) {
                             char vectorName[128];
                             snprintf(vectorName, sizeof(vectorName), "Stream %d Throughput", i);
                             streamThroughputVectors[i] = new cOutVector(vectorName);
@@ -2318,7 +2312,7 @@ SctpEventCode SctpAssociation::processHeartbeatAckArrived(SctpHeartbeatAckChunk 
 void SctpAssociation::processOutgoingResetRequestArrived(SctpOutgoingSsnResetRequestParameter *requestParam)
 {
     EV_TRACE << "processOutgoingResetRequestArrived\n";
-    if (!state->firstPeerRequest && (requestParam->getSrReqSn() < (state->peerRequestSn)) ) {
+    if (!state->firstPeerRequest && (requestParam->getSrReqSn() < (state->peerRequestSn))) {
         // Retransmission
         sendStreamResetResponse(requestParam->getSrReqSn(), NO_RESET);
         return;
@@ -2333,7 +2327,8 @@ void SctpAssociation::processOutgoingResetRequestArrived(SctpOutgoingSsnResetReq
         if (state->numResetRequests == 0) {
             SctpResetTimer *tm = check_and_cast<SctpResetTimer *>(PK(getPath(remoteAddr)->ResetTimer)->decapsulate());
             if ((tm->getOutSN() == requestParam->getSrResSn() && !tm->getOutAcked()) ||
-                (tm->getInSN() == requestParam->getSrResSn() && !tm->getInAcked())) {
+                (tm->getInSN() == requestParam->getSrResSn() && !tm->getInAcked()))
+            {
                 stopTimer(getPath(remoteAddr)->ResetTimer);
                 delete state->resetChunk;
                 state->resetChunk = nullptr;
@@ -2345,8 +2340,8 @@ void SctpAssociation::processOutgoingResetRequestArrived(SctpOutgoingSsnResetReq
         }
     }
     if (requestParam->getStreamNumbersArraySize() > 0) {
-        uint16 count = 0;
-        for (uint16 i = 0; i < requestParam->getStreamNumbersArraySize(); i++) {
+        uint16_t count = 0;
+        for (uint16_t i = 0; i < requestParam->getStreamNumbersArraySize(); i++) {
             if (!receiveStreamPresent(requestParam->getStreamNumbers(i))) {
                 sendStreamResetResponse(requestParam->getSrReqSn(), DENIED);
                 return;
@@ -2362,98 +2357,107 @@ void SctpAssociation::processOutgoingResetRequestArrived(SctpOutgoingSsnResetReq
     }
     if (state->streamReset && !(tsnGt(requestParam->getLastTsn(), state->gapList.getHighestTsnReceived()))) {
         if (requestParam->getStreamNumbersArraySize() > 0) {
-            for (uint16 i = 0; i < requestParam->getStreamNumbersArraySize(); i++) {
+            for (uint16_t i = 0; i < requestParam->getStreamNumbersArraySize(); i++) {
                 resetExpectedSsn(requestParam->getStreamNumbers(i));
             }
-        } else {
+        }
+        else {
             resetExpectedSsns();
         }
         EV_DETAIL << "processOutgoingResetRequestArrived: resetExpectedSsns\n";
         if (state->sendResponse == PERFORMED) {
             sendStreamResetResponse(requestParam->getSrReqSn(), PERFORMED);
             state->sendResponse = 0;
-        } else {
+        }
+        else {
             state->sendResponse = PERFORMED;
             state->responseSn = requestParam->getSrReqSn();
         }
-    } else if (tsnGt(requestParam->getLastTsn(), state->gapList.getHighestTsnReceived())) {
+    }
+    else if (tsnGt(requestParam->getLastTsn(), state->gapList.getHighestTsnReceived())) {
         state->lastTsnBeforeReset = requestParam->getLastTsn();
         state->peerRequestSn = requestParam->getSrReqSn();
         sendStreamResetResponse(requestParam->getSrReqSn(), DEFERRED);
         state->incomingRequest = requestParam->dup();
         state->incomingRequestSet = true;
         state->resetDeferred = true;
-       // state->firstPeerRequest = false;
-    } else {
+//        state->firstPeerRequest = false;
+    }
+    else {
         sendStreamResetResponse(requestParam->getSrReqSn(), PERFORMED);
     }
 }
 
 void SctpAssociation::processIncomingResetRequestArrived(SctpIncomingSsnResetRequestParameter *requestParam)
 {
-    uint16 num = 0;
-    if (!state->firstPeerRequest && (requestParam->getSrReqSn() < (state->peerRequestSn)) ) {
+    uint16_t num = 0;
+    if (!state->firstPeerRequest && (requestParam->getSrReqSn() < (state->peerRequestSn))) {
         // Retransmission
         sendStreamResetResponse(requestParam->getSrReqSn(), NO_RESET);
         return;
     }
     if (!state->fragInProgress && state->outstandingBytes == 0) {
         if (requestParam->getStreamNumbersArraySize() > 0) {
-            for (uint16 i = 0; i < requestParam->getStreamNumbersArraySize(); i++) {
+            for (uint16_t i = 0; i < requestParam->getStreamNumbersArraySize(); i++) {
                 if (!sendStreamPresent(requestParam->getStreamNumbers(i))) {
                     sendStreamResetResponse(requestParam->getSrReqSn(), DENIED);
                     return;
                 }
-                if (getSsnOfStream(requestParam->getStreamNumbers(i)) == 0 ) {
+                if (getSsnOfStream(requestParam->getStreamNumbers(i)) == 0) {
                     num++;
                 }
             }
             if (num == requestParam->getStreamNumbersArraySize()) {
                 sendStreamResetResponse(requestParam->getSrReqSn(), NOTHING_TO_DO);
-            return;
+                return;
             }
-            for (uint16 i = 0; i < requestParam->getStreamNumbersArraySize(); i++) {
+            for (uint16_t i = 0; i < requestParam->getStreamNumbersArraySize(); i++) {
                 if (!state->findPeerStreamToReset(requestParam->getStreamNumbers(i))) {
 
-                   // resetSsn(requestParam->getStreamNumbers(i));
+//                    resetSsn(requestParam->getStreamNumbers(i));
                     state->peerStreamsToReset.push_back(requestParam->getStreamNumbers(i));
                 }
             }
-        } else {
+        }
+        else {
             resetSsns();
         }
         sendOutgoingResetRequest(requestParam);
-       // sendBundledOutgoingResetAndResponse(requestParam);
+//        sendBundledOutgoingResetAndResponse(requestParam);
         EV_TRACE << "processIncomingResetRequestArrived: sendOutgoingResetRequestArrived returned\n";
         state->resetPending = true;
-    } else {
+    }
+    else {
         if (requestParam->getStreamNumbersArraySize() > 0) {
             state->streamsPending.clear();
             state->streamsToReset.clear();
-            for (uint16 i = 0; i < requestParam->getStreamNumbersArraySize(); i++) {
+            for (uint16_t i = 0; i < requestParam->getStreamNumbersArraySize(); i++) {
                 if (!sendStreamPresent(requestParam->getStreamNumbers(i))) {
                     sendStreamResetResponse(requestParam->getSrReqSn(), DENIED);
                     return;
                 }
-                if ((getBytesInFlightOfStream(requestParam->getStreamNumbers(i)) > 0) || getFragInProgressOfStream(requestParam->getStreamNumbers(i))){
+                if ((getBytesInFlightOfStream(requestParam->getStreamNumbers(i)) > 0) || getFragInProgressOfStream(requestParam->getStreamNumbers(i))) {
                     state->streamsPending.push_back(requestParam->getStreamNumbers(i));
-                } else {
+                }
+                else {
                     state->streamsToReset.push_back(requestParam->getStreamNumbers(i));
                     resetSsn(requestParam->getStreamNumbers(i));
                 }
             }
-        } else {
-            for (uint16 i = 0; i < outboundStreams; i++) {
+        }
+        else {
+            for (uint16_t i = 0; i < outboundStreams; i++) {
                 if (getBytesInFlightOfStream(i) > 0) {
                     state->streamsPending.push_back(i);
-                } else {
+                }
+                else {
                     state->streamsToReset.push_back(i);
                     resetSsn(i);
                 }
             }
         }
         if (state->streamsToReset.size() > 0) {
-           // sendBundledOutgoingResetAndResponse(requestParam);
+//            sendBundledOutgoingResetAndResponse(requestParam);
             sendOutgoingResetRequest(requestParam);
             state->resetPending = true;
         }
@@ -2469,8 +2473,8 @@ void SctpAssociation::processIncomingResetRequestArrived(SctpIncomingSsnResetReq
             state->incomingRequest = nullptr;
             state->incomingRequestSet = false;
         }
-        state->incomingRequest = ((SctpParameter *)requestParam)->dup();        //FIXME is the c-style conversion need here?, duplicate only SctpParameter part!!!
-      //  state->incomingRequest->setName("StateIncoming");
+        state->incomingRequest = ((SctpParameter *)requestParam)->dup(); // FIXME is the c-style conversion need here?, duplicate only SctpParameter part!!!
+//        state->incomingRequest->setName("StateIncoming");
         state->incomingRequestSet = true;
     }
 }
@@ -2478,7 +2482,7 @@ void SctpAssociation::processIncomingResetRequestArrived(SctpIncomingSsnResetReq
 void SctpAssociation::processSsnTsnResetRequestArrived(SctpSsnTsnResetRequestParameter *requestParam)
 {
     EV_TRACE << "processSSNTsnResetRequestArrived\n";
-    if (!state->firstPeerRequest && (requestParam->getSrReqSn() < (state->peerRequestSn)) ) {
+    if (!state->firstPeerRequest && (requestParam->getSrReqSn() < (state->peerRequestSn))) {
         // Retransmission
         sendStreamResetResponse(requestParam->getSrReqSn(), NO_RESET);
         return;
@@ -2486,24 +2490,26 @@ void SctpAssociation::processSsnTsnResetRequestArrived(SctpSsnTsnResetRequestPar
     if (!state->fragInProgress && state->outstandingBytes == 0) {
         state->advancedPeerAckPoint = state->nextTsn - 1;
         state->stopOldData = true;
-      //  resetExpectedSsns();
+//        resetExpectedSsns();
         if (state->sendResponse == PERFORMED) {
             sendStreamResetResponse(requestParam, PERFORMED, true);
             state->sendResponse = 0;
-        } else {
+        }
+        else {
             state->sendResponse = PERFORMED_WITH_OPTION;
             state->responseSn = requestParam->getSrReqSn();
             state->peerRequestType = SSN_TSN;
             state->incomingRequest = requestParam->dup();
             state->incomingRequestSet = true;
         }
-    } else {
+    }
+    else {
         sendStreamResetResponse(requestParam, DEFERRED, true);
         state->incomingRequest = requestParam->dup();
         state->incomingRequestSet = true;
-       // state->incomingRequest->setName("SSNDeferred");
+//        state->incomingRequest->setName("SSNDeferred");
         state->peerRequestSn = requestParam->getSrReqSn();
-      //  state->firstPeerRequest = false;
+//        state->firstPeerRequest = false;
         state->peerRequestType = SSN_TSN;
         state->resetDeferred = true;
     }
@@ -2514,7 +2520,8 @@ void SctpAssociation::processResetResponseArrived(SctpStreamResetResponseParamet
     EV_INFO << "processResetResponseArrived \n";
     if (getPath(remoteAddr)->ResetTimer->isScheduled()) {
         if (getPath(remoteAddr)->ResetTimer->hasEncapsulatedPacket() &&
-            (state->numResetRequests == 0 || (state->getNumRequestsNotPerformed() == 1 && responseParam->getResult() != DEFERRED))) {
+            (state->numResetRequests == 0 || (state->getNumRequestsNotPerformed() == 1 && responseParam->getResult() != DEFERRED)))
+        {
             SctpResetTimer *tm = check_and_cast<SctpResetTimer *>(getPath(remoteAddr)->ResetTimer->decapsulate());
             EV_INFO << "SrResSn=" << responseParam->getSrResSn() << " tmOut=" << tm->getOutSN() << " tmIn= " << tm->getInSN() << "\n";
             if (tm->getOutSN() == responseParam->getSrResSn() || tm->getInSN() == responseParam->getSrResSn() || responseParam->getResult() > DEFERRED) {
@@ -2538,20 +2545,22 @@ void SctpAssociation::processResetResponseArrived(SctpStreamResetResponseParamet
                 return;
             }
         }
-    } else {
+    }
+    else {
         if ((PK(getPath(remoteAddr)->ResetTimer)->hasEncapsulatedPacket())) {
-            delete ((PK(getPath(remoteAddr)->ResetTimer)->decapsulate()));
+            delete (PK(getPath(remoteAddr)->ResetTimer)->decapsulate());
         }
     }
     if (state->requests[responseParam->getSrResSn()].result != PERFORMED) {
         if (responseParam->getResult() == PERFORMED) {
             if (state->resetRequested) {
                 if (state->resetOutStreams.size() > 0) {
-                    for (auto & elem : state->resetOutStreams) {
+                    for (auto& elem : state->resetOutStreams) {
                         resetSsn((elem));
                     }
                     state->resetOutStreams.clear();
-                } else if (state->numAddedOutStreams == 0 && state->numAddedInStreams == 0) {
+                }
+                else if (state->numAddedOutStreams == 0 && state->numAddedInStreams == 0) {
                     resetSsns();
                 }
                 if (state->streamsPending.size() == 0)
@@ -2567,30 +2576,34 @@ void SctpAssociation::processResetResponseArrived(SctpStreamResetResponseParamet
                 state->stopReceiving = false;
                 state->stopOldData = true;
                 if (state->resetInStreams.size() > 0) {
-                    for (auto & elem : state->resetInStreams) {
+                    for (auto& elem : state->resetInStreams) {
                         resetExpectedSsn((elem));
                     }
                     state->resetInStreams.clear();
-                } else {
+                }
+                else {
                     resetExpectedSsns();
                 }
-               // sendSack();
+//                sendSack();
             }
             if (state->localRequestType == ADD_BOTH) {
                 if (state->numAddedOutStreams > 0) {
                     outboundStreams += state->numAddedOutStreams;
                     (this->*ssFunctions.ssAddOutStreams)(state->numAddedOutStreams);
                     state->numAddedOutStreams = 0;
-                } else if (state->numAddedInStreams > 0) {
+                }
+                else if (state->numAddedInStreams > 0) {
                     inboundStreams += state->numAddedInStreams;
                     (this->*ssFunctions.ssAddInStreams)(state->numAddedInStreams);
                     state->numAddedInStreams = 0;
                 }
-            } else if (state->localRequestType == ADD_INCOMING) {
+            }
+            else if (state->localRequestType == ADD_INCOMING) {
                 inboundStreams += state->numAddedInStreams;
                 (this->*ssFunctions.ssAddInStreams)(state->numAddedInStreams);
                 state->numAddedInStreams = 0;
-            } else if (state->localRequestType == ADD_OUTGOING) {
+            }
+            else if (state->localRequestType == ADD_OUTGOING) {
                 outboundStreams += state->numAddedOutStreams;
                 (this->*ssFunctions.ssAddOutStreams)(state->numAddedOutStreams);
                 state->numAddedOutStreams = 0;
@@ -2598,11 +2611,13 @@ void SctpAssociation::processResetResponseArrived(SctpStreamResetResponseParamet
             sendIndicationToApp(SCTP_I_SEND_STREAMS_RESETTED);
             auto it = sctpMain->assocStatMap.find(assocId);
             it->second.numResetRequestsPerformed++;
-        } else {
+        }
+        else {
             EV_INFO << "Reset Request failed. Send indication to app.\n";
             if (responseParam->getResult() == DEFERRED) {
                 state->numResetRequests++;
-            } else {
+            }
+            else {
                 state->resetPending = false;
                 sendIndicationToApp(SCTP_I_RESET_REQUEST_FAILED);
             }
@@ -2619,45 +2634,47 @@ void SctpAssociation::processResetResponseArrived(SctpStreamResetResponseParamet
 SctpEventCode SctpAssociation::processInAndOutResetRequestArrived(SctpIncomingSsnResetRequestParameter *inRequestParam,
         SctpOutgoingSsnResetRequestParameter *outRequestParam)
 {
-    uint32 inSrSn = 0;
-    uint32 outSrSn = 0;
-    uint16 inRes = 0;
-    uint16 outRes = 0;
-    uint16 num = 0;
+    uint32_t inSrSn = 0;
+    uint32_t outSrSn = 0;
+    uint16_t inRes = 0;
+    uint16_t outRes = 0;
+    uint16_t num = 0;
     if (tsnGt(outRequestParam->getLastTsn(), state->gapList.getHighestTsnReceived())) {
         state->lastTsnBeforeReset = outRequestParam->getLastTsn();
         state->peerRequestSn = outRequestParam->getSrReqSn();
         state->inRequestSn = inRequestParam->getSrReqSn();
         state->inOut = true;
-    } else {
+    }
+    else {
         if (outRequestParam->getStreamNumbersArraySize() > 0) {
             num = 0;
-            for (uint16 i = 0; i < outRequestParam->getStreamNumbersArraySize(); i++) {
+            for (uint16_t i = 0; i < outRequestParam->getStreamNumbersArraySize(); i++) {
                 if (!receiveStreamPresent(outRequestParam->getStreamNumbers(i))) {
-                    outSrSn =  outRequestParam->getSrReqSn();
+                    outSrSn = outRequestParam->getSrReqSn();
                     outRes = DENIED;
                     num++;
                     break;
                 }
             }
             if (num == 0) {
-                for (uint16 i = 0; i < outRequestParam->getStreamNumbersArraySize(); i++) {
+                for (uint16_t i = 0; i < outRequestParam->getStreamNumbersArraySize(); i++) {
                     resetExpectedSsn(outRequestParam->getStreamNumbers(i));
                 }
             }
-        } else {
+        }
+        else {
             resetExpectedSsns();
             EV_DETAIL << "processInAndOutResetRequestArrived: resetExpectedSsns\n";
             sendOutgoingRequestAndResponse(inRequestParam->getSrReqSn(), outRequestParam->getSrReqSn());
         }
         if (inRequestParam->getStreamNumbersArraySize() > 0) {
             num = 0;
-            for (uint16 i = 0; i < inRequestParam->getStreamNumbersArraySize(); i++) {
+            for (uint16_t i = 0; i < inRequestParam->getStreamNumbersArraySize(); i++) {
                 if (!receiveStreamPresent(inRequestParam->getStreamNumbers(i))) {
-                    inSrSn =  inRequestParam->getSrReqSn();
+                    inSrSn = inRequestParam->getSrReqSn();
                     inRes = DENIED;
                     num++;
-                   // sendStreamResetResponse(outRequestParam->getSrReqSn(), DENIED);
+//                    sendStreamResetResponse(outRequestParam->getSrReqSn(), DENIED);
                     break;
                 }
             }
@@ -2674,7 +2691,7 @@ SctpEventCode SctpAssociation::processInAndOutResetRequestArrived(SctpIncomingSs
 }
 
 void SctpAssociation::processAddInAndOutResetRequestArrived(const SctpAddStreamsRequestParameter *addInRequestParam,
-    SctpAddStreamsRequestParameter *addOutRequestParam)
+        SctpAddStreamsRequestParameter *addOutRequestParam)
 {
     const auto& msg = makeShared<SctpHeader>();
     msg->setChunkLength(B(SCTP_COMMON_HEADER));
@@ -2683,11 +2700,11 @@ void SctpAssociation::processAddInAndOutResetRequestArrived(const SctpAddStreams
     SctpStreamResetChunk *resetChunk = new SctpStreamResetChunk("AddInOut_CONFIG");
     resetChunk->setSctpChunkType(RE_CONFIG);
     resetChunk->setByteLength(SCTP_STREAM_RESET_CHUNK_LENGTH);
-    uint32 srsn = state->streamResetSequenceNumber;
+    uint32_t srsn = state->streamResetSequenceNumber;
     SctpResetTimer *rt = new SctpResetTimer();
     auto it = sctpMain->assocStatMap.find(assocId);
     SctpAddStreamsRequestParameter *addStreams = new SctpAddStreamsRequestParameter("Add_Streams");
-  /*  SctpAddStreamsRequestParameter *addStreams = new SctpAddStreamsRequestParameter();*/
+    /*  SctpAddStreamsRequestParameter *addStreams = new SctpAddStreamsRequestParameter();*/
     addStreams->setParameterType(ADD_OUTGOING_STREAMS_REQUEST_PARAMETER);
     addStreams->setNumberOfStreams(addInRequestParam->getNumberOfStreams());
     state->numAddedOutStreams = addStreams->getNumberOfStreams();
@@ -2702,14 +2719,14 @@ void SctpAssociation::processAddInAndOutResetRequestArrived(const SctpAddStreams
     responseChunk->setSctpChunkType(RE_CONFIG);
     responseChunk->setByteLength(SCTP_STREAM_RESET_CHUNK_LENGTH);
     SctpStreamResetResponseParameter *outResponseParam = new SctpStreamResetResponseParameter("Out_Response_Param");
-  /*  SctpStreamResetResponseParameter *outResponseParam = new SctpStreamResetResponseParameter();*/
+    /*  SctpStreamResetResponseParameter *outResponseParam = new SctpStreamResetResponseParameter();*/
     outResponseParam->setParameterType(STREAM_RESET_RESPONSE_PARAMETER);
     outResponseParam->setSrResSn(addOutRequestParam->getSrReqSn());
     outResponseParam->setResult(PERFORMED);
     outResponseParam->setByteLength(SCTP_STREAM_RESET_RESPONSE_PARAMETER_LENGTH);
     responseChunk->addParameter(outResponseParam);
     SctpStreamResetResponseParameter *inResponseParam = new SctpStreamResetResponseParameter("In_Response_Param");
-   /* SctpStreamResetResponseParameter *inResponseParam = new SctpStreamResetResponseParameter();*/
+    /* SctpStreamResetResponseParameter *inResponseParam = new SctpStreamResetResponseParameter();*/
     inResponseParam->setParameterType(STREAM_RESET_RESPONSE_PARAMETER);
     inResponseParam->setSrResSn(addInRequestParam->getSrReqSn());
     inResponseParam->setResult(PERFORMED);
@@ -2717,8 +2734,8 @@ void SctpAssociation::processAddInAndOutResetRequestArrived(const SctpAddStreams
     state->peerRequests[addOutRequestParam->getSrReqSn()].result = PERFORMED;
     inResponseParam->setByteLength(SCTP_STREAM_RESET_RESPONSE_PARAMETER_LENGTH);
     responseChunk->addParameter(inResponseParam);
-    msg->insertSctpChunks(resetChunk);
-    msg->insertSctpChunks(responseChunk);
+    msg->appendSctpChunks(resetChunk);
+    msg->appendSctpChunks(responseChunk);
     rt->setInSN(0);
     rt->setInAcked(true);
     rt->setOutSN(srsn);
@@ -2730,13 +2747,12 @@ void SctpAssociation::processAddInAndOutResetRequestArrived(const SctpAddStreams
         state->resetChunk = nullptr;
     }
     state->resetChunk = check_and_cast<SctpStreamResetChunk *>(resetChunk->dup());
-  //  state->resetChunk->setName("stateAddResetChunk");
+//    state->resetChunk->setName("stateAddResetChunk");
     Packet *pkt = new Packet("RE_CONFIG");
     sendToIP(pkt, msg, remoteAddr);
     PK(getPath(remoteAddr)->ResetTimer)->encapsulate(rt);
     startTimer(getPath(remoteAddr)->ResetTimer, getPath(remoteAddr)->pathRto);
 }
-
 
 SctpEventCode SctpAssociation::processOutAndResponseArrived(SctpOutgoingSsnResetRequestParameter *outRequestParam,
         SctpStreamResetResponseParameter *responseParam)
@@ -2755,10 +2771,11 @@ SctpEventCode SctpAssociation::processOutAndResponseArrived(SctpOutgoingSsnReset
     }
     if (state->requests[outRequestParam->getSrResSn()].result != PERFORMED) {
         if (outRequestParam->getStreamNumbersArraySize() > 0) {
-            for (uint16 i = 0; i < outRequestParam->getStreamNumbersArraySize(); i++) {
+            for (uint16_t i = 0; i < outRequestParam->getStreamNumbersArraySize(); i++) {
                 resetExpectedSsn(outRequestParam->getStreamNumbers(i));
             }
-        } else {
+        }
+        else {
             resetExpectedSsns();
         }
         state->requests[outRequestParam->getSrResSn()].result = PERFORMED;
@@ -2766,15 +2783,16 @@ SctpEventCode SctpAssociation::processOutAndResponseArrived(SctpOutgoingSsnReset
     sendStreamResetResponse(outRequestParam->getSrReqSn(), PERFORMED);
     if (responseParam->getResult() == PERFORMED) {
         if (state->requests[responseParam->getSrResSn()].result != PERFORMED) {
-            std::list<uint16>::iterator iter;
+            std::list<uint16_t>::iterator iter;
             if (state->requests[responseParam->getSrResSn()].streams.size() > 0) {
                 for (iter = state->requests[responseParam->getSrResSn()].streams.begin(); iter != state->requests[responseParam->getSrResSn()].streams.end(); iter++) {
                     resetSsn((*iter));
                 }
-            } else {
+            }
+            else {
                 resetSsns();
             }
-          //  resetExpectedSsns();
+//            resetExpectedSsns();
             state->resetPending = false;
             sendIndicationToApp(SCTP_I_SEND_STREAMS_RESETTED);
             auto it = sctpMain->assocStatMap.find(assocId);
@@ -2794,11 +2812,11 @@ SctpEventCode SctpAssociation::processStreamResetArrived(SctpStreamResetChunk *r
 {
     EV_INFO << "processStreamResetArrived\n";
     SctpParameter *parameter, *nextParam;
-    std::map<uint32, SctpStateVariables::RequestData>::reverse_iterator rit;
-    uint32 numberOfParameters = resetChunk->getParametersArraySize();
+    std::map<uint32_t, SctpStateVariables::RequestData>::reverse_iterator rit;
+    uint32_t numberOfParameters = resetChunk->getParametersArraySize();
     if (numberOfParameters == 0)
         return SCTP_E_IGNORE;
-    for (uint16 i = 0; i < numberOfParameters; i++) {
+    for (uint16_t i = 0; i < numberOfParameters; i++) {
         parameter = (SctpParameter *)(resetChunk->getParameters(i));
         switch (parameter->getParameterType()) {
             case OUTGOING_RESET_REQUEST_PARAMETER: {
@@ -2811,13 +2829,14 @@ SctpEventCode SctpAssociation::processStreamResetArrived(SctpStreamResetChunk *r
                         return SCTP_E_IGNORE;
                     }
                     if (state->peerRequests[outRequestParam->getSrReqSn()].result != 100) {
-                        std::map<uint32, SctpStateVariables::RequestData>::reverse_iterator rit;
+                        std::map<uint32_t, SctpStateVariables::RequestData>::reverse_iterator rit;
                         rit = state->peerRequests.rbegin();
                         if (state->peerRequests[outRequestParam->getSrReqSn()].sn == rit->first) {
-                        // send response with same result
+                            // send response with same result
                             sendStreamResetResponse(outRequestParam->getSrReqSn(), state->peerRequests[outRequestParam->getSrReqSn()].result);
                             return SCTP_E_IGNORE;
-                        } else {
+                        }
+                        else {
                             sendStreamResetResponse(outRequestParam->getSrReqSn(), NO_RESET);
                             return SCTP_E_IGNORE;
                         }
@@ -2826,7 +2845,8 @@ SctpEventCode SctpAssociation::processStreamResetArrived(SctpStreamResetChunk *r
                 if (state->firstPeerRequest && outRequestParam->getSrReqSn() != state->expectedStreamResetSequenceNumber) {
                     if (state->peerRequests.size() > 0) {
                         sendStreamResetResponse(outRequestParam->getSrReqSn(), REQUEST_IN_PROGRESS);
-                    } else {
+                    }
+                    else {
                         sendStreamResetResponse(outRequestParam->getSrReqSn(), NO_RESET);
                     }
                     break;
@@ -2835,33 +2855,36 @@ SctpEventCode SctpAssociation::processStreamResetArrived(SctpStreamResetChunk *r
                 state->peerRequests[outRequestParam->getSrReqSn()].result = 100;
                 state->peerRequests[outRequestParam->getSrReqSn()].type = outRequestParam->getParameterType();
                 if (numberOfParameters > i + 1u) {
-                    nextParam = (SctpParameter *)(resetChunk->getParameters(i + 1));    //FIXME const_cast
+                    nextParam = (SctpParameter *)(resetChunk->getParameters(i + 1)); // FIXME const_cast
                     if (nextParam->getParameterType() != INCOMING_RESET_REQUEST_PARAMETER &&
-                        nextParam->getParameterType() != STREAM_RESET_RESPONSE_PARAMETER) {
+                        nextParam->getParameterType() != STREAM_RESET_RESPONSE_PARAMETER)
+                    {
                         processOutgoingResetRequestArrived(outRequestParam);
                         delete nextParam;
-                    } else {
+                    }
+                    else {
                         switch (nextParam->getParameterType()) {
                             case INCOMING_RESET_REQUEST_PARAMETER:
-                            SctpIncomingSsnResetRequestParameter *inRequestParam;
-                            inRequestParam = check_and_cast<SctpIncomingSsnResetRequestParameter *>(nextParam);
-                            state->peerRequests[inRequestParam->getSrReqSn()].sn = inRequestParam->getSrReqSn();
-                            state->peerRequests[inRequestParam->getSrReqSn()].result = 100;
-                            state->peerRequests[inRequestParam->getSrReqSn()].type = inRequestParam->getParameterType();
-                            processInAndOutResetRequestArrived(inRequestParam, outRequestParam);
-                            i++;
-                            break;
+                                SctpIncomingSsnResetRequestParameter *inRequestParam;
+                                inRequestParam = check_and_cast<SctpIncomingSsnResetRequestParameter *>(nextParam);
+                                state->peerRequests[inRequestParam->getSrReqSn()].sn = inRequestParam->getSrReqSn();
+                                state->peerRequests[inRequestParam->getSrReqSn()].result = 100;
+                                state->peerRequests[inRequestParam->getSrReqSn()].type = inRequestParam->getParameterType();
+                                processInAndOutResetRequestArrived(inRequestParam, outRequestParam);
+                                i++;
+                                break;
 
-                        case STREAM_RESET_RESPONSE_PARAMETER:
-                            SctpStreamResetResponseParameter *responseParam;
-                            responseParam = check_and_cast<SctpStreamResetResponseParameter *>(nextParam);
-                            state->numResetRequests -= 2;
-                            processOutAndResponseArrived(outRequestParam, responseParam);
-                            i++;
-                            break;
+                            case STREAM_RESET_RESPONSE_PARAMETER:
+                                SctpStreamResetResponseParameter *responseParam;
+                                responseParam = check_and_cast<SctpStreamResetResponseParameter *>(nextParam);
+                                state->numResetRequests -= 2;
+                                processOutAndResponseArrived(outRequestParam, responseParam);
+                                i++;
+                                break;
                         }
                     }
-                } else {
+                }
+                else {
                     processOutgoingResetRequestArrived(outRequestParam);
                 }
                 break;
@@ -2877,8 +2900,9 @@ SctpEventCode SctpAssociation::processStreamResetArrived(SctpStreamResetChunk *r
                 }
                 if (!state->firstPeerRequest &&
                     (((inRequestParam->getSrReqSn() < (state->peerRequestSn)) &&
-                    (inRequestParam->getSrReqSn() != rit->first + 1)) ||
-                    (state->findPeerRequestNum(inRequestParam->getSrReqSn()) && state->peerRequests[inRequestParam->getSrReqSn()].type != inRequestParam->getParameterType()))) {
+                      (inRequestParam->getSrReqSn() != rit->first + 1)) ||
+                     (state->findPeerRequestNum(inRequestParam->getSrReqSn()) && state->peerRequests[inRequestParam->getSrReqSn()].type != inRequestParam->getParameterType())))
+                {
                     sendStreamResetResponse(inRequestParam->getSrReqSn(), NO_RESET);
                     return SCTP_E_IGNORE;
                 }
@@ -2886,23 +2910,24 @@ SctpEventCode SctpAssociation::processStreamResetArrived(SctpStreamResetChunk *r
                 if (rit->second.type == OUTGOING_RESET_REQUEST_PARAMETER && (rit->second.result == 100 || rit->second.result == PERFORMED)) {
                     state->requestsOverlap = true;
                     if (state->requests[rit->first].lastTsn == state->nextTsn - 1) {
-                    if (inRequestParam->getStreamNumbersArraySize() > 0) {
-                        uint16 match = 0;
-                        for (uint i = 0; i < inRequestParam->getStreamNumbersArraySize(); i++) {
-                            std::list<uint16>::iterator it;
-                            for (it = state->requests[rit->first].streams.begin(); it != state->requests[rit->first].streams.end(); it++) {
-                                if ((*it) == inRequestParam->getStreamNumbers(i))
-                                    match++;
+                        if (inRequestParam->getStreamNumbersArraySize() > 0) {
+                            uint16_t match = 0;
+                            for (uint i = 0; i < inRequestParam->getStreamNumbersArraySize(); i++) {
+                                std::list<uint16_t>::iterator it;
+                                for (it = state->requests[rit->first].streams.begin(); it != state->requests[rit->first].streams.end(); it++) {
+                                    if ((*it) == inRequestParam->getStreamNumbers(i))
+                                        match++;
+                                }
+                            }
+                            if (match == inRequestParam->getStreamNumbersArraySize()) {
+                                sendStreamResetResponse(inRequestParam->getSrReqSn(), NOTHING_TO_DO);
+                                return SCTP_E_IGNORE;
                             }
                         }
-                        if (match == inRequestParam->getStreamNumbersArraySize()) {
+                        else {
                             sendStreamResetResponse(inRequestParam->getSrReqSn(), NOTHING_TO_DO);
                             return SCTP_E_IGNORE;
                         }
-                    } else {
-                        sendStreamResetResponse(inRequestParam->getSrReqSn(), NOTHING_TO_DO);
-                        return SCTP_E_IGNORE;
-                    }
                     }
                 }
                 state->peerRequests[inRequestParam->getSrReqSn()].sn = inRequestParam->getSrReqSn();
@@ -2912,7 +2937,8 @@ SctpEventCode SctpAssociation::processStreamResetArrived(SctpStreamResetChunk *r
                     nextParam = (SctpParameter *)(resetChunk->getParameters(i + 1));
                     if (nextParam->getParameterType() != OUTGOING_RESET_REQUEST_PARAMETER) {
                         processIncomingResetRequestArrived(inRequestParam);
-                    } else {
+                    }
+                    else {
                         if (nextParam->getParameterType() == OUTGOING_RESET_REQUEST_PARAMETER) {
                             i++;
                             SctpOutgoingSsnResetRequestParameter *outRequestParam;
@@ -2924,7 +2950,8 @@ SctpEventCode SctpAssociation::processStreamResetArrived(SctpStreamResetChunk *r
                             delete outRequestParam;
                         }
                     }
-                } else {
+                }
+                else {
                     processIncomingResetRequestArrived(inRequestParam);
                 }
                 break;
@@ -2937,15 +2964,17 @@ SctpEventCode SctpAssociation::processStreamResetArrived(SctpStreamResetChunk *r
                 if (state->firstPeerRequest && ssnRequestParam->getSrReqSn() != state->expectedStreamResetSequenceNumber) {
                     if (state->peerRequests.size() > 0) {
                         sendStreamResetResponse(ssnRequestParam->getSrReqSn(), REQUEST_IN_PROGRESS);
-                    } else {
+                    }
+                    else {
                         sendStreamResetResponse(ssnRequestParam->getSrReqSn(), NO_RESET);
                     }
                     break;
                 }
                 if (!state->firstPeerRequest &&
                     ((((ssnRequestParam->getSrReqSn() < (state->peerRequestSn)) && (ssnRequestParam->getSrReqSn() != rit->first + 1))) ||
-                    ((state->findPeerRequestNum(ssnRequestParam->getSrReqSn())) &&
-                    state->peerRequests[ssnRequestParam->getSrReqSn()].type != ssnRequestParam->getParameterType()))) {
+                     ((state->findPeerRequestNum(ssnRequestParam->getSrReqSn())) &&
+                      state->peerRequests[ssnRequestParam->getSrReqSn()].type != ssnRequestParam->getParameterType())))
+                {
                     sendStreamResetResponse(ssnRequestParam->getSrReqSn(), NO_RESET);
                     return SCTP_E_IGNORE;
                 }
@@ -2969,9 +2998,10 @@ SctpEventCode SctpAssociation::processStreamResetArrived(SctpStreamResetChunk *r
                 rit = state->peerRequests.rbegin();
                 if ((state->firstPeerRequest && addStreamsParam->getSrReqSn() != state->expectedStreamResetSequenceNumber) ||
                     (!state->firstPeerRequest && ((addStreamsParam->getSrReqSn() < (state->peerRequestSn)) &&
-                    (addStreamsParam->getSrReqSn() != rit->first + 1))) ||
+                                                  (addStreamsParam->getSrReqSn() != rit->first + 1))) ||
                     (state->findPeerRequestNum(addStreamsParam->getSrReqSn()) &&
-                    state->peerRequests[addStreamsParam->getSrReqSn()].type != addStreamsParam->getParameterType())) {
+                     state->peerRequests[addStreamsParam->getSrReqSn()].type != addStreamsParam->getParameterType()))
+                {
                     sendStreamResetResponse(addStreamsParam->getSrReqSn(), NO_RESET);
                     return SCTP_E_IGNORE;
                 }
@@ -2993,12 +3023,13 @@ SctpEventCode SctpAssociation::processStreamResetArrived(SctpStreamResetChunk *r
                         processAddInAndOutResetRequestArrived(addStreamsParam, addOutStreamsParam);
                         i++;
                     }
-                } else {
+                }
+                else {
                     state->peerRequestSn = addStreamsParam->getSrReqSn();
                     state->peerRequestType = ADD_INCOMING;
-                    state->incomingRequest = ((SctpParameter *)addStreamsParam)->dup();        //FIXME is the c-style conversion need here?, this is not a correct dup, duplicate only the SctpParameter part of addStreamsParam
+                    state->incomingRequest = ((SctpParameter *)addStreamsParam)->dup(); // FIXME is the c-style conversion need here?, this is not a correct dup, duplicate only the SctpParameter part of addStreamsParam
                     state->incomingRequestSet = true;
-                  //  state->incomingRequest->setName("stateIncoming");
+//                    state->incomingRequest->setName("stateIncoming");
                     state->sendResponse = PERFORMED_WITH_ADDOUT;
                 }
                 break;
@@ -3013,7 +3044,8 @@ SctpEventCode SctpAssociation::processStreamResetArrived(SctpStreamResetChunk *r
                 }
                 rit = state->peerRequests.rbegin();
                 if ((!(addOutStreamsParam->getNumberOfStreams() + inboundStreams <= 65535)) ||
-                    (state->appLimited && (addOutStreamsParam->getNumberOfStreams() + inboundStreams > initInboundStreams))) {
+                    (state->appLimited && (addOutStreamsParam->getNumberOfStreams() + inboundStreams > initInboundStreams)))
+                {
                     sendStreamResetResponse(addOutStreamsParam->getSrReqSn(), DENIED);
                     return SCTP_E_IGNORE;
                 }
@@ -3025,10 +3057,11 @@ SctpEventCode SctpAssociation::processStreamResetArrived(SctpStreamResetChunk *r
                     }
                     if (state->peerRequests[addOutStreamsParam->getSrReqSn()].result != 100) {
                         if (state->peerRequests[addOutStreamsParam->getSrReqSn()].sn == rit->first) {
-                        // send response with same result
+                            // send response with same result
                             sendStreamResetResponse(addOutStreamsParam->getSrReqSn(), state->peerRequests[addOutStreamsParam->getSrReqSn()].result);
                             return SCTP_E_IGNORE;
-                        } else {
+                        }
+                        else {
                             sendStreamResetResponse(addOutStreamsParam->getSrReqSn(), NO_RESET);
                             return SCTP_E_IGNORE;
                         }
@@ -3036,7 +3069,8 @@ SctpEventCode SctpAssociation::processStreamResetArrived(SctpStreamResetChunk *r
                 }
                 if ((state->firstPeerRequest && addOutStreamsParam->getSrReqSn() != state->expectedStreamResetSequenceNumber) ||
                     (!state->firstPeerRequest && ((addOutStreamsParam->getSrReqSn() < (state->peerRequestSn)) &&
-                    (addOutStreamsParam->getSrReqSn() != rit->first + 1)))) {
+                                                  (addOutStreamsParam->getSrReqSn() != rit->first + 1))))
+                {
                     // Retransmission
                     sendStreamResetResponse(addOutStreamsParam->getSrReqSn(), NO_RESET);
                     return SCTP_E_IGNORE;
@@ -3060,21 +3094,23 @@ SctpEventCode SctpAssociation::processStreamResetArrived(SctpStreamResetChunk *r
                         state->peerRequests[addInStreamsParam->getSrReqSn()].type = addInStreamsParam->getParameterType();
                         processAddInAndOutResetRequestArrived(addInStreamsParam, addOutStreamsParam);
                         i++;
-                    } else {
+                    }
+                    else {
                         state->peerRequestSn = addOutStreamsParam->getSrReqSn();
                         state->peerRequestType = ADD_OUTGOING;
                         state->sendResponse = PERFORMED;
                         state->responseSn = addOutStreamsParam->getSrReqSn();
                         state->firstPeerRequest = false;
-                       // state->numAddedInStreams = addOutStreamsParam->getNumberOfStreams();
+//                        state->numAddedInStreams = addOutStreamsParam->getNumberOfStreams();
                         state->resetRequested = true;
                     }
-                } else {
+                }
+                else {
                     state->peerRequestSn = addOutStreamsParam->getSrReqSn();
                     state->peerRequestType = ADD_OUTGOING;
                     state->sendResponse = PERFORMED;
                     state->responseSn = addOutStreamsParam->getSrReqSn();
-                   // state->numAddedInStreams = addOutStreamsParam->getNumberOfStreams();
+//                    state->numAddedInStreams = addOutStreamsParam->getNumberOfStreams();
                     state->firstPeerRequest = false;
                     state->resetRequested = true;
                 }
@@ -3095,13 +3131,15 @@ SctpEventCode SctpAssociation::processStreamResetArrived(SctpStreamResetChunk *r
                         if (responseParam->getResult() != DEFERRED)
                             state->numResetRequests--;
                         processResetResponseArrived(responseParam);
-                    } else {
+                    }
+                    else {
                         switch (nextParam->getParameterType()) {
                             case OUTGOING_RESET_REQUEST_PARAMETER: {
                                 SctpOutgoingSsnResetRequestParameter *outRequestParam;
                                 outRequestParam = check_and_cast<SctpOutgoingSsnResetRequestParameter *>(nextParam);
                                 if ((state->firstPeerRequest && outRequestParam->getSrReqSn() != state->expectedStreamResetSequenceNumber) ||
-                                    (!state->firstPeerRequest && (outRequestParam->getSrReqSn() < (state->peerRequestSn)))) {
+                                    (!state->firstPeerRequest && (outRequestParam->getSrReqSn() < (state->peerRequestSn))))
+                                {
                                     // Retransmission
                                     sendStreamResetResponse(outRequestParam->getSrReqSn(), NO_RESET);
                                     return SCTP_E_IGNORE;
@@ -3116,7 +3154,8 @@ SctpEventCode SctpAssociation::processStreamResetArrived(SctpStreamResetChunk *r
                             }
                         }
                     }
-                } else {
+                }
+                else {
                     if (responseParam->getResult() != DEFERRED)
                         state->numResetRequests--;
                     processResetResponseArrived(responseParam);
@@ -3136,23 +3175,23 @@ SctpEventCode SctpAssociation::processAsconfArrived(SctpAsconfChunk *asconfChunk
     std::vector<L3Address> locAddr;
     SctpAuthenticationChunk *authChunk;
     EV_INFO << "Asconf arrived " << asconfChunk->getName() << "\n";
-   // SctpHeader *sctpAsconfAck = new SctpHeader("ASCONF_ACK");
+//    SctpHeader *sctpAsconfAck = new SctpHeader("ASCONF_ACK");
     const auto& sctpAsconfAck = makeShared<SctpHeader>();
     sctpAsconfAck->setChunkLength(B(SCTP_COMMON_HEADER));
     sctpAsconfAck->setSrcPort(localPort);
     sctpAsconfAck->setDestPort(remotePort);
     if (state->auth && state->peerAuth) {
         authChunk = createAuthChunk();
-        sctpAsconfAck->insertSctpChunks(authChunk);
+        sctpAsconfAck->appendSctpChunks(authChunk);
         auto it = sctpMain->assocStatMap.find(assocId);
         it->second.numAuthChunksSent++;
     }
     if (state->numberAsconfReceived > 0 || (state->numberAsconfReceived == 0 && asconfChunk->getSerialNumber() == initPeerTsn + state->numberAsconfReceived)) {
         SctpAsconfAckChunk *asconfAckChunk = createAsconfAckChunk(asconfChunk->getSerialNumber());
         state->numberAsconfReceived++;
-        int32 count = asconfChunk->getAsconfParamsArraySize();
+        int32_t count = asconfChunk->getAsconfParamsArraySize();
         EV_DETAIL << "Number of Asconf parameters=" << count << "\n";
-        for (int32 c = 0; c < count; c++) {
+        for (int32_t c = 0; c < count; c++) {
             sctpParam = (SctpParameter *)(asconfChunk->removeAsconfParam());
             switch (sctpParam->getParameterType()) {
                 case ADD_IP_ADDRESS:
@@ -3165,7 +3204,7 @@ SctpEventCode SctpAssociation::processAsconfArrived(SctpAsconfChunk *asconfChunk
                         addr = remoteAddr;
                         sendIndicationToApp(SCTP_I_ADDRESS_ADDED);
                     }
-                    for (auto & elem : state->localAddresses) {
+                    for (auto& elem : state->localAddresses) {
                         if (sctpMain->addRemoteAddress(this, (elem), addr)) {
                             addPath(addr);
                             EV_INFO << "add remote address " << addr << " to local address " << (elem) << "\n";
@@ -3197,14 +3236,14 @@ SctpEventCode SctpAssociation::processAsconfArrived(SctpAsconfChunk *asconfChunk
                         errorParam->setErrorCauseType(ERROR_DELETE_LAST_IP_ADDRESS);
                         errorParam->setByteLength(SCTP_ADD_IP_PARAMETER_LENGTH + 4);
                         errorParam->encapsulate(delParam->dup());
-                              //FIXME is the c-style conversion need here?
+                        // FIXME is the c-style conversion need here?
                         asconfAckChunk->addAsconfResponse(errorParam);
                     }
                     else if (addr == remoteAddr) {
                         EV_INFO << "addr=remoteAddr, make Error Parameter\n";
                         SctpErrorCauseParameter *errParam;
                         errParam = new SctpErrorCauseParameter("ErrorCause");
-                       // errParam = new SctpErrorCauseParameter();
+//                        errParam = new SctpErrorCauseParameter();
                         errParam->setParameterType(ERROR_CAUSE_INDICATION);
                         errParam->setResponseCorrelationId(delParam->getRequestCorrelationId());
                         errParam->setErrorCauseType(ERROR_DELETE_SOURCE_ADDRESS);
@@ -3231,7 +3270,7 @@ SctpEventCode SctpAssociation::processAsconfArrived(SctpAsconfChunk *asconfChunk
                         EV_INFO << "no address specified, add natted address " << remoteAddr << "\n";
                         addr = remoteAddr;
                     }
-                    for (auto & elem : remoteAddressList) {
+                    for (auto& elem : remoteAddressList) {
                         if ((elem) == addr) {
                             if (getPath(addr)->confirmed == true) {
                                 state->setPrimaryPath(getPath(addr));
@@ -3249,7 +3288,7 @@ SctpEventCode SctpAssociation::processAsconfArrived(SctpAsconfChunk *asconfChunk
                     break;
             }
         }
-        sctpAsconfAck->insertSctpChunks(asconfAckChunk);
+        sctpAsconfAck->appendSctpChunks(asconfAckChunk);
         Packet *pkt = new Packet("ASCONF-ACK");
         sendToIP(pkt, sctpAsconfAck, remoteAddr);
         if (StartAddIP->isScheduled()) {
@@ -3267,7 +3306,7 @@ SctpEventCode SctpAssociation::processAsconfAckArrived(SctpAsconfAckChunk *ascon
     SctpParameter *sctpParam;
     L3Address addr;
     SctpAsconfChunk *sctpasconf;
-    std::vector<uint32> errorCorrId;
+    std::vector<uint32_t> errorCorrId;
     bool errorFound = false;
 
     sctpasconf = check_and_cast<SctpAsconfChunk *>(state->asconfChunk->dup());
@@ -3277,7 +3316,7 @@ SctpEventCode SctpAssociation::processAsconfAckArrived(SctpAsconfAckChunk *ascon
         state->asconfOutstanding = false;
         getPath(remoteAddr)->pathErrorCount = 0;
         std::vector<L3Address> remAddr = remoteAddressList;
-        for (uint32 j = 0; j < asconfAckChunk->getAsconfResponseArraySize(); j++) {
+        for (uint32_t j = 0; j < asconfAckChunk->getAsconfResponseArraySize(); j++) {
             sctpParam = asconfAckChunk->getAsconfResponse(j);
             if (sctpParam->getParameterType() == ERROR_CAUSE_INDICATION) {
                 SctpErrorCauseParameter *error = check_and_cast<SctpErrorCauseParameter *>(sctpParam);
@@ -3285,7 +3324,7 @@ SctpEventCode SctpAssociation::processAsconfAckArrived(SctpAsconfAckChunk *ascon
                 EV_INFO << "error added with id " << error->getResponseCorrelationId() << "\n";
             }
         }
-        for (uint32 i = 0; i < sctpasconf->getAsconfParamsArraySize(); i++) {
+        for (uint32_t i = 0; i < sctpasconf->getAsconfParamsArraySize(); i++) {
             sctpParam = CHK(sctpasconf->removeAsconfParam());
             errorFound = false;
             switch (sctpParam->getParameterType()) {
@@ -3293,7 +3332,7 @@ SctpEventCode SctpAssociation::processAsconfAckArrived(SctpAsconfAckChunk *ascon
                     SctpAddIPParameter *ipParam;
                     ipParam = check_and_cast<SctpAddIPParameter *>(sctpParam);
                     if (errorCorrId.size() > 0) {
-                        for (auto & elem : errorCorrId)
+                        for (auto& elem : errorCorrId)
                             if ((elem) == ipParam->getRequestCorrelationId()) {
                                 errorFound = true;
                                 break;
@@ -3317,7 +3356,7 @@ SctpEventCode SctpAssociation::processAsconfAckArrived(SctpAsconfAckChunk *ascon
                     SctpDeleteIPParameter *delParam;
                     delParam = check_and_cast<SctpDeleteIPParameter *>(sctpParam);
                     if (errorCorrId.size() > 0) {
-                        for (auto & elem : errorCorrId) {
+                        for (auto& elem : errorCorrId) {
                             if ((elem) == delParam->getRequestCorrelationId()) {
                                 errorFound = true;
                                 break;
@@ -3344,7 +3383,7 @@ SctpEventCode SctpAssociation::processAsconfAckArrived(SctpAsconfAckChunk *ascon
                     SctpSetPrimaryIPParameter *priParam;
                     priParam = check_and_cast<SctpSetPrimaryIPParameter *>(sctpParam);
                     if (errorCorrId.size() > 0) {
-                        for (auto & elem : errorCorrId) {
+                        for (auto& elem : errorCorrId) {
                             if ((elem) == priParam->getRequestCorrelationId()) {
                                 errorFound = true;
                                 break;
@@ -3373,18 +3412,19 @@ bool SctpAssociation::processPacketDropArrived(SctpPacketDropChunk *packetDropCh
         EV_TRACE << "processPacketDropArrived" << endl;
         if (packetDropChunk->getEncapsulatedPacket() != nullptr) {
             SctpHeader *sctpmsg = (SctpHeader *)(packetDropChunk->decapsulate());
-            const uint32 numberOfChunks = sctpmsg->getChunksArraySize();
+            const uint32_t numberOfChunks = sctpmsg->getChunksArraySize();
             EV_DETAIL << "numberOfChunks=" << numberOfChunks << endl;
-            for (uint32 i = 0; i < numberOfChunks; i++) {
+            for (uint32_t i = 0; i < numberOfChunks; i++) {
                 SctpChunk *chunk = (SctpChunk *)(sctpmsg->removeChunk());
-                const uint8 type = chunk->getSctpChunkType();
+                const uint8_t type = chunk->getSctpChunkType();
                 switch (type) {
                     case DATA: {
                         SctpDataChunk *dataChunk = check_and_cast<SctpDataChunk *>(chunk);
-                        const uint32 tsn = dataChunk->getTsn();
+                        const uint32_t tsn = dataChunk->getTsn();
                         auto pq = retransmissionQ->payloadQueue.find(tsn);
                         if ((pq != retransmissionQ->payloadQueue.end()) &&
-                            (!chunkHasBeenAcked(pq->second))) {
+                            (!chunkHasBeenAcked(pq->second)))
+                        {
                             EV_DETAIL << simTime() << ": Packet Drop for TSN "
                                       << pq->second->tsn << " on path "
                                       << pq->second->getLastDestination()
@@ -3448,9 +3488,9 @@ bool SctpAssociation::processPacketDropArrived(SctpPacketDropChunk *packetDropCh
                             SctpForwardTsnChunk *forwardChunk = createForwardTsnChunk(remoteAddr);
                             if (state->auth && state->peerAuth && typeInChunkList(FORWARD_TSN)) {
                                 SctpAuthenticationChunk *authChunk = createAuthChunk();
-                                sctpmsg->insertSctpChunks(authChunk);
+                                sctpmsg->appendSctpChunks(authChunk);
                             }
-                            sctpmsg->insertSctpChunks(forwardChunk);
+                            sctpmsg->appendSctpChunks(forwardChunk);
                         }
                         break;
                     default:
@@ -3461,7 +3501,8 @@ bool SctpAssociation::processPacketDropArrived(SctpPacketDropChunk *packetDropCh
                 delete chunk;
             }
             disposeOf(sctpmsg);
-        } else {
+        }
+        else {
             EV_INFO << "no chunk encapsulated" << endl;
         }
         state->peerRwnd = packetDropChunk->getMaxRwnd()
@@ -3476,8 +3517,8 @@ bool SctpAssociation::processPacketDropArrived(SctpPacketDropChunk *packetDropCh
 
 void SctpAssociation::processErrorArrived(SctpErrorChunk *errorChunk)
 {
-    uint32 parameterType;
-    for (uint32 i = 0; i < errorChunk->getParametersArraySize(); i++) {
+    uint32_t parameterType;
+    for (uint32_t i = 0; i < errorChunk->getParametersArraySize(); i++) {
         SctpParameter *param = (SctpParameter *)errorChunk->getParameters(i);
         parameterType = param->getParameterType();
         switch (parameterType) {
@@ -3502,8 +3543,8 @@ void SctpAssociation::processErrorArrived(SctpErrorChunk *errorChunk)
 
 void SctpAssociation::process_TIMEOUT_INIT_REXMIT(SctpEventCode& event)
 {
-    if (++state->initRetransCounter > (int32)sctpMain->getMaxInitRetrans()) {
-        EV_INFO << "Retransmission count during connection setup exceeds " << (int32)sctpMain->getMaxInitRetrans() << ", giving up\n";
+    if (++state->initRetransCounter > (int32_t)sctpMain->getMaxInitRetrans()) {
+        EV_INFO << "Retransmission count during connection setup exceeds " << (int32_t)sctpMain->getMaxInitRetrans() << ", giving up\n";
         sendIndicationToApp(SCTP_I_CLOSED);
         sendAbort();
         return;
@@ -3520,7 +3561,7 @@ void SctpAssociation::process_TIMEOUT_INIT_REXMIT(SctpEventCode& event)
 
         default:
             throw cRuntimeError("Internal error: INIT-REXMIT timer expired while in state %s",
-                stateName(fsm->getState()));
+                    stateName(fsm->getState()));
     }
     state->initRexmitTimeout *= 2;
     if (state->initRexmitTimeout > sctpMain->getMaxInitRetransTimeout()) {
@@ -3531,7 +3572,7 @@ void SctpAssociation::process_TIMEOUT_INIT_REXMIT(SctpEventCode& event)
 
 void SctpAssociation::process_TIMEOUT_SHUTDOWN(SctpEventCode& event)
 {
-    if (++state->errorCount > (uint32)sctpMain->getAssocMaxRtx()) {
+    if (++state->errorCount > (uint32_t)sctpMain->getAssocMaxRtx()) {
         sendIndicationToApp(SCTP_I_CONN_LOST);
         sendAbort();
         sctpMain->removeAssociation(this);
@@ -3585,7 +3626,7 @@ void SctpAssociation::process_TIMEOUT_HEARTBEAT(SctpPathVariables *path)
     path->pathRto = (simtime_t)min(2 * path->pathRto.dbl(), sctpMain->getRtoMax());
     path->statisticsPathRTO->record(path->pathRto);
     /* check if any thresholds are exceeded, and if so, check if ULP must be notified */
-    if (state->errorCount > (uint32)sctpMain->getAssocMaxRtx()) {
+    if (state->errorCount > (uint32_t)sctpMain->getAssocMaxRtx()) {
         sendIndicationToApp(SCTP_I_CONN_LOST);
         sendAbort();
         sctpMain->removeAssociation(this);
@@ -3593,7 +3634,7 @@ void SctpAssociation::process_TIMEOUT_HEARTBEAT(SctpPathVariables *path)
     }
     else {
         /* set path state to INACTIVE, if the path error counter is exceeded */
-        if (path->pathErrorCount > (uint32)sctpMain->getPathMaxRetrans()) {
+        if (path->pathErrorCount > (uint32_t)sctpMain->getPathMaxRetrans()) {
             oldState = path->activePath;
             path->activePath = false;
             if (path == state->getPrimaryPath()) {
@@ -3608,7 +3649,7 @@ void SctpAssociation::process_TIMEOUT_HEARTBEAT(SctpPathVariables *path)
             sendIndicationToApp(SCTP_I_CONN_LOST);
             return;
         }
-        else if (path->activePath == false && oldState == true) {    //FIXME oldState may be uninitialized
+        else if (path->activePath == false && oldState == true) { // FIXME oldState may be uninitialized
             /* notify the application, in case the PATH STATE has changed from ACTIVE to INACTIVE */
             pathStatusIndication(path, false);
         }
@@ -3617,7 +3658,7 @@ void SctpAssociation::process_TIMEOUT_HEARTBEAT(SctpPathVariables *path)
 
 void SctpAssociation::stopTimers()
 {
-    for (auto & elem : sctpPathMap) {
+    for (auto& elem : sctpPathMap) {
         stopTimer(elem.second->HeartbeatTimer);
         stopTimer(elem.second->HeartbeatIntervalTimer);
     }
@@ -3640,12 +3681,13 @@ void SctpAssociation::startTimer(cMessage *timer, const simtime_t& timeout)
 
 void SctpAssociation::process_TIMEOUT_RESET(SctpPathVariables *path)
 {
-    int32 value;
-    std::map<uint32, SctpStateVariables::RequestData>::reverse_iterator rit;
+    int32_t value;
+    std::map<uint32_t, SctpStateVariables::RequestData>::reverse_iterator rit;
     rit = state->requests.rbegin();
     if (rit->second.result == DEFERRED) {
         value = 1;
-    } else {
+    }
+    else {
         value = updateCounters(path);
     }
     if (value == 1) {
@@ -3659,17 +3701,17 @@ void SctpAssociation::process_TIMEOUT_RESET(SctpPathVariables *path)
     }
 }
 
-int32 SctpAssociation::updateCounters(SctpPathVariables *path)
+int32_t SctpAssociation::updateCounters(SctpPathVariables *path)
 {
     bool notifyUlp = false;
-    if (++state->errorCount > (uint32)sctpMain->getAssocMaxRtx()) {
-        EV_DETAIL << "Retransmission count during connection setup exceeds " << (int32)sctpMain->getAssocMaxRtx() << ", giving up\n";
+    if (++state->errorCount > (uint32_t)sctpMain->getAssocMaxRtx()) {
+        EV_DETAIL << "Retransmission count during connection setup exceeds " << (int32_t)sctpMain->getAssocMaxRtx() << ", giving up\n";
         sendIndicationToApp(SCTP_I_CLOSED);
         sendAbort();
         sctpMain->removeAssociation(this);
         return 0;
     }
-    else if (++path->pathErrorCount > (uint32)sctpMain->getPathMaxRetrans()) {
+    else if (++path->pathErrorCount > (uint32_t)sctpMain->getPathMaxRetrans()) {
         if (path->activePath) {
             /* tell the source */
             notifyUlp = true;
@@ -3699,7 +3741,7 @@ int32 SctpAssociation::updateCounters(SctpPathVariables *path)
 
 void SctpAssociation::process_TIMEOUT_ASCONF(SctpPathVariables *path)
 {
-    int32 value;
+    int32_t value;
 
     if ((value = updateCounters(path)) == 1) {
         retransmitAsconf();
@@ -3756,7 +3798,7 @@ void SctpAssociation::process_TIMEOUT_RTX(SctpPathVariables *path)
         path->pathErrorCount++;
         EV_DETAIL << "RTX-Timeout: errorCount increased to " << path->pathErrorCount << "  state->errorCount=" << state->errorCount << "\n";
     }
-    if (state->errorCount > (uint32)sctpMain->getAssocMaxRtx()) {
+    if (state->errorCount > (uint32_t)sctpMain->getAssocMaxRtx()) {
         /* error counter exceeded terminate the association -- create an SCTPC_EV_CLOSE event and send it to myself */
 
         EV_DETAIL << "process_TIMEOUT_RTX : ASSOC ERROR COUNTER EXCEEDED, closing ASSOC" << endl;
@@ -3766,7 +3808,7 @@ void SctpAssociation::process_TIMEOUT_RTX(SctpPathVariables *path)
         return;
     }
     else {
-        if (path->pathErrorCount > static_cast<uint32>(sctpMain->par("pathMaxRetrans"))) {
+        if (path->pathErrorCount > static_cast<uint32_t>(sctpMain->par("pathMaxRetrans"))) {
             bool notifyUlp = false;
 
             EV_DETAIL << "pathErrorCount exceeded\n";
@@ -3805,8 +3847,7 @@ void SctpAssociation::process_TIMEOUT_RTX(SctpPathVariables *path)
         EV_DETAIL << "Still " << retransmissionQ->payloadQueue.size()
                   << " chunks in retransmissionQ" << endl;
 
-        for (auto & elem : retransmissionQ->payloadQueue)
-        {
+        for (auto& elem : retransmissionQ->payloadQueue) {
             SctpDataVariables *chunk = elem.second;
             assert(chunk != nullptr);
 
@@ -3846,7 +3887,7 @@ void SctpAssociation::process_TIMEOUT_RTX(SctpPathVariables *path)
 void SctpAssociation::process_TIMEOUT_BLOCKING(SctpPathVariables *path)
 {
     EV_INFO << "TIMEOUT_BLOCKING on " << path->remoteAddress
-              << " cwnd=" << path->cwnd << endl;
+            << " cwnd=" << path->cwnd << endl;
     path->blockingTimeout = -1.0;
     sendOnAllPaths(path);
 }

@@ -1,5 +1,33 @@
 ====== inet-4.x ======
 
+2022-05-13  ------ inet-4.4.0 released ------
+
+2021-05-07  Zoltan Bojthe
+
+	Added parent or this to parameter access for OMNeT++ 6 compatibility.
+
+2021-01-15  Zoltan Bojthe
+
+	Moved code from updateDisplayString() to resolveDirective().
+
+2021-01-04  Levente Mészáros
+
+	Simplified HCF coordination function after packet ownership changes.
+
+2021-01-11  ------ inet-4.3.0 released ------
+
+2020-12-18  Levente Mészáros
+
+	Changed coordination function to take ownership of received upper and lower packets.
+
+2020-12-08  Levente Mészáros
+
+	Fixed leaks detected by Valgrind.
+
+2020-07-20  Levente Mészáros
+
+	Fixed warmup period for compound source expressions, see bug #549.
+
 2020-01-08  ------ inet-4.2.0 released ------
 
 2019-08-21  Marcell Juhász

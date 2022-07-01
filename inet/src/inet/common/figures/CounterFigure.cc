@@ -1,23 +1,13 @@
 //
-// Copyright (C) 2016 OpenSim Ltd
+// Copyright (C) 2016 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-#include "inet/common/INETUtils.h"
+
 #include "inet/common/figures/CounterFigure.h"
+
+#include "inet/common/INETUtils.h"
 
 namespace inet {
 
@@ -165,7 +155,7 @@ int CounterFigure::getLabelOffset() const
 
 void CounterFigure::setLabelOffset(int offset)
 {
-    if(labelOffset != offset)   {
+    if (labelOffset != offset) {
         labelOffset = offset;
         labelFigure->setPosition(Point(backgroundFigure->getBounds().x + backgroundFigure->getBounds().width / 2, backgroundFigure->getBounds().y + backgroundFigure->getBounds().height + labelOffset));
     }
@@ -323,8 +313,7 @@ void CounterFigure::calculateBounds()
     double rectHeight = getDigitFont().pointSize * DIGIT_HEIGHT_PERCENT;
 
     Rectangle bounds = backgroundFigure->getBounds();
-    backgroundFigure->setBounds(Rectangle(0, 0, 2 * PADDING + (rectWidth + DIGIT_PADDING) * digits.size(),
-                    rectHeight + 2 * PADDING));
+    backgroundFigure->setBounds(Rectangle(0, 0, 2 * PADDING + (rectWidth + DIGIT_PADDING) * digits.size(), rectHeight + 2 * PADDING));
     Point pos = calculateRealPos(Point(bounds.x, bounds.y));
     bounds = backgroundFigure->getBounds();
     bounds.x = pos.x;
@@ -359,7 +348,7 @@ void CounterFigure::parse(cProperty *property)
     if ((s = property->getValue(PKEY_LABEL)) != nullptr)
         setLabel(s);
     if ((s = property->getValue(PKEY_LABEL_OFFSET)) != nullptr)
-            setLabelOffset(atoi(s));
+        setLabelOffset(atoi(s));
     if ((s = property->getValue(PKEY_LABEL_FONT)) != nullptr)
         setLabelFont(parseFont(s));
     if ((s = property->getValue(PKEY_LABEL_COLOR)) != nullptr)
@@ -391,7 +380,7 @@ void CounterFigure::layout()
     // Add frame
     bounds.x += PADDING + DIGIT_PADDING / 2;
 
-    for (uint32 i = 0; i < digits.size(); ++i) {
+    for (uint32_t i = 0; i < digits.size(); ++i) {
         double rectWidth = getDigitFont().pointSize * DIGIT_WIDTH_PERCENT;
         double rectHeight = getDigitFont().pointSize * DIGIT_HEIGHT_PERCENT;
         double x = bounds.x + (rectWidth + DIGIT_PADDING) * i;

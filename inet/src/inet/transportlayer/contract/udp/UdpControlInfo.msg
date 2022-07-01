@@ -1,23 +1,11 @@
 //
 // Copyright (C) 2000 Institut fuer Telematik, Universitaet Karlsruhe
-// Copyright (C) 2004,2011 Andras Varga
+// Copyright (C) 2004,2011 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
 import inet.common.INETDefs;
-import inet.networklayer.common.IpProtocolId;   //FIXME remove it, unused
 import inet.networklayer.common.L3Address;
 
 namespace inet;
@@ -69,7 +57,6 @@ enum UdpStatusInd
     UDP_I_SOCKET_CLOSED = 2;
 }
 
-
 //
 // Base class for UDP control info classes. The most convenient way to handle
 // ~Udp is the UdpSocket class, which hides control info from you.
@@ -112,7 +99,6 @@ class UdpConnectCommand extends UdpControlInfo
     int remotePort = -1;
 }
 
-
 //
 // Control info for sending data via UDP. To send a packet, send it to
 // the ~Udp module with kind=UDP_C_SEND and an ~UDPSendCommand attached.
@@ -123,7 +109,6 @@ class UdpConnectCommand extends UdpControlInfo
 //
 // @see ~UdpCommandCode, ~PortsReq, ~L3AddressReq, ~InterfaceReq
 //
-
 
 //
 // Control info for closing an UDP socket. To close a socket, send a message
@@ -212,7 +197,7 @@ class UdpSetDscpCommand extends UdpSetOptionCommand
 }
 
 //
-// Control info for setting the TOS (Type Of Service) / Traffic Class 
+// Control info for setting the TOS (Type Of Service) / Traffic Class
 // header field on outgoing Ipv4/Ipv6 packets sent from an Udp socket.
 // This is a 8-bit field.
 // To set the option, send a message to  the ~Udp module with kind=UDP_C_SETOPTION
@@ -382,4 +367,3 @@ class UdpSetMulticastSourceFilterCommand extends UdpSetOptionCommand
     UdpSourceFilterMode filterMode;
     L3Address sourceList[];
 }
-

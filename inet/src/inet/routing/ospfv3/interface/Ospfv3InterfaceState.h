@@ -1,9 +1,8 @@
-#ifndef __INET_OSPFV3INTERFACESTATE_H_
-#define __INET_OSPFV3INTERFACESTATE_H_
+#ifndef __INET_OSPFV3INTERFACESTATE_H
+#define __INET_OSPFV3INTERFACESTATE_H
 
 #include <string>
 
-#include "inet/common/INETDefs.h"
 #include "inet/routing/ospfv3/interface/Ospfv3Interface.h"
 
 namespace inet {
@@ -14,7 +13,7 @@ class INET_API Ospfv3InterfaceState
   public:
     virtual void processEvent(Ospfv3Interface *interface, Ospfv3Interface::Ospfv3InterfaceEvent eventNum) = 0;
     virtual Ospfv3Interface::Ospfv3InterfaceFaState getState() const = 0;
-    virtual ~Ospfv3InterfaceState() {};
+    virtual ~Ospfv3InterfaceState() {}
     virtual std::string getInterfaceStateString() const = 0;
 
   protected:
@@ -23,7 +22,7 @@ class INET_API Ospfv3InterfaceState
 };
 
 } // namespace ospfv3
-}//namespace inet
+} // namespace inet
 
-#endif // __INET_OSPFV3INTERFACESTATE_H_
+#endif
 

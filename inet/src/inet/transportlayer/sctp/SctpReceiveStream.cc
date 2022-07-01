@@ -2,23 +2,14 @@
 // Copyright (C) 2008 Irene Ruengeler
 // Copyright (C) 2010-2012 Thomas Dreibholz
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
+
+#include "inet/transportlayer/sctp/SctpReceiveStream.h"
 
 #include "inet/transportlayer/contract/sctp/SctpCommand_m.h"
 #include "inet/transportlayer/sctp/SctpAssociation.h"
-#include "inet/transportlayer/sctp/SctpReceiveStream.h"
 
 namespace inet {
 namespace sctp {
@@ -40,9 +31,9 @@ SctpReceiveStream::~SctpReceiveStream()
     delete unorderedQ;
 }
 
-uint32 SctpReceiveStream::reassemble(SctpQueue *queue, uint32 tsn)
+uint32_t SctpReceiveStream::reassemble(SctpQueue *queue, uint32_t tsn)
 {
-    uint32 begintsn = tsn, endtsn = 0;
+    uint32_t begintsn = tsn, endtsn = 0;
 
     EV_INFO << "Trying to reassemble message..." << endl;
 
@@ -76,7 +67,7 @@ uint32 SctpReceiveStream::reassemble(SctpQueue *queue, uint32 tsn)
                     firstSimple->setDataLen(firstSimple->getDataLen() + processSimple->getDataLen());
                     firstSimple->setByteLength(firstSimple->getByteLength() + processSimple->getByteLength());
                     /* copy data */
-                    for (uint32 i = 0; i < (processVar->len / 8); i++)
+                    for (uint32_t i = 0; i < (processVar->len / 8); i++)
                         firstSimple->setData(i + (firstVar->len / 8), processSimple->getData(i));
                 }
 
@@ -95,9 +86,9 @@ uint32 SctpReceiveStream::reassemble(SctpQueue *queue, uint32 tsn)
     return tsn;
 }
 
-uint32 SctpReceiveStream::enqueueNewDataChunk(SctpDataVariables *dchunk)
+uint32_t SctpReceiveStream::enqueueNewDataChunk(SctpDataVariables *dchunk)
 {
-    uint32 delivery = 0;    //0:orderedQ=false && deliveryQ=false; 1:orderedQ=true && deliveryQ=false; 2:oderedQ=true && deliveryQ=true; 3:fragment
+    uint32_t delivery = 0; // 0:orderedQ=false && deliveryQ=false; 1:orderedQ=true && deliveryQ=false; 2:oderedQ=true && deliveryQ=true; 3:fragment
 
     SctpDataVariables *chunk;
     /* Enqueueing NEW data chunk. Append it to the respective queue */
@@ -109,15 +100,16 @@ uint32 SctpReceiveStream::enqueueNewDataChunk(SctpDataVariables *dchunk)
             if (deliveryQ->checkAndInsertChunk(dchunk->tsn, dchunk)) {
                 delivery = 2;
             }
-        } else {
+        }
+        else {
             if (unorderedQ->checkAndInsertChunk(dchunk->tsn, dchunk)) {
                 delivery = 3;
             }
 
             /* try to reassemble here */
-            uint32 reassembled = reassemble(unorderedQ, dchunk->tsn);
+            uint32_t reassembled = reassemble(unorderedQ, dchunk->tsn);
 
-            if ((unorderedQ->getChunk(reassembled))->bbit && (unorderedQ->getChunk(reassembled))->bbit) {  //FIXME There are identical sub-expressions '(unorderedQ->getChunk(reassembled))->bbit' to the left and to the right of the '&&' operator.
+            if ((unorderedQ->getChunk(reassembled))->bbit && (unorderedQ->getChunk(reassembled))->bbit) { // FIXME There are identical sub-expressions '(unorderedQ->getChunk(reassembled))->bbit' to the left and to the right of the '&&' operator.
                 /* put message into deliveryQ */
                 if (deliveryQ->checkAndInsertChunk(reassembled, unorderedQ->getAndExtractChunk(reassembled))) {
                     delivery = 2;
@@ -154,14 +146,13 @@ uint32 SctpReceiveStream::enqueueNewDataChunk(SctpDataVariables *dchunk)
     return delivery;
 }
 
-int32 SctpReceiveStream::getExpectedStreamSeqNum() {
+int32_t SctpReceiveStream::getExpectedStreamSeqNum() {
     return expectedStreamSeqNum;
 }
 
-void SctpReceiveStream::setExpectedStreamSeqNum(int32 seqNum) {
+void SctpReceiveStream::setExpectedStreamSeqNum(int32_t seqNum) {
     expectedStreamSeqNum = seqNum;
 }
-
 
 } // namespace sctp
 

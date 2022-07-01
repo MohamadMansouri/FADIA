@@ -1,19 +1,9 @@
 //
-// Copyright (C) OpenSim Ltd.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see http://www.gnu.org/licenses/.
-//
+
 
 package inet.applications.tcpapp;
 
@@ -52,7 +42,7 @@ module TelnetClientApp like IApp
         }
         emptyProducer: <default("EmptyPacketSource")> like IActivePacketSource {
             parameters:
-	            @display("p=500,100");
+                @display("p=500,100");
         }
         scheduler: <default("MarkovScheduler")> like IPacketScheduler {
             parameters:
@@ -62,11 +52,11 @@ module TelnetClientApp like IApp
         }
         consumer: <default("PassivePacketSink")> like IPassivePacketSink {
             parameters:
-	            @display("p=100,200");
+                @display("p=100,200");
         }
         io: TcpClientSocketIo {
             parameters:
-	            @display("p=200,300");
+                @display("p=200,300");
         }
     connections:
         characterProducer.out --> scheduler.in++;

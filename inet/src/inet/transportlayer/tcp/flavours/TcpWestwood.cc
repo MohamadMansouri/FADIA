@@ -1,45 +1,19 @@
 //
-// Copyright (C) 2013 Maria Fernandez, Carlos Calafate, Juan-Carlos Cano and
-// Pietro Manzoni
+// Copyright (C) 2013 Maria Fernandez, Carlos Calafate, Juan-Carlos Cano and Pietro Manzoni
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-#include <algorithm>    // min,max
-
-#include "inet/transportlayer/tcp/Tcp.h"
 #include "inet/transportlayer/tcp/flavours/TcpWestwood.h"
 
-namespace inet {
+#include <algorithm> // min,max
 
+#include "inet/transportlayer/tcp/Tcp.h"
+
+namespace inet {
 namespace tcp {
 
 Register_Class(TcpWestwood);
-
-TcpWestwoodStateVariables::TcpWestwoodStateVariables()
-{
-    ssthresh = 65535;
-    w_RTTmin = SIMTIME_MAX;
-    w_a = 1;
-    w_lastAckTime = 0;
-    w_bwe = 0;
-    w_sample_bwe = 0;
-}
-
-TcpWestwoodStateVariables::~TcpWestwoodStateVariables()
-{
-}
 
 std::string TcpWestwoodStateVariables::str() const
 {
@@ -65,14 +39,15 @@ TcpWestwood::TcpWestwood()
 
 void TcpWestwood::recalculateSlowStartThreshold()
 {
-    state->ssthresh = (uint32)((state->w_bwe * SIMTIME_DBL(state->w_RTTmin)) / (state->w_a));
+    double x = (state->w_bwe * SIMTIME_DBL(state->w_RTTmin)) / (state->w_a);
+    state->ssthresh = x <= UINT32_MAX ? (uint32_t)(x) : UINT32_MAX;
 
     conn->emit(ssthreshSignal, state->ssthresh);
 
     EV_DEBUG << "recalculateSlowStartThreshold(), ssthresh=" << state->ssthresh << "\n";
 }
 
-void TcpWestwood::recalculateBWE(uint32 cumul_ack)
+void TcpWestwood::recalculateBWE(uint32_t cumul_ack)
 {
     simtime_t currentTime = simTime();
     simtime_t timeAck = currentTime - state->w_lastAckTime;
@@ -100,16 +75,17 @@ void TcpWestwood::processRexmitTimer(TcpEventCode& event)
     // and is set to 1 in cong. avoidance.
     // the cong. window is reset to 1 after a timeout, as is done by TCP Reno. Conservative. Reaseon: fairness.
 
-    if (state->snd_cwnd < state->ssthresh) {    // Slow start
+    if (state->snd_cwnd < state->ssthresh) { // Slow start
         state->w_a = state->w_a + 1;
         if (state->w_a > 4)
             state->w_a = 4;
     }
-    else {    // Cong. avoidance
+    else { // Cong. avoidance
         state->w_a = 1;
     }
 
-    recalculateSlowStartThreshold();
+    if (state->w_RTTmin != SIMTIME_MAX)
+        recalculateSlowStartThreshold();
     if (state->ssthresh < 2 * state->snd_mss)
         state->ssthresh = 2 * state->snd_mss;
 
@@ -121,7 +97,7 @@ void TcpWestwood::processRexmitTimer(TcpEventCode& event)
     conn->retransmitOneSegment(true);
 }
 
-void TcpWestwood::receivedDataAck(uint32 firstSeqAcked)
+void TcpWestwood::receivedDataAck(uint32_t firstSeqAcked)
 {
     TcpBaseAlg::receivedDataAck(firstSeqAcked);
 
@@ -138,7 +114,7 @@ void TcpWestwood::receivedDataAck(uint32 firstSeqAcked)
 
         // cumul_ack: cumulative ack's that acks 2 or more pkts count 1,
         // because DUPACKs count them
-        uint32 cumul_ack = state->snd_una - firstSeqAcked;    // acked bytes
+        uint32_t cumul_ack = state->snd_una - firstSeqAcked; // acked bytes
         if ((state->dupacks * state->snd_mss) >= cumul_ack)
             cumul_ack = state->snd_mss; // cumul_ack = 1:
         else
@@ -149,11 +125,11 @@ void TcpWestwood::receivedDataAck(uint32 firstSeqAcked)
             cumul_ack = 2 * state->snd_mss;
 
         recalculateBWE(cumul_ack);
-    }    // Closes if w_sendtime != nullptr
+    } // Closes if w_sendtime != nullptr
 
     // Same behavior of Reno during fast recovery, slow start and cong. avoidance
 
-    if (state->dupacks >= DUPTHRESH) {    // DUPTHRESH = 3
+    if (state->dupacks >= state->dupthresh) {
         //
         // Perform Fast Recovery: set cwnd to ssthresh (deflating the window).
         //
@@ -181,8 +157,8 @@ void TcpWestwood::receivedDataAck(uint32 firstSeqAcked)
             // RFC would require other modifications as well in addition to the
             // two lines below.
             //
-            // int bytesAcked = state->snd_una - firstSeqAcked;
-            // state->snd_cwnd += bytesAcked * state->snd_mss;
+//            int bytesAcked = state->snd_una - firstSeqAcked;
+//            state->snd_cwnd += bytesAcked * state->snd_mss;
 
             conn->emit(cwndSignal, state->snd_cwnd);
 
@@ -190,7 +166,7 @@ void TcpWestwood::receivedDataAck(uint32 firstSeqAcked)
         }
         else {
             // perform Congestion Avoidance (RFC 2581)
-            uint32 incr = state->snd_mss * state->snd_mss / state->snd_cwnd;
+            uint32_t incr = state->snd_mss * state->snd_mss / state->snd_cwnd;
 
             if (incr == 0)
                 incr = 1;
@@ -220,12 +196,12 @@ void TcpWestwood::receivedDuplicateAck()
 
     {
         // BWE calculation: dupack counts 1
-        uint32 cumul_ack = state->snd_mss;
+        uint32_t cumul_ack = state->snd_mss;
         recalculateBWE(cumul_ack);
-    }    // Closes if w_sendtime != nullptr
+    } // Closes if w_sendtime != nullptr
 
-    if (state->dupacks == DUPTHRESH) {    // DUPTHRESH = 3
-        EV_DETAIL << "Westwood on dupAcks == DUPTHRESH(=3): Faster Retransmit \n";
+    if (state->dupacks == state->dupthresh) {
+        EV_DETAIL << "Westwood on dupAcks == DUPTHRESH(=" << state->dupthresh << ": Faster Retransmit \n";
 
         // TCP Westwood: congestion control with faster recovery. S. Mascolo, C. Casetti, M. Gerla, S.S. Lee, M. Sanadidi
         // During the cong. avoidance phase we are probing for extra available bandwidth.
@@ -248,16 +224,17 @@ void TcpWestwood::receivedDuplicateAck()
         // a is restored to 1 in cong. avoidance: ssthresh was set correctly and there is no need to reduce
         // the impact of BWE
 
-        if (state->snd_cwnd < state->ssthresh) {    // Slow start
+        if (state->snd_cwnd < state->ssthresh) { // Slow start
             state->w_a = state->w_a + 0.25;
             if (state->w_a > 4)
                 state->w_a = 4;
         }
-        else {    // Cong. avoidance
+        else { // Cong. avoidance
             state->w_a = 1;
         }
 
-        recalculateSlowStartThreshold();
+        if (state->w_RTTmin != SIMTIME_MAX)
+            recalculateSlowStartThreshold();
         // reset cwnd to ssthresh, if larger
         if (state->snd_cwnd > state->ssthresh)
             state->snd_cwnd = state->ssthresh;
@@ -274,10 +251,10 @@ void TcpWestwood::receivedDuplicateAck()
         sendData(false);
     }
     // Behavior like Reno:
-    else if (state->dupacks > DUPTHRESH) {    // DUPTHRESH = 3
+    else if (state->dupacks > state->dupthresh) {
         // Westwood: like Reno
         state->snd_cwnd += state->snd_mss;
-        EV_DETAIL << "Westwood on dupAcks > DUPTHRESH(=3): Fast Recovery: inflating cwnd by SMSS, new cwnd=" << state->snd_cwnd << "\n";
+        EV_DETAIL << "Westwood on dupAcks > DUPTHRESH(=" << state->dupthresh << ": Fast Recovery: inflating cwnd by SMSS, new cwnd=" << state->snd_cwnd << "\n";
 
         conn->emit(cwndSignal, state->snd_cwnd);
 
@@ -285,7 +262,7 @@ void TcpWestwood::receivedDuplicateAck()
     }
 }
 
-void TcpWestwood::dataSent(uint32 fromseq)
+void TcpWestwood::dataSent(uint32_t fromseq)
 {
     TcpBaseAlg::dataSent(fromseq);
 
@@ -297,7 +274,7 @@ void TcpWestwood::dataSent(uint32 fromseq)
     state->regions.set(fromseq, state->snd_max, sendtime);
 }
 
-void TcpWestwood::segmentRetransmitted(uint32 fromseq, uint32 toseq)
+void TcpWestwood::segmentRetransmitted(uint32_t fromseq, uint32_t toseq)
 {
     TcpBaseAlg::segmentRetransmitted(fromseq, toseq);
 
@@ -305,6 +282,5 @@ void TcpWestwood::segmentRetransmitted(uint32 fromseq, uint32 toseq)
 }
 
 } // namespace tcp
-
 } // namespace inet
 

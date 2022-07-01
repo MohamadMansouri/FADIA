@@ -1,30 +1,18 @@
 //
 // Copyright (C) 2008 Irene Ruengeler
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 #ifndef __INET_SCTPPEER_H
 #define __INET_SCTPPEER_H
 
-#include "inet/common/INETDefs.h"
-
-#include "inet/applications/common/SocketTag_m.h"
 #include "inet/common/ProtocolTag_m.h"
 #include "inet/common/TimeTag_m.h"
 #include "inet/common/lifecycle/LifecycleUnsupported.h"
 #include "inet/common/packet/Message.h"
+#include "inet/common/socket/SocketTag_m.h"
 #include "inet/transportlayer/contract/sctp/SctpSocket.h"
 #include "inet/transportlayer/sctp/SctpAssociation.h"
 
@@ -38,8 +26,7 @@ class SctpConnectInfo;
 class INET_API SctpPeer : public cSimpleModule, public SctpSocket::ICallback, public LifecycleUnsupported
 {
   protected:
-    struct PathStatus
-    {
+    struct PathStatus {
         bool active;
         bool primaryPath;
         Ipv4Address pid;
@@ -71,7 +58,7 @@ class INET_API SctpPeer : public cSimpleModule, public SctpSocket::ICallback, pu
     bool shutdownReceived;
     bool sendAllowed;
     int serverAssocId;
-    int numRequestsToSend;    // requests to send in this session
+    int numRequestsToSend; // requests to send in this session
     int lastStream;
     int numPacketsToReceive;
 
@@ -129,5 +116,5 @@ class INET_API SctpPeer : public cSimpleModule, public SctpSocket::ICallback, pu
 
 } // namespace inet
 
-#endif // ifndef __INET_SCTPPEER_H
+#endif
 

@@ -1,22 +1,13 @@
 //
-// Copyright (C) 2005 Andras Varga
+// Copyright (C) 2005 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-#include "inet/common/INETMath.h"
+
 #include "inet/mobility/single/TurtleMobility.h"
+
+#include "inet/common/INETMath.h"
 
 namespace inet {
 
@@ -112,7 +103,7 @@ void TurtleMobility::executeStatement(cXMLElement *stmt)
 
     if (!strcmp(tag, "repeat")) {
         const char *nAttr = stmt->getAttribute("n");
-        long n = -1;    // infinity -- that's the default
+        long n = -1; // infinity -- that's the default
 
         if (nAttr) {
             n = (long)getValue(nAttr);
@@ -229,7 +220,7 @@ void TurtleMobility::executeStatement(cXMLElement *stmt)
         if (t < 0)
             throw cRuntimeError("<wait>: time (attribute t) is negative (%g) at %s", t, stmt->getSourceLocation());
 
-        nextChange += t;    // targetPosition is unchanged
+        nextChange += t; // targetPosition is unchanged
     }
     else if (!strcmp(tag, "moveto")) {
         const char *xAttr = stmt->getAttribute("x");
@@ -335,7 +326,7 @@ void TurtleMobility::gotoNextStatement()
     ASSERT(!nextStatement->getFirstChild() || (!strcmp(nextStatement->getTagName(), "repeat")
                                                && !loopVars.empty()));
 
-    if (nextStatement->getFirstChild() && (loopVars.top() != 0 || (loopVars.pop(), false))) {    // !=0: positive or -1
+    if (nextStatement->getFirstChild() && (loopVars.top() != 0 || (loopVars.pop(), false))) { // !=0: positive or -1
         // statement must be a <repeat> if it has children; repeat count>0 must be
         // on the stack; let's start doing the body.
         nextStatement = nextStatement->getFirstChild();
@@ -349,7 +340,7 @@ void TurtleMobility::gotoNextStatement()
             if (loopVars.top() != -1) // -1 means infinity
                 loopVars.top()--;
 
-            if (loopVars.top() != 0) {    // positive or -1
+            if (loopVars.top() != 0) { // positive or -1
                 // go to beginning of <repeat> block again
                 nextStatement = nextStatement->getParentNode()->getFirstChild();
             }
@@ -375,8 +366,7 @@ void TurtleMobility::computeMaxSpeed(cXMLElement *nodes)
     // Recursively traverse the whole config file, looking for
     // speed attributes
     cXMLElementList childs = nodes->getChildren();
-    for (auto & child : childs)
-    {
+    for (auto& child : childs) {
         const char *speedAttr = child->getAttribute("speed");
         if (speedAttr) {
             double speed = atof(speedAttr);

@@ -1,24 +1,15 @@
 //
 // Copyright (C) 2016 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see http://www.gnu.org/licenses/.
-//
-//
+
+
+#include "inet/linklayer/ieee80211/mac/channelaccess/Edcaf.h"
 
 #include "inet/common/ModuleAccess.h"
 #include "inet/common/Simsignals.h"
-#include "inet/linklayer/ieee80211/mac/channelaccess/Edcaf.h"
+#include "inet/networklayer/common/NetworkInterface.h"
 
 namespace inet {
 namespace ieee80211 {
@@ -27,8 +18,8 @@ using namespace inet::physicallayer;
 
 Define_Module(Edcaf);
 
-inline double fallback(double a, double b) {return a!=-1 ? a : b;}
-inline simtime_t fallback(simtime_t a, simtime_t b) {return a!=-1 ? a : b;}
+inline double fallback(double a, double b) { return a != -1 ? a : b; }
+inline simtime_t fallback(simtime_t a, simtime_t b) { return a != -1 ? a : b; }
 
 Edcaf::~Edcaf()
 {
@@ -97,10 +88,9 @@ void Edcaf::calculateTimingParameters()
     EV_DEBUG << "Contention window parameters are initialized: cw = " << cw << ", cwMin = " << cwMin << ", cwMax = " << cwMax << std::endl;
 }
 
-
 void Edcaf::incrementCw()
 {
-    Enter_Method_Silent("incrementCw");
+    Enter_Method("incrementCw");
     int newCw = 2 * cw + 1;
     if (newCw > cwMax)
         cw = cwMax;
@@ -111,15 +101,14 @@ void Edcaf::incrementCw()
 
 void Edcaf::resetCw()
 {
-    Enter_Method_Silent("resetCw");
+    Enter_Method("resetCw");
     cw = cwMin;
     EV_DEBUG << "Contention window is reset: cw = " << cw << std::endl;
 }
 
 int Edcaf::getAifsNumber(AccessCategory ac)
 {
-    switch (ac)
-    {
+    switch (ac) {
         case AC_BK: return 7;
         case AC_BE: return 3;
         case AC_VI: return 2;
@@ -143,7 +132,7 @@ AccessCategory Edcaf::getAccessCategory(const char *ac)
 
 void Edcaf::channelAccessGranted()
 {
-    Enter_Method_Silent("channelAccessGranted");
+    Enter_Method("channelAccessGranted");
     ASSERT(callback != nullptr);
     if (!collisionController->isInternalCollision(this)) {
         owning = true;
@@ -154,9 +143,9 @@ void Edcaf::channelAccessGranted()
         EV_WARN << "Ignoring channel access granted due to internal collision.\n";
 }
 
-void Edcaf::releaseChannel(IChannelAccess::ICallback* callback)
+void Edcaf::releaseChannel(IChannelAccess::ICallback *callback)
 {
-    Enter_Method_Silent("releaseChannel");
+    Enter_Method("releaseChannel");
     ASSERT(owning);
     owning = false;
     emit(channelOwnershipChangedSignal, owning);
@@ -164,9 +153,9 @@ void Edcaf::releaseChannel(IChannelAccess::ICallback* callback)
     EV_INFO << "Channel released.\n";
 }
 
-void Edcaf::requestChannel(IChannelAccess::ICallback* callback)
+void Edcaf::requestChannel(IChannelAccess::ICallback *callback)
 {
-    Enter_Method_Silent("requestChannel");
+    Enter_Method("requestChannel");
     this->callback = callback;
     ASSERT(!owning);
     if (contention->isContentionInProgress())
@@ -187,8 +176,7 @@ bool Edcaf::isInternalCollision()
 
 int Edcaf::getCwMax(AccessCategory ac, int aCwMax, int aCwMin)
 {
-    switch (ac)
-    {
+    switch (ac) {
         case AC_BK: return aCwMax;
         case AC_BE: return aCwMax;
         case AC_VI: return aCwMin;
@@ -199,8 +187,7 @@ int Edcaf::getCwMax(AccessCategory ac, int aCwMax, int aCwMin)
 
 int Edcaf::getCwMin(AccessCategory ac, int aCwMin)
 {
-    switch (ac)
-    {
+    switch (ac) {
         case AC_BK: return aCwMin;
         case AC_BE: return aCwMin;
         case AC_VI: return (aCwMin + 1) / 2 - 1;
@@ -209,14 +196,16 @@ int Edcaf::getCwMin(AccessCategory ac, int aCwMin)
     }
 }
 
-void Edcaf::receiveSignal(cComponent* source, simsignal_t signalID, cObject* obj, cObject* details)
+void Edcaf::receiveSignal(cComponent *source, simsignal_t signalID, cObject *obj, cObject *details)
 {
-    Enter_Method_Silent("receiveSignal");
+    Enter_Method("%s", cComponent::getSignalName(signalID));
+
     if (signalID == modesetChangedSignal) {
-        modeSet = check_and_cast<Ieee80211ModeSet*>(obj);
+        modeSet = check_and_cast<Ieee80211ModeSet *>(obj);
         calculateTimingParameters();
     }
 }
 
 } // namespace ieee80211
 } // namespace inet
+

@@ -1,24 +1,15 @@
 //
 // Copyright (C) 2016 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see http://www.gnu.org/licenses/.
-//
+
+
+#include "inet/linklayer/ieee80211/mac/fragmentation/BasicReassembly.h"
 
 #include <algorithm>
 
 #include "inet/linklayer/ieee80211/mac/Ieee80211Frame_m.h"
-#include "inet/linklayer/ieee80211/mac/fragmentation/BasicReassembly.h"
 #include "inet/linklayer/ieee80211/mac/fragmentation/Defragmentation.h"
 
 namespace inet {
@@ -27,7 +18,7 @@ namespace ieee80211 {
 Register_Class(BasicReassembly);
 
 /*
- * FIXME: this function needs a serious review
+ * FIXME this function needs a serious review
  */
 Packet *BasicReassembly::addFragment(Packet *packet)
 {
@@ -35,7 +26,7 @@ Packet *BasicReassembly::addFragment(Packet *packet)
     // Frame is not fragmented
     if (!header->getMoreFragments() && header->getFragmentNumber() == 0)
         return packet;
-    // FIXME: temporary fix for mgmt frames
+    // FIXME temporary fix for mgmt frames
     if (dynamicPtrCast<const Ieee80211MgmtHeader>(header))
         return packet;
     // find entry for this frame
@@ -45,7 +36,7 @@ Packet *BasicReassembly::addFragment(Packet *packet)
     if (header->getType() == ST_DATA_WITH_QOS)
         if (const Ptr<const Ieee80211DataHeader>& qosDataHeader = dynamicPtrCast<const Ieee80211DataHeader>(header))
             key.tid = qosDataHeader->getTid();
-    key.seqNum = header->getSequenceNumber();
+    key.seqNum = header->getSequenceNumber().get();
     short fragNum = header->getFragmentNumber();
     ASSERT(fragNum >= 0 && fragNum < MAX_NUM_FRAGMENTS);
     auto& value = fragmentsMap[key];
@@ -61,7 +52,7 @@ Packet *BasicReassembly::addFragment(Packet *packet)
     else
         delete packet;
 
-    //MacAddress txAddress = header->getTransmitterAddress();
+//    MacAddress txAddress = header->getTransmitterAddress();
 
     // if all fragments arrived, return assembled frame
     if (value.allFragments != 0 && value.allFragments == value.receivedFragments) {
@@ -69,8 +60,8 @@ Packet *BasicReassembly::addFragment(Packet *packet)
         value.fragments.erase(std::remove(value.fragments.begin(), value.fragments.end(), nullptr), value.fragments.end());
         auto defragmentedFrame = defragmentation.defragmentFrames(&value.fragments);
         // We need to restore some data from the carrying frame's header like TX address
-        // TODO: Maybe we need to restore the fromDs, toDs fields as well when traveling through multiple APs
-        // TODO: Are there any other fields that we need to restore?
+        // TODO Maybe we need to restore the fromDs, toDs fields as well when traveling through multiple APs
+        // TODO Are there any other fields that we need to restore?
         for (auto fragment : value.fragments)
             delete fragment;
         fragmentsMap.erase(key);
@@ -91,14 +82,14 @@ void BasicReassembly::purge(const MacAddress& address, int tid, int startSeqNumb
     auto itEnd = fragmentsMap.upper_bound(key);
 
     if (endSeqNumber < startSeqNumber) {
-        for (auto it = itStart; it != fragmentsMap.end(); ) {
+        for (auto it = itStart; it != fragmentsMap.end();) {
             for (auto fragment : it->second.fragments)
                 delete fragment;
             it = fragmentsMap.erase(it);
         }
         itStart = fragmentsMap.begin();
     }
-    for (auto it = itStart; it != itEnd; ) {
+    for (auto it = itStart; it != itEnd;) {
         for (auto fragment : it->second.fragments)
             delete fragment;
         it = fragmentsMap.erase(it);

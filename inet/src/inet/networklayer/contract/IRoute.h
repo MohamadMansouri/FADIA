@@ -1,26 +1,15 @@
 //
-// Copyright (C) 2012 Andras Varga
+// Copyright (C) 2012 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 #ifndef __INET_IROUTE_H
 #define __INET_IROUTE_H
 
-#include "inet/common/INETDefs.h"
-#include "inet/networklayer/common/InterfaceEntry.h"
 #include "inet/networklayer/common/L3Address.h"
+#include "inet/networklayer/common/NetworkInterface.h"
 
 namespace inet {
 
@@ -37,19 +26,19 @@ class INET_API IRoute
   public:
     /** Specifies where the route comes from */
     enum SourceType {
-        MANUAL,    ///< manually added static route
-        IFACENETMASK,    ///< comes from an interface's netmask
-        ROUTER_ADVERTISEMENT,    ///< on-link prefix, from Router Advertisement
-        OWN_ADV_PREFIX,    ///< on routers: on-link prefix that the router **itself** advertises on the link
-        ICMP_REDIRECT,    ///< ICMP redirect message
-        RIP,    ///< managed by the given routing protocol
-        OSPF,    ///< managed by the given routing protocol
-        BGP,    ///< managed by the given routing protocol
-        ZEBRA,    ///< managed by the Quagga/Zebra based model
-        MANET,    ///< managed by manet, search exact address
-        MANET2,    ///< managed by manet, search approximate address
-        DYMO,    ///< managed by DYMO routing
-        AODV,    ///< managed by AODV routing
+        MANUAL, ///< manually added static route
+        IFACENETMASK, ///< comes from an interface's netmask
+        ROUTER_ADVERTISEMENT, ///< on-link prefix, from Router Advertisement
+        OWN_ADV_PREFIX, ///< on routers: on-link prefix that the router **itself** advertises on the link
+        ICMP_REDIRECT, ///< ICMP redirect message
+        RIP, ///< managed by the given routing protocol
+        OSPF, ///< managed by the given routing protocol
+        BGP, ///< managed by the given routing protocol
+        ZEBRA, ///< managed by the Quagga/Zebra based model
+        MANET, ///< managed by manet, search exact address
+        MANET2, ///< managed by manet, search approximate address
+        DYMO, ///< managed by DYMO routing
+        AODV, ///< managed by AODV routing
         EIGRP, LISP, BABEL, ODR, UNKNOWN, ISIS
     };
 
@@ -70,25 +59,25 @@ class INET_API IRoute
     /** Cisco like administrative distances */
     enum RouteAdminDist {
         dDirectlyConnected = 0,
-        dStatic = 1,
-        dEIGRPSummary = 5,
-        dBGPExternal = 20,
-        dEIGRPInternal = 90,
-        dIGRP = 100,
-        dOSPF = 110,
-        dISIS = 115,
-        dRIP = 120,
-        dEGP = 140,
-        dODR = 160,
-        dEIGRPExternal = 170,
-        dBGPInternal = 200,
-        dDHCPlearned = 254,
-        dBABEL = 125,
-        dLISP = 210,
-        dUnknown = 255
+        dStatic            = 1,
+        dEIGRPSummary      = 5,
+        dBGPExternal       = 20,
+        dEIGRPInternal     = 90,
+        dIGRP              = 100,
+        dOSPF              = 110,
+        dISIS              = 115,
+        dRIP               = 120,
+        dEGP               = 140,
+        dODR               = 160,
+        dEIGRPExternal     = 170,
+        dBGPInternal       = 200,
+        dDHCPlearned       = 254,
+        dBABEL             = 125,
+        dLISP              = 210,
+        dUnknown           = 255
     };
 
-//TODO maybe:
+    // TODO maybe:
 //    virtual std::string info() const;
 //    virtual std::string detailedInfo() const;
 //
@@ -104,10 +93,10 @@ class INET_API IRoute
     virtual void setDestination(const L3Address& dest) = 0;
     virtual void setPrefixLength(int l) = 0;
     virtual void setNextHop(const L3Address& nextHop) = 0;
-    virtual void setInterface(InterfaceEntry *ie) = 0;
+    virtual void setInterface(NetworkInterface *ie) = 0;
     virtual void setSource(cObject *source) = 0;
     virtual void setSourceType(SourceType type) = 0;
-    virtual void setMetric(int metric) = 0;    //XXX double?
+    virtual void setMetric(int metric) = 0; // TODO double?
     virtual void setAdminDist(unsigned int adminDist) = 0;
 
     /** Destination address prefix to match */
@@ -120,7 +109,7 @@ class INET_API IRoute
     virtual L3Address getNextHopAsGeneric() const = 0;
 
     /** Next hop interface */
-    virtual InterfaceEntry *getInterface() const = 0;
+    virtual NetworkInterface *getInterface() const = 0;
 
     /** Source of route */
     virtual cObject *getSource() const = 0;
@@ -137,7 +126,7 @@ class INET_API IRoute
     static const char *sourceTypeName(SourceType sourceType);
 };
 
-// TODO: move into info()?
+// TODO move into info()?
 inline std::ostream& operator<<(std::ostream& out, const IRoute *route)
 {
     out << "destination = " << route->getDestinationAsGeneric();
@@ -174,36 +163,34 @@ class INET_API IMulticastRoute
   public:
     /** Specifies where the route comes from */
     enum SourceType {
-        MANUAL,    ///< manually added static route
-        DVMRP,    ///< managed by DVMRP router
-        PIM_DM,    ///< managed by PIM-DM router
-        PIM_SM,    ///< managed by PIM-SM router
+        MANUAL, ///< manually added static route
+        DVMRP, ///< managed by DVMRP router
+        PIM_DM, ///< managed by PIM-DM router
+        PIM_SM, ///< managed by PIM-SM router
     };
 
-    class InInterface
-    {
+    class InInterface {
       protected:
-        InterfaceEntry *ie;
+        NetworkInterface *ie;
 
       public:
-        InInterface(InterfaceEntry *ie) : ie(ie) { ASSERT(ie); }
+        InInterface(NetworkInterface *ie) : ie(ie) { ASSERT(ie); }
         virtual ~InInterface() {}
 
-        InterfaceEntry *getInterface() const { return ie; }
+        NetworkInterface *getInterface() const { return ie; }
     };
 
-    class OutInterface
-    {
+    class OutInterface {
       protected:
-        const InterfaceEntry *ie;
-        bool _isLeaf;    // for TRPB support
+        const NetworkInterface *ie;
+        bool _isLeaf; // for TRPB support
 
       public:
-        OutInterface(const InterfaceEntry *ie, bool isLeaf = false) : ie(ie), _isLeaf(isLeaf) { ASSERT(ie); }
+        OutInterface(const NetworkInterface *ie, bool isLeaf = false) : ie(ie), _isLeaf(isLeaf) { ASSERT(ie); }
         OutInterface(const OutInterface& other) : ie(other.ie), _isLeaf(other._isLeaf) {}
         virtual ~OutInterface() {}
 
-        const InterfaceEntry *getInterface() const { return ie; }
+        const NetworkInterface *getInterface() const { return ie; }
         bool isLeaf() const { return _isLeaf; }
 
         // to disable forwarding on this interface (e.g. pruned by PIM)
@@ -212,7 +199,7 @@ class INET_API IMulticastRoute
 
     typedef std::vector<OutInterface *> OutInterfaceVector;
 
-//TODO maybe:
+    // TODO maybe:
 //    virtual std::string info() const;
 //    virtual std::string detailedInfo() const;
 
@@ -228,7 +215,7 @@ class INET_API IMulticastRoute
     virtual void setInInterface(InInterface *_inInterface) = 0;
     virtual void clearOutInterfaces() = 0;
     virtual void addOutInterface(OutInterface *outInterface) = 0;
-    virtual bool removeOutInterface(const InterfaceEntry *ie) = 0;
+    virtual bool removeOutInterface(const NetworkInterface *ie) = 0;
     virtual void removeOutInterface(unsigned int i) = 0;
     virtual void setSource(cObject *source) = 0;
     virtual void setSourceType(SourceType type) = 0;
@@ -263,5 +250,5 @@ class INET_API IMulticastRoute
 
 } // namespace inet
 
-#endif // ifndef __INET_IROUTE_H
+#endif
 

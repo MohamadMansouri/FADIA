@@ -15,7 +15,6 @@ simple TestApp
 %file: TestApp.cc
 
 #include <fstream>
-#include "inet/common/INETDefs.h"
 #include "inet/common/Protocol.h"
 #include "inet/common/ProtocolTag_m.h"
 #include "inet/common/packet/Packet.h"
@@ -278,7 +277,10 @@ void TestApp::finalize()
 void TestApp::handleMessage(cMessage *msg)
 {
   cGate *gate = msg->getArrivalGate();
-  out << msg->getName() << ": " << gate->getName() << "[" << gate->getIndex() << "]\n";
+  out << msg->getName() << ": " << gate->getName();
+  if (gate->isVector())
+      out << "[" << gate->getIndex() << "]";
+  out << "\n";
   delete msg;
 }
 
@@ -358,10 +360,9 @@ ipv4-14: in[11]
 ipv6-15: in[11]
 ipv4-16: in[12]
 ipv6-17: in[12]
-ipv4-18: defaultIn[0]
+ipv4-18: defaultIn
 %#--------------------------------------------------------------------------------------------------------------
-%not-contains: stdout
-undisposed object:
-%not-contains: stdout
--- check module destructor
+%postrun-command: grep "undisposed object:" test.out > test_undisposed.out || true
+%not-contains: test_undisposed.out
+undisposed object: (
 %#--------------------------------------------------------------------------------------------------------------

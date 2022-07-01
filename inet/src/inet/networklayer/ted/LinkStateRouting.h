@@ -1,21 +1,13 @@
 //
-// (C) 2005 Vojtech Janota
+// Copyright (C) 2005 Vojtech Janota
 //
-// This library is free software, you can redistribute it
-// and/or modify
-// it under  the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation;
-// either version 2 of the License, or any later version.
-// The library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-// See the GNU Lesser General Public License for more details.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
 #ifndef __INET_LINKSTATEROUTING_H
 #define __INET_LINKSTATEROUTING_H
 
-#include "inet/common/INETDefs.h"
+#include "inet/common/ModuleRefByPar.h"
 #include "inet/common/packet/Packet.h"
 #include "inet/networklayer/rsvpte/IntServ_m.h"
 #include "inet/networklayer/ted/LinkStatePacket_m.h"
@@ -27,7 +19,7 @@ namespace inet {
 class Ted;
 class IIpv4RoutingTable;
 class IInterfaceTable;
-class InterfaceEntry;
+class NetworkInterface;
 
 /**
  * Implements a minimalistic link state routing protocol that employs flooding.
@@ -55,11 +47,11 @@ class InterfaceEntry;
 class INET_API LinkStateRouting : public cSimpleModule, public cListener
 {
   protected:
-    Ted *tedmod = nullptr;
+    ModuleRefByPar<Ted> tedmod;
     cMessage *announceMsg = nullptr;
     Ipv4Address routerId;
 
-    Ipv4AddressVector peerIfAddrs;    // addresses of interfaces towards neighbouring routers
+    Ipv4AddressVector peerIfAddrs; // addresses of interfaces towards neighbouring routers
 
   public:
     LinkStateRouting();
@@ -82,5 +74,5 @@ class INET_API LinkStateRouting : public cSimpleModule, public cListener
 
 } // namespace inet
 
-#endif // ifndef __INET_LINKSTATEROUTING_H
+#endif
 

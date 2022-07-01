@@ -1,39 +1,27 @@
 //
-// Copyright (C) 2004 Andras Varga
-// Copyright (C) 2010 Zoltan Bojthe
+// Copyright (C) 2004 OpenSim Ltd.
+// Copyright (C) 2010 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 #ifndef __INET_TCPLWIPQUEUES_H
 #define __INET_TCPLWIPQUEUES_H
 
-#include "inet/common/INETDefs.h"
 #include "inet/common/packet/ChunkQueue.h"
 #include "inet/common/packet/Packet.h"
 #include "inet/common/packet/chunk/BytesChunk.h"
+#include "inet/transportlayer/tcp_common/TcpHeader.h"
 
 namespace inet {
-
 namespace tcp {
 
 // forward declarations:
 class TcpLwipConnection;
-class TcpHeader;
 
 /**
- * TCP_LWIP send queue. In fact a single object
+ * TcpLwip send queue. In fact a single object
  * represents both the send queue and the retransmission queue
  * (no need to separate them). The TcpConnection object knows
  * which data in the queue have already been transmitted ("retransmission
@@ -84,18 +72,10 @@ class TcpHeader;
  *
  * @see TcpLwipReceiveQueue
  */
-
 class INET_API TcpLwipSendQueue : public cObject
 {
   public:
-    /**
-     * Ctor.
-     */
     TcpLwipSendQueue();
-
-    /**
-     * Virtual dtor.
-     */
     virtual ~TcpLwipSendQueue();
 
     /**
@@ -148,25 +128,19 @@ class INET_API TcpLwipSendQueue : public cObject
 
   protected:
     TcpLwipConnection *connM = nullptr;
-    ChunkQueue dataBuffer;      // dataBuffer
+    ChunkQueue dataBuffer; // dataBuffer
 };
 
+/**
+ * TcpLwip receive queue.
+ */
 class INET_API TcpLwipReceiveQueue : public cObject
 {
   public:
-    /**
-     * Ctor.
-     */
     TcpLwipReceiveQueue();
-
-    /**
-     * Virtual dtor.
-     */
     virtual ~TcpLwipReceiveQueue();
 
-    /**
-     * Add a connection queue.
-     */
+    /** Add a connection queue. */
     virtual void setConnection(TcpLwipConnection *connP);
 
     /**
@@ -175,7 +149,7 @@ class INET_API TcpLwipReceiveQueue : public cObject
      * object should *not* be deleted.
      * //FIXME revise this comment
      */
-    virtual void notifyAboutIncomingSegmentProcessing(Packet *packet, uint32 seqNo,
+    virtual void notifyAboutIncomingSegmentProcessing(Packet *packet, uint32_t seqNo,
             const void *bufferP, size_t bufferLengthP);
 
     /**
@@ -200,12 +174,12 @@ class INET_API TcpLwipReceiveQueue : public cObject
     /**
      * Returns the number of bytes (out-of-order-segments) currently buffered in queue.
      */
-    virtual uint32 getAmountOfBufferedBytes() const;
+    virtual uint32_t getAmountOfBufferedBytes() const;
 
     /**
      * Returns the number of blocks currently buffered in queue.
      */
-    virtual uint32 getQueueLength() const;
+    virtual uint32_t getQueueLength() const;
 
     /**
      * Shows current queue status.
@@ -222,13 +196,12 @@ class INET_API TcpLwipReceiveQueue : public cObject
 
   protected:
     TcpLwipConnection *connM = nullptr;
-    ChunkQueue dataBuffer;      // fifo dataBuffer
+    ChunkQueue dataBuffer; // fifo dataBuffer
     // ReorderBuffer reorderBuffer;     // ReorderBuffer not needed, because the original lwIP code manages the unordered buffer
 };
 
 } // namespace tcp
-
 } // namespace inet
 
-#endif // ifndef __INET_TCPLWIPQUEUES_H
+#endif
 

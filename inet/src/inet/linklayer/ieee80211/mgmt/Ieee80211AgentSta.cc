@@ -1,24 +1,15 @@
 //
-// Copyright (C) 2006 Andras Varga
+// Copyright (C) 2006 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
+
+#include "inet/linklayer/ieee80211/mgmt/Ieee80211AgentSta.h"
 
 #include "inet/common/INETUtils.h"
 #include "inet/common/ModuleAccess.h"
 #include "inet/common/Simsignals.h"
-#include "inet/linklayer/ieee80211/mgmt/Ieee80211AgentSta.h"
 #include "inet/linklayer/ieee80211/mgmt/Ieee80211Primitives_m.h"
 
 namespace inet {
@@ -60,7 +51,7 @@ void Ieee80211AgentSta::initialize(int stage)
         simtime_t startingTime = par("startingTime");
         if (startingTime < SIMTIME_ZERO)
             startingTime = uniform(SIMTIME_ZERO, maxChannelTime);
-        scheduleAt(simTime() + startingTime, new cMessage("startUp", MK_STARTUP));
+        scheduleAfter(startingTime, new cMessage("startUp", MK_STARTUP));
 
         myIface = nullptr;
     }
@@ -116,14 +107,15 @@ void Ieee80211AgentSta::handleResponse(cMessage *msg)
 
 void Ieee80211AgentSta::receiveSignal(cComponent *source, simsignal_t signalID, cObject *obj, cObject *details)
 {
-    Enter_Method_Silent();
+    Enter_Method("%s", cComponent::getSignalName(signalID));
+
     printSignalBanner(signalID, obj, details);
 
     if (signalID == l2BeaconLostSignal) {
-        //XXX should check details if it's about this NIC
+        // TODO should check details if it's about this NIC
         EV << "beacon lost, starting scanning again\n";
         getContainingNode(this)->bubble("Beacon lost!");
-        //sendDisassociateRequest();
+//        sendDisassociateRequest();
         sendScanRequest();
         emit(l2DisassociatedSignal, myIface);
     }
@@ -148,7 +140,7 @@ void Ieee80211AgentSta::sendScanRequest()
     req->setChannelListArraySize(channelsToScan.size());
     for (size_t i = 0; i < channelsToScan.size(); i++)
         req->setChannelList(i, channelsToScan[i]);
-    //XXX BSSID, SSID are left at default ("any")
+    // TODO BSSID, SSID are left at default ("any")
 
     emit(sentRequestSignal, PR_SCAN_REQUEST);
     sendRequest(req);
@@ -305,7 +297,7 @@ void Ieee80211AgentSta::processAssociateConfirm(Ieee80211Prim_AssociateConfirm *
         // we are happy!
         getContainingNode(this)->bubble("Associated with AP");
         if (prevAP.isUnspecified() || prevAP != resp->getAddress()) {
-            emit(l2AssociatedNewApSignal, myIface);    //XXX detail: InterfaceEntry?
+            emit(l2AssociatedNewApSignal, myIface); // TODO detail: NetworkInterface?
             prevAP = resp->getAddress();
         }
         else
@@ -324,7 +316,7 @@ void Ieee80211AgentSta::processReassociateConfirm(Ieee80211Prim_ReassociateConfi
     }
     else {
         EV << "Reassociation successful\n";
-        emit(l2AssociatedOldApSignal, myIface);    //XXX detail: InterfaceEntry?
+        emit(l2AssociatedOldApSignal, myIface); // TODO detail: NetworkInterface?
         emit(acceptConfirmSignal, PR_REASSOCIATE_CONFIRM);
         // we are happy!
     }

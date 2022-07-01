@@ -1,23 +1,13 @@
 //
-// Copyright (C) 2005 Andras Varga
+// Copyright (C) 2005 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-#include <stdio.h>
 
 #include "inet/common/Simsignals.h"
+
+#include <stdio.h>
 
 namespace inet {
 
@@ -32,6 +22,9 @@ simsignal_t l2ApDisassociatedSignal = cComponent::registerSignal("l2ApDisassocia
 simsignal_t linkBrokenSignal = cComponent::registerSignal("linkBroken");
 
 simsignal_t modesetChangedSignal = cComponent::registerSignal("modesetChanged");
+
+simsignal_t interpacketGapStartedSignal = cComponent::registerSignal("interpacketGapStarted");
+simsignal_t interpacketGapEndedSignal = cComponent::registerSignal("interpacketGapEnded");
 
 // - layer 3 (network)
 simsignal_t interfaceCreatedSignal = cComponent::registerSignal("interfaceCreated");
@@ -76,14 +69,14 @@ simsignal_t ipv6MulticastGroupLeftSignal = cComponent::registerSignal("ipv6Multi
 simsignal_t ipv6MulticastGroupRegisteredSignal = cComponent::registerSignal("ipv6MulticastGroupRegistered");
 simsignal_t ipv6MulticastGroupUnregisteredSignal = cComponent::registerSignal("ipv6MulticastGroupUnregistered");
 
-//layer 3 - ISIS
+// layer 3 - ISIS
 simsignal_t isisAdjChangedSignal = cComponent::registerSignal("isisAdjChanged");
 
 // - layer 4 (transport)
-//...
+// ...
 
 // - layer 7 (application)
-//...
+// ...
 
 // general
 simsignal_t packetCreatedSignal = cComponent::registerSignal("packetCreated");
@@ -104,7 +97,31 @@ simsignal_t packetSentSignal = cComponent::registerSignal("packetSent");
 simsignal_t packetReceivedSignal = cComponent::registerSignal("packetReceived");
 
 simsignal_t packetPushedSignal = cComponent::registerSignal("packetPushed");
-simsignal_t packetPoppedSignal = cComponent::registerSignal("packetPopped");
+simsignal_t packetPushedInSignal = cComponent::registerSignal("packetPushedIn");
+simsignal_t packetPushedOutSignal = cComponent::registerSignal("packetPushedOut");
+simsignal_t packetPushStartedSignal = cComponent::registerSignal("packetPushStarted");
+simsignal_t packetPushEndedSignal = cComponent::registerSignal("packetPushEnded");
+
+simsignal_t packetPulledSignal = cComponent::registerSignal("packetPulled");
+simsignal_t packetPulledInSignal = cComponent::registerSignal("packetPulledIn");
+simsignal_t packetPulledOutSignal = cComponent::registerSignal("packetPulledOut");
+simsignal_t packetPullStartedSignal = cComponent::registerSignal("packetPullStarted");
+simsignal_t packetPullEndedSignal = cComponent::registerSignal("packetPullEnded");
+
+simsignal_t packetFilteredSignal = cComponent::registerSignal("packetFiltered");
+
+simsignal_t packetFlowStartedSignal = cComponent::registerSignal("packetFlowStarted");
+simsignal_t packetFlowEndedSignal = cComponent::registerSignal("packetFlowEnded");
+
+simsignal_t transmissionStartedSignal = cComponent::registerSignal("transmissionStarted");
+simsignal_t transmissionEndedSignal = cComponent::registerSignal("transmissionEnded");
+simsignal_t receptionStartedSignal = cComponent::registerSignal("receptionStarted");
+simsignal_t receptionEndedSignal = cComponent::registerSignal("receptionEnded");
+
+simsignal_t tokensChangedSignal = cComponent::registerSignal("tokensChanged");
+simsignal_t tokensAddedSignal = cComponent::registerSignal("tokensAdded");
+simsignal_t tokensRemovedSignal = cComponent::registerSignal("tokensRemoved");
+simsignal_t tokensDepletedSignal = cComponent::registerSignal("tokensDepleted");
 
 void printSignalBanner(simsignal_t signalID, const cObject *obj, const cObject *details)
 {

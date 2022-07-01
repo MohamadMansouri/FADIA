@@ -1,24 +1,13 @@
 //
-// Copyright (C) OpenSim Ltd.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 #ifndef __INET_PACKETFILTER_H
 #define __INET_PACKETFILTER_H
 
-#include "inet/common/MatchableObject.h"
 #include "inet/common/packet/dissector/PacketDissector.h"
 
 namespace inet {
@@ -32,35 +21,65 @@ namespace inet {
 class INET_API PacketFilter
 {
   protected:
-    class INET_API PacketDissectorCallback : public PacketDissector::ICallback
-    {
+    class INET_API PacketDissectorCallback : public PacketDissector::ICallback {
       protected:
-        bool matches_ = false;
-        const PacketFilter& packetFilter;
+        PacketFilter *packetFilter = nullptr;
 
       public:
-        PacketDissectorCallback(const PacketFilter& packetFilter);
-
-        bool matches(const Packet *packet);
+        PacketDissectorCallback(PacketFilter *packetFilter) : packetFilter(packetFilter) { }
+        virtual ~PacketDissectorCallback() { }
 
         virtual bool shouldDissectProtocolDataUnit(const Protocol *protocol) override { return true; }
-        virtual void startProtocolDataUnit(const Protocol *protocol) override;
-        virtual void endProtocolDataUnit(const Protocol *protocol) override;
-        virtual void markIncorrect() override;
+        virtual void startProtocolDataUnit(const Protocol *protocol) override { }
+        virtual void endProtocolDataUnit(const Protocol *protocol) override { }
+        virtual void markIncorrect() override { }
         virtual void visitChunk(const Ptr<const Chunk>& chunk, const Protocol *protocol) override;
     };
 
+    class INET_API DynamicExpressionResolver : public cDynamicExpression::IResolver {
+      protected:
+        PacketFilter *packetFilter = nullptr;
+
+      public:
+        DynamicExpressionResolver(PacketFilter *packetFilter) : packetFilter(packetFilter) { }
+
+        virtual IResolver *dup() const override { return new DynamicExpressionResolver(packetFilter); }
+
+        virtual cValue readVariable(cExpression::Context *context, const char *name) override;
+        virtual cValue readVariable(cExpression::Context *context, const char *name, intval_t index) override;
+        virtual cValue readMember(cExpression::Context *context, const cValue &object, const char *name) override;
+        virtual cValue readMember(cExpression::Context *context, const cValue& object, const char *name, intval_t index) override;
+        virtual cValue callMethod(cExpression::Context *context, const cValue& object, const char *name, cValue argv[], int argc) override;
+        virtual cValue callFunction(cExpression::Context *context, const char *name, cValue argv[], int argc) override;
+    };
+
   protected:
-    cMatchExpression packetMatchExpression;
-    cMatchExpression chunkMatchExpression;
+    cDynamicExpression *filterExpression = nullptr;
+    cMatchExpression *matchExpression = nullptr;
+    PacketDissectorCallback *packetDissectorCallback = nullptr;
+    mutable const cPacket *cpacket = nullptr;
+    mutable std::multimap<const Protocol *, Chunk *> protocolToChunkMap;
+    mutable std::multimap<std::string, Chunk *> classNameToChunkMap;
 
   public:
-    void setPattern(const char* packetPattern, const char* chunkPattern);
+    PacketFilter();
+    virtual ~PacketFilter();
+
+    void setPattern(const char *pattern);
+    void setExpression(const char *expression);
+    void setExpression(cDynamicExpression *expression);
+    void setExpression(cOwnedDynamicExpression *expression);
+    void setExpression(cValueHolder *expression);
+    void setExpression(cObject *expression);
+    void setExpression(cValue& expression);
 
     bool matches(const cPacket *packet) const;
+
+  protected:
+    const cObject *findPacketTag(const char *className) const;
 };
 
 } // namespace inet
 
-#endif // ifndef __INET_PACKETFILTER_H
+#endif
 

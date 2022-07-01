@@ -1,13 +1,14 @@
 //
-// This program is property of its copyright holder. All rights reserved.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
+
 
 package inet.examples.wireless.filtering;
 
 import inet.networklayer.configurator.ipv4.Ipv4NetworkConfigurator;
 import inet.node.aodv.AodvRouter;
-import inet.physicallayer.ieee80211.packetlevel.Ieee80211ScalarRadioMedium;
-import inet.visualizer.integrated.IntegratedCanvasVisualizer;
+import inet.physicallayer.wireless.ieee80211.packetlevel.Ieee80211ScalarRadioMedium;
+import inet.visualizer.canvas.integrated.IntegratedCanvasVisualizer;
 
 network FilteringExampleNetwork
 {

@@ -1,26 +1,15 @@
 //
 // Copyright (C) 2018 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
-// @author: Zoltan Bojthe
-//
+
+
+#include "inet/networklayer/icmpv6/Icmpv6ProtocolPrinter.h"
 
 #include "inet/common/packet/printer/PacketPrinter.h"
 #include "inet/common/packet/printer/ProtocolPrinterRegistry.h"
 #include "inet/networklayer/icmpv6/Icmpv6Header_m.h"
-#include "inet/networklayer/icmpv6/Icmpv6ProtocolPrinter.h"
 
 namespace inet {
 
@@ -35,7 +24,7 @@ void Icmpv6ProtocolPrinter::print(const Ptr<const Chunk>& chunk, const Protocol 
                 break;
             case ICMPv6_DESTINATION_UNREACHABLE: {
                 auto header2 = CHK(dynamicPtrCast<const Icmpv6DestUnreachableMsg>(header));
-                //TODO packet contains a complete Ipv4Header and the first 8 bytes of transport header (or icmp). (protocol specified in Ipv4Header.)
+                // TODO packet contains a complete Ipv4Header and the first 8 bytes of transport header (or icmp). (protocol specified in Ipv4Header.)
                 context.infoColumn << "ICMPv6-DEST-UN code=" << header2->getCode();
                 break;
             }
@@ -51,53 +40,53 @@ void Icmpv6ProtocolPrinter::print(const Ptr<const Chunk>& chunk, const Protocol 
             case ICMPv6_ECHO_REQUEST: {
                 auto echoHeader = CHK(dynamicPtrCast<const Icmpv6EchoRequestMsg>(header));
                 context.infoColumn << "ICMPv6-ECHO-REQ code=" << echoHeader->getCode()
-                        << " id=" << echoHeader->getIdentifier() << " seq=" << echoHeader->getSeqNumber();
+                                   << " id=" << echoHeader->getIdentifier() << " seq=" << echoHeader->getSeqNumber();
                 break;
             }
             case ICMPv6_ECHO_REPLY: {
                 auto echoHeader = CHK(dynamicPtrCast<const Icmpv6EchoReplyMsg>(header));
                 context.infoColumn << "ICMPv6-ECHO-REPLY code=" << echoHeader->getCode()
-                        << " id=" << echoHeader->getIdentifier() << " seq=" << echoHeader->getSeqNumber();
+                                   << " id=" << echoHeader->getIdentifier() << " seq=" << echoHeader->getSeqNumber();
                 break;
             }
             case ICMPv6_MLD_QUERY:
                 context.infoColumn << "ICMPv6-MLD-QRY";
-                //TODO
+                // TODO
                 break;
             case ICMPv6_MLD_REPORT:
                 context.infoColumn << "ICMPv6-MLD-REPORT";
-                //TODO
+                // TODO
                 break;
             case ICMPv6_MLD_DONE:
                 context.infoColumn << "ICMPv6-MLD-DONE";
-                //TODO
+                // TODO
                 break;
             case ICMPv6_ROUTER_SOL:
                 context.infoColumn << "ICMPv6-ROUTER-SOL";
-                //TODO
+                // TODO
                 break;
             case ICMPv6_ROUTER_AD:
                 context.infoColumn << "ICMPv6-ROUTER-AD";
-                //TODO
+                // TODO
                 break;
             case ICMPv6_NEIGHBOUR_SOL:
                 context.infoColumn << "ICMPv6-NEIGHBOUR-SOL";
-                //TODO
+                // TODO
                 break;
             case ICMPv6_NEIGHBOUR_AD:
                 context.infoColumn << "ICMPv6-NEIGHBOUR-AD";
-                //TODO
+                // TODO
                 break;
             case ICMPv6_REDIRECT:
                 context.infoColumn << "ICMPv6-NEIGHBOUR-REDIR";
                 break;
             case ICMPv6_MLDv2_REPORT:
                 context.infoColumn << "ICMPv6-MLDv2-REPORT";
-                //TODO
+                // TODO
                 break;
             case ICMPv6_EXPERIMENTAL_MOBILITY:
                 context.infoColumn << "ICMPv6-EXPERIMENTAL-MOBILITY";
-                //TODO
+                // TODO
                 break;
         }
     }

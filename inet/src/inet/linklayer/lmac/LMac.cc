@@ -9,17 +9,18 @@
  *  Converted to MiXiM by Kapourniotis Theodoros
  */
 
-#include "inet/common/INETUtils.h"
-#include "inet/common/INETMath.h"
+#include "inet/linklayer/lmac/LMac.h"
+
 #include "inet/common/FindModule.h"
+#include "inet/common/INETMath.h"
+#include "inet/common/INETUtils.h"
 #include "inet/common/ModuleAccess.h"
 #include "inet/common/ProtocolGroup.h"
 #include "inet/common/ProtocolTag_m.h"
 #include "inet/linklayer/common/InterfaceTag_m.h"
 #include "inet/linklayer/common/MacAddressTag_m.h"
-#include "inet/linklayer/lmac/LMac.h"
 #include "inet/linklayer/lmac/LMacHeader_m.h"
-#include "inet/networklayer/common/InterfaceEntry.h"
+#include "inet/networklayer/common/NetworkInterface.h"
 
 namespace inet {
 
@@ -51,16 +52,16 @@ void LMac::initialize(int stage)
         slotChange = new cOutVector("slotChange");
 
         // how long does it take to send/receive a control packet
-        controlDuration = (double)(b(headerLength).get() + numSlots + 16) / (double)bitrate;     //FIXME replace 16 to a constant
+        controlDuration = (double)(b(headerLength).get() + numSlots + 16) / (double)bitrate; // FIXME replace 16 to a constant
         EV << "Control packets take : " << controlDuration << " seconds to transmit\n";
 
-        txQueue = check_and_cast<queueing::IPacketQueue *>(getSubmodule("queue"));
+        txQueue = getQueue(gate(upperLayerInGateId));
     }
     else if (stage == INITSTAGE_LINK_LAYER) {
-        cModule *radioModule = getModuleFromPar<cModule>(par("radioModule"), this);
+        radio.reference(this, "radioModule", true);
+        cModule *radioModule = check_and_cast<cModule *>(radio.get());
         radioModule->subscribe(IRadio::radioModeChangedSignal, this);
         radioModule->subscribe(IRadio::transmissionStateChangedSignal, this);
-        radio = check_and_cast<IRadio *>(radioModule);
 
         WATCH(macState);
 
@@ -77,8 +78,8 @@ void LMac::initialize(int stage)
         start_lmac = new cMessage("start_lmac", LMAC_START_LMAC);
         send_control = new cMessage("send_control", LMAC_SEND_CONTROL);
 
-        scheduleAt(simTime(), start_lmac);
-        EV_DETAIL << "My Mac address is" << interfaceEntry->getMacAddress() << " and my Id is " << myId << endl;
+        scheduleAfter(SIMTIME_ZERO, start_lmac);
+        EV_DETAIL << "My Mac address is" << networkInterface->getMacAddress() << " and my Id is " << myId << endl;
     }
 }
 
@@ -94,21 +95,21 @@ LMac::~LMac()
     cancelAndDelete(send_control);
 }
 
-void LMac::configureInterfaceEntry()
+void LMac::configureNetworkInterface()
 {
     MacAddress address = parseMacAddressParameter(par("address"));
 
     // data rate
-    interfaceEntry->setDatarate(bitrate);
+    networkInterface->setDatarate(bitrate);
 
     // generate a link-layer address to be used as interface token for IPv6
-    interfaceEntry->setMacAddress(address);
-    interfaceEntry->setInterfaceToken(address.formInterfaceIdentifier());
+    networkInterface->setMacAddress(address);
+    networkInterface->setInterfaceToken(address.formInterfaceIdentifier());
 
     // capabilities
-    interfaceEntry->setMtu(par("mtu"));
-    interfaceEntry->setMulticast(false);
-    interfaceEntry->setBroadcast(true);
+    networkInterface->setMtu(par("mtu"));
+    networkInterface->setMulticast(false);
+    networkInterface->setBroadcast(true);
 }
 
 /**
@@ -117,10 +118,7 @@ void LMac::configureInterfaceEntry()
  */
 void LMac::handleUpperPacket(Packet *packet)
 {
-    encapsulate(packet);
-    txQueue->pushPacket(packet);
-    EV_DETAIL << "packet put in queue\n  queue size: " << txQueue->getNumPackets() << " macState: " << macState
-              << "; mySlot is " << mySlot << "; current slot is " << currSlot << endl;
+    throw cRuntimeError("Model error: this module should pull packet from upper queue, direct incoming packet not accepted");
 }
 
 /**
@@ -133,19 +131,19 @@ void LMac::handleUpperPacket(Packet *packet)
  */
 void LMac::handleSelfMessage(cMessage *msg)
 {
-    MacAddress address = interfaceEntry->getMacAddress();
+    MacAddress address = networkInterface->getMacAddress();
 
     switch (macState) {
         case INIT:
             if (msg->getKind() == LMAC_START_LMAC) {
                 // the first 5 full slots we will be waking up every controlDuration to setup the network first
                 // normal packets will be queued, but will be send only after the setup phase
-                scheduleAt(slotDuration * 5 * numSlots, initChecker);
+                scheduleAfter(slotDuration * 5 * numSlots, initChecker);
                 EV << "Startup time =" << slotDuration * 5 * numSlots << endl;
 
                 EV_DETAIL << "Scheduling the first wakeup at : " << slotDuration << endl;
 
-                scheduleAt(slotDuration, wakeup);
+                scheduleAfter(slotDuration, wakeup);
 
                 for (int i = 0; i < numSlots; i++) {
                     occSlotsDirect[i] = LMAC_FREE_SLOT;
@@ -156,8 +154,8 @@ void LMac::handleSelfMessage(cMessage *msg)
                     mySlot = ((int)FindModule<>::findHost(this)->getId()) % (numSlots - reservedMobileSlots);
                 else
                     mySlot = myId;
-                //occSlotsDirect[mySlot] = address;
-                //occSlotsAway[mySlot] = address;
+//                occSlotsDirect[mySlot] = address;
+//                occSlotsAway[mySlot] = address;
                 currSlot = 0;
 
                 EV_DETAIL << "ID: " << FindModule<>::findHost(this)->getId() << ". Picked random slot: " << mySlot << endl;
@@ -184,7 +182,7 @@ void LMac::handleSelfMessage(cMessage *msg)
                     EV_DETAIL << "Old state: SLEEP, New state: CCA" << endl;
 
                     double small_delay = controlDuration * dblrand();
-                    scheduleAt(simTime() + small_delay, checkChannel);
+                    scheduleAfter(small_delay, checkChannel);
                     EV_DETAIL << "Checking for channel for " << small_delay << " time.\n";
                 }
                 else {
@@ -192,23 +190,19 @@ void LMac::handleSelfMessage(cMessage *msg)
                     macState = WAIT_CONTROL;
                     radio->setRadioMode(IRadio::RADIO_MODE_RECEIVER);
                     EV_DETAIL << "Old state: SLEEP, New state: WAIT_CONTROL" << endl;
-                    if (!SETUP_PHASE) //in setup phase do not sleep
-                        scheduleAt(simTime() + 2.f * controlDuration, timeout);
+                    if (!SETUP_PHASE) // in setup phase do not sleep
+                        scheduleAfter(2.f * controlDuration, timeout);
                 }
                 if (SETUP_PHASE) {
-                    scheduleAt(simTime() + 2.f * controlDuration, wakeup);
+                    scheduleAfter(2.f * controlDuration, wakeup);
                     EV_DETAIL << "setup phase slot duration:" << 2.f * controlDuration << "while controlduration is" << controlDuration << endl;
                 }
                 else
-                    scheduleAt(simTime() + slotDuration, wakeup);
+                    scheduleAfter(slotDuration, wakeup);
             }
             else if (msg->getKind() == LMAC_SETUP_PHASE_END) {
                 EV_DETAIL << "Setup phase end. Start normal work at the next slot.\n";
-                if (wakeup->isScheduled())
-                    cancelEvent(wakeup);
-
-                scheduleAt(simTime() + slotDuration, wakeup);
-
+                rescheduleAfter(slotDuration, wakeup);
                 SETUP_PHASE = false;
             }
             else {
@@ -282,15 +276,15 @@ void LMac::handleSelfMessage(cMessage *msg)
                 }
                 delete packet;
             }
-            //probably it never happens
+            // probably it never happens
             else if (msg->getKind() == LMAC_DATA) {
                 auto packet = check_and_cast<Packet *>(msg);
                 const MacAddress& dest = packet->peekAtFront<LMacDataFrameHeader>()->getDestAddr();
-                //bool collision = false;
+//                bool collision = false;
                 // if we are listening to the channel and receive anything, there is a collision in the slot.
                 if (checkChannel->isScheduled()) {
                     cancelEvent(checkChannel);
-                    //collision = true;
+//                    collision = true;
                 }
                 EV_DETAIL << " I have received a data packet.\n";
                 if (dest == address || dest.isBroadcast()) {
@@ -312,11 +306,7 @@ void LMac::handleSelfMessage(cMessage *msg)
             }
             else if (msg->getKind() == LMAC_SETUP_PHASE_END) {
                 EV_DETAIL << "Setup phase end. Start normal work at the next slot.\n";
-                if (wakeup->isScheduled())
-                    cancelEvent(wakeup);
-
-                scheduleAt(simTime() + slotDuration, wakeup);
-
+                rescheduleAfter(slotDuration, wakeup);
                 SETUP_PHASE = false;
             }
             else {
@@ -396,19 +386,16 @@ void LMac::handleSelfMessage(cMessage *msg)
 
                 macState = SLEEP;
                 EV_DETAIL << "Old state: WAIT_DATA, New state: SLEEP" << endl;
-                scheduleAt(simTime(), wakeup);
+                scheduleAfter(SIMTIME_ZERO, wakeup);
             }
             else if (msg->getKind() == LMAC_SETUP_PHASE_END) {
                 EV_DETAIL << "Setup phase end. Start normal work at the next slot.\n";
-                if (wakeup->isScheduled())
-                    cancelEvent(wakeup);
-
-                scheduleAt(simTime() + slotDuration, wakeup);
+                rescheduleAfter(slotDuration, wakeup);
 
                 SETUP_PHASE = false;
             }
             else if (msg->getKind() == LMAC_DATA) {
-                // TODO: review this delete, it's added to avoid a memory leak detected by Valgrind
+                // TODO review this delete, it's added to avoid a memory leak detected by Valgrind
                 delete msg;
             }
             else {
@@ -419,8 +406,10 @@ void LMac::handleSelfMessage(cMessage *msg)
 
         case SEND_CONTROL:
             if (msg->getKind() == LMAC_SEND_CONTROL) {
-                if (!SETUP_PHASE && currentTxFrame == nullptr && !txQueue->isEmpty())
-                    currentTxFrame = txQueue->popPacket();
+                if (!SETUP_PHASE && currentTxFrame == nullptr && canDequeuePacket()) {
+                    currentTxFrame = dequeuePacket();
+                    encapsulate(currentTxFrame);
+                }
                 // send first a control message, so that non-receiving nodes can switch off.
                 EV << "Sending a control packet.\n";
                 auto control = makeShared<LMacControlFrame>();
@@ -431,7 +420,7 @@ void LMac::handleSelfMessage(cMessage *msg)
 
                 control->setSrcAddr(address);
                 control->setMySlot(mySlot);
-                control->setChunkLength(ctrlFrameLength + b(numSlots));    //FIXME check it: add only 1 bit / slot?
+                control->setChunkLength(ctrlFrameLength + b(numSlots)); // FIXME check it: add only 1 bit / slot?
                 control->setOccupiedSlotsArraySize(numSlots);
                 for (int i = 0; i < numSlots; i++)
                     control->setOccupiedSlots(i, occSlotsDirect[i]);
@@ -442,7 +431,7 @@ void LMac::handleSelfMessage(cMessage *msg)
                 packet->addTag<PacketProtocolTag>()->setProtocol(&Protocol::lmac);
                 sendDown(packet);
                 if ((currentTxFrame != nullptr) && (!SETUP_PHASE))
-                    scheduleAt(simTime() + controlDuration, sendData);
+                    scheduleAfter(controlDuration, sendData);
             }
             else if (msg->getKind() == LMAC_SEND_DATA) {
                 // we should be in our own slot and the control packet should be already sent. receiving neighbors should wait for the data now.
@@ -472,11 +461,7 @@ void LMac::handleSelfMessage(cMessage *msg)
             }
             else if (msg->getKind() == LMAC_SETUP_PHASE_END) {
                 EV_DETAIL << "Setup phase end. Start normal work at the next slot.\n";
-                if (wakeup->isScheduled())
-                    cancelEvent(wakeup);
-
-                scheduleAt(simTime() + slotDuration, wakeup);
-
+                rescheduleAfter(slotDuration, wakeup);
                 SETUP_PHASE = false;
             }
             else {
@@ -521,7 +506,7 @@ void LMac::handleSelfMessage(cMessage *msg)
             else if (msg->getKind() == LMAC_WAKEUP) {
                 macState = SLEEP;
                 EV_DETAIL << "Unlikely transition. Old state: WAIT_DATA, New state: SLEEP" << endl;
-                scheduleAt(simTime(), wakeup);
+                scheduleAfter(SIMTIME_ZERO, wakeup);
             }
             else {
                 EV << "Unknown packet" << msg->getKind() << "in state" << macState << endl;
@@ -558,6 +543,8 @@ void LMac::handleLowerPacket(Packet *packet)
  */
 void LMac::receiveSignal(cComponent *source, simsignal_t signalID, intval_t value, cObject *details)
 {
+    Enter_Method("%s", cComponent::getSignalName(signalID));
+
     if (signalID == IRadio::transmissionStateChangedSignal) {
         IRadio::TransmissionState newRadioTransmissionState = static_cast<IRadio::TransmissionState>(value);
         if (transmissionState == IRadio::TRANSMISSION_STATE_TRANSMITTING && newRadioTransmissionState == IRadio::TRANSMISSION_STATE_IDLE) {
@@ -580,7 +567,7 @@ void LMac::receiveSignal(cComponent *source, simsignal_t signalID, intval_t valu
         IRadio::RadioMode radioMode = (IRadio::RadioMode)value;
         if (macState == SEND_CONTROL && radioMode == IRadio::RADIO_MODE_TRANSMITTER) {
             // we just switched to TX after CCA, so simply send the first sendPremable self message
-            scheduleAt(simTime(), send_control);
+            scheduleAfter(SIMTIME_ZERO, send_control);
         }
     }
 }
@@ -616,10 +603,11 @@ void LMac::decapsulate(Packet *packet)
 {
     const auto& lmacHeader = packet->popAtFront<LMacDataFrameHeader>();
     packet->addTagIfAbsent<MacAddressInd>()->setSrcAddress(lmacHeader->getSrcAddr());
-    packet->addTagIfAbsent<InterfaceInd>()->setInterfaceId(interfaceEntry->getInterfaceId());
+    packet->addTagIfAbsent<InterfaceInd>()->setInterfaceId(networkInterface->getInterfaceId());
     auto payloadProtocol = ProtocolGroup::ethertype.getProtocol(lmacHeader->getNetworkProtocol());
     packet->addTagIfAbsent<DispatchProtocolReq>()->setProtocol(payloadProtocol);
     packet->addTagIfAbsent<PacketProtocolTag>()->setProtocol(payloadProtocol);
+    packet->setKind(0);
     EV_DETAIL << " message decapsulated " << endl;
 }
 
@@ -640,23 +628,40 @@ void LMac::encapsulate(Packet *netwPkt)
     pkt->setDestAddr(dest);
     pkt->setNetworkProtocol(ProtocolGroup::ethertype.getProtocolNumber(netwPkt->getTag<PacketProtocolTag>()->getProtocol()));
 
-    //delete the control info
+    // delete the control info
     delete netwPkt->removeControlInfo();
 
-    //set the src address to own mac address (nic module getId())
-    pkt->setSrcAddr(interfaceEntry->getMacAddress());
+    // set the src address to own mac address (nic module getId())
+    pkt->setSrcAddr(networkInterface->getMacAddress());
 
-    //encapsulate the network packet
+    // encapsulate the network packet
     netwPkt->insertAtFront(pkt);
     EV_DETAIL << "pkt encapsulated\n";
 }
 
 void LMac::attachSignal(Packet *macPkt)
 {
-    //calc signal duration
+    // calc signal duration
     simtime_t duration = macPkt->getBitLength() / bitrate;
-    //create and initialize control info with new signal
+    // create and initialize control info with new signal
     macPkt->setDuration(duration);
+}
+
+queueing::IPassivePacketSource *LMac::getProvider(cGate *gate)
+{
+    return (gate->getId() == upperLayerInGateId) ? txQueue.get() : nullptr;
+}
+
+void LMac::handleCanPullPacketChanged(cGate *gate)
+{
+    Enter_Method("handleCanPullPacketChanged");
+    // packed arrived from upper layer
+}
+
+void LMac::handlePullPacketProcessed(Packet *packet, cGate *gate, bool successful)
+{
+    Enter_Method("handlePullPacketProcessed");
+    throw cRuntimeError("Not supported callback");
 }
 
 } // namespace inet

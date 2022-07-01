@@ -1,19 +1,9 @@
 //
 // Copyright (C) 2016 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 package inet.linklayer.csmaca;
 
@@ -60,9 +50,9 @@ module CsmaCaMac extends MacProtocolBase like IMacProtocol
 {
     parameters:
         string radioModule = default("^.radio"); // The path to the Radio module  //FIXME remove default value
-        string address = default("auto"); // MAC address as hex string (12 hex digits), or
-                                          // "auto". "auto" values will be replaced by
-                                          // a generated MAC address in init stage 0.
+        string address @mutable = default("auto"); // MAC address as hex string (12 hex digits), or
+                                                   // "auto". "auto" values will be replaced by
+                                                   // a generated MAC address in init stage 0.
         string fcsMode @enum("declared","computed") = default("declared");
         bool useAck = default(true);
         double bitrate @unit(bps);
@@ -84,11 +74,5 @@ module CsmaCaMac extends MacProtocolBase like IMacProtocol
         @statistic[packetDropNotAddressedToUs](title="packet drop: not addressed to us"; source=packetDropReasonIsNotAddressedToUs(packetDropped); record=count,sum(packetBytes),vector(packetBytes); interpolationmode=none);
         @statistic[packetDropQueueOverflow](title="packet drop: queue overflow"; source=packetDropReasonIsQueueOverflow(packetDropped); record=count,sum(packetBytes),vector(packetBytes); interpolationmode=none);
         @statistic[packetDropRetryLimitReached](title="packet drop: retry limit reached"; source=packetDropReasonIsRetryLimitReached(packetDropped); record=count,sum(packetBytes),vector(packetBytes); interpolationmode=none);
-    submodules:
-        queue: <default("DropTailQueue")> like IPacketQueue {
-            parameters:
-                packetCapacity = default(-1);
-                @display("p=100,100;q=l2queue");
-        }
 }
 

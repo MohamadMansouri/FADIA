@@ -1,22 +1,16 @@
 //
-// Copyright (C) OpenSim Ltd.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see http://www.gnu.org/licenses/.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-#include "inet/applications/base/ApplicationPacket_m.h"
+
 #include "inet/queueing/base/PacketSourceBase.h"
+
+#include "inet/applications/base/ApplicationPacket_m.h"
+#include "inet/common/DirectionTag_m.h"
+#include "inet/common/IdentityTag_m.h"
+#include "inet/common/ModuleAccess.h"
 #include "inet/common/packet/chunk/BitCountChunk.h"
 #include "inet/common/packet/chunk/BitsChunk.h"
 #include "inet/common/packet/chunk/ByteCountChunk.h"
@@ -35,6 +29,9 @@ void PacketSourceBase::initialize(int stage)
         packetRepresentation = par("packetRepresentation");
         packetLengthParameter = &par("packetLength");
         packetDataParameter = &par("packetData");
+        attachCreationTimeTag = par("attachCreationTimeTag");
+        attachIdentityTag = par("attachIdentityTag");
+        attachDirectionTag = par("attachDirectionTag");
     }
 }
 
@@ -43,11 +40,36 @@ const char *PacketSourceBase::createPacketName(const Ptr<const Chunk>& data) con
     return StringFormat::formatString(packetNameFormat, [&] (char directive) {
         static std::string result;
         switch (directive) {
-            case 'n':
-                result = getFullName();
+            case 'a': {
+                auto application = findContainingApplication();
+                if (application != nullptr)
+                    result = application->getDisplayName() != nullptr ? application->getDisplayName() : application->getFullName();
+                else
+                    result = getDisplayName() != nullptr ? getDisplayName() :  getFullName();
                 break;
+            }
+            case 'n':
+                result = getDisplayName() != nullptr ? getDisplayName() : getFullName();
+                break;
+            case 'm': {
+                auto application = getContainingApplication();
+                result = application->getDisplayName() != nullptr ? application->getDisplayName() : application->getFullName();
+                break;
+            }
+            case 'M': {
+                auto networkNode = getContainingNode(this);
+                result = networkNode->getDisplayName() != nullptr ? networkNode->getDisplayName() : networkNode->getFullName();
+                break;
+            }
             case 'p':
+
                 result = getFullPath();
+                break;
+            case 'h':
+                result = getContainingApplication()->getFullPath();
+                break;
+            case 'H':
+                result = getContainingNode(this)->getFullPath();
                 break;
             case 'c':
                 result = std::to_string(numProcessedPackets);
@@ -77,29 +99,36 @@ const char *PacketSourceBase::createPacketName(const Ptr<const Chunk>& data) con
 Ptr<Chunk> PacketSourceBase::createPacketContent() const
 {
     auto packetLength = b(packetLengthParameter->intValue());
-    auto packetData = packetDataParameter->intValue();
-    if (!strcmp(packetRepresentation, "bitCount"))
+    if (!strcmp(packetRepresentation, "bitCount")) {
+        int packetData = packetDataParameter->intValue();
         return packetData == -1 ? makeShared<BitCountChunk>(packetLength) : makeShared<BitCountChunk>(packetLength, packetData);
+    }
     else if (!strcmp(packetRepresentation, "bits")) {
         static int total = 0;
         const auto& packetContent = makeShared<BitsChunk>();
         std::vector<bool> bits;
         bits.resize(b(packetLength).get());
-        for (int i = 0; i < (int)bits.size(); i++)
+        for (int i = 0; i < (int)bits.size(); i++) {
+            int packetData = packetDataParameter->intValue();
             bits[i] = packetData == -1 ? (total + i) % 2 == 0 : packetData;
+        }
         total += bits.size();
         packetContent->setBits(bits);
         return packetContent;
     }
-    else if (!strcmp(packetRepresentation, "byteCount"))
+    else if (!strcmp(packetRepresentation, "byteCount")) {
+        int packetData = packetDataParameter->intValue();
         return packetData == -1 ? makeShared<ByteCountChunk>(packetLength) : makeShared<ByteCountChunk>(packetLength, packetData);
+    }
     else if (!strcmp(packetRepresentation, "bytes")) {
         static int total = 0;
         const auto& packetContent = makeShared<BytesChunk>();
         std::vector<uint8_t> bytes;
         bytes.resize(B(packetLength).get());
-        for (int i = 0; i < (int)bytes.size(); i++)
+        for (int i = 0; i < (int)bytes.size(); i++) {
+            int packetData = packetDataParameter->intValue();
             bytes[i] = packetData == -1 ? (total + i) % 256 : packetData;
+        }
         total += bytes.size();
         packetContent->setBytes(bytes);
         return packetContent;
@@ -117,13 +146,44 @@ Ptr<Chunk> PacketSourceBase::createPacketContent() const
 Packet *PacketSourceBase::createPacket()
 {
     auto packetContent = createPacketContent();
-    packetContent->addTag<CreationTimeTag>()->setCreationTime(simTime());
+    if (attachCreationTimeTag)
+        packetContent->addTag<CreationTimeTag>()->setCreationTime(simTime());
+    if (attachIdentityTag) {
+        auto identityStart = IdentityTag::getNextIdentityStart(packetContent->getChunkLength());
+        packetContent->addTag<IdentityTag>()->setIdentityStart(identityStart);
+    }
     auto packetName = createPacketName(packetContent);
     auto packet = new Packet(packetName, packetContent);
+    if (attachDirectionTag)
+        packet->addTagIfAbsent<DirectionTag>()->setDirection(DIRECTION_OUTBOUND);
     numProcessedPackets++;
     processedTotalLength += packet->getDataLength();
     emit(packetCreatedSignal, packet);
     return packet;
+}
+
+inline bool isApplication(const cModule *mod)
+{
+    cProperties *properties = mod->getProperties();
+    return properties && properties->getAsBool("application");
+}
+
+const cModule *PacketSourceBase::findContainingApplication() const
+{
+    for (const cModule *module = this; module != nullptr; module = module->getParentModule()) {
+        if (isApplication(module))
+            return module;
+    }
+    return nullptr;
+}
+
+const cModule *PacketSourceBase::getContainingApplication() const
+{
+    auto application = findContainingApplication();
+    if (application == nullptr)
+        throw cRuntimeError("Application not found");
+    else
+        return application;
 }
 
 } // namespace queueing

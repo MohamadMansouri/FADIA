@@ -1,19 +1,9 @@
 //
 // Copyright (C) 2013 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 #ifndef __INET_PROTOCOL_H
 #define __INET_PROTOCOL_H
@@ -26,8 +16,8 @@ class INET_API Protocol
 {
   protected:
     static int nextId;
-    static std::map<int, const Protocol *> idToProtocol;
-    static std::map<std::string, const Protocol *> nameToProtocol;
+    static std::map<int, const Protocol *>& getIdToProtocol();
+    static std::map<std::string, const Protocol *>& getNameToProtocol();
 
   public:
     enum Layer { PhysicalLayer, LinkLayer, NetworkLayer, TransportLayer, UnspecifiedLayer };
@@ -70,26 +60,34 @@ class INET_API Protocol
     static const Protocol dsr;
     static const Protocol dymo;
     static const Protocol egp;
+    static const Protocol eigrp;
+    static const Protocol ethernetFlowCtrl;
     static const Protocol ethernetMac;
     static const Protocol ethernetPhy;
     static const Protocol ftp;
     static const Protocol gpsr;
+    static const Protocol gptp;
     static const Protocol http;
     static const Protocol icmpv4;
     static const Protocol icmpv6;
-    static const Protocol ieee80211EtherType;
+    static const Protocol ieee80211DsssPhy;
+    static const Protocol ieee80211ErpOfdmPhy;
+    static const Protocol ieee80211FhssPhy;
+    static const Protocol ieee80211HrDsssPhy;
+    static const Protocol ieee80211HtPhy;
+    static const Protocol ieee80211IrPhy;
     static const Protocol ieee80211Mac;
     static const Protocol ieee80211Mgmt;
-    static const Protocol ieee80211FhssPhy;
-    static const Protocol ieee80211IrPhy;
-    static const Protocol ieee80211DsssPhy;
-    static const Protocol ieee80211HrDsssPhy;
     static const Protocol ieee80211OfdmPhy;
-    static const Protocol ieee80211ErpOfdmPhy;
-    static const Protocol ieee80211HtPhy;
     static const Protocol ieee80211VhtPhy;
     static const Protocol ieee802154;
-    static const Protocol ieee8022;
+    static const Protocol ieee8021ae;
+    static const Protocol ieee8021qCTag;
+    static const Protocol ieee8021qSTag;
+    static const Protocol ieee8021rTag;
+    static const Protocol ieee8022llc;
+    static const Protocol ieee8022snap;
+    static const Protocol ieee802epd;
     static const Protocol igmp;
     static const Protocol igp;
     static const Protocol ipv4;
@@ -114,8 +112,8 @@ class INET_API Protocol
     static const Protocol tcp;
     static const Protocol telnet;
     static const Protocol trill;
-    static const Protocol tsn;  // ieee1722, AVB, TSN
-    static const Protocol tteth;  // SAE AS6802, TTEthernet
+    static const Protocol tsn; // ieee1722, AVB, TSN
+    static const Protocol tteth; // SAE AS6802, TTEthernet
     static const Protocol udp;
     static const Protocol xmac;
     static const Protocol xtp;
@@ -126,18 +124,22 @@ class INET_API Protocol
     static const Protocol csmaCaMac;
     static const Protocol echo;
     static const Protocol flooding;
-    static const Protocol nextHopForwarding;
     static const Protocol linkStateRouting;
+    static const Protocol nextHopForwarding;
     static const Protocol probabilistic;
     static const Protocol shortcutMac;
     static const Protocol shortcutPhy;
     static const Protocol unitDisk;
+    static const Protocol unknown;
     static const Protocol wiseRoute;
 };
 
-inline std::ostream& operator << (std::ostream& o, const Protocol& t) { o << t.str(); return o; }
+inline std::ostream& operator<<(std::ostream& o, const Protocol& t) { o << t.str(); return o; }
+
+inline void doParsimPacking(cCommBuffer *buffer, const Protocol *protocol) { buffer->pack(protocol->getId()); }
+inline void doParsimUnpacking(cCommBuffer *buffer, const Protocol *& protocol) { int id; buffer->unpack(id); protocol = Protocol::getProtocol(id); }
 
 } // namespace inet
 
-#endif // ifndef __INET_PROTOCOL_H
+#endif
 

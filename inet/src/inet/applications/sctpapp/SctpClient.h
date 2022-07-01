@@ -2,24 +2,13 @@
 // Copyright (C) 2008 Irene Ruengeler
 // Copyright (C) 2009-2015 Thomas Dreibholz
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 #ifndef __INET_SCTPCLIENT_H
 #define __INET_SCTPCLIENT_H
 
-#include "inet/common/INETDefs.h"
 #include "inet/common/lifecycle/LifecycleUnsupported.h"
 #include "inet/transportlayer/contract/sctp/SctpSocket.h"
 
@@ -37,8 +26,7 @@ class SctpAssociation;
 class INET_API SctpClient : public cSimpleModule, public SctpSocket::ICallback, public LifecycleUnsupported
 {
   protected:
-    struct PathStatus
-    {
+    struct PathStatus {
         L3Address pid;
         bool active;
         bool primaryPath;
@@ -62,7 +50,7 @@ class INET_API SctpClient : public cSimpleModule, public SctpSocket::ICallback, 
     cMessage *timeMsg;
     cMessage *stopTimer;
     cMessage *primaryChangeTimer;
-    int64 bufferSize;
+    int64_t bufferSize;
     bool timer;
     bool sendAllowed;
     const char *stateNameStr;
@@ -73,7 +61,7 @@ class INET_API SctpClient : public cSimpleModule, public SctpSocket::ICallback, 
     unsigned long int bytesSent;
     unsigned long int echoedBytesSent;
     unsigned long int bytesRcvd;
-    unsigned long int numRequestsToSend;    // requests to send in this session
+    unsigned long int numRequestsToSend; // requests to send in this session
     unsigned long int numPacketsToReceive;
     int numSessions;
     int numBroken;
@@ -93,8 +81,8 @@ class INET_API SctpClient : public cSimpleModule, public SctpSocket::ICallback, 
 
     /* SctpSocket::ICallback callback methods */
     virtual void socketAvailable(SctpSocket *socket, Indication *indication) override { throw cRuntimeError("Model error, this module doesn't use any listener SCTP sockets"); }
-    void socketEstablished(SctpSocket *socket, unsigned long int buffer) override;    // TODO: needs a better name
-    void socketDataArrived(SctpSocket *socket, Packet *msg, bool urgent) override;    // TODO: needs a better name
+    void socketEstablished(SctpSocket *socket, unsigned long int buffer) override; // TODO needs a better name
+    void socketDataArrived(SctpSocket *socket, Packet *msg, bool urgent) override; // TODO needs a better name
     void socketDataNotificationArrived(SctpSocket *socket, Message *msg) override;
     void socketPeerClosed(SctpSocket *socket) override;
     void socketClosed(SctpSocket *socket) override;
@@ -117,5 +105,5 @@ class INET_API SctpClient : public cSimpleModule, public SctpSocket::ICallback, 
 
 } // namespace inet
 
-#endif // ifndef __INET_SCTPCLIENT_H
+#endif
 

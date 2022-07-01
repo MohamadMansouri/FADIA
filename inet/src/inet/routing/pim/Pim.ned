@@ -1,19 +1,9 @@
 //
 // Copyright (C) 2013 Brno University of Technology (http://nes.fit.vutbr.cz/ansa)
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 3
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 // Authors: Veronika Rybova, Vladimir Vesely (ivesely@fit.vutbr.cz),
 //          Tamas Borbely (tomi@omnetpp.org)
 
@@ -33,8 +23,8 @@ module Pim like IPim
         string interfaceTableModule;
         string routingTableModule;
         string crcMode @enum("declared", "computed") = default("declared");
-        *.interfaceTableModule = default(absPath(interfaceTableModule));
-        *.routingTableModule = default(absPath(routingTableModule));
+        *.interfaceTableModule = default(absPath(this.interfaceTableModule));
+        *.routingTableModule = default(absPath(this.routingTableModule));
         *.pimInterfaceTableModule = default("^.pimInterfaceTable");
         *.pimNeighborTableModule = default("^.pimNeighborTable");
 
@@ -81,5 +71,9 @@ module Pim like IPim
         // splitter out
         pimSplitter.ipOut --> { @display("m=s"); } --> networkLayerOut;
         pimSplitter.ipIn <-- { @display("m=s"); } <-- networkLayerIn;
+}
+
+simple PimCrcInsertionHook
+{
 }
 

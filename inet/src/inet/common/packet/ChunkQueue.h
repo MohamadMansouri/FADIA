@@ -1,20 +1,12 @@
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program.  If not, see http://www.gnu.org/licenses/.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-#ifndef __INET_CHUNKQUEUE_H_
-#define __INET_CHUNKQUEUE_H_
+
+#ifndef __INET_CHUNKQUEUE_H
+#define __INET_CHUNKQUEUE_H
 
 #include "inet/common/packet/chunk/BitsChunk.h"
 #include "inet/common/packet/chunk/BytesChunk.h"
@@ -41,7 +33,7 @@ namespace inet {
  */
 class INET_API ChunkQueue : public cNamedObject
 {
-  friend class ChunkQueueDescriptor;
+    friend class ChunkQueueDescriptor;
 
   protected:
     b pushedLength = b(0);
@@ -113,7 +105,7 @@ class INET_API ChunkQueue : public cNamedObject
      * in the requested representation. If the length is unspecified, then the
      * length of the result is chosen according to the internal representation.
      */
-    template <typename T>
+    template<typename T>
     bool has(b length = b(-1)) const {
         return content->has<T>(iterator, length == b(-1) ? Chunk::unspecifiedLength : length);
     }
@@ -123,7 +115,7 @@ class INET_API ChunkQueue : public cNamedObject
      * chunk in the requested representation. If the length is unspecified, then
      * the length of the result is chosen according to the internal representation.
      */
-    template <typename T>
+    template<typename T>
     const Ptr<const T> peek(b length = b(-1), int flags = 0) const {
         return content->peek<T>(iterator, length == b(-1) ? Chunk::unspecifiedLength : length, flags);
     }
@@ -133,7 +125,7 @@ class INET_API ChunkQueue : public cNamedObject
      * the requested representation. If the length is unspecified, then the
      * length of the result is chosen according to the internal representation.
      */
-    template <typename T>
+    template<typename T>
     const Ptr<const T> peekAt(b offset, b length = b(-1), int flags = 0) const {
         CHUNK_CHECK_USAGE(b(0) <= offset && offset <= getLength(), "offset is out of range");
         CHUNK_CHECK_USAGE(b(-1) <= length && offset + length <= getLength(), "length is invalid");
@@ -180,7 +172,7 @@ class INET_API ChunkQueue : public cNamedObject
      * unspecified, then the length of the result is chosen according to the
      * internal representation.
      */
-    template <typename T>
+    template<typename T>
     const Ptr<const T> pop(b length = b(-1), int flags = 0) {
         const auto& chunk = peek<T>(length == b(-1) ? Chunk::unspecifiedLength : length, flags);
         if (chunk != nullptr)
@@ -205,7 +197,7 @@ class INET_API ChunkQueue : public cNamedObject
     /**
      * Returns a human readable string representation.
      */
-    virtual std::string str() const override { return iterator.getPosition() == b(0) ? content->str() : content->peek(iterator)->str(); }
+    virtual std::string str() const override;
 };
 
 inline std::ostream& operator<<(std::ostream& os, const ChunkQueue *queue) { return os << queue->str(); }
@@ -214,5 +206,5 @@ inline std::ostream& operator<<(std::ostream& os, const ChunkQueue& queue) { ret
 
 } // namespace
 
-#endif // #ifndef __INET_CHUNKQUEUE_H_
+#endif
 

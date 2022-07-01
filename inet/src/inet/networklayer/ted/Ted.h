@@ -1,21 +1,13 @@
 //
-// (C) 2005 Vojtech Janota
+// Copyright (C) 2005 Vojtech Janota
 //
-// This library is free software, you can redistribute it
-// and/or modify
-// it under  the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation;
-// either version 2 of the License, or any later version.
-// The library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-// See the GNU Lesser General Public License for more details.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
 #ifndef __INET_TED_H
 #define __INET_TED_H
 
-#include "inet/common/INETDefs.h"
+#include "inet/common/ModuleRefByPar.h"
 #include "inet/networklayer/rsvpte/IntServ_m.h"
 #include "inet/networklayer/ted/Ted_m.h"
 #include "inet/routing/base/RoutingProtocolBase.h"
@@ -24,7 +16,7 @@ namespace inet {
 
 class IIpv4RoutingTable;
 class IInterfaceTable;
-class InterfaceEntry;
+class NetworkInterface;
 
 /**
  * Contains the Traffic Engineering Database and provides public methods
@@ -39,22 +31,20 @@ class INET_API Ted : public RoutingProtocolBase
      * Only used internally, during shortest path calculation:
      * vertex in the graph we build from links in TeLinkStateInfoVector.
      */
-    struct vertex_t
-    {
-        Ipv4Address node;    // FIXME *** is this the routerID? ***
-        int parent;    // index into the same vertex_t vector
-        double dist;    // distance to root (???)
+    struct vertex_t {
+        Ipv4Address node; // FIXME *** is this the routerID? ***
+        int parent; // index into the same vertex_t vector
+        double dist; // distance to root (???)
     };
 
     /**
      * Only used internally, during shortest path calculation:
      * edge in the graph we build from links in TeLinkStateInfoVector.
      */
-    struct edge_t
-    {
-        int src;    // index into the vertex_t[] vector
-        int dest;    // index into the vertex_t[] vector
-        double metric;    // link cost
+    struct edge_t {
+        int src; // index into the vertex_t[] vector
+        int dest; // index into the vertex_t[] vector
+        double metric; // link cost
     };
 
     /**
@@ -97,11 +87,11 @@ class INET_API Ted : public RoutingProtocolBase
     virtual void handleCrashOperation(LifecycleOperation *operation) override;
 
   protected:
-    IIpv4RoutingTable *rt = nullptr;
-    IInterfaceTable *ift = nullptr;
+    ModuleRefByPar<IIpv4RoutingTable> rt;
+    ModuleRefByPar<IInterfaceTable> ift;
     Ipv4Address routerId;
 
-    Ipv4AddressVector interfaceAddrs;    // list of local interface addresses
+    Ipv4AddressVector interfaceAddrs; // list of local interface addresses
 
     int maxMessageId = 0;
 
@@ -111,7 +101,7 @@ class INET_API Ted : public RoutingProtocolBase
     std::vector<vertex_t> calculateShortestPaths(const TeLinkStateInfoVector& topology,
             double req_bandwidth, int priority);
 
-  public:    //FIXME
+  public: // FIXME
     virtual bool checkLinkValidity(TeLinkStateInfo link, TeLinkStateInfo *& match);
     virtual void updateTimestamp(TeLinkStateInfo *link);
 };
@@ -120,5 +110,5 @@ std::ostream& operator<<(std::ostream& os, const TeLinkStateInfo& info);
 
 } // namespace inet
 
-#endif // ifndef __INET_TED_H
+#endif
 

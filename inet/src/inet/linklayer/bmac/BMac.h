@@ -1,26 +1,20 @@
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+// Copyright (C) 2008-2010, Anna Foerster, NetLab, SUPSI, Switzerland.
+// Copyright (C) 2010 OpenSim Ltd.
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program.  If not, see http://www.gnu.org/licenses/.
-//
+
 
 #ifndef __INET_BMAC_H
 #define __INET_BMAC_H
 
-#include "inet/queueing/contract/IPacketQueue.h"
 #include "inet/linklayer/base/MacProtocolBase.h"
 #include "inet/linklayer/common/MacAddress.h"
 #include "inet/linklayer/contract/IMacProtocol.h"
-#include "inet/physicallayer/contract/packetlevel/IRadio.h"
+#include "inet/physicallayer/wireless/common/contract/packetlevel/IRadio.h"
+#include "inet/queueing/contract/IActivePacketSink.h"
+#include "inet/queueing/contract/IPacketQueue.h"
 
 namespace inet {
 
@@ -53,7 +47,7 @@ namespace inet {
  * @author Anna Foerster
  *
  */
-class INET_API BMac : public MacProtocolBase, public IMacProtocol
+class INET_API BMac : public MacProtocolBase, public IMacProtocol, public queueing::IActivePacketSink
 {
   private:
     /** @brief Copy constructor is not allowed.
@@ -87,9 +81,16 @@ class INET_API BMac : public MacProtocolBase, public IMacProtocol
     /** @brief Handle control messages from lower layer */
     virtual void receiveSignal(cComponent *source, simsignal_t signalID, intval_t value, cObject *details) override;
 
+    // IActivePacketSink:
+    virtual queueing::IPassivePacketSource *getProvider(cGate *gate) override;
+    virtual void handleCanPullPacketChanged(cGate *gate) override;
+    virtual void handlePullPacketProcessed(Packet *packet, cGate *gate, bool successful) override;
+
   protected:
+    void scheduleWakeUp();
+
     /** @brief The radio. */
-    physicallayer::IRadio *radio = nullptr;
+    ModuleRefByPar<physicallayer::IRadio> radio;
     physicallayer::IRadio::TransmissionState transmissionState = physicallayer::IRadio::TRANSMISSION_STATE_UNDEFINED;
 
     /** @name Different tracked statistics.*/
@@ -125,16 +126,16 @@ class INET_API BMac : public MacProtocolBase, public IMacProtocol
      *                    over
      */
     enum States {
-        INIT,    //0
-        SLEEP,    //1
-        CCA,    //2
-        SEND_PREAMBLE,    //3
-        WAIT_DATA,    //4
-        SEND_DATA,    //5
-        WAIT_TX_DATA_OVER,    //6
-        WAIT_ACK,    //7
-        SEND_ACK,    //8
-        WAIT_ACK_TX    //9
+        INIT, // 0
+        SLEEP, // 1
+        CCA, // 2
+        SEND_PREAMBLE, // 3
+        WAIT_DATA, // 4
+        SEND_DATA, // 5
+        WAIT_TX_DATA_OVER, // 6
+        WAIT_ACK, // 7
+        SEND_ACK, // 8
+        WAIT_ACK_TX // 9
     };
     /** @brief The current state of the protocol */
     States macState = static_cast<States>(-1);
@@ -185,7 +186,7 @@ class INET_API BMac : public MacProtocolBase, public IMacProtocol
     bool stats = false;
 
     /** @brief Generate new interface address*/
-    virtual void configureInterfaceEntry() override;
+    virtual void configureNetworkInterface() override;
     virtual void handleCommand(cMessage *msg) {}
 
     /** @brief Internal function to send the first packet in the queue */
@@ -206,5 +207,5 @@ class INET_API BMac : public MacProtocolBase, public IMacProtocol
 
 } // namespace inet
 
-#endif // ifndef __INET_BMAC_H
+#endif
 

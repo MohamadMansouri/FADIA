@@ -1,19 +1,9 @@
 //
-// Copyright (C) OpenSim Ltd.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 #ifndef __INET_PACKETDROPVISUALIZERBASE_H
 #define __INET_PACKETDROPVISUALIZERBASE_H
@@ -32,20 +22,21 @@ namespace inet {
 
 namespace visualizer {
 
-class INET_API PacketDrop : public PacketDropDetails {
+class INET_API PacketDrop : public PacketDropDetails
+{
   protected:
     const cPacket *packet = nullptr;
     const int moduleId = -1;
     const Coord position;
 
   public:
-    PacketDrop(PacketDropReason reason, const cPacket* packet, const int moduleId, const Coord& position);
+    PacketDrop(PacketDropReason reason, const cPacket *packet, const int moduleId, const Coord& position);
     virtual ~PacketDrop();
 
     const cPacket *getPacket_() const { return packet; }
-    const cModule* getModule() const;
-    const cModule* getNetworkNode() const;
-    const InterfaceEntry *getNetworkInterface() const;
+    const cModule *getModule() const;
+    const cModule *getNetworkNode() const;
+    const NetworkInterface *getNetworkInterface() const;
     const Coord& getPosition() const { return position; }
 };
 
@@ -58,7 +49,7 @@ class INET_API PacketDropVisualizerBase : public VisualizerBase, public cListene
         const PacketDrop *packetDrop = nullptr;
 
       public:
-        PacketDropVisualization(const PacketDrop* packetDrop);
+        PacketDropVisualization(const PacketDrop *packetDrop);
         virtual ~PacketDropVisualization();
     };
 
@@ -67,13 +58,12 @@ class INET_API PacketDropVisualizerBase : public VisualizerBase, public cListene
         const PacketDrop *packetDrop = nullptr;
 
       public:
-        DirectiveResolver(const PacketDrop* packetDrop);
+        DirectiveResolver(const PacketDrop *packetDrop);
 
         virtual const char *resolveDirective(char directive) const override;
     };
 
-    class INET_API DetailsFilter
-    {
+    class INET_API DetailsFilter {
       protected:
         cMatchExpression matchExpression;
 
@@ -87,14 +77,14 @@ class INET_API PacketDropVisualizerBase : public VisualizerBase, public cListene
     /** @name Parameters */
     //@{
     bool displayPacketDrops = false;
-    NetworkNodeFilter nodeFilter; // TODO:
-    InterfaceFilter interfaceFilter; // TODO:
+    NetworkNodeFilter nodeFilter; // TODO
+    InterfaceFilter interfaceFilter; // TODO
     PacketFilter packetFilter;
     DetailsFilter detailsFilter;
     const char *icon = nullptr;
     ColorSet iconTintColorSet;
     double iconTintAmount = NaN;
-    StringFormat labelFormat; // TODO:
+    StringFormat labelFormat; // TODO
     cFigure::Font labelFont;
     cFigure::Color labelColor;
     const char *fadeOutMode = nullptr;
@@ -108,6 +98,7 @@ class INET_API PacketDropVisualizerBase : public VisualizerBase, public cListene
     virtual void initialize(int stage) override;
     virtual void handleParameterChange(const char *name) override;
     virtual void refreshDisplay() const override;
+    virtual void preDelete(cComponent *root) override;
 
     virtual void subscribe();
     virtual void unsubscribe();
@@ -121,8 +112,6 @@ class INET_API PacketDropVisualizerBase : public VisualizerBase, public cListene
     virtual std::string getPacketDropVisualizationText(const PacketDrop *packetDrop) const;
 
   public:
-    virtual ~PacketDropVisualizerBase();
-
     virtual void receiveSignal(cComponent *source, simsignal_t signal, cObject *object, cObject *details) override;
 };
 
@@ -130,5 +119,5 @@ class INET_API PacketDropVisualizerBase : public VisualizerBase, public cListene
 
 } // namespace inet
 
-#endif // ifndef __INET_PACKETDROPVISUALIZERBASE_H
+#endif
 

@@ -1,23 +1,14 @@
 //
-// Copyright (C) 2006-2019 Opensim Ltd
+// Copyright (C) 2006-2019 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
+
 #include "ObjectPrinter.h"
-#include "MatchableObject.h"
+
 #include "MatchableField.h"
+#include "MatchableObject.h"
 
 namespace inet {
 
@@ -37,7 +28,7 @@ static bool needsQuotes(const char *txt)
 
 static std::string quoteString(const std::string& txt)
 {
-    char *buf = new char[4 * txt.length() + 3];  // a conservative guess
+    char *buf = new char[4 * txt.length() + 3]; // a conservative guess
     char *d = buf;
     *d++ = '"';
     const char *s = txt.c_str();
@@ -50,8 +41,8 @@ static std::string quoteString(const std::string& txt)
             case '\t': *d++ = '\\'; *d++ = 't'; s++; break;
             case '"':  *d++ = '\\'; *d++ = '"'; s++; break;
             case '\\': *d++ = '\\'; *d++ = '\\'; s++; break;
-            default: if (*s < ' ') {*d++='\\'; *d++='x'; sprintf(d,"%2.2X",*s++); d+=2;}
-                     else {*d++ = *s++;}
+            default: if (*s < ' ') {*d++='\\'; *d++='x'; sprintf(d,"%2.2X",*s++); d+=2; }
+                     else {*d++ = *s++; }
         }
     }
     *d++ = '"';
@@ -62,7 +53,7 @@ static std::string quoteString(const std::string& txt)
     return ret;
 }
 
-static ObjectPrinterRecursionControl defaultRecurseIntoMessageFields(void *object, cClassDescriptor *descriptor, int fieldIndex, void *fieldValue, void **parents, int level)
+static ObjectPrinterRecursionControl defaultRecurseIntoMessageFields(any_ptr object, cClassDescriptor *descriptor, int fieldIndex, any_ptr fieldValue, any_ptr *parents, int level)
 {
     const char *fieldName = descriptor->getFieldName(fieldIndex);
     return strcmp(fieldName, "owner") ? RECURSE : SKIP;
@@ -70,7 +61,7 @@ static ObjectPrinterRecursionControl defaultRecurseIntoMessageFields(void *objec
 
 ObjectPrinter::ObjectPrinter(ObjectPrinterRecursionPredicate recursionPredicate,
         const std::vector<cMatchExpression *>& objectMatchExpressions,
-        const std::vector<std::vector<cMatchExpression *> >& fieldNameMatchExpressionsList,
+        const std::vector<std::vector<cMatchExpression *>>& fieldNameMatchExpressionsList,
         int indentSize)
 {
     ASSERT(objectMatchExpressions.size() == fieldNameMatchExpressionsList.size());
@@ -83,12 +74,12 @@ ObjectPrinter::ObjectPrinter(ObjectPrinterRecursionPredicate recursionPredicate,
 ObjectPrinter::ObjectPrinter(ObjectPrinterRecursionPredicate recursionPredicate, const char *objectFieldMatcherPattern, int indentSize)
 {
     std::vector<cMatchExpression *> objectMatchExpressions;
-    std::vector<std::vector<cMatchExpression *> > fieldNameMatchExpressionsList;
+    std::vector<std::vector<cMatchExpression *>> fieldNameMatchExpressionsList;
 
     cStringTokenizer tokenizer(objectFieldMatcherPattern, "|;");
     std::vector<std::string> patterns = tokenizer.asVector();
 
-    for (auto & pattern : patterns) {
+    for (auto& pattern : patterns) {
         char *objectPattern = (char *)pattern.c_str();
         char *fieldNamePattern = strchr(objectPattern, ':');
 
@@ -98,7 +89,7 @@ ObjectPrinter::ObjectPrinter(ObjectPrinterRecursionPredicate recursionPredicate,
             std::vector<std::string> fieldNamePatterns = fieldNameTokenizer.asVector();
             std::vector<cMatchExpression *> fieldNameMatchExpressions;
 
-            for (auto & fieldNamePattern : fieldNamePatterns)
+            for (auto& fieldNamePattern : fieldNamePatterns)
                 fieldNameMatchExpressions.push_back(new cMatchExpression(fieldNamePattern.c_str(), false, true, true));
 
             fieldNameMatchExpressionsList.push_back(fieldNameMatchExpressions);
@@ -124,17 +115,17 @@ ObjectPrinter::~ObjectPrinter()
     for (int i = 0; i < (int)objectMatchExpressions.size(); i++) {
         delete objectMatchExpressions[i];
         std::vector<cMatchExpression *>& fieldNameMatchExpressions = fieldNameMatchExpressionsList[i];
-        for (auto & fieldNameMatchExpression : fieldNameMatchExpressions)
+        for (auto& fieldNameMatchExpression : fieldNameMatchExpressions)
             delete fieldNameMatchExpression;
     }
 }
 
 void ObjectPrinter::printObjectToStream(std::ostream& ostream, cObject *object)
 {
-    void *parents[MAXIMUM_OBJECT_PRINTER_LEVEL];
+    any_ptr parents[MAXIMUM_OBJECT_PRINTER_LEVEL];
     cClassDescriptor *descriptor = cClassDescriptor::getDescriptorFor(object);
     ostream << "class " << descriptor->getName() << " {\n";
-    printObjectToStream(ostream, object, descriptor, parents, 0);
+    printObjectToStream(ostream, toAnyPtr(object), descriptor, parents, 0);
     ostream << "}\n";
 }
 
@@ -145,7 +136,7 @@ std::string ObjectPrinter::printObjectToString(cObject *object)
     return out.str();
 }
 
-void ObjectPrinter::printObjectToStream(std::ostream& ostream, void *object, cClassDescriptor *descriptor, void **parents, int level)
+void ObjectPrinter::printObjectToStream(std::ostream& ostream, any_ptr object, cClassDescriptor *descriptor, any_ptr *parents, int level)
 {
     if (level == MAXIMUM_OBJECT_PRINTER_LEVEL) {
         printIndent(ostream, level);
@@ -180,12 +171,12 @@ void ObjectPrinter::printObjectToStream(std::ostream& ostream, void *object, cCl
 
             int size = isArray ? descriptor->getFieldArraySize(object, fieldIndex) : 1;
             for (int elementIndex = 0; elementIndex < size; elementIndex++) {
-                void *fieldValue = isCompound ? descriptor->getFieldStructValuePointer(object, fieldIndex, elementIndex) : nullptr;
+                any_ptr fieldValue = isCompound ? descriptor->getFieldStructValuePointer(object, fieldIndex, elementIndex) : any_ptr(nullptr);
 
                 ObjectPrinterRecursionControl result = RECURSE;
                 if (recursionPredicate)
                     result = recursionPredicate(object, descriptor, fieldIndex, fieldValue, parents, level);
-                if (result == SKIP || (descriptor->extendsCObject() && !matchesObjectField((cObject *)object, fieldIndex)))
+                if (result == SKIP || (descriptor->extendsCObject() && !matchesObjectField(fromAnyPtr<cObject>(object), fieldIndex)))
                     continue;
 
                 printIndent(ostream, level + 1);
@@ -200,17 +191,17 @@ void ObjectPrinter::printObjectToStream(std::ostream& ostream, void *object, cCl
                 ostream << " = ";
 
                 if (isCompound) {
-                    if (fieldValue) {
-                        cClassDescriptor *fieldDescriptor = isCObject ? cClassDescriptor::getDescriptorFor((cObject *)fieldValue) :
+                    if (fieldValue != nullptr) {
+                        cClassDescriptor *fieldDescriptor = isCObject ? cClassDescriptor::getDescriptorFor(fromAnyPtr<cObject>(fieldValue)) :
                             cClassDescriptor::getDescriptorFor(descriptor->getFieldStructName(fieldIndex));
 
                         if (isCObject && result == FULL_NAME)
-                            ostream << ((cObject *)fieldValue)->getFullName() << "\n";
+                            ostream << fromAnyPtr<cObject>(fieldValue)->getFullName() << "\n";
                         else if (isCObject && result == FULL_PATH)
-                            ostream << ((cObject *)fieldValue)->getFullPath() << "\n";
+                            ostream << fromAnyPtr<cObject>(fieldValue)->getFullPath() << "\n";
                         else if (fieldDescriptor) {
                             if (isCObject)
-                                ostream << "class " << ((cObject *)fieldValue)->getClassName() << " ";
+                                ostream << "class " << fromAnyPtr<cObject>(fieldValue)->getClassName() << " ";
                             else
                                 ostream << "struct " << descriptor->getFieldStructName(fieldIndex) << " ";
 
@@ -265,5 +256,5 @@ bool ObjectPrinter::matchesObjectField(cObject *object, int fieldIndex)
     return false;
 }
 
-}  // namespace inet
+} // namespace inet
 

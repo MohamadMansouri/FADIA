@@ -1,31 +1,16 @@
-/* -*- mode:c++ -*- ********************************************************
- * file:        MobilityBase.cc
- *
- * author:      Daniel Willkomm, Andras Varga, Zoltan Bojthe
- *
- * copyright:   (C) 2004 Telecommunication Networks Group (TKN) at
- *              Technische Universitaet Berlin, Germany.
- *
- *              (C) 2005 Andras Varga
- *              (C) 2011 Zoltan Bojthe
- *
- *              This program is free software; you can redistribute it
- *              and/or modify it under the terms of the GNU General Public
- *              License as published by the Free Software Foundation; either
- *              version 2 of the License, or (at your option) any later
- *              version.
- *              For further information see file COPYING
- *              in the top level directory
- ***************************************************************************
- * part of:     framework implementation developed by tkn
- **************************************************************************/
+//
+// SPDX-License-Identifier: LGPL-3.0-or-later
+//
+//
+
+#include "inet/mobility/base/MobilityBase.h"
 
 #include "inet/common/INETMath.h"
 #include "inet/common/geometry/common/GeographicCoordinateSystem.h"
 #include "inet/common/geometry/common/Quaternion.h"
-#include "inet/mobility/base/MobilityBase.h"
-#ifdef WITH_VISUALIZERS
-#include "inet/visualizer/mobility/MobilityCanvasVisualizer.h"
+
+#ifdef INET_WITH_VISUALIZATIONCANVAS
+#include "inet/visualizer/canvas/mobility/MobilityCanvasVisualizer.h"
 #endif
 
 namespace inet {
@@ -40,7 +25,7 @@ static bool parseIntTo(const char *s, double& destValue)
     /* This method is only used to convert positions from the display strings,
      * which can contain floating point values.
      */
-    if(sscanf(s, "%lf", &destValue) != 1)
+    if (sscanf(s, "%lf", &destValue) != 1)
         return false;
 
     return true;
@@ -137,7 +122,7 @@ void MobilityBase::initializePosition()
 void MobilityBase::setInitialPosition()
 {
     // reading the coordinates from omnetpp.ini makes predefined scenarios a lot easier
-    auto coordinateSystem = getModuleFromPar<IGeographicCoordinateSystem>(par("coordinateSystemModule"), this, false);
+    auto coordinateSystem = findModuleFromPar<IGeographicCoordinateSystem>(par("coordinateSystemModule"), this);
     if (subjectModule != nullptr && hasPar("initFromDisplayString") && par("initFromDisplayString")) {
         const char *s = subjectModule->getDisplayString().getTagArg("p", 2);
         if (s && *s)
@@ -402,7 +387,7 @@ void MobilityBase::handleIfOutside(BorderPolicy policy, Coord& targetPosition, C
             break;
 
         default:
-            throw cRuntimeError("Invalid outside policy=%d in module", policy, getFullPath().c_str());
+            throw cRuntimeError("Invalid outside policy=%d in module '%s'", policy, getFullPath().c_str());
     }
 }
 

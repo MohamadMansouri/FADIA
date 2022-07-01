@@ -1,22 +1,14 @@
 //
 // Copyright (C) 2016 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see http://www.gnu.org/licenses/.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-#include "inet/linklayer/ieee80211/mac/contract/IRtsPolicy.h"
+
 #include "inet/linklayer/ieee80211/mac/originator/QosRecoveryProcedure.h"
+
+#include "inet/common/stlutils.h"
+#include "inet/linklayer/ieee80211/mac/contract/IRtsPolicy.h"
 
 namespace inet {
 namespace ieee80211 {
@@ -74,8 +66,8 @@ void QosRecoveryProcedure::incrementStationLrc()
 
 void QosRecoveryProcedure::incrementCounter(const Ptr<const Ieee80211DataHeader>& header, std::map<std::pair<Tid, SequenceControlField>, int>& retryCounter)
 {
-    auto id = std::make_pair(header->getTid(), SequenceControlField(header->getSequenceNumber(), header->getFragmentNumber()));
-    if (retryCounter.find(id) != retryCounter.end())
+    auto id = std::make_pair((Tid)header->getTid(), SequenceControlField(header->getSequenceNumber().get(), header->getFragmentNumber()));
+    if (containsKey(retryCounter, id))
         retryCounter[id]++;
     else
         retryCounter[id] = 1;
@@ -121,7 +113,7 @@ void QosRecoveryProcedure::blockAckFrameReceived()
 //
 void QosRecoveryProcedure::ackFrameReceived(Packet *packet, const Ptr<const Ieee80211DataHeader>& ackedHeader)
 {
-    auto id = std::make_pair(ackedHeader->getTid(), SequenceControlField(ackedHeader->getSequenceNumber(), ackedHeader->getFragmentNumber()));
+    auto id = std::make_pair(ackedHeader->getTid(), SequenceControlField(ackedHeader->getSequenceNumber().get(), ackedHeader->getFragmentNumber()));
     if (packet->getByteLength() >= rtsThreshold) {
         resetStationLrc();
         auto it = longRetryCounter.find(id);
@@ -134,10 +126,10 @@ void QosRecoveryProcedure::ackFrameReceived(Packet *packet, const Ptr<const Ieee
         if (it != shortRetryCounter.end())
             shortRetryCounter.erase(it);
     }
-//
-// The CW shall be reset to aCWmin after every successful attempt to transmit a frame containing
-// all or part of an MSDU or MMPDU
-//
+    //
+    // The CW shall be reset to aCWmin after every successful attempt to transmit a frame containing
+    // all or part of an MSDU or MMPDU
+    //
     resetContentionWindow();
 }
 
@@ -148,7 +140,7 @@ void QosRecoveryProcedure::ackFrameReceived(Packet *packet, const Ptr<const Ieee
 void QosRecoveryProcedure::retryLimitReached(Packet *packet, const Ptr<const Ieee80211DataHeader>& header)
 {
     EV_WARN << "Retry limit reached for " << *packet << ".\n";
-    auto id = std::make_pair(header->getTid(), SequenceControlField(header->getSequenceNumber(), header->getFragmentNumber()));
+    auto id = std::make_pair(header->getTid(), SequenceControlField(header->getSequenceNumber().get(), header->getFragmentNumber()));
     if (packet->getByteLength() >= rtsThreshold) {
         auto it = longRetryCounter.find(id);
         if (it != longRetryCounter.end())
@@ -239,12 +231,12 @@ bool QosRecoveryProcedure::isRtsFrameRetryLimitReached(Packet *packet, const Ptr
 
 int QosRecoveryProcedure::getRc(Packet *packet, const Ptr<const Ieee80211DataHeader>& header, std::map<std::pair<Tid, SequenceControlField>, int>& retryCounter)
 {
-    auto id = std::make_pair(header->getTid(), SequenceControlField(header->getSequenceNumber(), header->getFragmentNumber()));
+    auto id = std::make_pair(header->getTid(), SequenceControlField(header->getSequenceNumber().get(), header->getFragmentNumber()));
     auto it = retryCounter.find(id);
     if (it != retryCounter.end())
         return it->second;
     else
-        throw cRuntimeError("The retry counter entry doesn't exist for message id: %d", packet->getId());
+        throw cRuntimeError("The retry counter entry doesn't exist for message id: %" PRId64, packet->getId());
 }
 
 bool QosRecoveryProcedure::isMulticastFrame(Packet *packet, const Ptr<const Ieee80211MacHeader>& header)
@@ -256,3 +248,4 @@ bool QosRecoveryProcedure::isMulticastFrame(Packet *packet, const Ptr<const Ieee
 
 } /* namespace ieee80211 */
 } /* namespace inet */
+

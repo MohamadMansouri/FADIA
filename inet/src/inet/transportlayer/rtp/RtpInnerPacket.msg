@@ -1,20 +1,8 @@
 //
-// Copyright (C) 2008 Andras Varga
-// Copyright (C) 2001 Matthias Oppitz
+// Copyright (C) 2008 OpenSim Ltd.
+// Copyright (C) 2001 Matthias Oppitz <Matthias.Oppitz@gmx.de>
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
 import inet.common.INETDefs;
@@ -81,7 +69,7 @@ packet RtpInnerPacket
     int port = PORT_UNDEF;
 
     // The SSRC identifier
-    uint32 ssrc;
+    uint32_t ssrc;
 
     // The payload type
     int payloadType;
@@ -136,20 +124,20 @@ cplusplus(RtpInnerPacket) {{
      * for incoming messages from other session participants. It informs the rtp
      * module which later informs the rtp application about the ssrc identifier
      */
-    virtual void setRtcpInitializedPkt(uint32 ssrc);
+    virtual void setRtcpInitializedPkt(uint32_t ssrc);
 
-    virtual void setCreateSenderModulePkt(uint32 ssrc, int payloadType, const char *fileName);
-    virtual void setSenderModuleCreatedPkt(uint32 ssrc);
+    virtual void setCreateSenderModulePkt(uint32_t ssrc, int payloadType, const char *fileName);
+    virtual void setSenderModuleCreatedPkt(uint32_t ssrc);
 
-    virtual void setDeleteSenderModulePkt(uint32 ssrc);
-    virtual void setSenderModuleDeletedPkt(uint32 ssrc);
+    virtual void setDeleteSenderModulePkt(uint32_t ssrc);
+    virtual void setSenderModuleDeletedPkt(uint32_t ssrc);
 
-    virtual void setInitializeSenderModulePkt(uint32 ssrc, const char *fileName, int mtu);
-    virtual void setSenderModuleInitializedPkt(uint32 ssrc, int payloadType, int clockRate,
+    virtual void setInitializeSenderModulePkt(uint32_t ssrc, const char *fileName, int mtu);
+    virtual void setSenderModuleInitializedPkt(uint32_t ssrc, int payloadType, int clockRate,
             int timeStampBase, int sequenceNumberBase);
 
-    virtual void setSenderModuleControlPkt(uint32 ssrc, RtpSenderControlMessage *msg);
-    virtual void setSenderModuleStatusPkt(uint32 ssrc, RtpSenderStatusMessage *msg);
+    virtual void setSenderModuleControlPkt(uint32_t ssrc, RtpSenderControlMessage *msg);
+    virtual void setSenderModuleStatusPkt(uint32_t ssrc, RtpSenderStatusMessage *msg);
 
     /**
      * Called by the rtp module to inform the rtcp module that the session
@@ -175,4 +163,3 @@ cplusplus(RtpInnerPacket) {{
      */
     virtual void setDataInPkt(Packet *packet, Ipv4Address address, int port);
 }}
-

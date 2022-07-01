@@ -1,3 +1,10 @@
+//
+// Copyright (C) 2001 Matthias Oppitz <Matthias.Oppitz@gmx.de>
+// Copyright (C) 2017 OpenSim Ltd.
+//
+// SPDX-License-Identifier: LGPL-3.0-or-later
+//
+
 #include <iostream>
 #include <sstream>
 
@@ -12,7 +19,7 @@ void RtcpPacket::paddingAndSetLength()
     handleChange();
     int64_t chunkBits = getChunkLength().get();
     rtcpLength = (chunkBits + 31) / 32 - 1;
-    setChunkLength(b((rtcpLength+1) * 32));
+    setChunkLength(b((rtcpLength + 1) * 32));
 }
 
 void RtcpReceiverReportPacket::addReceptionReport(ReceptionReport *report)

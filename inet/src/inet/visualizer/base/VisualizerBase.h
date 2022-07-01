@@ -1,19 +1,9 @@
 //
-// Copyright (C) OpenSim Ltd.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 #ifndef __INET_VISUALIZERBASE_H
 #define __INET_VISUALIZERBASE_H
@@ -23,7 +13,7 @@
 #include "inet/common/geometry/common/Coord.h"
 #include "inet/common/geometry/common/Quaternion.h"
 #include "inet/common/packet/chunk/Chunk.h"
-#include "inet/networklayer/common/InterfaceEntry.h"
+#include "inet/networklayer/common/NetworkInterface.h"
 
 namespace inet {
 
@@ -44,12 +34,12 @@ class INET_API VisualizerBase : public cSimpleModule
     virtual Coord getContactPosition(const cModule *networkNode, const Coord& fromPosition, const char *contactMode, double contactSpacing) const;
     virtual Quaternion getOrientation(const cModule *networkNode) const;
 
-    virtual void mapChunkIds(const Ptr<const Chunk>& chunk, const std::function<void(int)>& thunk) const;
+    virtual void mapChunks(const Ptr<const Chunk>& chunk, const std::function<void(const Ptr<const Chunk>&, int)>& thunk) const;
 };
 
 } // namespace visualizer
 
 } // namespace inet
 
-#endif // ifndef __INET_VISUALIZERBASE_H
+#endif
 

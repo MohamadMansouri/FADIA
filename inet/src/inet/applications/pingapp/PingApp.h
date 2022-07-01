@@ -1,25 +1,12 @@
 //
 // Copyright (C) 2001, 2003, 2004 Johnny Lai, Monash University, Melbourne, Australia
-// Copyright (C) 2005 Andras Varga
+// Copyright (C) 2005 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
 #ifndef __INET_PINGAPP_H
 #define __INET_PINGAPP_H
-
-#include "inet/common/INETDefs.h"
 
 #include "inet/applications/base/ApplicationBase.h"
 #include "inet/common/Protocol.h"
@@ -63,14 +50,14 @@ class INET_API PingApp : public ApplicationBase, public INetworkSocket::ICallbac
 
     // state
     SocketMap socketMap;
-    INetworkSocket *currentSocket = nullptr;   // current socket stored in socketMap, too
-    int pid = 0;    // to determine which hosts are associated with the responses
-    cMessage *timer = nullptr;    // to schedule the next Ping request
-    NodeStatus *nodeStatus = nullptr;    // lifecycle
-    simtime_t lastStart;    // the last time when the app was started (lifecycle)
-    long sendSeqNo = 0;    // to match the response with the request that caused the response
+    INetworkSocket *currentSocket = nullptr; // current socket stored in socketMap, too
+    int pid = 0; // to determine which hosts are associated with the responses
+    cMessage *timer = nullptr; // to schedule the next Ping request
+    NodeStatus *nodeStatus = nullptr; // lifecycle
+    simtime_t lastStart; // the last time when the app was started (lifecycle)
+    long sendSeqNo = 0; // to match the response with the request that caused the response
     long expectedReplySeqNo = 0;
-    simtime_t sendTimeHistory[PING_HISTORY_SIZE];    // times of when the requests were sent
+    simtime_t sendTimeHistory[PING_HISTORY_SIZE]; // times of when the requests were sent
     bool pongReceived[PING_HISTORY_SIZE];
 
     static const std::map<const Protocol *, const Protocol *> l3Echo;
@@ -82,11 +69,11 @@ class INET_API PingApp : public ApplicationBase, public INetworkSocket::ICallbac
     static simsignal_t numOutOfOrderArrivalsSignal;
     static simsignal_t pingTxSeqSignal;
     static simsignal_t pingRxSeqSignal;
-    long sentCount = 0;    // number of sent Ping requests
-    long lossCount = 0;    // number of lost requests
-    long outOfOrderArrivalCount = 0;    // number of responses which arrived too late
-    long numPongs = 0;    // number of received Ping requests
-    long numDuplicatedPongs = 0;    // number of duplicated Ping responses
+    long sentCount = 0; // number of sent Ping requests
+    long lossCount = 0; // number of lost requests
+    long outOfOrderArrivalCount = 0; // number of responses which arrived too late
+    long numPongs = 0; // number of received Ping requests
+    long numDuplicatedPongs = 0; // number of duplicated Ping responses
 
   protected:
     virtual void initialize(int stage) override;
@@ -111,9 +98,10 @@ class INET_API PingApp : public ApplicationBase, public INetworkSocket::ICallbac
     virtual void handleStopOperation(LifecycleOperation *operation) override;
     virtual void handleCrashOperation(LifecycleOperation *operation) override;
 
-    //INetworkSocket::ICallback:
+    // INetworkSocket::ICallback:
     virtual void socketDataArrived(INetworkSocket *socket, Packet *packet) override;
     virtual void socketClosed(INetworkSocket *socket) override;
+
   public:
     PingApp();
     virtual ~PingApp();
@@ -123,3 +111,4 @@ class INET_API PingApp : public ApplicationBase, public INetworkSocket::ICallbac
 } // namespace inet
 
 #endif
+

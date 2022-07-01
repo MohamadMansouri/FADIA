@@ -1,23 +1,13 @@
 //
 // Copyright (C) 2010 Helene Lageber
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
+#include "inet/routing/bgpv4/Bgp.h"
 
 #include "inet/common/ModuleAccess.h"
 #include "inet/common/lifecycle/NodeStatus.h"
-#include "inet/routing/bgpv4/Bgp.h"
 #include "inet/routing/bgpv4/BgpConfigReader.h"
 #include "inet/routing/bgpv4/BgpSession.h"
 
@@ -41,8 +31,8 @@ void Bgp::initialize(int stage)
     cSimpleModule::initialize(stage);
 
     if (stage == INITSTAGE_LOCAL) {
-        ift = getModuleFromPar<IInterfaceTable>(par("interfaceTableModule"), this);
-        rt = getModuleFromPar<IIpv4RoutingTable>(par("routingTableModule"), this);
+        ift.reference(this, "interfaceTableModule", true);
+        rt.reference(this, "routingTableModule", true);
 
         startupTimer = new cMessage("BGP-startup");
     }
@@ -55,15 +45,14 @@ void Bgp::initialize(int stage)
             if (startupTime == 0)
                 createBgpRouter();
             else
-                scheduleAt(simTime() + startupTime, startupTimer);
+                scheduleAfter(startupTime, startupTimer);
         }
     }
 }
 
 void Bgp::finish()
 {
-    if (!isUp)
-    {
+    if (!isUp) {
         EV_ERROR << "Protocol is turned off. \n";
         return;
     }
@@ -73,8 +62,7 @@ void Bgp::finish()
 
 void Bgp::handleMessage(cMessage *msg)
 {
-    if (!isUp)
-    {
+    if (!isUp) {
         if (msg->isSelfMessage())
             throw cRuntimeError("Model error: self msg '%s' received when protocol is down", msg->getName());
         EV_ERROR << "Protocol is turned off, dropping '" << msg->getName() << "' message\n";
@@ -82,11 +70,11 @@ void Bgp::handleMessage(cMessage *msg)
         return;
     }
 
-    if(msg == startupTimer)
+    if (msg == startupTimer)
         createBgpRouter();
-    else if (msg->isSelfMessage())    // BGP level
+    else if (msg->isSelfMessage()) // BGP level
         handleTimer(msg);
-    else if (!strcmp(msg->getArrivalGate()->getName(), "socketIn"))    // TCP level
+    else if (!strcmp(msg->getArrivalGate()->getName(), "socketIn")) // TCP level
         bgpRouter->processMessageFromTCP(msg);
     else
         delete msg;

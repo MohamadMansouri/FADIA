@@ -1,20 +1,13 @@
 //
-// Copyright (C) 2006 Andras Varga
+// Copyright (C) 2006 OpenSim Ltd.
 //
-// This library is free software, you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation;
-// either version 2 of the License, or any later version.
-// The library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-// See the GNU Lesser General Public License for more details.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
 package inet.examples.voipstream.VoIPStreamTrafficTest;
 
 import inet.networklayer.configurator.ipv4.Ipv4NetworkConfigurator;
-import inet.node.ethernet.EtherSwitch;
+import inet.node.ethernet.EthernetSwitch;
 import inet.node.inet.Router;
 import inet.node.inet.StandardHost;
 import ned.DatarateChannel;
@@ -42,7 +35,7 @@ network VoIPStreamTrafficTest
             parameters:
                 @display("p=54,133;i=device/laptop_l");
         }
-        switch: EtherSwitch {
+        switch: EthernetSwitch {
             parameters:
                 @display("p=190,224;i=device/switch");
         }
@@ -69,7 +62,7 @@ network VoIPStreamTrafficTest
         host2: StandardHost {
             @display("p=589,332");
         }
-        switch2: EtherSwitch {
+        switch2: EthernetSwitch {
             @display("p=473,224");
         }
     connections:

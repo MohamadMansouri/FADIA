@@ -1,24 +1,13 @@
 //
-// Copyright (C) 2016 OpenSim Ltd
+// Copyright (C) 2016 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 #ifndef __INET_PLOTFIGURE_H
 #define __INET_PLOTFIGURE_H
 
-#include "inet/common/INETDefs.h"
 #include "inet/common/INETMath.h"
 #include "inet/common/figures/IIndicatorFigure.h"
 
@@ -26,8 +15,7 @@ namespace inet {
 
 class INET_API PlotFigure : public cGroupFigure, public inet::IIndicatorFigure
 {
-    struct Tick
-    {
+    struct Tick {
         cLineFigure *tick;
         cLineFigure *dashLine;
         cLabelFigure *number;
@@ -70,7 +58,7 @@ class INET_API PlotFigure : public cGroupFigure, public inet::IIndicatorFigure
 
   public:
     PlotFigure(const char *name = nullptr);
-    virtual ~PlotFigure() {};
+    virtual ~PlotFigure() {}
 
     virtual void parse(cProperty *property) override;
     const char **getAllowedPropertyKeys() const override;
@@ -84,7 +72,7 @@ class INET_API PlotFigure : public cGroupFigure, public inet::IIndicatorFigure
     virtual void setValue(int series, double x, double y);
     virtual void clearValues(int series) { seriesValues[series].clear(); invalidPlot = true; }
 
-    //getters and setters
+    // getters and setters
     const Point getPlotSize() const { return backgroundFigure->getBounds().getSize(); }
     void setPlotSize(const Point& p);
 
@@ -124,14 +112,14 @@ class INET_API PlotFigure : public cGroupFigure, public inet::IIndicatorFigure
     void setXValueFormat(const char *format) { xValueFormat = format; }
     void setYValueFormat(const char *format) { yValueFormat = format; }
 
-    const char* getXAxisLabel() const { return xAxisLabelFigure->getText(); }
-    void setXAxisLabel(const char* text) { xAxisLabelFigure->setText(text); }
+    const char *getXAxisLabel() const { return xAxisLabelFigure->getText(); }
+    void setXAxisLabel(const char *text) { xAxisLabelFigure->setText(text); }
 
-    const char* getYAxisLabel() const { return yAxisLabelFigure->getText(); }
-    void setYAxisLabel(const char* text) { yAxisLabelFigure->setText(text); }
+    const char *getYAxisLabel() const { return yAxisLabelFigure->getText(); }
+    void setYAxisLabel(const char *text) { yAxisLabelFigure->setText(text); }
 
-    const char* getLabel() const { return labelFigure->getText(); }
-    void setLabel(const char* text) { labelFigure->setText(text); }
+    const char *getLabel() const { return labelFigure->getText(); }
+    void setLabel(const char *text) { labelFigure->setText(text); }
 
     int getLabelOffset() const;
     void setLabelOffset(int offset);
@@ -145,5 +133,5 @@ class INET_API PlotFigure : public cGroupFigure, public inet::IIndicatorFigure
 
 } // namespace inet
 
-#endif // ifndef __INET_PLOTFIGURE_H
+#endif
 

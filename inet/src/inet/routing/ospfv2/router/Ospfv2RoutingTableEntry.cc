@@ -1,18 +1,7 @@
 //
 // Copyright (C) 2006 Andras Babos and Andras Varga
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
 #include "inet/routing/ospfv2/router/Ospfv2RoutingTableEntry.h"
@@ -21,10 +10,10 @@ namespace inet {
 namespace ospfv2 {
 
 Ospfv2RoutingTableEntry::Ospfv2RoutingTableEntry(IInterfaceTable *_ift) :
-        ift(_ift),
-        destinationType(Ospfv2RoutingTableEntry::NETWORK_DESTINATION),
-        area(BACKBONE_AREAID),
-        pathType(Ospfv2RoutingTableEntry::INTRAAREA)
+    ift(_ift),
+    destinationType(Ospfv2RoutingTableEntry::NETWORK_DESTINATION),
+    area(BACKBONE_AREAID),
+    pathType(Ospfv2RoutingTableEntry::INTRAAREA)
 {
     setNetmask(Ipv4Address::ALLONES_ADDRESS);
     setSourceType(IRoute::OSPF);
@@ -32,15 +21,15 @@ Ospfv2RoutingTableEntry::Ospfv2RoutingTableEntry(IInterfaceTable *_ift) :
 }
 
 Ospfv2RoutingTableEntry::Ospfv2RoutingTableEntry(const Ospfv2RoutingTableEntry& entry) :
-        ift(entry.ift),
-        destinationType(entry.destinationType),
-        optionalCapabilities(entry.optionalCapabilities),
-        area(entry.area),
-        pathType(entry.pathType),
-        cost(entry.cost),
-        type2Cost(entry.type2Cost),
-        linkStateOrigin(entry.linkStateOrigin),
-        nextHops(entry.nextHops)
+    ift(entry.ift),
+    destinationType(entry.destinationType),
+    optionalCapabilities(entry.optionalCapabilities),
+    area(entry.area),
+    pathType(entry.pathType),
+    cost(entry.cost),
+    type2Cost(entry.type2Cost),
+    linkStateOrigin(entry.linkStateOrigin),
+    nextHops(entry.nextHops)
 {
     setDestination(entry.getDestination());
     setNetmask(entry.getNetmask());
@@ -54,10 +43,10 @@ Ospfv2RoutingTableEntry::Ospfv2RoutingTableEntry(const Ospfv2RoutingTableEntry& 
 void Ospfv2RoutingTableEntry::addNextHop(NextHop hop)
 {
     if (nextHops.size() == 0) {
-        InterfaceEntry *routingInterface = ift->getInterfaceById(hop.ifIndex);
+        NetworkInterface *routingInterface = ift->getInterfaceById(hop.ifIndex);
 
         setInterface(routingInterface);
-        // TODO: this used to be commented out, but it seems we need it
+        // TODO this used to be commented out, but it seems we need it
         // otherwise gateways will never be filled in and gateway is needed for broadcast networks
         setGateway(hop.hopAddress);
     }
@@ -115,7 +104,7 @@ std::ostream& operator<<(std::ostream& out, const Ospfv2RoutingTableEntry& entry
             out << gateway << "  ";
     }
     out << "cost: " << entry.getCost() << " ";
-    if(entry.getPathType() == Ospfv2RoutingTableEntry::TYPE2_EXTERNAL)
+    if (entry.getPathType() == Ospfv2RoutingTableEntry::TYPE2_EXTERNAL)
         out << "type2Cost: " << entry.getType2Cost() << " ";
     out << "if: " << entry.getInterfaceName() << " ";
     out << "destType: " << Ospfv2RoutingTableEntry::getDestinationTypeString(entry.getDestinationType());
@@ -145,7 +134,7 @@ std::string Ospfv2RoutingTableEntry::str() const
         out << "*  ";
     else
         out << getGateway() << "  ";
-    if(getRoutingTable() && getRoutingTable()->isAdminDistEnabled())
+    if (getRoutingTable() && getRoutingTable()->isAdminDistEnabled())
         out << "AD:" << getAdminDist() << "  ";
     out << "metric:" << getMetric() << "  ";
     out << "if:";
@@ -155,8 +144,8 @@ std::string Ospfv2RoutingTableEntry::str() const
         out << getInterfaceName();
 
     out << " destType:" << Ospfv2RoutingTableEntry::getDestinationTypeString(destinationType)
-            << " pathType:" << Ospfv2RoutingTableEntry::getPathTypeString(pathType)
-            << " area:" << area.str(false);
+        << " pathType:" << Ospfv2RoutingTableEntry::getPathTypeString(pathType)
+        << " area:" << area.str(false);
 
     return out.str();
 }

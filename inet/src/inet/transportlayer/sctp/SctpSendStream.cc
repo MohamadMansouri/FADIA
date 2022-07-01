@@ -2,27 +2,18 @@
 // Copyright (C) 2008 Irene Ruengeler
 // Copyright (C) 2010-2012 Thomas Dreibholz
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-#include "inet/transportlayer/contract/sctp/SctpCommand_m.h"
+
 #include "inet/transportlayer/sctp/SctpSendStream.h"
+
+#include "inet/transportlayer/contract/sctp/SctpCommand_m.h"
 
 namespace inet {
 namespace sctp {
 
-SctpSendStream::SctpSendStream(SctpAssociation *assoc_, const uint16 id)
+SctpSendStream::SctpSendStream(SctpAssociation *assoc_, const uint16_t id)
 {
     assoc = assoc_;
     streamId = id;
@@ -47,7 +38,7 @@ void SctpSendStream::deleteQueue()
 {
     SctpDataMsg *datMsg;
     SctpSimpleMessage *smsg;
-    int32 count = streamQ->getLength();
+    int32_t count = streamQ->getLength();
     while (!streamQ->isEmpty()) {
         datMsg = check_and_cast<SctpDataMsg *>(streamQ->pop());
         smsg = check_and_cast<SctpSimpleMessage *>(datMsg->decapsulate());
@@ -65,11 +56,11 @@ void SctpSendStream::deleteQueue()
     delete uStreamQ;
 }
 
-uint32 SctpSendStream::getNextStreamSeqNum() {
+uint32_t SctpSendStream::getNextStreamSeqNum() {
     return nextStreamSeqNum;
 };
 
-void SctpSendStream::setNextStreamSeqNum(const uint16 num) {
+void SctpSendStream::setNextStreamSeqNum(const uint16_t num) {
     nextStreamSeqNum = num;
 };
 

@@ -1,26 +1,15 @@
 //
 // Copyright (C) 2001, 2003, 2004 Johnny Lai, Monash University, Melbourne, Australia
-// Copyright (C) 2005 Andras Varga
+// Copyright (C) 2005 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
+#include "inet/applications/pingapp/PingApp.h"
 
 #include <iostream>
 
-#include "inet/applications/pingapp/PingApp.h"
 #include "inet/applications/pingapp/PingApp_m.h"
-
 #include "inet/common/ModuleAccess.h"
 #include "inet/common/Protocol.h"
 #include "inet/common/ProtocolGroup.h"
@@ -30,28 +19,27 @@
 #include "inet/common/packet/chunk/ByteCountChunk.h"
 #include "inet/networklayer/common/EchoPacket_m.h"
 #include "inet/networklayer/common/HopLimitTag_m.h"
-#include "inet/networklayer/common/InterfaceEntry.h"
 #include "inet/networklayer/common/IpProtocolId_m.h"
 #include "inet/networklayer/common/L3AddressResolver.h"
 #include "inet/networklayer/common/L3AddressTag_m.h"
+#include "inet/networklayer/common/NetworkInterface.h"
 #include "inet/networklayer/contract/IInterfaceTable.h"
 #include "inet/networklayer/contract/IL3AddressType.h"
 #include "inet/networklayer/contract/L3Socket.h"
 #include "inet/networklayer/contract/ipv4/Ipv4Socket.h"
 #include "inet/networklayer/contract/ipv6/Ipv6Socket.h"
 
-#ifdef WITH_IPv4
+#ifdef INET_WITH_IPv4
 #include "inet/networklayer/ipv4/Icmp.h"
 #include "inet/networklayer/ipv4/IcmpHeader.h"
 #include "inet/networklayer/ipv4/Ipv4InterfaceData.h"
-#endif // ifdef WITH_IPv4
+#endif // ifdef INET_WITH_IPv4
 
-#ifdef WITH_IPv6
+#ifdef INET_WITH_IPv6
 #include "inet/networklayer/icmpv6/Icmpv6.h"
 #include "inet/networklayer/icmpv6/Icmpv6Header_m.h"
 #include "inet/networklayer/ipv6/Ipv6InterfaceData.h"
-#endif // ifdef WITH_IPv6
-
+#endif // ifdef INET_WITH_IPv6
 
 namespace inet {
 
@@ -183,7 +171,7 @@ void PingApp::handleSelfMessage(cMessage *msg)
         }
         const Protocol *icmp = l3Echo.at(networkProtocol);
 
-        for (auto socket: socketMap.getMap()) {
+        for (auto socket : socketMap.getMap()) {
             socket.second->close();
         }
         currentSocket = nullptr;
@@ -236,7 +224,7 @@ void PingApp::handleMessageWhenUp(cMessage *msg)
 
 void PingApp::socketDataArrived(INetworkSocket *socket, Packet *packet)
 {
-#ifdef WITH_IPv4
+#ifdef INET_WITH_IPv4
     if (packet->getTag<PacketProtocolTag>()->getProtocol() == &Protocol::icmpv4) {
         const auto& icmpHeader = packet->popAtFront<IcmpHeader>();
         if (icmpHeader->getType() == ICMP_ECHO_REPLY) {
@@ -250,7 +238,7 @@ void PingApp::socketDataArrived(INetworkSocket *socket, Packet *packet)
     }
     else
 #endif
-#ifdef WITH_IPv6
+#ifdef INET_WITH_IPv6
     if (packet->getTag<PacketProtocolTag>()->getProtocol() == &Protocol::icmpv6) {
         const auto& icmpHeader = packet->popAtFront<Icmpv6Header>();
         if (icmpHeader->getType() == ICMPv6_ECHO_REPLY) {
@@ -264,7 +252,7 @@ void PingApp::socketDataArrived(INetworkSocket *socket, Packet *packet)
     }
     else
 #endif
-#ifdef WITH_NEXTHOP
+#ifdef INET_WITH_NEXTHOP
     if (packet->getTag<PacketProtocolTag>()->getProtocol() == &Protocol::echo) {
         const auto& icmpHeader = packet->popAtFront<EchoPacket>();
         if (icmpHeader->getType() == ECHO_PROTOCOL_REPLY) {
@@ -325,10 +313,10 @@ void PingApp::handleStopOperation(LifecycleOperation *operation)
     destAddrIdx = -1;
     cancelNextPingRequest();
     currentSocket = nullptr;
-    // TODO: close sockets
-    // TODO: remove getMap()
+    // TODO close sockets
+    // TODO remove getMap()
     if (socketMap.size() > 0) {
-        for (auto socket: socketMap.getMap())
+        for (auto socket : socketMap.getMap())
             socket.second->close();
     }
     delayActiveOperationFinish(par("stopOperationTimeout"));
@@ -344,10 +332,10 @@ void PingApp::handleCrashOperation(LifecycleOperation *operation)
     destAddrIdx = -1;
     cancelNextPingRequest();
     currentSocket = nullptr;
-    // TODO: remove check?
+    // TODO remove check?
     if (operation->getRootModule() != getContainingNode(this)) {
-        // TODO: destroy sockets
-        for (auto socket: socketMap.getMap())
+        // TODO destroy sockets
+        for (auto socket : socketMap.getMap())
             socket.second->destroy();
         socketMap.deleteSockets();
     }
@@ -389,7 +377,7 @@ void PingApp::sendPingRequest()
 
     switch (destAddr.getType()) {
         case L3Address::IPv4: {
-#ifdef WITH_IPv4
+#ifdef INET_WITH_IPv4
             const auto& request = makeShared<IcmpEchoRequest>();
             request->setIdentifier(pid);
             request->setSeqNumber(sendSeqNo);
@@ -403,7 +391,7 @@ void PingApp::sendPingRequest()
 #endif
         }
         case L3Address::IPv6: {
-#ifdef WITH_IPv6
+#ifdef INET_WITH_IPv6
             const auto& request = makeShared<Icmpv6EchoRequestMsg>();
             request->setIdentifier(pid);
             request->setSeqNumber(sendSeqNo);
@@ -418,14 +406,14 @@ void PingApp::sendPingRequest()
         }
         case L3Address::MODULEID:
         case L3Address::MODULEPATH: {
-#ifdef WITH_NEXTHOP
+#ifdef INET_WITH_NEXTHOP
             const auto& request = makeShared<EchoPacket>();
             request->setChunkLength(B(8));
             request->setType(ECHO_PROTOCOL_REQUEST);
             request->setIdentifier(pid);
             request->setSeqNumber(sendSeqNo);
             outPacket->insertAtBack(payload);
-            // insertCrc(crcMode, request, outPacket);
+//            insertCrc(crcMode, request, outPacket);
             outPacket->insertAtFront(request);
             outPacket->addTag<PacketProtocolTag>()->setProtocol(&Protocol::echo);
             break;
@@ -464,8 +452,8 @@ void PingApp::processPingResponse(int originatorId, int seqNo, Packet *packet)
 
     // get src, hopCount etc from packet, and print them
     L3Address src = packet->getTag<L3AddressInd>()->getSrcAddress();
-    //L3Address dest = msg->getTag<L3AddressInd>()->getDestination();
-    auto msgHopCountTag = packet->findTag<HopLimitInd>();
+//    L3Address dest = msg->getTag<L3AddressInd>()->getDestination();
+    auto& msgHopCountTag = packet->findTag<HopLimitInd>();
     int msgHopCount = msgHopCountTag ? msgHopCountTag->getHopLimit() : -1;
 
     // calculate the RTT time by looking up the the send time of the packet
@@ -525,8 +513,8 @@ void PingApp::countPingResponse(int bytes, long seqNo, simtime_t rtt, bool isDup
         // expect sequence numbers to continue from here
         expectedReplySeqNo = seqNo + 1;
     }
-    else {    // seqNo < expectedReplySeqNo
-              // ping reply arrived too late: count as out-of-order arrival (not loss after all)
+    else { // seqNo < expectedReplySeqNo
+           // ping reply arrived too late: count as out-of-order arrival (not loss after all)
         EV_DETAIL << "Arrived out of order (too late)\n";
         outOfOrderArrivalCount++;
         if (!isDup && rtt > SIMTIME_ZERO)
@@ -542,22 +530,21 @@ std::vector<L3Address> PingApp::getAllAddresses()
 
     int lastId = getSimulation()->getLastComponentId();
 
-    for (int i = 0; i <= lastId; i++)
-    {
+    for (int i = 0; i <= lastId; i++) {
         IInterfaceTable *ift = dynamic_cast<IInterfaceTable *>(getSimulation()->getModule(i));
         if (ift) {
             for (int j = 0; j < ift->getNumInterfaces(); j++) {
-                InterfaceEntry *ie = ift->getInterface(j);
+                NetworkInterface *ie = ift->getInterface(j);
                 if (ie && !ie->isLoopback()) {
-#ifdef WITH_IPv4
+#ifdef INET_WITH_IPv4
                     auto ipv4Data = ie->findProtocolData<Ipv4InterfaceData>();
                     if (ipv4Data != nullptr) {
                         Ipv4Address address = ipv4Data->getIPAddress();
                         if (!address.isUnspecified())
                             result.push_back(L3Address(address));
                     }
-#endif // ifdef WITH_IPv4
-#ifdef WITH_IPv6
+#endif // ifdef INET_WITH_IPv4
+#ifdef INET_WITH_IPv6
                     auto ipv6Data = ie->findProtocolData<Ipv6InterfaceData>();
                     if (ipv6Data != nullptr) {
                         for (int k = 0; k < ipv6Data->getNumAddresses(); k++) {
@@ -566,7 +553,7 @@ std::vector<L3Address> PingApp::getAllAddresses()
                                 result.push_back(L3Address(address));
                         }
                     }
-#endif // ifdef WITH_IPv6
+#endif // ifdef INET_WITH_IPv6
                 }
             }
         }

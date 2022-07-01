@@ -1,18 +1,7 @@
 //
 // Copyright (C) 2006 Andras Babos and Andras Varga
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
 #ifndef __INET_OSPFV2CONFIGREADER_H
@@ -20,7 +9,6 @@
 
 #include <vector>
 
-#include "inet/common/INETDefs.h"
 #include "inet/networklayer/contract/IInterfaceTable.h"
 #include "inet/networklayer/ipv4/IIpv4RoutingTable.h"
 #include "inet/routing/ospfv2/Ospfv2Packet_m.h"
@@ -37,8 +25,8 @@ class INET_API Ospfv2ConfigReader
 {
   private:
     cModule *ospfModule = nullptr;
-    IInterfaceTable *ift = nullptr;    // provides access to the interface table
-    Router *ospfRouter = nullptr;    // data structure to fill in
+    IInterfaceTable *ift = nullptr; // provides access to the interface table
+    Router *ospfRouter = nullptr; // data structure to fill in
 
   private:
     cPar& par(const char *name) const { return ospfModule->par(name); }
@@ -47,12 +35,12 @@ class INET_API Ospfv2ConfigReader
     const char *getStrAttrOrPar(const cXMLElement& ifConfig, const char *name) const;
 
     /**
-     * Search an InterfaceEntry in IInterfaceTable by interface name or toward module name
-     * an returns the InterfaceEntry pointer or throws an error.
+     * Search an NetworkInterface in IInterfaceTable by interface name or toward module name
+     * an returns the NetworkInterface pointer or throws an error.
      */
-    std::vector<InterfaceEntry *> getInterfaceByXMLAttributesOf(const cXMLElement& ifConfig);
+    std::vector<NetworkInterface *> getInterfaceByXMLAttributesOf(const cXMLElement& ifConfig);
 
-    cXMLElement * findMatchingConfig(const cXMLElementList& routerConfig, const InterfaceEntry& intf);
+    cXMLElement *findMatchingConfig(const cXMLElementList& routerConfig, const NetworkInterface& intf);
 
     /**
      * Loads a list of OSPF Areas connected to this router from the config XML.
@@ -76,7 +64,7 @@ class INET_API Ospfv2ConfigReader
      * Loads OSPF configuration information for a router interface.
      * Handles POINTTOPOINT, BROADCAST, NBMA and POINTTOMULTIPOINT interfaces.
      */
-    void loadInterfaceParameters(const cXMLElement& ifConfig, InterfaceEntry& intf);
+    void loadInterfaceParameters(const cXMLElement& ifConfig, NetworkInterface& intf);
 
     /**
      * Loads the configuration information of a route outside of the Autonomous System (external route).
@@ -91,7 +79,7 @@ class INET_API Ospfv2ConfigReader
     /**
      * Loads the configuration of a loopback interface.
      */
-    void loadLoopbackParameters(const cXMLElement& loConfig, InterfaceEntry& intf);
+    void loadLoopbackParameters(const cXMLElement& loConfig, NetworkInterface& intf);
 
     /**
      * Loads the configuration of an OSPf virtual link (virtual connection between two backbone routers).
@@ -120,5 +108,5 @@ class INET_API Ospfv2ConfigReader
 
 } // namespace inet
 
-#endif // ifndef __INET_OSPFV2CONFIGREADER_H
+#endif
 

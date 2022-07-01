@@ -3,26 +3,13 @@
 // Copyright (C) INRIA
 // Copyright (C) 2013 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
 #ifndef __INET_DHCPSERVER_H
 #define __INET_DHCPSERVER_H
 
 #include <map>
-
-#include "inet/common/INETDefs.h"
 
 #include "inet/applications/base/ApplicationBase.h"
 #include "inet/applications/dhcp/DhcpLease.h"
@@ -43,12 +30,12 @@ class INET_API DhcpServer : public ApplicationBase, public cListener, public Udp
     enum TimerType {
         START_DHCP
     };
-    DhcpLeased leased;    // lookup table for lease infos
+    DhcpLeased leased; // lookup table for lease infos
 
-    int numSent = 0;    // num of sent UDP packets
-    int numReceived = 0;    // num of received UDP packets
-    int serverPort = -1;    // server port
-    int clientPort = -1;    // client port
+    int numSent = 0; // num of sent UDP packets
+    int numReceived = 0; // num of received UDP packets
+    int serverPort = -1; // server port
+    int clientPort = -1; // client port
 
     /* Set by management, see DhcpServer NED file. */
     unsigned int maxNumOfClients = 0;
@@ -57,10 +44,10 @@ class INET_API DhcpServer : public ApplicationBase, public cListener, public Udp
     Ipv4Address gateway;
     Ipv4Address ipAddressStart;
 
-    InterfaceEntry *ie = nullptr;    // interface to serve DHCP requests on
+    NetworkInterface *ie = nullptr; // interface to serve DHCP requests on
     UdpSocket socket;
-    simtime_t startTime;    // application start time
-    cMessage *startTimer = nullptr;    // self message to start DHCP server
+    simtime_t startTime; // application start time
+    cMessage *startTimer = nullptr; // self message to start DHCP server
 
   protected:
     virtual int numInitStages() const override { return NUM_INIT_STAGES; }
@@ -105,10 +92,10 @@ class INET_API DhcpServer : public ApplicationBase, public cListener, public Udp
     virtual void sendNak(const Ptr<const DhcpMessage>& dhcpMsg);
 
     virtual void handleSelfMessages(cMessage *msg);
-    virtual InterfaceEntry *chooseInterface();
+    virtual NetworkInterface *chooseInterface();
     virtual void sendToUDP(Packet *msg, int srcPort, const L3Address& destAddr, int destPort);
 
-    //UdpSocket::ICallback methods
+    // UdpSocket::ICallback methods
     virtual void socketDataArrived(UdpSocket *socket, Packet *packet) override;
     virtual void socketErrorArrived(UdpSocket *socket, Indication *indication) override;
     virtual void socketClosed(UdpSocket *socket) override;
@@ -130,5 +117,5 @@ class INET_API DhcpServer : public ApplicationBase, public cListener, public Udp
 
 } // namespace inet
 
-#endif // ifndef __INET_DHCPSERVER_H
+#endif
 

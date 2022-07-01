@@ -1,22 +1,13 @@
 //
-// Copyright (C) OpenSim Ltd.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-#include "inet/common/ModuleAccess.h"
+
 #include "inet/visualizer/base/MobilityVisualizerBase.h"
+
+#include "inet/common/ModuleAccess.h"
 
 namespace inet {
 
@@ -27,10 +18,12 @@ MobilityVisualizerBase::MobilityVisualization::MobilityVisualization(IMobility *
 {
 }
 
-MobilityVisualizerBase::~MobilityVisualizerBase()
+void MobilityVisualizerBase::preDelete(cComponent *root)
 {
-    if (displayMobility)
+    if (displayMobility) {
         unsubscribe();
+        removeAllMobilityVisualizations();
+    }
 }
 
 void MobilityVisualizerBase::initialize(int stage)
@@ -79,7 +72,7 @@ void MobilityVisualizerBase::handleParameterChange(const char *name)
     if (name != nullptr) {
         if (!strcmp(name, "moduleFilter"))
             moduleFilter.setPattern(par("moduleFilter"));
-        // TODO:
+        // TODO
     }
 }
 
@@ -92,11 +85,65 @@ void MobilityVisualizerBase::subscribe()
 void MobilityVisualizerBase::unsubscribe()
 {
     // NOTE: lookup the module again because it may have been deleted first
-    auto visualizationSubjectModule = getModuleFromPar<cModule>(par("visualizationSubjectModule"), this, false);
+    auto visualizationSubjectModule = findModuleFromPar<cModule>(par("visualizationSubjectModule"), this);
     if (visualizationSubjectModule != nullptr) {
         visualizationSubjectModule->unsubscribe(IMobility::mobilityStateChangedSignal, this);
         visualizationSubjectModule->unsubscribe(PRE_MODEL_CHANGE, this);
     }
+}
+
+MobilityVisualizerBase::MobilityVisualization *MobilityVisualizerBase::getMobilityVisualization(const IMobility *mobility) const
+{
+    auto it = mobilityVisualizations.find(mobility->getId());
+    return (it == mobilityVisualizations.end()) ? nullptr : it->second;
+}
+
+void MobilityVisualizerBase::addMobilityVisualization(const IMobility *mobility, MobilityVisualization *mobilityVisualization)
+{
+    mobilityVisualizations[mobility->getId()] = mobilityVisualization;
+}
+
+void MobilityVisualizerBase::removeMobilityVisualization(const MobilityVisualization *mobilityVisualization)
+{
+    mobilityVisualizations.erase(mobilityVisualization->mobility->getId());
+}
+
+void MobilityVisualizerBase::removeAllMobilityVisualizations()
+{
+    std::vector<const MobilityVisualization *> removedMobilityVisualizations;
+    for (auto it : mobilityVisualizations)
+        removedMobilityVisualizations.push_back(it.second);
+    for (auto mobilityVisualization : removedMobilityVisualizations) {
+        removeMobilityVisualization(mobilityVisualization);
+        delete mobilityVisualization;
+    }
+}
+
+void MobilityVisualizerBase::receiveSignal(cComponent *source, simsignal_t signal, cObject *object, cObject *details)
+{
+    Enter_Method("%s", cComponent::getSignalName(signal));
+
+    if (signal == IMobility::mobilityStateChangedSignal) {
+        if (moduleFilter.matches(check_and_cast<cModule *>(source))) {
+            auto mobility = dynamic_cast<IMobility *>(source);
+            auto mobilityVisualization = getMobilityVisualization(mobility);
+            if (mobilityVisualization == nullptr) {
+                mobilityVisualization = createMobilityVisualization(mobility);
+                addMobilityVisualization(mobility, mobilityVisualization);
+            }
+        }
+    }
+    else if (signal == PRE_MODEL_CHANGE) {
+        if (dynamic_cast<cPreModuleDeleteNotification *>(object)) {
+            if (auto mobility = dynamic_cast<IMobility *>(source)) {
+                auto mobilityVisualization = getMobilityVisualization(mobility);
+                removeMobilityVisualization(mobilityVisualization);
+                delete mobilityVisualization;
+            }
+        }
+    }
+    else
+        throw cRuntimeError("Unknown signal");
 }
 
 } // namespace visualizer

@@ -1,19 +1,9 @@
 //
-// Copyright (C) 2005 Andras Varga
+// Copyright (C) 2005 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 #ifndef __INET_INETUTILS_H
 #define __INET_INETUTILS_H
@@ -29,12 +19,23 @@ namespace utils {
 /**
  *  Converts an integer to string.
  */
-INET_API std::string ltostr(long i);    //XXX make an ultostr as well, to be consistent with atoul
+INET_API std::string ltostr(long i); // TODO make an ultostr as well, to be consistent with atoul
 
 /**
  *  Converts a double to string
  */
 INET_API std::string dtostr(double d);
+
+INET_API std::string hex(int16_t l);
+INET_API std::string hex(uint16_t l);
+INET_API std::string hex(int32_t l);
+INET_API std::string hex(uint32_t l);
+INET_API std::string hex(int64_t l);
+INET_API std::string hex(uint64_t l);
+
+INET_API long hex(const char *s);
+
+INET_API unsigned long uhex(const char *s);
 
 /**
  *  Converts string to double
@@ -66,7 +67,7 @@ INET_API std::string vstringf(const char *fmt, va_list& args);
 /**
  * Rounding up to the nearest multiple of a number.
  */
-inline int roundUp(int numToRound, int multiple) { return ((numToRound + multiple -1) / multiple) * multiple; }
+inline int roundUp(int numToRound, int multiple) { return ((numToRound + multiple - 1) / multiple) * multiple; }
 
 /**
  * Like cObjectFactory::createOneIfClassIsKnown(), except it starts searching for the class in the given namespace
@@ -84,7 +85,7 @@ INET_API cObject *createOne(const char *className, const char *defaultNamespace 
  */
 template<typename T>
 T *dupPacketAndControlInfo(T *packet) {
-    T *copy  = packet->dup();
+    T *copy = packet->dup();
     if (cObject *ctrl = packet->getControlInfo())
         copy->setControlInfo(ctrl->dup());
     return copy;
@@ -99,5 +100,5 @@ INET_API void makePathForFile(const char *filename);
 
 } // namespace inet
 
-#endif // ifndef __INET_OPP_UTILS_H
+#endif
 

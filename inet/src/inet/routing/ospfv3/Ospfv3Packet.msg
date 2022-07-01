@@ -37,6 +37,7 @@ class Ospfv3Packet extends ospf::OspfPacketBase
 //options for OSPFv3 packets - present in Hello, DD and certain LSAs
 struct Ospfv3Options
 {
+    @packetData;
     uint16_t reserved;  //reserved 16 bit
     bool reservedOne;   //reserved for compatibility with ospfv2
     bool reservedTwo;   //reserved for compatibility with ospfv2
@@ -79,6 +80,7 @@ class Ospfv3HelloPacket extends Ospfv3Packet
 //triplet {lsType, linkStateID, advertisingRouter} uniquely identify the LSA
 class Ospfv3LsaHeader extends cObject
 {
+    @packetData;
     unsigned short lsaAge;          // [sec] 16 bits
     unsigned short options;         // 8 bits
     unsigned short lsaType;         // 8 bits
@@ -92,6 +94,7 @@ class Ospfv3LsaHeader extends cObject
 
 class Ospfv3Lsa extends cObject
 {
+    @packetData;
     Ospfv3LsaHeader header;
 }
 
@@ -112,6 +115,7 @@ enum Ospfv3LsaFunctionCode
 //used for Intra-Area-Prefix LSA
 struct Ospfv3LsaPrefixMetric
 {
+    @packetData;
     bool reserved1 = 0;
     bool reserved2 = 0;
     bool reserved3 = 0;
@@ -129,15 +133,15 @@ struct Ospfv3LsaPrefixMetric
 cplusplus(Ospfv3LsaPrefixMetric) {{
 bool operator ==(const Ospfv3LsaPrefixMetric& b) const
 {
-	return (dnBit == b.dnBit)
-		&& (pBit == b.pBit)
-		&& (xBit == b.xBit)
-		&& (laBit == b.laBit)
-		&& (nuBit == b.nuBit)
-		&& (prefixLen == b.prefixLen)
-		&& (metric == b.metric)
-		&& (addressPrefix == b.addressPrefix)
-		;
+    return (dnBit == b.dnBit)
+        && (pBit == b.pBit)
+        && (xBit == b.xBit)
+        && (laBit == b.laBit)
+        && (nuBit == b.nuBit)
+        && (prefixLen == b.prefixLen)
+        && (metric == b.metric)
+        && (addressPrefix == b.addressPrefix)
+        ;
 }
 
 bool operator !=(const Ospfv3LsaPrefixMetric& b) const { return ! (*this == b); }
@@ -147,6 +151,7 @@ bool operator !=(const Ospfv3LsaPrefixMetric& b) const { return ! (*this == b); 
 //Address Prefix options
 struct Ospfv3LsaPrefix0
 {
+    @packetData;
     bool reserved1 = 0;
     bool reserved2 = 0;
     bool reserved3 = 0;
@@ -164,14 +169,14 @@ struct Ospfv3LsaPrefix0
 cplusplus(Ospfv3LsaPrefix0) {{
 bool operator ==(const Ospfv3LsaPrefix0& b) const
 {
-	return (dnBit == b.dnBit)
-		&& (pBit == b.pBit)
-		&& (xBit == b.xBit)
-		&& (laBit == b.laBit)
-		&& (nuBit == b.nuBit)
-		&& (prefixLen == b.prefixLen)
-		&& (addressPrefix == b.addressPrefix)
-		;
+    return (dnBit == b.dnBit)
+        && (pBit == b.pBit)
+        && (xBit == b.xBit)
+        && (laBit == b.laBit)
+        && (nuBit == b.nuBit)
+        && (prefixLen == b.prefixLen)
+        && (addressPrefix == b.addressPrefix)
+        ;
 }
 
 bool operator !=(const Ospfv3LsaPrefix0& b) const { return ! (*this == b); }
@@ -189,6 +194,7 @@ enum Ospfv3RouterLsaType
 
 struct Ospfv3RouterLsaBody
 {
+    @packetData;
     uint8_t type;
     uint16_t metric;
 
@@ -220,8 +226,8 @@ class Ospfv3NetworkLsa  extends Ospfv3Lsa
 // Inter-Area-Prefix-LSAs
 class Ospfv3InterAreaPrefixLsa  extends Ospfv3Lsa
 {
-    uint8_t reserved1 = 0;		// 8 bits
-    uint32_t metric;			// 24 bits
+    uint8_t reserved1 = 0;      // 8 bits
+    uint32_t metric;            // 24 bits
     Ospfv3LsaPrefix0 prefix;
 }
 
@@ -296,6 +302,7 @@ class Ospfv3IntraAreaPrefixLsa  extends Ospfv3Lsa
 // options struct for Database Description packets
 struct Ospfv3DdOptions
 {
+    @packetData;
     uint16_t reserved = 0;     // 13 bits
     bool iBit;  //this packet is the initial DD packet
     bool mBit;  //more DD packets will follow
@@ -324,6 +331,7 @@ class Ospfv3DatabaseDescriptionPacket extends Ospfv3Packet
 //identity of requested LSA - there may be multiple LSAs requested in a single LSR
 struct Ospfv3LsRequest
 {
+    @packetData;
     uint16_t lsaType;
     Ipv4Address lsaID;
     Ipv4Address advertisingRouter;
@@ -362,4 +370,3 @@ class Ospfv3LinkStateAcknowledgementPacket extends Ospfv3Packet
 {
     Ospfv3LsaHeader lsaHeaders[];
 }
-

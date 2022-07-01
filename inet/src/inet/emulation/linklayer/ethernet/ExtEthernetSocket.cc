@@ -1,19 +1,9 @@
 //
-// Copyright (C) OpenSim Ltd.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program.  If not, see http://www.gnu.org/licenses/.
-//
+
 
 #include <omnetpp/platdep/sockets.h>
 
@@ -34,7 +24,7 @@
 #include "inet/common/packet/Packet.h"
 #include "inet/emulation/linklayer/ethernet/ExtEthernetSocket.h"
 #include "inet/linklayer/common/InterfaceTag_m.h"
-#include "inet/networklayer/common/InterfaceEntry.h"
+#include "inet/networklayer/common/NetworkInterface.h"
 
 namespace inet {
 
@@ -76,7 +66,7 @@ void ExtEthernetSocket::handleMessage(cMessage *message)
     socket_address.sll_addr[4] = macAddress.getAddressByte(4);
     socket_address.sll_addr[5] = macAddress.getAddressByte(5);
 
-    uint8 buffer[packet->getByteLength()];
+    uint8_t buffer[packet->getByteLength()];
     auto bytesChunk = packet->peekAllAsBytes();
     size_t packetLength = bytesChunk->copyToBuffer(buffer, sizeof(buffer));
     ASSERT(packetLength == (size_t)packet->getByteLength());
@@ -116,13 +106,13 @@ void ExtEthernetSocket::openSocket()
         throw cRuntimeError("Cannot open socket");
     // get the index of the interface to send on
     memset(&if_idx, 0, sizeof(struct ifreq));
-    strncpy(if_idx.ifr_name, device, IFNAMSIZ-1);
+    strncpy(if_idx.ifr_name, device, IFNAMSIZ - 1);
     if (ioctl(fd, SIOCGIFINDEX, &if_idx) < 0)
         perror("SIOCGIFINDEX");
     ifindex = if_idx.ifr_ifindex;
     // get the MAC address of the interface to send on
     memset(&if_mac, 0, sizeof(struct ifreq));
-    strncpy(if_mac.ifr_name, device, IFNAMSIZ-1);
+    strncpy(if_mac.ifr_name, device, IFNAMSIZ - 1);
     if (ioctl(fd, SIOCGIFHWADDR, &if_mac) < 0)
         perror("SIOCGIFHWADDR");
     macAddress.setAddressBytes(if_mac.ifr_hwaddr.sa_data);
@@ -134,7 +124,7 @@ void ExtEthernetSocket::openSocket()
         throw cRuntimeError("Cannot bind raw socket to '%s' interface", device);
     // bind to all ethernet frames
     struct sockaddr_ll socket_address;
-    memset(&socket_address, 0, sizeof (socket_address));
+    memset(&socket_address, 0, sizeof(socket_address));
     socket_address.sll_family = PF_PACKET;
     socket_address.sll_ifindex = ifindex;
     socket_address.sll_protocol = htons(ETH_P_ALL);
@@ -156,7 +146,7 @@ void ExtEthernetSocket::closeSocket()
 
 bool ExtEthernetSocket::notify(int fd)
 {
-    Enter_Method_Silent();
+    Enter_Method("notify");
     ASSERT(this->fd == fd);
     uint8_t buffer[1 << 16];
     memset(&buffer, 0, sizeof(buffer));
@@ -169,8 +159,8 @@ bool ExtEthernetSocket::notify(int fd)
     memcpy(&buffer[n], &checksum, sizeof(checksum));
     auto data = makeShared<BytesChunk>(static_cast<const uint8_t *>(buffer), n + 4);
     auto packet = new Packet(nullptr, data);
-    auto interfaceEntry = check_and_cast<InterfaceEntry *>(getContainingNicModule(this));
-    packet->addTag<InterfaceInd>()->setInterfaceId(interfaceEntry->getInterfaceId());
+    auto networkInterface = check_and_cast<NetworkInterface *>(getContainingNicModule(this));
+    packet->addTag<InterfaceInd>()->setInterfaceId(networkInterface->getInterfaceId());
     packet->addTag<PacketProtocolTag>()->setProtocol(&Protocol::ethernetMac);
     packet->addTag<DispatchProtocolReq>()->setProtocol(&Protocol::ethernetMac);
     packet->setName(packetPrinter.printPacketToString(packet, packetNameFormat).c_str());

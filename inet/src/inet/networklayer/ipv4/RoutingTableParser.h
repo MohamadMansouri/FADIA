@@ -1,19 +1,8 @@
 //
 // Copyright (C) 2000 Institut fuer Telematik, Universitaet Karlsruhe
-// Copyright (C) 2004 Andras Varga
+// Copyright (C) 2004 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
 //
@@ -28,7 +17,6 @@
 #ifndef __INET_ROUTINGTABLEPARSER_H
 #define __INET_ROUTINGTABLEPARSER_H
 
-#include "inet/common/INETDefs.h"
 #include "inet/networklayer/ipv4/Ipv4RoutingTable.h"
 
 namespace inet {
@@ -51,7 +39,7 @@ class INET_API RoutingTableParser
     /**
      * Destructor
      */
-    virtual ~RoutingTableParser() {};
+    virtual ~RoutingTableParser() {}
 
     /**
      * Read Routing Table file; return 0 on success, -1 on error
@@ -82,7 +70,7 @@ class INET_API RoutingTableParser
             char *destStr);
 
     // Convert string separated by ':' into dynamic string array.
-    virtual void parseMulticastGroups(char *groupStr, InterfaceEntry *);
+    virtual void parseMulticastGroups(char *groupStr, NetworkInterface *);
 
     // Return 1 if beginning of str1 and str2 is equal up to str2-len,
     // otherwise 0.
@@ -98,5 +86,5 @@ class INET_API RoutingTableParser
 
 } // namespace inet
 
-#endif // ifndef __INET_ROUTINGTABLEPARSER_H
+#endif
 

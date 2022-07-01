@@ -1,20 +1,13 @@
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program.  If not, see http://www.gnu.org/licenses/.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-#include "inet/applications/common/SocketTag_m.h"
+
 #include "inet/applications/tcpapp/TcpServerSocketIo.h"
+
+#include "inet/common/socket/SocketTag_m.h"
 #include "inet/networklayer/common/L3AddressResolver.h"
 
 namespace inet {
@@ -23,7 +16,7 @@ Define_Module(TcpServerSocketIo);
 
 void TcpServerSocketIo::acceptSocket(TcpAvailableInfo *availableInfo)
 {
-    Enter_Method_Silent();
+    Enter_Method("acceptSocket");
     socket = new TcpSocket(availableInfo);
     socket->setOutputGate(gate("socketOut"));
     socket->setCallback(this);
@@ -42,9 +35,9 @@ void TcpServerSocketIo::handleMessage(cMessage *message)
         throw cRuntimeError("Unknown message");
 }
 
-void TcpServerSocketIo::socketDataArrived(TcpSocket* socket, Packet *packet, bool urgent)
+void TcpServerSocketIo::socketDataArrived(TcpSocket *socket, Packet *packet, bool urgent)
 {
-    delete packet->removeTag<SocketInd>();
+    packet->removeTag<SocketInd>();
     send(packet, "trafficOut");
 }
 

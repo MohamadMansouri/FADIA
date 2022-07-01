@@ -1,23 +1,14 @@
-/***************************************************************************
-                          RtpPayloadSender.cc  -  description
-                             -------------------
-    (C) 2007 Ahmed Ayadi  <ahmed.ayadi@sophia.inria.fr>
-    (C) 2001 Matthias Oppitz, Arndt Buschmann <Matthias.Oppitz@gmx.de> <a.buschmann@gmx.de>
+//
+// Copyright (C) 2001 Matthias Oppitz <Matthias.Oppitz@gmx.de>
+// Copyright (C) 2007 Ahmed Ayadi <ahmed.ayadi@sophia.inria.fr>
+//
+// SPDX-License-Identifier: LGPL-3.0-or-later
+//
 
-***************************************************************************/
-
-/***************************************************************************
-*                                                                         *
-*   This program is free software; you can redistribute it and/or modify  *
-*   it under the terms of the GNU General Public License as published by  *
-*   the Free Software Foundation; either version 2 of the License, or     *
-*   (at your option) any later version.                                   *
-*                                                                         *
-***************************************************************************/
+#include "inet/transportlayer/rtp/RtpPayloadSender.h"
 
 #include "inet/transportlayer/rtp/RtpInnerPacket_m.h"
 #include "inet/transportlayer/rtp/RtpInterfacePacket_m.h"
-#include "inet/transportlayer/rtp/RtpPayloadSender.h"
 
 namespace inet {
 namespace rtp {

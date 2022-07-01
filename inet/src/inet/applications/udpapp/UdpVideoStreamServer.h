@@ -1,27 +1,16 @@
 //
-// Copyright (C) 2005 Andras Varga
+// Copyright (C) 2005 OpenSim Ltd.
+//
+// SPDX-License-Identifier: LGPL-3.0-or-later
+//
+
 // Based on the video streaming app of the similar name by Johnny Lai.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
 
-#ifndef __INET_UDPVIDEOSTREAMSVR_H
-#define __INET_UDPVIDEOSTREAMSVR_H
+#ifndef __INET_UDPVIDEOSTREAMSERVER_H
+#define __INET_UDPVIDEOSTREAMSERVER_H
 
 #include <map>
-
-#include "inet/common/INETDefs.h"
 
 #include "inet/applications/base/ApplicationBase.h"
 #include "inet/common/packet/Packet.h"
@@ -39,14 +28,13 @@ namespace inet {
 class INET_API UdpVideoStreamServer : public ApplicationBase, public UdpSocket::ICallback
 {
   public:
-    struct VideoStreamData
-    {
-        cMessage *timer = nullptr;    // self timer msg
-        L3Address clientAddr;    // client address
-        int clientPort = -1;    // client UDP port
-        long videoSize = 0;    // total size of video
-        long bytesLeft = 0;    // bytes left to transmit
-        long numPkSent = 0;    // number of packets sent
+    struct VideoStreamData {
+        cMessage *timer = nullptr; // self timer msg
+        L3Address clientAddr; // client address
+        int clientPort = -1; // client UDP port
+        long videoSize = 0; // total size of video
+        long bytesLeft = 0; // bytes left to transmit
+        long numPkSent = 0; // number of packets sent
     };
 
   protected:
@@ -63,9 +51,9 @@ class INET_API UdpVideoStreamServer : public ApplicationBase, public UdpSocket::
     cPar *videoSize = nullptr;
 
     // statistics
-    unsigned int numStreams = 0;    // number of video streams served
-    unsigned long numPkSent = 0;    // total number of packets sent
-    static simsignal_t reqStreamBytesSignal;    // length of video streams served
+    unsigned int numStreams = 0; // number of video streams served
+    unsigned long numPkSent = 0; // total number of packets sent
+    static simsignal_t reqStreamBytesSignal; // length of video streams served
 
     virtual void processStreamRequest(Packet *msg);
     virtual void sendStreamData(cMessage *timer);
@@ -92,5 +80,5 @@ class INET_API UdpVideoStreamServer : public ApplicationBase, public UdpSocket::
 
 } // namespace inet
 
-#endif // ifndef __INET_UDPVIDEOSTREAMSVR_H
+#endif
 

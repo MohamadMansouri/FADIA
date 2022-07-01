@@ -1,26 +1,16 @@
 //
 // Copyright (C) 2016 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see http://www.gnu.org/licenses/.
-//
+
 
 #include "inet/linklayer/ieee80211/mac/framesequence/GenericFrameSequences.h"
 
 namespace inet {
 namespace ieee80211 {
 
-SequentialFs::SequentialFs(std::vector<IFrameSequence*> elements) :
+SequentialFs::SequentialFs(std::vector<IFrameSequence *> elements) :
     elements(elements)
 {
 }
@@ -30,19 +20,19 @@ void SequentialFs::startSequence(FrameSequenceContext *context, int firstStep)
     this->firstStep = firstStep;
     step = 0;
     elementIndex = 0;
-    if (elementIndex < (int) (elements.size()))
+    if (elementIndex < (int)(elements.size()))
         elements[elementIndex]->startSequence(context, firstStep);
 }
 
 IFrameSequenceStep *SequentialFs::prepareStep(FrameSequenceContext *context)
 {
-    while (elementIndex < (int) elements.size()) {
+    while (elementIndex < (int)elements.size()) {
         auto elementStep = elements[elementIndex]->prepareStep(context);
         if (elementStep != nullptr)
             return elementStep;
         else {
             elementIndex++;
-            if (elementIndex < (int) elements.size())
+            if (elementIndex < (int)elements.size())
                 elements[elementIndex]->startSequence(context, firstStep + step);
         }
     }
@@ -71,15 +61,13 @@ std::string SequentialFs::getHistory() const
     return history;
 }
 
-
 SequentialFs::~SequentialFs()
 {
     for (auto element : elements)
         delete element;
 }
 
-
-OptionalFs::OptionalFs(IFrameSequence *element, std::function<bool(OptionalFs*, FrameSequenceContext*)> predicate) :
+OptionalFs::OptionalFs(IFrameSequence *element, std::function<bool(OptionalFs *, FrameSequenceContext *)> predicate) :
     element(element),
     predicate(predicate)
 {
@@ -109,10 +97,10 @@ bool OptionalFs::completeStep(FrameSequenceContext *context)
 std::string OptionalFs::getHistory() const
 {
     ASSERT(step != -1);
-    return apply ? "["+ element->getHistory() + "]" : "";
+    return apply ? "[" + element->getHistory() + "]" : "";
 }
 
-RepeatingFs::RepeatingFs(IFrameSequence *element, std::function<bool(RepeatingFs*, FrameSequenceContext*)> predicate) :
+RepeatingFs::RepeatingFs(IFrameSequence *element, std::function<bool(RepeatingFs *, FrameSequenceContext *)> predicate) :
     element(element),
     predicate(predicate)
 {
@@ -168,7 +156,7 @@ std::string RepeatingFs::getHistory() const
 {
     ASSERT(step != -1);
     std::string history;
-    for (int i = 0; i < (int) histories.size(); i++) {
+    for (int i = 0; i < (int)histories.size(); i++) {
         auto elementHistory = histories.at(i);
         if (!elementHistory.empty()) {
             if (!history.empty())
@@ -179,7 +167,7 @@ std::string RepeatingFs::getHistory() const
     return "{" + history + "}";
 }
 
-AlternativesFs::AlternativesFs(std::vector<IFrameSequence*> elements, std::function<int(AlternativesFs*, FrameSequenceContext*)> selector) :
+AlternativesFs::AlternativesFs(std::vector<IFrameSequence *> elements, std::function<int(AlternativesFs *, FrameSequenceContext *)> selector) :
     elements(elements),
     selector(selector)
 {
@@ -219,3 +207,4 @@ AlternativesFs::~AlternativesFs()
 
 } // namespace ieee80211
 } // namespace inet
+

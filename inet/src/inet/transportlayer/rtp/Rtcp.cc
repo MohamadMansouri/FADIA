@@ -1,26 +1,18 @@
-/***************************************************************************
-                       Rtcp.cc  -  description
-                             -------------------
-    (C) 2007 Ahmed Ayadi  <ahmed.ayadi@sophia.inria.fr>
-    (C) 2001 Matthias Oppitz <Matthias.Oppitz@gmx.de>
+//
+// Copyright (C) 2001 Matthias Oppitz <Matthias.Oppitz@gmx.de>
+// Copyright (C) 2007 Ahmed Ayadi <ahmed.ayadi@sophia.inria.fr>
+//
+// SPDX-License-Identifier: LGPL-3.0-or-later
+//
 
-***************************************************************************/
-
-/***************************************************************************
-*                                                                         *
-*   This program is free software; you can redistribute it and/or modify  *
-*   it under the terms of the GNU General Public License as published by  *
-*   the Free Software Foundation; either version 2 of the License, or     *
-*   (at your option) any later version.                                   *
-*                                                                         *
-***************************************************************************/
+#include "inet/transportlayer/rtp/Rtcp.h"
 
 #include "inet/common/ModuleAccess.h"
+#include "inet/common/Simsignals.h"
 #include "inet/common/lifecycle/NodeStatus.h"
 #include "inet/networklayer/contract/ipv4/Ipv4Address.h"
 #include "inet/transportlayer/contract/udp/UdpControlInfo_m.h"
 #include "inet/transportlayer/contract/udp/UdpSocket.h"
-#include "inet/transportlayer/rtp/Rtcp.h"
 #include "inet/transportlayer/rtp/RtcpPacket_m.h"
 #include "inet/transportlayer/rtp/RtpInnerPacket_m.h"
 #include "inet/transportlayer/rtp/RtpParticipantInfo.h"
@@ -183,7 +175,7 @@ void Rtcp::handleDataOut(RtpInnerPacket *innerPacket)
 void Rtcp::handleDataIn(RtpInnerPacket *rinp)
 {
     Packet *packet = check_and_cast<Packet *>(rinp->decapsulate());
-    //rtpPacket->dump();
+//    rtpPacket->dump();
     processIncomingRTPPacket(packet, rinp->getAddress(), rinp->getPort());
 }
 
@@ -197,7 +189,7 @@ void Rtcp::connectRet()
     // schedule first rtcp packet
     double intervalLength = 2.5 * (dblrand() + 0.5);
     cMessage *reminderMessage = new cMessage("Interval");
-    scheduleAt(simTime() + intervalLength, reminderMessage);
+    scheduleAfter(intervalLength, reminderMessage);
 }
 
 void Rtcp::readRet(Packet *sifpIn)
@@ -208,9 +200,9 @@ void Rtcp::readRet(Packet *sifpIn)
 
 void Rtcp::createSocket()
 {
-    _udpSocket.bind(_port);    //XXX this will fail if this function is invoked multiple times; not sure that may (or is expected to) happen
+    _udpSocket.bind(_port); // TODO this will fail if this function is invoked multiple times; not sure that may (or is expected to) happen
     MulticastGroupList mgl = getModuleFromPar<IInterfaceTable>(par("interfaceTableModule"), this)->collectMulticastGroups();
-    _udpSocket.joinLocalMulticastGroups(mgl);    //TODO make it parameter-dependent
+    _udpSocket.joinLocalMulticastGroups(mgl); // TODO make it parameter-dependent
     connectRet();
 }
 
@@ -227,15 +219,15 @@ void Rtcp::scheduleInterval()
     // with a random number between 0.5 and 1.5
     intervalLength = intervalLength * (0.5 + dblrand());
 
-    intervalLength /= (double)(2.71828 - 1.5);    // [RFC 3550] , by Ahmed ayadi
+    intervalLength /= (double)(2.71828 - 1.5); // [RFC 3550] , by Ahmed ayadi
 
     cMessage *reminderMessage = new cMessage("Interval");
-    scheduleAt(simTime() + intervalLength, reminderMessage);
+    scheduleAfter(intervalLength, reminderMessage);
 }
 
 void Rtcp::chooseSSRC()
 {
-    uint32 ssrc = 0;
+    uint32_t ssrc = 0;
     bool ssrcConflict = false;
     do {
         ssrc = intrand(0x7fffffff);
@@ -329,7 +321,7 @@ void Rtcp::processIncomingRTPPacket(Packet *packet, Ipv4Address address, int por
 {
     bool good = false;
     const auto& rtpHeader = packet->peekAtFront<RtpHeader>();
-    uint32 ssrc = rtpHeader->getSsrc();
+    uint32_t ssrc = rtpHeader->getSsrc();
     RtpParticipantInfo *participantInfo = findParticipantInfo(ssrc);
     if (participantInfo == nullptr) {
         participantInfo = new RtpParticipantInfo(ssrc);
@@ -396,7 +388,7 @@ void Rtcp::processIncomingRTCPPacket(Packet *packet, Ipv4Address address, int po
 
 void Rtcp::processIncomingRTCPSenderReportPacket(const Ptr<const RtcpSenderReportPacket>& rtcpSenderReportPacket, Ipv4Address address, int port)
 {
-    uint32 ssrc = rtcpSenderReportPacket->getSsrc();
+    uint32_t ssrc = rtcpSenderReportPacket->getSsrc();
     RtpParticipantInfo *participantInfo = findParticipantInfo(ssrc);
 
     if (participantInfo == nullptr) {
@@ -430,7 +422,7 @@ void Rtcp::processIncomingRTCPSenderReportPacket(const Ptr<const RtcpSenderRepor
 
 void Rtcp::processIncomingRTCPReceiverReportPacket(const Ptr<const RtcpReceiverReportPacket>& rtcpReceiverReportPacket, Ipv4Address address, int port)
 {
-    uint32 ssrc = rtcpReceiverReportPacket->getSsrc();
+    uint32_t ssrc = rtcpReceiverReportPacket->getSsrc();
     RtpParticipantInfo *participantInfo = findParticipantInfo(ssrc);
     if (participantInfo == nullptr) {
         participantInfo = new RtpReceiverInfo(ssrc);
@@ -469,8 +461,8 @@ void Rtcp::processIncomingRTCPSDESPacket(const Ptr<const RtcpSdesPacket>& rtcpSD
             // remove the sdes chunk from the cArray of sdes chunks
             const SdesChunk *sdesChunk = check_and_cast<const SdesChunk *>(sdesChunks.get(j));
             // this is needed to avoid seg faults
-            //sdesChunk->setOwner(this);
-            uint32 ssrc = sdesChunk->getSsrc();
+//            sdesChunk->setOwner(this);
+            uint32_t ssrc = sdesChunk->getSsrc();
             RtpParticipantInfo *participantInfo = findParticipantInfo(ssrc);
             if (participantInfo == nullptr) {
                 participantInfo = new RtpReceiverInfo(ssrc);
@@ -488,7 +480,7 @@ void Rtcp::processIncomingRTCPSDESPacket(const Ptr<const RtcpSdesPacket>& rtcpSD
 
 void Rtcp::processIncomingRTCPByePacket(const Ptr<const RtcpByePacket>& rtcpByePacket, Ipv4Address address, int port)
 {
-    uint32 ssrc = rtcpByePacket->getSsrc();
+    uint32_t ssrc = rtcpByePacket->getSsrc();
     RtpParticipantInfo *participantInfo = findParticipantInfo(ssrc);
 
     if (participantInfo != nullptr && participantInfo != _senderInfo) {
@@ -501,7 +493,7 @@ void Rtcp::processIncomingRTCPByePacket(const Ptr<const RtcpByePacket>& rtcpByeP
     }
 }
 
-RtpParticipantInfo *Rtcp::findParticipantInfo(uint32 ssrc)
+RtpParticipantInfo *Rtcp::findParticipantInfo(uint32_t ssrc)
 {
     std::string ssrcString = RtpParticipantInfo::ssrcToName(ssrc);
     return check_and_cast_nullable<RtpParticipantInfo *>(_participantInfos.get(ssrcString.c_str()));

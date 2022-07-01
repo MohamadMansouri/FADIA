@@ -1,21 +1,13 @@
-/**
- * Copyright (C) 2007
- * Christian Bauer
- * Institute of Communications and Navigation, German Aerospace Center (DLR)
+//
+// Copyright (C) 2007
+// Christian Bauer
+// Institute of Communications and Navigation, German Aerospace Center (DLR)
+//
+// SPDX-License-Identifier: LGPL-3.0-or-later
+//
+//
 
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+/**
  *
  * @file Ipv6Tunneling.h
  * @brief Manage IP tunnels (RFC 2473) and Type 2 Routing Header/Home Address Option based routing as specified in MIPv6 (RFC 3775)
@@ -27,6 +19,7 @@
 #ifndef __INET_IPV6TUNNELING_H
 #define __INET_IPV6TUNNELING_H
 
+#include "inet/common/ModuleRefByPar.h"
 #include "inet/common/lifecycle/LifecycleUnsupported.h"
 #include "inet/common/packet/Packet.h"
 #include "inet/networklayer/contract/ipv6/Ipv6Address.h"
@@ -48,22 +41,21 @@ class INET_API Ipv6Tunneling : public cSimpleModule, public LifecycleUnsupported
         INVALID = 0,
         SPLIT,
         NON_SPLIT,
-        NORMAL,    // either split or non-split
+        NORMAL, // either split or non-split
         T2RH,
         HA_OPT,
-        MOBILITY    // either T2RH or HA_OPT
+        MOBILITY // either T2RH or HA_OPT
     };
 
   protected:
-    IInterfaceTable *ift = nullptr;
-    Ipv6RoutingTable *rt = nullptr;
+    ModuleRefByPar<IInterfaceTable> ift;
+    ModuleRefByPar<Ipv6RoutingTable> rt;
 
-    struct Tunnel
-    {
+    struct Tunnel {
         Tunnel(const Ipv6Address& entry = Ipv6Address::UNSPECIFIED_ADDRESS,
                 const Ipv6Address& exit = Ipv6Address::UNSPECIFIED_ADDRESS,
                 const Ipv6Address& destTrigger = Ipv6Address::UNSPECIFIED_ADDRESS);
-        //~Tunnel();
+//        ~Tunnel();
 
         bool operator==(const Tunnel& rhs)
         {
@@ -109,8 +101,7 @@ class INET_API Ipv6Tunneling : public cSimpleModule, public LifecycleUnsupported
     typedef std::map<int, struct Tunnel> Tunnels;
     typedef Tunnels::const_iterator TI;
 
-    struct equalTunnel : public std::binary_function<Tunnels::value_type, Tunnels::value_type, bool>
-    {
+    struct equalTunnel : public std::binary_function<Tunnels::value_type, Tunnels::value_type, bool> {
         bool operator()(const Tunnels::value_type& lhs, const Tunnels::value_type& rhs) const
         {
             return (lhs.second.entry == rhs.second.entry) &&
@@ -130,7 +121,7 @@ class INET_API Ipv6Tunneling : public cSimpleModule, public LifecycleUnsupported
 
   public:
     Ipv6Tunneling();
-    //virtual ~Ipv6Tunneling();
+//    virtual ~Ipv6Tunneling();
 
     /**
      * Initialize tunnel manager.
@@ -157,8 +148,7 @@ class INET_API Ipv6Tunneling : public cSimpleModule, public LifecycleUnsupported
      * with given entry and exit point, which will be used for datagrams destined for destTrigger.
      * Returns virtual interface index.
      */
-    //int createPseudoTunnel(const Ipv6Address& src, const Ipv6Address& dest,
-    //        const Ipv6Address& destTrigger, int tunnelType);
+//    int createPseudoTunnel(const Ipv6Address& src, const Ipv6Address& dest, const Ipv6Address& destTrigger, int tunnelType);
 
     /**
      * Remove tunnel and the associated entries from destination cache
@@ -210,17 +200,17 @@ class INET_API Ipv6Tunneling : public cSimpleModule, public LifecycleUnsupported
      * This method is equivalent for getVIfIndexForDest() except that it
      * only searches for pseudo tunnels (T2RH, etc.).
      */
-    //int getVIfIndexForDestForPseudoTunnel(const Ipv6Address& destAddress);
+//    int getVIfIndexForDestForPseudoTunnel(const Ipv6Address& destAddress);
 
     /**
      * Check if there exists a tunnel with exit equal to the provided address.
      */
-    bool isTunnelExit(const Ipv6Address& exit);    // 11.9.07 - CB
+    bool isTunnelExit(const Ipv6Address& exit); // 11.9.07 - CB
 
     /**
      * Returns the type of the tunnels: non-split, split, T2RH, ...
      */
-    //TunnelType getTunnelType(const int vIfIndex);
+//    TunnelType getTunnelType(const int vIfIndex);
 
   protected:
     /**
@@ -265,5 +255,5 @@ class INET_API Ipv6Tunneling : public cSimpleModule, public LifecycleUnsupported
 
 } // namespace inet
 
-#endif // ifndef __INET_IPV6TUNNELING_H
+#endif
 

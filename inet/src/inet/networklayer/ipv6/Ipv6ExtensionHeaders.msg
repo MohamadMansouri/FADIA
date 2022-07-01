@@ -1,20 +1,9 @@
 //
 // Copyright (C) 2005 Wei Yang, Ng
-// Copyright (C) 2005 Andras Varga
+// Copyright (C) 2005 OpenSim Ltd.
 // Copyright (C) 2001-2004 CTIE, Monash University
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public
-// License along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
 import inet.common.INETDefs;
@@ -44,7 +33,6 @@ enum Ipv6TlvOptionTypes
     IPv6TLVOPTION_TLV_GPSR = 47;
 };
 
-
 //
 // Hop-by-Hop Options Header.
 // RFC 2460 Section 4.3
@@ -67,8 +55,8 @@ class Ipv6RoutingHeader extends Ipv6ExtensionHeader
     extensionType = IP_PROT_IPv6EXT_ROUTING;
     byteLength = B(8);
     //byteLength = 8+16*getAddressArraySize() when routingType == 0
-    uint8 routingType;
-    uint8 segmentsLeft;
+    uint8_t routingType;
+    uint8_t segmentsLeft;
     Ipv6Address address[];
 }
 
@@ -81,9 +69,10 @@ class Ipv6FragmentHeader extends Ipv6ExtensionHeader
 {
     extensionType = IP_PROT_IPv6EXT_FRAGMENT;
     byteLength = IPv6_FRAGMENT_HEADER_LENGTH;
-    unsigned short fragmentOffset;
-    unsigned int identification;  // datagram ID: identifies which datagram this fragment belongs to.
+    uint16_t fragmentOffset;    // @bit(13), divided by 8
+    uint8_t reserved = 0;    // @bit(2)
     bool moreFragments; //Is this the last fragment?
+    uint32_t identification;  // datagram ID: identifies which datagram this fragment belongs to.
 }
 
 //

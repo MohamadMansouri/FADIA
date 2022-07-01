@@ -1,33 +1,23 @@
 //
-// Copyright (C) 2012 Opensim Ltd.
-// Author: Tamas Borbely
+// Copyright (C) 2012 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
+
+#include "inet/networklayer/diffserv/DiffservUtil.h"
 
 #include "inet/common/INETUtils.h"
-#include "inet/networklayer/common/InterfaceEntry.h"
-#include "inet/networklayer/diffserv/DiffservUtil.h"
+#include "inet/networklayer/common/NetworkInterface.h"
 #include "inet/networklayer/diffserv/Dscp_m.h"
 
-#ifdef WITH_IPv4
+#ifdef INET_WITH_IPv4
 #include "inet/networklayer/ipv4/Ipv4Header_m.h"
-#endif // ifdef WITH_IPv4
+#endif // ifdef INET_WITH_IPv4
 
-#ifdef WITH_IPv6
+#ifdef INET_WITH_IPv6
 #include "inet/networklayer/ipv6/Ipv6Header.h"
-#endif // ifdef WITH_IPv6
+#endif // ifdef INET_WITH_IPv6
 
 namespace inet {
 namespace DiffservUtil {
@@ -40,7 +30,7 @@ cEnum *protocolEnum = nullptr;
 
 double parseInformationRate(const char *attrValue, const char *attrName, IInterfaceTable *ift, cSimpleModule& owner, int defaultValue)
 {
-    if (isEmpty(attrValue))
+    if (opp_isempty(attrValue))
         return defaultValue;
 
     const char *percentPtr = strchr(attrValue, '%');
@@ -50,7 +40,7 @@ double parseInformationRate(const char *attrValue, const char *attrName, IInterf
         if (e != percentPtr)
             throw cRuntimeError("malformed %s attribute: %s", attrName, attrValue);
         if (percent < 0.0 || percent > 100.0)
-            throw cRuntimeError("%s must be between 0\% and 100\%, found: %s", attrName, attrValue);
+            throw cRuntimeError("%s must be between 0%% and 100%%, found: %s", attrName, attrValue);
 
         double datarate = getInterfaceDatarate(ift, &owner);
         if (datarate < 0.0)
@@ -67,7 +57,7 @@ double parseInformationRate(const char *attrValue, const char *attrName, IInterf
 
 int parseIntAttribute(const char *attrValue, const char *attrName, bool isOptional)
 {
-    if (isEmpty(attrValue)) {
+    if (opp_isempty(attrValue)) {
         if (isOptional)
             return -1;
         else
@@ -92,7 +82,7 @@ int parseIntAttribute(const char *attrValue, const char *attrName, bool isOption
 
 int parseProtocol(const char *attrValue, const char *attrName)
 {
-    if (isEmpty(attrValue))
+    if (opp_isempty(attrValue))
         return -1;
     if (isdigit(*attrValue))
         return parseIntAttribute(attrValue, attrName);
@@ -110,12 +100,12 @@ int parseProtocol(const char *attrValue, const char *attrName)
 
 int parseDSCP(const char *attrValue, const char *attrName)
 {
-    if (isEmpty(attrValue))
+    if (opp_isempty(attrValue))
         throw cRuntimeError("missing %s attribute", attrName);
     if (isdigit(*attrValue)) {
         int dscp = parseIntAttribute(attrValue, attrName);
         if (dscp < 0 || dscp >= DSCP_MAX)
-            throw cRuntimeError("value of %s attribute is out of range [0,%d)", DSCP_MAX);
+            throw cRuntimeError("value of %s attribute is out of range [0,%d)", attrName, DSCP_MAX);
         return dscp;
     }
     if (!dscpEnum)
@@ -136,7 +126,7 @@ int parseDSCP(const char *attrValue, const char *attrName)
 
 void parseDSCPs(const char *attrValue, const char *attrName, std::vector<int>& result)
 {
-    if (isEmpty(attrValue))
+    if (opp_isempty(attrValue))
         return;
     if (*attrValue == '*' && *(attrValue + 1) == '\0') {
         for (int dscp = 0; dscp < DSCP_MAX; ++dscp)
@@ -182,7 +172,7 @@ std::string colorToString(int color)
 
 double getInterfaceDatarate(IInterfaceTable *ift, cSimpleModule *interfaceModule)
 {
-    InterfaceEntry *ie = ift ? ift->findInterfaceByInterfaceModule(interfaceModule) : nullptr;
+    NetworkInterface *ie = ift ? ift->findInterfaceByInterfaceModule(interfaceModule) : nullptr;
     return ie ? ie->getDatarate() : -1;
 }
 

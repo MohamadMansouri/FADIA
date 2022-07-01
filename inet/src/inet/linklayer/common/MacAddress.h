@@ -1,19 +1,8 @@
-/*
- * Copyright (C) 2003 Andras Varga; CTIE, Monash University, Australia
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program; if not, see <http://www.gnu.org/licenses/>.
- */
+//
+// Copyright (C) 2003 Andras Varga; CTIE, Monash University, Australia
+//
+// SPDX-License-Identifier: LGPL-3.0-or-later
+//
 
 #ifndef __INET_MACADDRESS_H
 #define __INET_MACADDRESS_H
@@ -27,7 +16,6 @@ namespace inet {
 #define MAC_ADDRESS_SIZE    6
 #define MAC_ADDRESS_MASK    0xffffffffffffULL
 
-class Ipv4Address;
 class InterfaceToken;
 
 /**
@@ -36,23 +24,9 @@ class InterfaceToken;
 class INET_API MacAddress
 {
   private:
-    uint64 address;    // 6*8=48 bit address, lowest 6 bytes are used, highest 2 bytes are always zero
-    static unsigned int autoAddressCtr;    // global counter for generateAutoAddress()
-    static bool simulationLifecycleListenerAdded;
+    uint64_t address; // 6*8=48 bit address, lowest 6 bytes are used, highest 2 bytes are always zero
 
   public:
-    class SimulationLifecycleListener : public cISimulationLifecycleListener
-    {
-        virtual void lifecycleEvent(SimulationLifecycleEventType eventType, cObject *details) {
-            if (eventType == LF_PRE_NETWORK_INITIALIZE)
-                autoAddressCtr = 0;
-        }
-
-        virtual void listenerRemoved() {
-            delete this;
-        }
-    };
-
     /** The unspecified MAC address, 00:00:00:00:00:00 */
     static const MacAddress UNSPECIFIED_ADDRESS;
 
@@ -79,7 +53,7 @@ class INET_API MacAddress
     /**
      * Initializes the address from the lower 48 bits of the 64-bit argument
      */
-    explicit MacAddress(uint64 bits) { address = bits & MAC_ADDRESS_MASK; }
+    explicit MacAddress(uint64_t bits) { address = bits & MAC_ADDRESS_MASK; }
 
     /**
      * Constructor which accepts a hex string (12 hex digits, may also
@@ -149,12 +123,12 @@ class INET_API MacAddress
     /**
      * Returns true if this is a multicast logical address (first byte's lsb is 1).
      */
-    bool isMulticast() const  { return getAddressByte(0) & 0x01; };
+    bool isMulticast() const { return getAddressByte(0) & 0x01; };
 
     /**
      * Returns true if this is a local address (first byte's second less significant bit is 1).
      */
-    bool isLocal() const  { return getAddressByte(0) & 0x02; };
+    bool isLocal() const { return getAddressByte(0) & 0x02; };
 
     /**
      * Returns true if all address bytes are zero.
@@ -169,7 +143,7 @@ class INET_API MacAddress
     /**
      * Converts address to 48 bits integer.
      */
-    uint64 getInt() const { return address; }
+    uint64_t getInt() const { return address; }
 
     /**
      * Returns true if the two addresses are equal.
@@ -203,14 +177,32 @@ class INET_API MacAddress
      */
     static MacAddress generateAutoAddress();
 
-    /**
-     * Form a MAC address for a multicast IPv4 address, see  RFC 1112, section 6.4
-     */
-    static MacAddress makeMulticastAddress(Ipv4Address addr);
-
     bool operator<(const MacAddress& other) const { return address < other.address; }
 
     bool operator>(const MacAddress& other) const { return address > other.address; }
+};
+
+template <typename T>
+class INET_API SimulationRunUniqueNumberGenerator : public cISimulationLifecycleListener
+{
+  private:
+    bool listenerAdded;
+    T value = 0;
+
+  public:
+    T getNextValue() {
+        if (!listenerAdded) {
+            // NOTE: EXECUTE_ON_STARTUP is too early and would add the listener to StaticEnv
+            getEnvir()->addLifecycleListener(this);
+            listenerAdded = true;
+        }
+        return ++value;
+    }
+
+    virtual void lifecycleEvent(SimulationLifecycleEventType eventType, cObject *details) {
+        if (eventType == LF_PRE_NETWORK_INITIALIZE)
+            value = 0;
+    }
 };
 
 inline std::ostream& operator<<(std::ostream& os, const MacAddress& mac)
@@ -218,7 +210,10 @@ inline std::ostream& operator<<(std::ostream& os, const MacAddress& mac)
     return os << mac.str();
 }
 
+inline void doParsimPacking(cCommBuffer *buffer, const MacAddress& macAddress) { buffer->pack(macAddress.getInt()); }
+inline void doParsimUnpacking(cCommBuffer *buffer, MacAddress& macAddress) { uint64_t address; buffer->unpack(address); macAddress = MacAddress(address); }
+
 } // namespace inet
 
-#endif // ifndef __INET_MACADDRESS_H
+#endif
 

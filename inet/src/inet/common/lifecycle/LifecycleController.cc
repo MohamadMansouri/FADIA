@@ -1,26 +1,19 @@
 //
-// (C) 2013 Opensim Ltd.
+// Copyright (C) 2013 OpenSim Ltd.
 //
-// This library is free software, you can redistribute it
-// and/or modify
-// it under  the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation;
-// either version 2 of the License, or any later version.
-// The library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-// See the GNU Lesser General Public License for more details.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// Author: Andras Varga (andras@omnetpp.org)
-//
+
+
+#include "inet/common/lifecycle/LifecycleController.h"
 
 #include <algorithm>
 
 #include "inet/common/INETUtils.h"
-#include "inet/common/lifecycle/LifecycleController.h"
 #include "inet/common/lifecycle/LifecycleOperation.h"
-#include "inet/networklayer/common/InterfaceEntry.h"
+#include "inet/common/stlutils.h"
 #include "inet/networklayer/common/L3AddressResolver.h"
+#include "inet/networklayer/common/NetworkInterface.h"
 #include "inet/networklayer/contract/IInterfaceTable.h"
 
 namespace inet {
@@ -39,12 +32,12 @@ void LifecycleController::Callback::invoke()
     controller->moduleOperationStageCompleted(this);
 }
 
-//----
+// ----
 
 template<typename T>
 void vector_delete_element(std::vector<T *>& v, T *p)
 {
-    auto it = std::find(v.begin(), v.end(), p);
+    auto it = find(v, p);
     ASSERT(it != v.end());
     v.erase(it);
     delete p;
@@ -52,6 +45,7 @@ void vector_delete_element(std::vector<T *>& v, T *p)
 
 bool LifecycleController::initiateOperation(LifecycleOperation *operation, IDoneCallback *completionCallback)
 {
+    ASSERT(getSimulation()->getContextModule() == check_and_cast<cComponent *>(this));
     operation->currentStage = 0;
     operation->operationCompletionCallback = completionCallback;
     operation->insideInitiateOperation = true;
@@ -75,7 +69,7 @@ bool LifecycleController::resumeOperation(LifecycleOperation *operation)
     if (operation->operationCompletionCallback && !operation->insideInitiateOperation)
         operation->operationCompletionCallback->invoke();
     delete operation;
-    return true;    // done
+    return true; // done
 }
 
 void LifecycleController::doOneStage(LifecycleOperation *operation, cModule *submodule)
@@ -101,6 +95,11 @@ void LifecycleController::doOneStage(LifecycleOperation *operation, cModule *sub
 
 void LifecycleController::moduleOperationStageCompleted(Callback *callback)
 {
+    omnetpp::cMethodCallContextSwitcher __ctx(check_and_cast<cComponent *>(this)); __ctx.methodCall(__FUNCTION__);
+#ifdef INET_WITH_SELFDOC
+    __Enter_Method_SelfDoc(__FUNCTION__);
+#endif
+
     LifecycleOperation *operation = callback->operation;
     std::string moduleFullPath = callback->module->getFullPath();
     vector_delete_element(operation->pendingList, (IDoneCallback *)callback);

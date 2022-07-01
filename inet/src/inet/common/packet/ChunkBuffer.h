@@ -1,20 +1,12 @@
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program.  If not, see http://www.gnu.org/licenses/.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-#ifndef __INET_CHUNKBUFFER_H_
-#define __INET_CHUNKBUFFER_H_
+
+#ifndef __INET_CHUNKBUFFER_H
+#define __INET_CHUNKBUFFER_H
 
 #include "inet/common/packet/chunk/Chunk.h"
 
@@ -38,12 +30,12 @@ namespace inet {
  */
 class INET_API ChunkBuffer : public cNamedObject
 {
-  friend class ChunkBufferDescriptor;
-  friend class ChunkBuffer__RegionDescriptor;
+    friend class ChunkBufferDescriptor;
+    friend class ChunkBuffer__RegionDescriptor;
 
-  protected:
+  public:
     class INET_API Region {
-      friend class ChunkBuffer__RegionDescriptor;
+        friend class ChunkBuffer__RegionDescriptor;
 
       public:
         b offset;
@@ -57,8 +49,8 @@ class INET_API ChunkBuffer : public cNamedObject
         const Chunk *getData() const { return data.get(); } // only for class descriptor
 
       public:
-        Region(b offset, const Ptr<const Chunk>& data) : offset(offset), data(data) { }
-        Region(const Region& other) : offset(other.offset), data(other.data) { }
+        Region(b offset, const Ptr<const Chunk>& data) : offset(offset), data(data) {}
+        Region(const Region& other) : offset(other.offset), data(other.data) {}
 
         b getStartOffset() const { return offset; }
         b getEndOffset() const { return offset + data->getChunkLength(); }
@@ -127,7 +119,7 @@ class INET_API ChunkBuffer : public cNamedObject
      * chunk. Already existing data gets overwritten, and connecting data gets
      * merged with the provided chunk.
      */
-    // TODO: add flag to decide between keeping or overwriting old data when replacing with new data
+    // TODO add flag to decide between keeping or overwriting old data when replacing with new data
     void replace(b offset, const Ptr<const Chunk>& chunk);
 
     /**
@@ -152,5 +144,5 @@ inline std::ostream& operator<<(std::ostream& os, const ChunkBuffer& buffer) { r
 
 } // namespace
 
-#endif // #ifndef __INET_CHUNKBUFFER_H_
+#endif
 

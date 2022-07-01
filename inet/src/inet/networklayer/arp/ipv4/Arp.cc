@@ -1,32 +1,21 @@
-/*
- * Copyright (C) 2004 Andras Varga
- * Copyright (C) 2008 Alfonso Ariza Quintana (global arp)
- * Copyright (C) 2014 OpenSim Ltd.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program; if not, see <http://www.gnu.org/licenses/>.
- */
+//
+// Copyright (C) 2004 OpenSim Ltd.
+// Copyright (C) 2008 Alfonso Ariza Quintana (global arp)
+// Copyright (C) 2014 OpenSim Ltd.
+//
+// SPDX-License-Identifier: LGPL-3.0-or-later
+//
+
+#include "inet/networklayer/arp/ipv4/Arp.h"
 
 #include "inet/common/IProtocolRegistrationListener.h"
 #include "inet/common/ProtocolTag_m.h"
-#include "inet/common/lifecycle/ModuleOperations.h"
 #include "inet/common/lifecycle/NodeStatus.h"
 #include "inet/common/packet/Packet.h"
 #include "inet/common/packet/dissector/ProtocolDissector.h"
 #include "inet/common/packet/dissector/ProtocolDissectorRegistry.h"
 #include "inet/linklayer/common/InterfaceTag_m.h"
 #include "inet/linklayer/common/MacAddressTag_m.h"
-#include "inet/networklayer/arp/ipv4/Arp.h"
 #include "inet/networklayer/arp/ipv4/ArpPacket_m.h"
 #include "inet/networklayer/contract/IInterfaceTable.h"
 #include "inet/networklayer/ipv4/IIpv4RoutingTable.h"
@@ -76,10 +65,10 @@ void Arp::initialize(int stage)
         WATCH_PTRMAP(arpCache);
     }
     else if (stage == INITSTAGE_NETWORK_LAYER) {
-        ift = getModuleFromPar<IInterfaceTable>(par("interfaceTableModule"), this);
-        rt = getModuleFromPar<IIpv4RoutingTable>(par("routingTableModule"), this);
-        registerService(Protocol::arp, gate("netwIn"), gate("ifIn"));
-        registerProtocol(Protocol::arp, gate("ifOut"), gate("netwOut"));
+        ift.reference(this, "interfaceTableModule", true);
+        rt.reference(this, "routingTableModule", true);
+        registerService(Protocol::arp, gate("netwIn"), gate("netwOut"));
+        registerProtocol(Protocol::arp, gate("ifOut"), gate("ifIn"));
     }
 }
 
@@ -89,7 +78,7 @@ void Arp::finish()
 
 Arp::~Arp()
 {
-    for (auto & elem : arpCache)
+    for (auto& elem : arpCache)
         delete elem.second;
 }
 
@@ -143,26 +132,26 @@ void Arp::refreshDisplay() const
     getDisplayString().setTagArg("t", 0, os.str().c_str());
 }
 
-void Arp::initiateArpResolution(ArpCacheEntry *entry)
+void Arp::initiateArpResolution(Ipv4Address nextHopAddr, ArpCacheEntry *entry)
 {
-    Ipv4Address nextHopAddr = entry->myIter->first;
     entry->pending = true;
     entry->numRetries = 0;
     entry->lastUpdate = SIMTIME_ZERO;
     entry->macAddress = MacAddress::UNSPECIFIED_ADDRESS;
+    entry->ipv4Address = nextHopAddr;
     sendArpRequest(entry->ie, nextHopAddr);
 
     // start timer
     cMessage *msg = entry->timer = new cMessage("ARP timeout");
     msg->setContextPointer(entry);
-    scheduleAt(simTime() + retryTimeout, msg);
+    scheduleAfter(retryTimeout, msg);
 
     numResolutions++;
     Notification signal(nextHopAddr, MacAddress::UNSPECIFIED_ADDRESS, entry->ie);
     emit(arpResolutionInitiatedSignal, &signal);
 }
 
-void Arp::sendArpRequest(const InterfaceEntry *ie, Ipv4Address ipAddress)
+void Arp::sendArpRequest(const NetworkInterface *ie, Ipv4Address ipAddress)
 {
     // find our own IPv4 address and MAC address on the given interface
     MacAddress myMACAddress = ie->getMacAddress();
@@ -183,7 +172,12 @@ void Arp::sendArpRequest(const InterfaceEntry *ie, Ipv4Address ipAddress)
 
     packet->addTag<MacAddressReq>()->setDestAddress(MacAddress::BROADCAST_ADDRESS);
     packet->addTag<InterfaceReq>()->setInterfaceId(ie->getInterfaceId());
+    if (ie->getProtocol() != nullptr)
+        packet->addTag<DispatchProtocolReq>()->setProtocol(ie->getProtocol());
+    else
+        packet->removeTagIfPresent<DispatchProtocolReq>();
     packet->addTag<PacketProtocolTag>()->setProtocol(&Protocol::arp);
+
     // send out
     EV_INFO << "Sending " << packet << " to network protocol.\n";
     emit(arpRequestSentSignal, packet);
@@ -197,10 +191,10 @@ void Arp::requestTimedOut(cMessage *selfmsg)
     entry->numRetries++;
     if (entry->numRetries < retryCount) {
         // retry
-        Ipv4Address nextHopAddr = entry->myIter->first;
+        Ipv4Address nextHopAddr = entry->ipv4Address;
         EV_INFO << "ARP request for " << nextHopAddr << " timed out, resending\n";
         sendArpRequest(entry->ie, nextHopAddr);
-        scheduleAt(simTime() + retryTimeout, selfmsg);
+        scheduleAfter(retryTimeout, selfmsg);
         return;
     }
 
@@ -208,15 +202,15 @@ void Arp::requestTimedOut(cMessage *selfmsg)
 
     // max retry count reached: ARP failure.
     // throw out entry from cache
-    EV << "ARP timeout, max retry count " << retryCount << " for " << entry->myIter->first << " reached.\n";
-    Notification signal(entry->myIter->first, MacAddress::UNSPECIFIED_ADDRESS, entry->ie);
+    EV << "ARP timeout, max retry count " << retryCount << " for " << entry->ipv4Address << " reached.\n";
+    Notification signal(entry->ipv4Address, MacAddress::UNSPECIFIED_ADDRESS, entry->ie);
     emit(arpResolutionFailedSignal, &signal);
-    arpCache.erase(entry->myIter);
+    arpCache.erase(entry->ipv4Address);
     delete entry;
     numFailedResolutions++;
 }
 
-bool Arp::addressRecognized(Ipv4Address destAddr, InterfaceEntry *ie)
+bool Arp::addressRecognized(Ipv4Address destAddr, NetworkInterface *ie)
 {
     if (rt->isLocalAddress(destAddr))
         return true;
@@ -225,7 +219,7 @@ bool Arp::addressRecognized(Ipv4Address destAddr, InterfaceEntry *ie)
         if (proxyArpInterfacesMatcher.matches(ie->getInterfaceName())) {
             // if we can route this packet, and the output port is
             // different from this one, then say yes
-            InterfaceEntry *rtie = rt->getInterfaceForDestAddr(destAddr);
+            NetworkInterface *rtie = rt->getInterfaceForDestAddr(destAddr);
             return rtie != nullptr && rtie != ie;
         }
         else
@@ -247,7 +241,7 @@ void Arp::processArpPacket(Packet *packet)
     dumpArpPacket(arp.get());
 
     // extract input port
-    InterfaceEntry *ie = ift->getInterfaceById(packet->getTag<InterfaceInd>()->getInterfaceId());
+    NetworkInterface *ie = ift->getInterfaceById(packet->getTag<InterfaceInd>()->getInterfaceId());
 
     //
     // Recipe a'la RFC 826:
@@ -307,8 +301,8 @@ void Arp::processArpPacket(Packet *packet)
             }
             else {
                 entry = new ArpCacheEntry();
-                auto where = arpCache.insert(arpCache.begin(), std::make_pair(srcIpAddress, entry));
-                entry->myIter = where;
+                arpCache.insert(arpCache.begin(), std::make_pair(srcIpAddress, entry));
+                entry->ipv4Address = srcIpAddress;
                 entry->ie = ie;
 
                 entry->pending = false;
@@ -342,6 +336,10 @@ void Arp::processArpPacket(Packet *packet)
                 outPk->insertAtFront(arpReply);
                 outPk->addTag<MacAddressReq>()->setDestAddress(srcMacAddress);
                 outPk->addTag<InterfaceReq>()->setInterfaceId(ie->getInterfaceId());
+                if (ie->getProtocol() != nullptr)
+                    outPk->addTag<DispatchProtocolReq>()->setProtocol(ie->getProtocol());
+                else
+                    outPk->removeTagIfPresent<DispatchProtocolReq>();
                 outPk->addTag<PacketProtocolTag>()->setProtocol(&Protocol::arp);
 
                 // send out
@@ -374,44 +372,44 @@ void Arp::processArpPacket(Packet *packet)
     delete packet;
 }
 
-MacAddress Arp::resolveMacAddressForArpReply(const InterfaceEntry *ie, const ArpPacket *arp)
+MacAddress Arp::resolveMacAddressForArpReply(const NetworkInterface *ie, const ArpPacket *arp)
 {
     return ie->getMacAddress();
 }
 
 void Arp::updateArpCache(ArpCacheEntry *entry, const MacAddress& macAddress)
 {
-    EV_DETAIL << "Updating ARP cache entry: " << entry->myIter->first << " <--> " << macAddress << "\n";
+    EV_DETAIL << "Updating ARP cache entry: " << entry->ipv4Address << " <--> " << macAddress << "\n";
 
     // update entry
     if (entry->pending) {
         entry->pending = false;
-        delete cancelEvent(entry->timer);
+        cancelAndDelete(entry->timer);
         entry->timer = nullptr;
         entry->numRetries = 0;
     }
     entry->macAddress = macAddress;
     entry->lastUpdate = simTime();
-    Notification signal(entry->myIter->first, macAddress, entry->ie);
+    Notification signal(entry->ipv4Address, macAddress, entry->ie);
     emit(arpResolutionCompletedSignal, &signal);
 }
 
-MacAddress Arp::resolveL3Address(const L3Address& address, const InterfaceEntry *ie)
+MacAddress Arp::resolveL3Address(const L3Address& address, const NetworkInterface *ie)
 {
     Enter_Method("resolveMACAddress(%s,%s)", address.str().c_str(), ie->getInterfaceName());
 
     Ipv4Address addr = address.toIpv4();
-    ArpCache::const_iterator it = arpCache.find(addr);
+    auto it = arpCache.find(addr);
     if (it == arpCache.end()) {
         // no cache entry: launch ARP request
         ArpCacheEntry *entry = new ArpCacheEntry();
         entry->owner = this;
-        auto where = arpCache.insert(arpCache.begin(), std::make_pair(addr, entry));
-        entry->myIter = where;    // note: "inserting a new element into a map does not invalidate iterators that point to existing elements"
+        arpCache.insert(arpCache.begin(), std::make_pair(addr, entry));
+        entry->ipv4Address = addr;
         entry->ie = ie;
 
         EV << "Starting ARP resolution for " << addr << "\n";
-        initiateArpResolution(entry);
+        initiateArpResolution(addr, entry);
         return MacAddress::UNSPECIFIED_ADDRESS;
     }
     else if (it->second->pending) {
@@ -425,32 +423,31 @@ MacAddress Arp::resolveL3Address(const L3Address& address, const InterfaceEntry 
     else {
         EV << "ARP cache entry for " << addr << " expired, starting new ARP resolution\n";
         ArpCacheEntry *entry = it->second;
-        entry->ie = ie;    // routing table may have changed
-        initiateArpResolution(entry);
+        entry->ie = ie; // routing table may have changed
+        initiateArpResolution(addr, entry);
     }
     return MacAddress::UNSPECIFIED_ADDRESS;
 }
 
 L3Address Arp::getL3AddressFor(const MacAddress& macAddr) const
 {
-    Enter_Method_Silent();
+    Enter_Method("getL3AddressFor");
 
     if (macAddr.isUnspecified())
         return Ipv4Address::UNSPECIFIED_ADDRESS;
 
     simtime_t now = simTime();
-    for (const auto & elem : arpCache)
+    for (const auto& elem : arpCache)
         if (elem.second->macAddress == macAddr && elem.second->lastUpdate + cacheTimeout >= now)
             return elem.first;
-
 
     return Ipv4Address::UNSPECIFIED_ADDRESS;
 }
 
 // Also known as ARP Announcement
-void Arp::sendArpGratuitous(const InterfaceEntry *ie, MacAddress srcAddr, Ipv4Address ipAddr, ArpOpcode opCode)
+void Arp::sendArpGratuitous(const NetworkInterface *ie, MacAddress srcAddr, Ipv4Address ipAddr, ArpOpcode opCode)
 {
-    Enter_Method_Silent();
+    Enter_Method("sendArpGratuitous");
 
     // both must be set
     ASSERT(!srcAddr.isUnspecified());
@@ -470,18 +467,23 @@ void Arp::sendArpGratuitous(const InterfaceEntry *ie, MacAddress srcAddr, Ipv4Ad
     macAddrReq->setSrcAddress(srcAddr);
     macAddrReq->setDestAddress(MacAddress::BROADCAST_ADDRESS);
     packet->addTag<InterfaceReq>()->setInterfaceId(ie->getInterfaceId());
+    if (ie->getProtocol() != nullptr)
+        packet->addTag<DispatchProtocolReq>()->setProtocol(ie->getProtocol());
+    else
+        packet->removeTagIfPresent<DispatchProtocolReq>();
     packet->addTag<PacketProtocolTag>()->setProtocol(&Protocol::arp);
 
     ArpCacheEntry *entry = new ArpCacheEntry();
-    auto where = arpCache.insert(arpCache.begin(), std::make_pair(ipAddr, entry));
-    entry->myIter = where;
+    arpCache.insert(arpCache.begin(), std::make_pair(ipAddr, entry));
+    entry->ipv4Address = ipAddr;
     entry->ie = ie;
 
     entry->pending = false;
     entry->timer = nullptr;
     entry->numRetries = 0;
 
-//    updateARPCache(entry, srcAddr); //FIXME
+    entry->lastUpdate = simTime();
+    // updateARPCache(entry, srcAddr); //FIXME
 
     // send out
     send(packet, "ifOut");
@@ -489,9 +491,9 @@ void Arp::sendArpGratuitous(const InterfaceEntry *ie, MacAddress srcAddr, Ipv4Ad
 
 // A client should send out 'ARP Probe' to probe the newly received IPv4 address.
 // Refer to RFC 5227, IPv4 Address Conflict Detection
-void Arp::sendArpProbe(const InterfaceEntry *ie, MacAddress srcAddr, Ipv4Address probedAddr)
+void Arp::sendArpProbe(const NetworkInterface *ie, MacAddress srcAddr, Ipv4Address probedAddr)
 {
-    Enter_Method_Silent();
+    Enter_Method("sendArpProbe");
 
     // both must be set
     ASSERT(!srcAddr.isUnspecified());
@@ -510,6 +512,10 @@ void Arp::sendArpProbe(const InterfaceEntry *ie, MacAddress srcAddr, Ipv4Address
     macAddrReq->setSrcAddress(srcAddr);
     macAddrReq->setDestAddress(MacAddress::BROADCAST_ADDRESS);
     packet->addTag<InterfaceReq>()->setInterfaceId(ie->getInterfaceId());
+    if (ie->getProtocol() != nullptr)
+        packet->addTag<DispatchProtocolReq>()->setProtocol(ie->getProtocol());
+    else
+        packet->removeTagIfPresent<DispatchProtocolReq>();
     packet->addTag<PacketProtocolTag>()->setProtocol(&Protocol::arp);
 
     // send out

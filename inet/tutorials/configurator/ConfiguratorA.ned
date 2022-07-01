@@ -1,27 +1,17 @@
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program.  If not, see http://www.gnu.org/licenses/.
-//
+
 
 package inet.tutorials.configurator;
 
 import inet.networklayer.configurator.ipv4.Ipv4NetworkConfigurator;
 import inet.node.ethernet.Eth100M;
 import inet.node.ethernet.Eth10M;
-import inet.node.ethernet.EtherSwitch;
+import inet.node.ethernet.EthernetSwitch;
 import inet.node.inet.Router;
 import inet.node.inet.StandardHost;
-import inet.visualizer.integrated.IntegratedCanvasVisualizer;
+import inet.visualizer.canvas.integrated.IntegratedCanvasVisualizer;
 
 
 network ConfiguratorA
@@ -67,13 +57,13 @@ network ConfiguratorA
         host8: StandardHost {
             @display("p=1430.4075,736.3875");
         }
-        switch0: EtherSwitch {
+        switch0: EthernetSwitch {
             @display("p=518.4975,574.9875");
         }
-        switch2: EtherSwitch {
+        switch2: EthernetSwitch {
             @display("p=1162.08,574.9875");
         }
-        switch1: EtherSwitch {
+        switch1: EthernetSwitch {
             @display("p=821.1225,225.95999");
         }
         visualizer: IntegratedCanvasVisualizer {

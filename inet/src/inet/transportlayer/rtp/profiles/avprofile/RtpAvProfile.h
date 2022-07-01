@@ -1,3 +1,7 @@
+//
+// SPDX-License-Identifier: LGPL-3.0-or-later
+//
+
 /***************************************************************************
                           RtpAvProfile.h  -  description
                              -------------------
@@ -6,16 +10,8 @@
     email                : Matthias.Oppitz@gmx.de
 ***************************************************************************/
 
-/***************************************************************************
-*                                                                         *
-*   This program is free software; you can redistribute it and/or modify  *
-*   it under the terms of the GNU General Public License as published by  *
-*   the Free Software Foundation; either version 2 of the License, or     *
-*   (at your option) any later version.                                   *
-*                                                                         *
-***************************************************************************/
-
-#include "inet/common/INETDefs.h"
+#ifndef __INET_RTPAVPROFILE_H
+#define __INET_RTPAVPROFILE_H
 
 #include "inet/transportlayer/rtp/RtpProfile.h"
 
@@ -43,4 +39,6 @@ class INET_API RtpAvProfile : public RtpProfile
 } // namespace rtp
 
 } // namespace inet
+
+#endif
 

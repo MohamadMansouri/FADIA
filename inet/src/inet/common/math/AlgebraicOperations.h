@@ -1,20 +1,12 @@
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program.  If not, see http://www.gnu.org/licenses/.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-#ifndef __INET_MATH_ALGEBRAICOPERATIONS_H_
-#define __INET_MATH_ALGEBRAICOPERATIONS_H_
+
+#ifndef __INET_ALGEBRAICOPERATIONS_H
+#define __INET_ALGEBRAICOPERATIONS_H
 
 #include "inet/common/math/PrimitiveFunctions.h"
 
@@ -32,7 +24,7 @@ class INET_API AddedFunction : public FunctionBase<R, D>
   public:
     AddedFunction(const Ptr<const IFunction<R, D>>& function1, const Ptr<const IFunction<R, D>>& function2) :
         function1(function1), function2(function2)
-    { }
+    {}
 
     virtual typename D::I getDomain() const override {
         return function1->getDomain().getIntersected(function2->getDomain());
@@ -42,7 +34,7 @@ class INET_API AddedFunction : public FunctionBase<R, D>
         return function1->getValue(p) + function2->getValue(p);
     }
 
-    virtual void partition(const typename D::I& i, const std::function<void (const typename D::I&, const IFunction<R, D> *)> callback) const override {
+    virtual void partition(const typename D::I& i, const std::function<void(const typename D::I&, const IFunction<R, D> *)> callback) const override {
         function1->partition(i, [&] (const typename D::I& i1, const IFunction<R, D> *f1) {
             // NOTE: optimization for 0 + x
             if (auto f1c = dynamic_cast<const ConstantFunction<R, D> *>(f1)) {
@@ -52,7 +44,7 @@ class INET_API AddedFunction : public FunctionBase<R, D>
                 }
             }
             function2->partition(i1, [&] (const typename D::I& i2, const IFunction<R, D> *f2) {
-                // TODO: use template specialization for compile time optimization
+                // TODO use template specialization for compile time optimization
                 if (auto f1c = dynamic_cast<const ConstantFunction<R, D> *>(f1)) {
                     if (auto f2c = dynamic_cast<const ConstantFunction<R, D> *>(f2)) {
                         ConstantFunction<R, D> g(f1c->getConstantValue() + f2c->getConstantValue());
@@ -106,7 +98,7 @@ class INET_API AddedFunction : public FunctionBase<R, D>
     }
 
     virtual bool isFinite(const typename D::I& i) const override {
-        return function1->isFinite(i) & function2->isFinite(i);
+        return function1->isFinite(i) && function2->isFinite(i);
     }
 
     virtual void printStructure(std::ostream& os, int level = 0) const override {
@@ -128,7 +120,7 @@ class INET_API SubtractedFunction : public FunctionBase<R, D>
   public:
     SubtractedFunction(const Ptr<const IFunction<R, D>>& function1, const Ptr<const IFunction<R, D>>& function2) :
         function1(function1), function2(function2)
-    { }
+    {}
 
     virtual typename D::I getDomain() const override {
         return function1->getDomain().getIntersected(function2->getDomain());
@@ -138,7 +130,7 @@ class INET_API SubtractedFunction : public FunctionBase<R, D>
         return function1->getValue(p) - function2->getValue(p);
     }
 
-    virtual void partition(const typename D::I& i, const std::function<void (const typename D::I&, const IFunction<R, D> *)> callback) const override {
+    virtual void partition(const typename D::I& i, const std::function<void(const typename D::I&, const IFunction<R, D> *)> callback) const override {
         function1->partition(i, [&] (const typename D::I& i1, const IFunction<R, D> *f1) {
             function2->partition(i1, [&] (const typename D::I& i2, const IFunction<R, D> *f2) {
                 if (auto f1c = dynamic_cast<const ConstantFunction<R, D> *>(f1)) {
@@ -176,7 +168,7 @@ class INET_API SubtractedFunction : public FunctionBase<R, D>
     }
 
     virtual bool isFinite(const typename D::I& i) const override {
-        return function1->isFinite(i) & function2->isFinite(i);
+        return function1->isFinite(i) && function2->isFinite(i);
     }
 
     virtual void printStructure(std::ostream& os, int level = 0) const override {
@@ -198,7 +190,7 @@ class INET_API MultipliedFunction : public FunctionBase<R, D>
   public:
     MultipliedFunction(const Ptr<const IFunction<R, D>>& function1, const Ptr<const IFunction<double, D>>& function2) :
         function1(function1), function2(function2)
-    { }
+    {}
 
     virtual typename D::I getDomain() const override {
         return function1->getDomain().getIntersected(function2->getDomain());
@@ -212,7 +204,7 @@ class INET_API MultipliedFunction : public FunctionBase<R, D>
         return function1->getValue(p) * function2->getValue(p);
     }
 
-    virtual void partition(const typename D::I& i, const std::function<void (const typename D::I&, const IFunction<R, D> *)> callback) const override {
+    virtual void partition(const typename D::I& i, const std::function<void(const typename D::I&, const IFunction<R, D> *)> callback) const override {
         function1->partition(i, [&] (const typename D::I& i1, const IFunction<R, D> *f1) {
             // NOTE: optimization for 0 * x
             if (auto f1c = dynamic_cast<const ConstantFunction<R, D> *>(f1)) {
@@ -240,7 +232,7 @@ class INET_API MultipliedFunction : public FunctionBase<R, D>
                         simplifyAndCall(i2, &g, callback);
                     }
                     else if (auto f2l = dynamic_cast<const UnilinearFunction<double, D> *>(f2)) {
-                        // QuadraticFunction<double, D> g();
+//                        QuadraticFunction<double, D> g();
                         throw cRuntimeError("TODO");
                     }
                     else
@@ -253,7 +245,7 @@ class INET_API MultipliedFunction : public FunctionBase<R, D>
     }
 
     virtual bool isFinite(const typename D::I& i) const override {
-        return function1->isFinite(i) & function2->isFinite(i);
+        return function1->isFinite(i) && function2->isFinite(i);
     }
 
     virtual void printStructure(std::ostream& os, int level = 0) const override {
@@ -273,7 +265,7 @@ class INET_API DividedFunction : public FunctionBase<double, D>
     const Ptr<const IFunction<R, D>> function2;
 
   public:
-    DividedFunction(const Ptr<const IFunction<R, D>>& function1, const Ptr<const IFunction<R, D>>& function2) : function1(function1), function2(function2) { }
+    DividedFunction(const Ptr<const IFunction<R, D>>& function1, const Ptr<const IFunction<R, D>>& function2) : function1(function1), function2(function2) {}
 
     virtual typename D::I getDomain() const override {
         return function1->getDomain().getIntersected(function2->getDomain());
@@ -283,7 +275,7 @@ class INET_API DividedFunction : public FunctionBase<double, D>
         return unit(function1->getValue(p) / function2->getValue(p)).get();
     }
 
-    virtual void partition(const typename D::I& i, const std::function<void (const typename D::I&, const IFunction<double, D> *)> callback) const override {
+    virtual void partition(const typename D::I& i, const std::function<void(const typename D::I&, const IFunction<double, D> *)> callback) const override {
         function1->partition(i, [&] (const typename D::I& i1, const IFunction<R, D> *f1) {
             // NOTE: optimization for 0 / x
             if (auto f1c = dynamic_cast<const ConstantFunction<R, D> *>(f1)) {
@@ -318,8 +310,8 @@ class INET_API DividedFunction : public FunctionBase<double, D>
                         }
                         else {
                             throw cRuntimeError("TODO");
-                            // BireciprocalFunction<double, D> g(...);
-                            // simplifyAndCall(i2, &g, f);
+//                            BireciprocalFunction<double, D> g(...);
+//                            simplifyAndCall(i2, &g, f);
                         }
                     }
                     else
@@ -349,8 +341,8 @@ class INET_API SummedFunction : public FunctionBase<R, D>
     std::vector<Ptr<const IFunction<R, D>>> functions;
 
   public:
-    SummedFunction() { }
-    SummedFunction(const std::vector<Ptr<const IFunction<R, D>>>& functions) : functions(functions) { }
+    SummedFunction() {}
+    SummedFunction(const std::vector<Ptr<const IFunction<R, D>>>& functions) : functions(functions) {}
 
     const std::vector<Ptr<const IFunction<R, D>>>& getElements() const { return functions; }
 
@@ -376,12 +368,12 @@ class INET_API SummedFunction : public FunctionBase<R, D>
         return sum;
     }
 
-    virtual void partition(const typename D::I& i, const std::function<void (const typename D::I&, const IFunction<R, D> *)> callback) const override {
+    virtual void partition(const typename D::I& i, const std::function<void(const typename D::I&, const IFunction<R, D> *)> callback) const override {
         ConstantFunction<R, D> g(R(0));
         partition(0, i, callback, &g);
     }
 
-    virtual void partition(int index, const typename D::I& i, const std::function<void (const typename D::I&, const IFunction<R, D> *)> callback, const IFunction<R, D> *f) const {
+    virtual void partition(int index, const typename D::I& i, const std::function<void(const typename D::I&, const IFunction<R, D> *)> callback, const IFunction<R, D> *f) const {
         if (index == (int)functions.size())
             simplifyAndCall(i, f, callback);
         else {
@@ -445,5 +437,5 @@ class INET_API SummedFunction : public FunctionBase<R, D>
 
 } // namespace inet
 
-#endif // #ifndef __INET_MATH_ALGEBRAICOPERATIONS_H_
+#endif
 

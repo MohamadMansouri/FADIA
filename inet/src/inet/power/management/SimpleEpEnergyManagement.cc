@@ -1,24 +1,14 @@
 //
-// Copyright (C) OpenSim Ltd.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-#include "inet/common/ModuleAccess.h"
-#include "inet/common/lifecycle/LifecycleController.h"
-#include "inet/common/lifecycle/ModuleOperations.h"
+
 #include "inet/power/management/SimpleEpEnergyManagement.h"
+
+#include "inet/common/ModuleAccess.h"
+#include "inet/common/lifecycle/ModuleOperations.h"
 
 namespace inet {
 
@@ -81,14 +71,14 @@ void SimpleEpEnergyManagement::executeNodeOperation(J estimatedEnergyCapacity)
         LifecycleOperation::StringMap params;
         ModuleStopOperation *operation = new ModuleStopOperation();
         operation->initialize(networkNode, params);
-        lifecycleController.initiateOperation(operation);
+        initiateOperation(operation);
     }
     else if (!std::isnan(nodeStartCapacity.get()) && estimatedEnergyCapacity >= nodeStartCapacity && nodeStatus->getState() == NodeStatus::DOWN) {
         EV_INFO << "Capacity reached node start threshold" << endl;
         LifecycleOperation::StringMap params;
         ModuleStartOperation *operation = new ModuleStartOperation();
         operation->initialize(networkNode, params);
-        lifecycleController.initiateOperation(operation);
+        initiateOperation(operation);
     }
 }
 
@@ -107,15 +97,17 @@ void SimpleEpEnergyManagement::scheduleLifecycleOperationTimer()
         if (!std::isnan(nodeShutdownCapacity.get()) && nodeStatus->getState() == NodeStatus::UP && estimatedResidualCapacity > nodeShutdownCapacity)
             targetCapacity = nodeShutdownCapacity;
     }
-    // enforce target capacity to be in range
-    simtime_t remainingTime = unit((targetCapacity - estimatedResidualCapacity) / totalPower / s(1)).get();
-    // make sure the targetCapacity is reached despite floating point arithmetic
-    remainingTime.setRaw(remainingTime.raw() + 1);
     if (lifecycleOperationTimer->isScheduled())
         cancelEvent(lifecycleOperationTimer);
-    // don't schedule if there's no progress
-    if (remainingTime > 0)
-        scheduleAt(simTime() + remainingTime, lifecycleOperationTimer);
+    if (totalPower != W(0) && std::isfinite(targetCapacity.get())) {
+        // enforce target capacity to be in range
+        simtime_t remainingTime = unit((targetCapacity - estimatedResidualCapacity) / totalPower / s(1)).get();
+        // make sure the targetCapacity is reached despite floating point arithmetic
+        remainingTime.setRaw(remainingTime.raw() + 1);
+        // don't schedule if there's no progress
+        if (remainingTime > 0)
+            scheduleAfter(remainingTime, lifecycleOperationTimer);
+    }
 }
 
 J SimpleEpEnergyManagement::getEstimatedEnergyCapacity() const
@@ -126,7 +118,8 @@ J SimpleEpEnergyManagement::getEstimatedEnergyCapacity() const
 
 void SimpleEpEnergyManagement::receiveSignal(cComponent *source, simsignal_t signal, double value, cObject *details)
 {
-    Enter_Method_Silent("receiveSignal");
+    Enter_Method("%s", cComponent::getSignalName(signal));
+
     if (signal == IEpEnergySource::powerConsumptionChangedSignal || signal == IEpEnergySink::powerGenerationChangedSignal) {
         executeNodeOperation(getEstimatedEnergyCapacity());
         scheduleLifecycleOperationTimer();

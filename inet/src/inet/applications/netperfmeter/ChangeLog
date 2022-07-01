@@ -1,5 +1,28 @@
 ====== inet-4.x ======
 
+2022-05-13  ------ inet-4.4.0 released ------
+
+2022-04-13  Levente Mészáros
+
+	Commented out unused structure in NetPerfMeter that caused memory leaks.
+
+2021-03-19  Zoltan Bojthe
+
+	Changed if-else-if ladders in initialize() to separate if statements because
+	different stages may have the same number.
+
+2022-01-26  Rudolf Hornig
+
+	All of the netpefmeter code is licensed now under LGPL v3
+
+	(allowed by the written permission of the original author, Thomas Dreibholz).
+
+2021-01-11  ------ inet-4.3.0 released ------
+
+2020-09-16  Levente Mészáros
+
+	Replaced (u)int8..64 with the standard (u)int8..64_t types.
+
 2020-01-08  ------ inet-4.2.0 released ------
 
 2019-11-20  Levente Mészáros

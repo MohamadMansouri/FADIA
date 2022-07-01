@@ -1,16 +1,8 @@
 //
-// (C) 2005 Vojtech Janota
-// (C) 2003 Xuan Thang Nguyen
+// Copyright (C) 2005 Vojtech Janota
+// Copyright (C) 2003 Xuan Thang Nguyen
 //
-// This library is free software, you can redistribute it
-// and/or modify
-// it under  the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation;
-// either version 2 of the License, or any later version.
-// The library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-// See the GNU Lesser General Public License for more details.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
 import inet.common.INETDefs;
@@ -24,7 +16,7 @@ namespace inet;
 // This class adds convenience get() and set() methods to the generated
 // base class, but no extra data.
 //
-// XXX FIXME all RSVP message have kind=RSVP_TRAFFIC
+// FIXME all RSVP message have kind=RSVP_TRAFFIC
 // to distinguish them:
 // if they are RsvpPacket: use packet->getRsvpKind()
 // if they are RsvpHelloMsg: only one type exists
@@ -43,4 +35,3 @@ class RsvpHelloMsg extends RsvpMessage
 
     rsvpKind = HELLO_MESSAGE;
 }
-

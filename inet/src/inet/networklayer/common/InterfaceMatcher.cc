@@ -1,38 +1,26 @@
 //
-// Copyright (C) 2013 Opensim Ltd.
+// Copyright (C) 2013 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
+
+#include "inet/networklayer/common/InterfaceMatcher.h"
 
 #include <set>
 
 #include "inet/common/ModuleAccess.h"
 #include "inet/common/PatternMatcher.h"
 #include "inet/common/stlutils.h"
-#include "inet/networklayer/contract/IInterfaceTable.h"
 #include "inet/networklayer/common/L3AddressResolver.h"
-#include "inet/networklayer/common/InterfaceEntry.h"
-#include "inet/networklayer/common/InterfaceMatcher.h"
+#include "inet/networklayer/common/NetworkInterface.h"
+#include "inet/networklayer/contract/IInterfaceTable.h"
 
 namespace inet {
 
-inline bool isEmpty(const char *s) { return !s || !s[0]; }
-inline bool isNotEmpty(const char *s) { return s && s[0]; }
-
 InterfaceMatcher::Matcher::Matcher(const char *pattern)
 {
-    matchesany = isEmpty(pattern);
+    matchesany = opp_isempty(pattern);
     if (matchesany)
         return;
     cStringTokenizer tokenizer(pattern);
@@ -42,7 +30,7 @@ InterfaceMatcher::Matcher::Matcher(const char *pattern)
 
 InterfaceMatcher::Matcher::~Matcher()
 {
-    for (auto & elem : matchers)
+    for (auto& elem : matchers)
         delete elem;
 }
 
@@ -50,7 +38,7 @@ bool InterfaceMatcher::Matcher::matches(const char *s) const
 {
     if (matchesany)
         return true;
-    for (auto & elem : matchers)
+    for (auto& elem : matchers)
         if (elem->matches(s))
             return true;
 
@@ -63,7 +51,7 @@ InterfaceMatcher::Selector::Selector(const char *hostPattern, const char *namePa
 }
 
 // Note: "hosts", "interfaces" and "towards" must ALL match on the interface
-bool InterfaceMatcher::Selector::matches(const InterfaceEntry *ie)
+bool InterfaceMatcher::Selector::matches(const NetworkInterface *ie)
 {
     cModule *hostModule = ie->getInterfaceTable()->getHostModule();
     std::string hostFullPath = hostModule->getFullPath();
@@ -76,15 +64,15 @@ bool InterfaceMatcher::Selector::matches(const InterfaceEntry *ie)
 
 InterfaceMatcher::InterfaceMatcher(const cXMLElementList& xmlSelectors)
 {
-    for (auto & xmlSelector : xmlSelectors) {
+    for (auto& xmlSelector : xmlSelectors) {
         cXMLElement *interfaceElement = xmlSelector;
-        const char *hostAttr = interfaceElement->getAttribute("hosts");    // "host* router[0..3]"
-        const char *interfaceAttr = interfaceElement->getAttribute("names");    // i.e. interface names, like "eth* ppp0"
+        const char *hostAttr = interfaceElement->getAttribute("hosts"); // "host* router[0..3]"
+        const char *interfaceAttr = interfaceElement->getAttribute("names"); // i.e. interface names, like "eth* ppp0"
 
-        const char *towardsAttr = interfaceElement->getAttribute("towards");    // neighbor host names, like "ap switch"
-        const char *amongAttr = interfaceElement->getAttribute("among");    // neighbor host names, like "host[*] router1"
+        const char *towardsAttr = interfaceElement->getAttribute("towards"); // neighbor host names, like "ap switch"
+        const char *amongAttr = interfaceElement->getAttribute("among"); // neighbor host names, like "host[*] router1"
 
-        if (amongAttr && *amongAttr) {    // among="X Y Z" means hosts = "X Y Z" towards = "X Y Z"
+        if (amongAttr && *amongAttr) { // among="X Y Z" means hosts = "X Y Z" towards = "X Y Z"
             if ((hostAttr && *hostAttr) || (towardsAttr && *towardsAttr))
                 throw cRuntimeError("The 'hosts'/'towards' and 'among' attributes are mutually exclusive, at %s", interfaceElement->getSourceLocation());
             towardsAttr = hostAttr = amongAttr;
@@ -101,14 +89,14 @@ InterfaceMatcher::InterfaceMatcher(const cXMLElementList& xmlSelectors)
 
 InterfaceMatcher::~InterfaceMatcher()
 {
-    for (auto & elem : selectors)
+    for (auto& elem : selectors)
         delete elem;
 }
 
 /**
  * Returns the index of the first selector that matches the interface.
  */
-int InterfaceMatcher::findMatchingSelector(const InterfaceEntry *ie)
+int InterfaceMatcher::findMatchingSelector(const NetworkInterface *ie)
 {
     for (int i = 0; i < (int)selectors.size(); i++)
         if (selectors[i]->matches(ie))
@@ -131,7 +119,7 @@ static cGate *findRemoteGate(cGate *startGate)
     return nullptr;
 }
 
-bool InterfaceMatcher::linkContainsMatchingHost(const InterfaceEntry *ie, const Matcher& hostMatcher) const
+bool InterfaceMatcher::linkContainsMatchingHost(const NetworkInterface *ie, const Matcher& hostMatcher) const
 {
     int outGateId = ie->getNodeOutputGateId();
     cModule *node = ie->getInterfaceTable()->getHostModule();
@@ -142,7 +130,7 @@ bool InterfaceMatcher::linkContainsMatchingHost(const InterfaceEntry *ie, const 
     collectNeighbors(outGate, hostNodes, deviceNodes, node);
 
     for (auto neighbour : hostNodes) {
-        
+
         std::string hostFullPath = neighbour->getFullPath();
         std::string hostShortenedFullPath = hostFullPath.substr(hostFullPath.find('.') + 1);
         if (hostMatcher.matches(hostShortenedFullPath.c_str()) || hostMatcher.matches(hostFullPath.c_str()))

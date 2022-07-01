@@ -1,7 +1,7 @@
 %description:
 Testing Ethernet communication on EtherBus with 100MBps, with disconnecting and reconnecting some hosts.
 The network contains two hosts that communicate with each other.
-All hosts use EtherMac implementation with half duplex mode.
+All hosts use EthernetCsmaMac implementation with half duplex mode.
 All hosts have same ethernet configurations.
 All hosts send requests and also reply to requests sent to them.
 
@@ -15,11 +15,11 @@ checks:
 %#--------------------------------------------------------------------------------------------------------------
 %file: test.ned
 import inet.linklayer.ethernet.EtherBus;
-import inet.node.ethernet.EtherHost;
+import inet.node.ethernet.EthernetHost;
 import inet.common.scenario.ScenarioManager;
 import ned.DatarateChannel;
 
-module EtherHostQ extends EtherHost
+module EtherHostQ extends EthernetHost
 {
     parameters:
         queueType = "DropTailQueue";
@@ -216,7 +216,7 @@ network = SpeedTest
 **.cli.respLength = 1250B      # 10.000 bit
 *.host_*_*.cli.startTime = 0s
 
-*.host_*_H_*.mac.duplexMode = false
+*.host_*_H_*.duplexMode = false
 
 *.host_*_H_*.cli.sendInterval  = 0.1ms        # 10.000 / speed [ / nodecount, when halfduplex]
 

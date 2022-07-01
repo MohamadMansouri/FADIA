@@ -1,22 +1,13 @@
 //
 // Copyright (C) 2016 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see http://www.gnu.org/licenses/.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-#include "inet/linklayer/ieee80211/mac/Ieee80211Frame_m.h"
+
 #include "inet/linklayer/ieee80211/mac/fragmentation/BasicFragmentationPolicy.h"
+
+#include "inet/linklayer/ieee80211/mac/Ieee80211Frame_m.h"
 
 namespace inet {
 namespace ieee80211 {
@@ -30,7 +21,7 @@ void BasicFragmentationPolicy::initialize()
 
 std::vector<int> BasicFragmentationPolicy::computeFragmentSizes(Packet *frame)
 {
-    Enter_Method_Silent("computeFragmentSizes");
+    Enter_Method("computeFragmentSizes");
     if (fragmentationThreshold < frame->getByteLength()) {
         EV_DEBUG << "Computing fragment sizes: fragmentationThreshold = " << fragmentationThreshold << ", packet = " << *frame << ".\n";
         std::vector<int> sizes;
@@ -49,7 +40,7 @@ std::vector<int> BasicFragmentationPolicy::computeFragmentSizes(Packet *frame)
         int maxFragmentPayload = fragmentationThreshold - headerLength - trailerLength;
         if (payloadLength > maxFragmentPayload * MAX_NUM_FRAGMENTS)
             throw cRuntimeError("Fragmentation: frame \"%s\" too large, won't fit into %d fragments", frame->getName(), MAX_NUM_FRAGMENTS);
-        for(int i = 0; headerLength + trailerLength + payloadLength > fragmentationThreshold; i++) {
+        for (int i = 0; headerLength + trailerLength + payloadLength > fragmentationThreshold; i++) {
             auto size = fragmentationThreshold - headerLength - trailerLength;
             EV_TRACE << "Computed fragment: i = " << i << ", size = " << size << ".\n";
             sizes.push_back(size);
@@ -68,3 +59,4 @@ std::vector<int> BasicFragmentationPolicy::computeFragmentSizes(Packet *frame)
 
 } // namespace ieee80211
 } // namespace inet
+

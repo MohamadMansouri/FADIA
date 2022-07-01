@@ -1,34 +1,24 @@
 //
-// Copyright (C) 2005 Andras Varga
+// Copyright (C) 2005 OpenSim Ltd.
 // Copyright (C) 2005 Wei Yang, Ng
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public
-// License along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
 #include "inet/networklayer/ipv6/Ipv6Route.h"
+
 #include "inet/networklayer/ipv6/Ipv6RoutingTable.h"
 
 namespace inet {
 
 Register_Abstract_Class(Ipv6Route);
 
-const char* inet::Ipv6Route::getSourceTypeAbbreviation() const {
+const char *inet::Ipv6Route::getSourceTypeAbbreviation() const {
     switch (_sourceType) {
         case IFACENETMASK:
             return "C";
         case MANUAL:
-            return (getDestPrefix().isUnspecified() ? "S*": "S");
+            return getDestPrefix().isUnspecified() ? "S*" : "S";
         case ROUTER_ADVERTISEMENT:
             return "ra";
         case RIP:
@@ -59,12 +49,10 @@ std::string Ipv6Route::str() const
     else
         out << " " << getDestPrefix();
     out << "/" << getPrefixLength();
-    if (getNextHop().isUnspecified())
-    {
+    if (getNextHop().isUnspecified()) {
         out << " is directly connected";
     }
-    else
-    {
+    else {
         out << " [" << getAdminDist() << "/" << getMetric() << "]";
         out << " via ";
         out << getNextHop();

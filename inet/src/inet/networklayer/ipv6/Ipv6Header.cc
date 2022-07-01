@@ -1,22 +1,13 @@
 //
-// Copyright (C) 2005 Andras Varga
+// Copyright (C) 2005 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-#include "inet/networklayer/ipv6/Ipv6ExtensionHeaders_m.h"
+
 #include "inet/networklayer/ipv6/Ipv6Header.h"
+
+#include "inet/networklayer/ipv6/Ipv6ExtensionHeaders_m.h"
 
 namespace inet {
 
@@ -28,12 +19,12 @@ std::ostream& operator<<(std::ostream& os, Ipv6ExtensionHeader *eh)
 Ipv6ExtensionHeader *Ipv6Header::findExtensionHeaderByTypeForUpdate(IpProtocolId extensionType, int index)
 {
     handleChange();
-    return const_cast<Ipv6ExtensionHeader *>(const_cast<Ipv6Header*>(this)->findExtensionHeaderByType(extensionType, index));
+    return const_cast<Ipv6ExtensionHeader *>(const_cast<Ipv6Header *>(this)->findExtensionHeaderByType(extensionType, index));
 }
 
 const Ipv6ExtensionHeader *Ipv6Header::findExtensionHeaderByType(IpProtocolId extensionType, int index) const
 {
-    for (size_t i=0; i < extensionHeader_arraysize; i++)
+    for (size_t i = 0; i < extensionHeader_arraysize; i++)
         if (extensionHeader[i]->getExtensionType() == extensionType) {
             if (index == 0)
                 return extensionHeader[i];
@@ -53,7 +44,7 @@ void Ipv6Header::addExtensionHeader(Ipv6ExtensionHeader *eh)
         if (thisOrder != -1 && thatOrder > thisOrder)
             break;
         else if (thisOrder == thatOrder) {
-            if (thisOrder == 1)   // first IP_PROT_IPv6EXT_DEST has order 1, second IP_PROT_IPv6EXT_DEST has order 6
+            if (thisOrder == 1) // first IP_PROT_IPv6EXT_DEST has order 1, second IP_PROT_IPv6EXT_DEST has order 6
                 thisOrder = 6;
             else if (thisOrder != -1)
                 throw cRuntimeError(this, "addExtensionHeader() duplicate extension header: %d",
@@ -116,7 +107,7 @@ B Ipv6Header::calculateUnfragmentableHeaderByteLength() const
 {
     size_t firstFragmentableExtensionIndex = 0;
     for (size_t i = extensionHeader_arraysize; i > 0; i--) {
-        int type = extensionHeader[i-1]->getExtensionType();
+        int type = extensionHeader[i - 1]->getExtensionType();
         if (type == IP_PROT_IPv6EXT_ROUTING || type == IP_PROT_IPv6EXT_HOP) {
             firstFragmentableExtensionIndex = i;
             break;
@@ -150,7 +141,7 @@ Ipv6ExtensionHeader *Ipv6Header::removeFirstExtensionHeader()
     handleChange();
     if (extensionHeader_arraysize == 0)
         return nullptr;
-    Ipv6ExtensionHeader *eh = dropExtensionHeader(0);
+    Ipv6ExtensionHeader *eh = removeExtensionHeader(0);
     eraseExtensionHeader(0);
     return eh;
 }
@@ -163,7 +154,7 @@ Ipv6ExtensionHeader *Ipv6Header::removeExtensionHeader(IpProtocolId extensionTyp
 
     for (size_t i = 0; i < extensionHeader_arraysize; i++) {
         if (extensionHeader[i]->getExtensionType() == extensionType) {
-            Ipv6ExtensionHeader *eh = dropExtensionHeader(i);
+            Ipv6ExtensionHeader *eh = removeExtensionHeader(i);
             eraseExtensionHeader(i);
             return eh;
         }

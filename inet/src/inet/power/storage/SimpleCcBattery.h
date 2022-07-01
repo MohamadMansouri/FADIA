@@ -1,31 +1,24 @@
 //
-// Copyright (C) OpenSim Ltd.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 #ifndef __INET_SIMPLECCBATTERY_H
 #define __INET_SIMPLECCBATTERY_H
 
+#include "inet/common/StringFormat.h"
+#include "inet/common/lifecycle/LifecycleController.h"
 #include "inet/common/lifecycle/ModuleOperations.h"
+#include "inet/common/lifecycle/NodeStatus.h"
 #include "inet/power/base/CcEnergyStorageBase.h"
 
 namespace inet {
 
 namespace power {
 
-class INET_API SimpleCcBattery : public CcEnergyStorageBase
+class INET_API SimpleCcBattery : public CcEnergyStorageBase, public StringFormat::IDirectiveResolver, public LifecycleController
 {
   protected:
     // parameters
@@ -39,12 +32,12 @@ class INET_API SimpleCcBattery : public CcEnergyStorageBase
 
     cModule *networkNode = nullptr;
     NodeStatus *nodeStatus = nullptr;
-    LifecycleController lifecycleController;
 
   protected:
     virtual void initialize(int stage) override;
     virtual void refreshDisplay() const override;
     virtual void updateDisplayString() const;
+    virtual const char *resolveDirective(char directive) const override;
 
     virtual void updateTotalCurrentConsumption() override;
     virtual void updateTotalCurrentGeneration() override;
@@ -61,7 +54,7 @@ class INET_API SimpleCcBattery : public CcEnergyStorageBase
     virtual A getTotalCurrentConsumption() const override { return totalCurrentConsumption; }
     virtual A getTotalCurrentGeneration() const override { return totalCurrentGeneration; }
 
-    virtual C getNominalChargeCapacity() const override{ return nominalCapacity; }
+    virtual C getNominalChargeCapacity() const override { return nominalCapacity; }
     virtual C getResidualChargeCapacity() const override { return residualCapacity; }
 };
 
@@ -69,5 +62,5 @@ class INET_API SimpleCcBattery : public CcEnergyStorageBase
 
 } // namespace inet
 
-#endif // ifndef __INET_SIMPLECCBATTERY_H
+#endif
 

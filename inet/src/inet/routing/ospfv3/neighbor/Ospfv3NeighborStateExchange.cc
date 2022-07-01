@@ -12,11 +12,12 @@
  * 2WAY_RECEIVED - no change
  */
 
+#include "inet/routing/ospfv3/neighbor/Ospfv3NeighborStateExchange.h"
+
 #include "inet/routing/ospfv3/neighbor/Ospfv3Neighbor.h"
 #include "inet/routing/ospfv3/neighbor/Ospfv3NeighborState2Way.h"
 #include "inet/routing/ospfv3/neighbor/Ospfv3NeighborStateDown.h"
 #include "inet/routing/ospfv3/neighbor/Ospfv3NeighborStateExStart.h"
-#include "inet/routing/ospfv3/neighbor/Ospfv3NeighborStateExchange.h"
 #include "inet/routing/ospfv3/neighbor/Ospfv3NeighborStateFull.h"
 #include "inet/routing/ospfv3/neighbor/Ospfv3NeighborStateInit.h"
 #include "inet/routing/ospfv3/neighbor/Ospfv3NeighborStateLoading.h"
@@ -73,16 +74,16 @@ void Ospfv3NeighborStateExchange::processEvent(Ospfv3Neighbor *neighbor, Ospfv3N
     }
     if (event == Ospfv3Neighbor::UPDATE_RETRANSMISSION_TIMER) {
         EV_DEBUG << "Ospfv3Neighbor::UPDATE_RETRANSMISSION_TIMER caught in ExchangeState\n";
-        neighbor->retransmitUpdatePacket();                             //  ZAKOMENTOVANE PRED MIGRACIOU .  PRECO ?
+        neighbor->retransmitUpdatePacket(); // ZAKOMENTOVANE PRED MIGRACIOU .  PRECO ?
         neighbor->startUpdateRetransmissionTimer();
     }
     if (event == Ospfv3Neighbor::REQUEST_RETRANSMISSION_TIMER) {
         EV_DEBUG << "Ospfv3Neighbor::REQUEST_RETRANSMISSION_TIMER caught in ExchangeState\n";
-        neighbor->sendLinkStateRequestPacket();                             //  ZAKOMENTOVANE PRED MIGRACIOU .  PRECO ?
+        neighbor->sendLinkStateRequestPacket(); // ZAKOMENTOVANE PRED MIGRACIOU .  PRECO ?
         neighbor->startRequestRetransmissionTimer();
     }
 }
 
 } // namespace ospfv3
-}//namespace inet
+} // namespace inet
 

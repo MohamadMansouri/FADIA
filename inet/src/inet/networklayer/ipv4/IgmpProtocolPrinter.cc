@@ -1,26 +1,15 @@
 //
 // Copyright (C) 2018 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
-// @author: Zoltan Bojthe
-//
+
+
+#include "inet/networklayer/ipv4/IgmpProtocolPrinter.h"
 
 #include "inet/common/packet/printer/PacketPrinter.h"
 #include "inet/common/packet/printer/ProtocolPrinterRegistry.h"
 #include "inet/networklayer/ipv4/IgmpMessage_m.h"
-#include "inet/networklayer/ipv4/IgmpProtocolPrinter.h"
 #include "inet/networklayer/ipv4/Igmpv3.h"
 
 namespace inet {
@@ -45,7 +34,7 @@ void IgmpProtocolPrinter::print(const Ptr<const Chunk>& chunk, const Protocol *p
                         context.infoColumn << ", general";
                     else
                         context.infoColumn << ", group " << header->getGroupAddress();
-                    context.infoColumn << ", maxRespTime=" << SimTime(header->getMaxRespTimeCode(), (SimTimeUnit)-1);
+                    context.infoColumn << ", maxRespTime=" << SimTime(header->getMaxRespTimeCode(), (SimTimeUnit) - 1);
                 }
                 else if (auto header = dynamicPtrCast<const Igmpv3Query>(chunk)) {
                     context.infoColumn << "IGMPv3 QRY";
@@ -53,14 +42,14 @@ void IgmpProtocolPrinter::print(const Ptr<const Chunk>& chunk, const Protocol *p
                         context.infoColumn << ", general";
                     else
                         context.infoColumn << ", group " << header->getGroupAddress();
-                    context.infoColumn << ", maxRespTime=" << SimTime(Igmpv3::decodeTime(header->getMaxRespTimeCode()), (SimTimeUnit)-1);
+                    context.infoColumn << ", maxRespTime=" << SimTime(Igmpv3::decodeTime(header->getMaxRespTimeCode()), (SimTimeUnit) - 1);
                     if (header->getSuppressRouterProc())
                         context.infoColumn << " Suppress";
                     context.infoColumn << ", QRV=" << header->getRobustnessVariable();
                     context.infoColumn << ", QQIC=" << SimTime(Igmpv3::decodeTime(header->getQueryIntervalCode()), SIMTIME_S);
                     if (header->getSourceList().size() > 0) {
                         context.infoColumn << ", SRC={";
-                        for(auto it = header->getSourceList().begin(); it != header->getSourceList().end(); ++it) {
+                        for (auto it = header->getSourceList().begin(); it != header->getSourceList().end(); ++it) {
                             if (it != header->getSourceList().begin())
                                 context.infoColumn << ", ";
                             context.infoColumn << *it;

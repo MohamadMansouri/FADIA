@@ -1,14 +1,9 @@
 //
-// This library is free software, you can redistribute it
-// and/or modify
-// it under  the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation;
-// either version 2 of the License, or any later version.
-// The library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-// See the GNU Lesser General Public License for more details.
+// Copyright (C) 2020 OpenSim Ltd.
 //
+// SPDX-License-Identifier: LGPL-3.0-or-later
+//
+
 package inet.node.mpls;
 
 import inet.common.MessageDispatcher;
@@ -42,7 +37,7 @@ module RsvpMplsRouter
         string peers;
         string routerId = default("auto");
         *.forwarding = true;
-        *.routingTable.routerId = routerId;
+        *.routingTable.routerId = this.routerId;
         *.interfaceTableModule = default(absPath(".interfaceTable"));
         *.routingTableModule = default(absPath(".ipv4.routingTable"));
         *.tedModule = default(absPath(".ted"));
@@ -64,12 +59,12 @@ module RsvpMplsRouter
         }
         linkStateRouting: LinkStateRouting {
             parameters:
-                peers = peers;
+                peers = parent.peers;
                 @display("p=600,80");
         }
         rsvp: RsvpTe {
             parameters:
-                peers = peers;
+                peers = parent.peers;
                 classifierModule = "^.classifier";
                 @display("p=300,80");
         }
@@ -132,9 +127,9 @@ module RsvpMplsRouter
             ppp[i].upperLayerOut --> ml.in++;
             ml.out++ --> ppp[i].upperLayerIn;
         }
-        mpls.ifOut --> ml.in++;
-        ml.out++ --> mpls.ifIn;
-        nm.out++ --> mpls.netwIn;
-        mpls.netwOut --> nm.in++;
+        mpls.lowerLayerOut --> ml.in++;
+        ml.out++ --> mpls.lowerLayerIn;
+        nm.out++ --> mpls.upperLayerIn;
+        mpls.upperLayerOut --> nm.in++;
 }
 

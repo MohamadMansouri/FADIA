@@ -1,23 +1,13 @@
 //
 // Copyright (C) 2016 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see http://www.gnu.org/licenses/.
-// 
 
-#include <tuple>
 
 #include "inet/linklayer/ieee80211/mac/originator/OriginatorQosAckPolicy.h"
+
+#include <tuple>
 
 namespace inet {
 namespace ieee80211 {
@@ -28,7 +18,7 @@ void OriginatorQosAckPolicy::initialize(int stage)
 {
     ModeSetListener::initialize(stage);
     if (stage == INITSTAGE_LOCAL) {
-        rateSelection = check_and_cast<IQosRateSelection*>(getModuleByPath(par("rateSelectionModule")));
+        rateSelection = check_and_cast<IQosRateSelection *>(getModuleByPath(par("rateSelectionModule")));
         maxBlockAckPolicyFrameLength = par("maxBlockAckPolicyFrameLength");
         blockAckReqThreshold = par("blockAckReqThreshold");
         blockAckTimeout = par("blockAckTimeout");
@@ -50,8 +40,7 @@ std::map<MacAddress, std::vector<Packet *>> OriginatorQosAckPolicy::getOutstandi
     return outstandingFramesPerReceiver;
 }
 
-
-SequenceNumber OriginatorQosAckPolicy::computeStartingSequenceNumber(const std::vector<Packet *>& outstandingFrames) const
+SequenceNumberCyclic OriginatorQosAckPolicy::computeStartingSequenceNumber(const std::vector<Packet *>& outstandingFrames) const
 {
     ASSERT(outstandingFrames.size() > 0);
     auto startingSequenceNumber = outstandingFrames[0]->peekAtFront<Ieee80211DataHeader>()->getSequenceNumber();
@@ -75,7 +64,7 @@ bool OriginatorQosAckPolicy::isCompressedBlockAckReq(const std::vector<Packet *>
 }
 
 // FIXME
-bool OriginatorQosAckPolicy::isBlockAckReqNeeded(InProgressFrames* inProgressFrames, TxopProcedure* txopProcedure) const
+bool OriginatorQosAckPolicy::isBlockAckReqNeeded(InProgressFrames *inProgressFrames, TxopProcedure *txopProcedure) const
 {
     auto outstandingFramesPerReceiver = getOutstandingFramesPerReceiver(inProgressFrames);
     for (auto outstandingFrames : outstandingFramesPerReceiver) {
@@ -86,7 +75,7 @@ bool OriginatorQosAckPolicy::isBlockAckReqNeeded(InProgressFrames* inProgressFra
 }
 
 // FIXME
-std::tuple<MacAddress, SequenceNumber, Tid> OriginatorQosAckPolicy::computeBlockAckReqParameters(InProgressFrames *inProgressFrames, TxopProcedure* txopProcedure) const
+std::tuple<MacAddress, SequenceNumberCyclic, Tid> OriginatorQosAckPolicy::computeBlockAckReqParameters(InProgressFrames *inProgressFrames, TxopProcedure *txopProcedure) const
 {
     auto outstandingFramesPerReceiver = getOutstandingFramesPerReceiver(inProgressFrames);
     for (auto outstandingFrames : outstandingFramesPerReceiver) {
@@ -97,12 +86,12 @@ std::tuple<MacAddress, SequenceNumber, Tid> OriginatorQosAckPolicy::computeBlock
                     largestOutstandingFrames = it;
             }
             MacAddress receiverAddress = largestOutstandingFrames->first;
-            SequenceNumber startingSequenceNumber = computeStartingSequenceNumber(largestOutstandingFrames->second);
+            SequenceNumberCyclic startingSequenceNumber = computeStartingSequenceNumber(largestOutstandingFrames->second);
             Tid tid = largestOutstandingFrames->second.at(0)->peekAtFront<Ieee80211DataHeader>()->getTid();
             return std::make_tuple(receiverAddress, startingSequenceNumber, tid);
         }
     }
-    return std::make_tuple(MacAddress::UNSPECIFIED_ADDRESS, -1, -1);
+    return std::make_tuple(MacAddress::UNSPECIFIED_ADDRESS, SequenceNumberCyclic(), -1);
 }
 
 AckPolicy OriginatorQosAckPolicy::computeAckPolicy(Packet *packet, const Ptr<const Ieee80211DataHeader>& header, OriginatorBlockAckAgreement *agreement) const
@@ -128,8 +117,8 @@ bool OriginatorQosAckPolicy::checkAgreementPolicy(const Ptr<const Ieee80211DataH
 {
     bool bufferFull = agreement->getBufferSize() == agreement->getNumSentBaPolicyFrames();
     bool aMsduOk = agreement->getIsAMsduSupported() || !header->getAMsduPresent();
-    // TODO: bool baPolicy = agreement->getIsDelayedBlockAckPolicySupported() || !frame->getAckPolicy();
-    return !bufferFull && aMsduOk && (header->getSequenceNumber() >= agreement->getStartingSequenceNumber()); // TODO: && baPolicy
+    // TODO bool baPolicy = agreement->getIsDelayedBlockAckPolicySupported() || !frame->getAckPolicy();
+    return !bufferFull && aMsduOk && (header->getSequenceNumber() >= agreement->getStartingSequenceNumber()); // TODO && baPolicy
 }
 
 //
@@ -151,3 +140,4 @@ simtime_t OriginatorQosAckPolicy::getBlockAckTimeout(Packet *packet, const Ptr<c
 
 } /* namespace ieee80211 */
 } /* namespace inet */
+

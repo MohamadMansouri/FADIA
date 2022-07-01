@@ -1,20 +1,9 @@
 //
-// Copyright (C) 2004 Andras Varga
-// Copyright (C) 2010-2011 Zoltan Bojthe
+// Copyright (C) 2004 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 #ifndef __INET_TCP_H
 #define __INET_TCP_H
@@ -22,7 +11,6 @@
 #include <map>
 #include <set>
 
-#include "inet/common/INETDefs.h"
 #include "inet/common/lifecycle/ModuleOperations.h"
 #include "inet/common/packet/Packet.h"
 #include "inet/networklayer/common/L3Address.h"
@@ -104,12 +92,11 @@ class INET_API Tcp : public TransportProtocolBase
         EPHEMERAL_PORTRANGE_END   = 5000
     };
 
-    struct SockPair
-    {
+    struct SockPair {
         L3Address localAddr;
         L3Address remoteAddr;
-        int localPort;    // -1: unspec
-        int remotePort;    // -1: unspec
+        int localPort; // -1: unspec
+        int remotePort; // -1: unspec
 
         inline bool operator<(const SockPair& b) const
         {
@@ -127,8 +114,6 @@ class INET_API Tcp : public TransportProtocolBase
   protected:
     typedef std::map<int /*socketId*/, TcpConnection *> TcpAppConnMap;
     typedef std::map<SockPair, TcpConnection *> TcpConnMap;
-    TcpCrcInsertion crcInsertion;
-
     TcpAppConnMap tcpAppConnMap;
     TcpConnMap tcpConnMap;
 
@@ -140,9 +125,9 @@ class INET_API Tcp : public TransportProtocolBase
     virtual TcpConnection *createConnection(int socketId);
 
     // utility methods
-    virtual TcpConnection *findConnForSegment(const Ptr<const TcpHeader>& tcpseg, L3Address srcAddr, L3Address destAddr);
+    virtual TcpConnection *findConnForSegment(const Ptr<const TcpHeader>& tcpHeader, L3Address srcAddr, L3Address destAddr);
     virtual TcpConnection *findConnForApp(int socketId);
-    virtual void segmentArrivalWhileClosed(Packet *packet, const Ptr<const TcpHeader>& tcpseg, L3Address src, L3Address dest);
+    virtual void segmentArrivalWhileClosed(Packet *tcpSegment, const Ptr<const TcpHeader>& tcpHeader, L3Address src, L3Address dest);
     virtual void refreshDisplay() const override;
 
   public:
@@ -216,5 +201,5 @@ class INET_API Tcp : public TransportProtocolBase
 } // namespace tcp
 } // namespace inet
 
-#endif // ifndef __INET_TCP_H
+#endif
 

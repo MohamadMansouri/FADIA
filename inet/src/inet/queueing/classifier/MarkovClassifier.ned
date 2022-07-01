@@ -1,19 +1,9 @@
 //
-// Copyright (C) OpenSim Ltd.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see http://www.gnu.org/licenses/.
-//
+
 
 package inet.queueing.classifier;
 
@@ -29,8 +19,9 @@ simple MarkovClassifier extends PacketClassifierBase like IPacketClassifier
 {
     parameters:
         displayStringTextFormat = default("classified %p pk (%l)\ncurrent state: %s");
+        string clockModule = default(""); // relative path of a module that implements IClock; optional
         int initialState = default(0); // the index of the start state of the Markov process
         string transitionProbabilities; // the transition matrix (N x N) of the Markov process, specified as a list of probabilities
-        string waitIntervals; // the amount of time the Markov process stays in a given state, a list of intervals (N) indexed by the state 
+        string waitIntervals; // the amount of time the Markov process stays in a given state, a list of intervals (N) indexed by the state
         @class(MarkovClassifier);
 }

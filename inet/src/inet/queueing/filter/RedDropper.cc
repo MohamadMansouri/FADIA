@@ -1,22 +1,13 @@
 //
-// Copyright (C) OpenSim Ltd.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see http://www.gnu.org/licenses/.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-#include "inet/common/ModuleAccess.h"
+
 #include "inet/queueing/filter/RedDropper.h"
+
+#include "inet/common/ModuleAccess.h"
 #include "inet/queueing/marker/EcnMarker.h"
 
 namespace inet {
@@ -52,13 +43,18 @@ void RedDropper::initialize(int stage)
         if (maxth > packetCapacity)
             throw cRuntimeError("Warning: packetCapacity < maxth. Setting capacity to maxth");
         auto outputGate = gate("out");
-        collection = findConnectedModule<IPacketCollection>(outputGate);
-        if (collection == nullptr)
-            collection = getModuleFromPar<IPacketCollection>(par("collectionModule"), this);
+        collection.reference(outputGate, false);
+        if (!collection)
+            collection.reference(this, "collectionModule", true);
+        cModule * cm = check_and_cast<cModule *>(collection.get());
+        cm->subscribe(packetPushedSignal, this);
+        cm->subscribe(packetPulledSignal, this);
+        cm->subscribe(packetRemovedSignal, this);
+        cm->subscribe(packetDroppedSignal, this);
     }
 }
 
-RedDropper::RedResult RedDropper::doRandomEarlyDetection(Packet *packet)
+RedDropper::RedResult RedDropper::doRandomEarlyDetection(const Packet *packet)
 {
     int queueLength = collection->getNumPackets();
 
@@ -70,10 +66,11 @@ RedDropper::RedResult RedDropper::doRandomEarlyDetection(Packet *packet)
         // TD: Added behaviour for empty queue.
         const double m = SIMTIME_DBL(simTime() - q_time) * pkrate;
         avg = pow(1 - wq, m) * avg;
+        q_time = simTime();
     }
 
-    if (queueLength >= packetCapacity) {   // maxth is also the "hard" limit
-        EV << "Queue len " << queueLength << " >= packetCapacity.\n";
+    if (queueLength >= packetCapacity) { // maxth is also the "hard" limit
+        EV_DEBUG << "Queue length >= capacity" << EV_FIELD(queueLength) << EV_FIELD(packetCapacity) << EV_ENDL;
         count = 0;
         return QUEUE_FULL;
     }
@@ -82,7 +79,7 @@ RedDropper::RedResult RedDropper::doRandomEarlyDetection(Packet *packet)
         const double pb = maxp * (avg - minth) / (maxth - minth);
         const double pa = pb / (1 - count * pb); // TD: Adapted to work as in [Floyd93].
         if (dblrand() < pa) {
-            EV << "Random early packet (avg queue len=" << avg << ", pa=" << pb << ")\n";
+            EV_DEBUG << "Random early packet detected" << EV_FIELD(averageQueueLength, avg) << EV_FIELD(probability, pa) << EV_ENDL;
             count = 0;
             return RANDOMLY_ABOVE_LIMIT;
         }
@@ -90,7 +87,7 @@ RedDropper::RedResult RedDropper::doRandomEarlyDetection(Packet *packet)
             return RANDOMLY_BELOW_LIMIT;
     }
     else if (avg >= maxth) {
-        EV << "Avg queue len " << avg << " >= maxth.\n";
+        EV_DEBUG << "Average queue length >= maxth" << EV_FIELD(averageQueueLength, avg) << EV_FIELD(maxth) << EV_ENDL;
         count = 0;
         return ABOVE_MAX_LIMIT;
     }
@@ -101,19 +98,31 @@ RedDropper::RedResult RedDropper::doRandomEarlyDetection(Packet *packet)
     return BELOW_MIN_LIMIT;
 }
 
-bool RedDropper::matchesPacket(Packet *packet)
+bool RedDropper::matchesPacket(const Packet *packet) const
 {
-    auto redResult = doRandomEarlyDetection(packet);
-    switch (redResult) {
+    lastResult = const_cast<RedDropper *>(this)->doRandomEarlyDetection(packet);
+    switch (lastResult) {
+        case RANDOMLY_ABOVE_LIMIT:
+        case ABOVE_MAX_LIMIT:
+            return useEcn && EcnMarker::getEcn(packet) != IP_ECN_NOT_ECT;
+        case RANDOMLY_BELOW_LIMIT:
+        case BELOW_MIN_LIMIT:
+            return true;
+        case QUEUE_FULL:
+            return false;
+        default:
+            throw cRuntimeError("Unknown RED result");
+    }
+}
+
+void RedDropper::processPacket(Packet *packet)
+{
+    switch (lastResult) {
         case RANDOMLY_ABOVE_LIMIT:
         case ABOVE_MAX_LIMIT: {
-            if (!useEcn)
-                return false;
-            else {
+            if (useEcn) {
                 IpEcnCode ecn = EcnMarker::getEcn(packet);
-                if (ecn == IP_ECN_NOT_ECT)
-                    return false;
-                else {
+                if (ecn != IP_ECN_NOT_ECT) {
                     // if next packet should be marked and it is not
                     if (markNext && ecn != IP_ECN_CE) {
                         EcnMarker::setEcn(packet, IP_ECN_CE);
@@ -125,26 +134,21 @@ bool RedDropper::matchesPacket(Packet *packet)
                         else
                             EcnMarker::setEcn(packet, IP_ECN_CE);
                     }
-                    return true;
                 }
             }
         }
         case RANDOMLY_BELOW_LIMIT:
         case BELOW_MIN_LIMIT:
-            return true;
         case QUEUE_FULL:
-            return false;
+            break;
         default:
-            throw cRuntimeError("Unknown XXX");
+            throw cRuntimeError("Unknown RED result");
     }
 }
 
-void RedDropper::pushOrSendPacket(Packet *packet, cGate *gate, IPassivePacketSink *consumer)
+void RedDropper::receiveSignal(cComponent *source, simsignal_t signalID, cObject *obj, cObject *details)
 {
-    PacketFilterBase::pushOrSendPacket(packet, gate, consumer);
-    // TD: Set the time stamp q_time when the queue gets empty.
-    const int queueLength = collection->getNumPackets();
-    if (queueLength == 0)
+    if (signalID == packetPushedSignal || signalID == packetPulledSignal || signalID == packetRemovedSignal || signalID == packetDroppedSignal)
         q_time = simTime();
 }
 

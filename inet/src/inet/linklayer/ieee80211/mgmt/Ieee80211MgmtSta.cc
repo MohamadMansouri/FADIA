@@ -1,46 +1,34 @@
 //
-// Copyright (C) 2006 Andras Varga
+// Copyright (C) 2006 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
+
+#include "inet/linklayer/ieee80211/mgmt/Ieee80211MgmtSta.h"
 
 #include "inet/common/INETUtils.h"
 #include "inet/common/ModuleAccess.h"
-#include "inet/common/ProtocolTag_m.h"
 #include "inet/common/Simsignals.h"
 #include "inet/common/packet/Message.h"
-#include "inet/linklayer/common/InterfaceTag_m.h"
 #include "inet/linklayer/common/MacAddressTag_m.h"
-#include "inet/linklayer/common/UserPriorityTag_m.h"
 #include "inet/linklayer/ieee80211/mac/Ieee80211SubtypeTag_m.h"
-#include "inet/linklayer/ieee80211/mgmt/Ieee80211MgmtSta.h"
-#include "inet/networklayer/common/InterfaceEntry.h"
-#include "inet/physicallayer/contract/packetlevel/IRadioMedium.h"
-#include "inet/physicallayer/contract/packetlevel/RadioControlInfo_m.h"
-#include "inet/physicallayer/contract/packetlevel/SignalTag_m.h"
-#include "inet/physicallayer/ieee80211/packetlevel/Ieee80211ControlInfo_m.h"
+#include "inet/networklayer/common/NetworkInterface.h"
+#include "inet/physicallayer/wireless/common/contract/packetlevel/IRadioMedium.h"
+#include "inet/physicallayer/wireless/common/contract/packetlevel/RadioControlInfo_m.h"
+#include "inet/physicallayer/wireless/common/contract/packetlevel/SignalTag_m.h"
+#include "inet/physicallayer/wireless/ieee80211/packetlevel/Ieee80211ControlInfo_m.h"
 
 namespace inet {
 namespace ieee80211 {
 
 using namespace physicallayer;
 
-//TBD supportedRates!
-//TBD use command msg kinds?
-//TBD implement bitrate switching (Radio already supports it)
-//TBD where to put LCC header (SNAP)..?
-//TBD mac should be able to signal when msg got transmitted
+// TODO supportedRates!
+// TODO use command msg kinds?
+// TODO implement bitrate switching (Radio already supports it)
+// TODO where to put LCC header (SNAP)..?
+// TODO mac should be able to signal when msg got transmitted
 
 Define_Module(Ieee80211MgmtSta);
 
@@ -78,7 +66,7 @@ std::ostream& operator<<(std::ostream& os, const Ieee80211MgmtSta::ApInfo& ap)
     os << "AP addr=" << ap.address
        << " chan=" << ap.channel
        << " ssid=" << ap.ssid
-        //TBD supportedRates
+        // TODO supportedRates
        << " beaconIntvl=" << ap.beaconInterval
        << " rxPower=" << ap.rxPower
        << " authSeqExpected=" << ap.authSeqExpected
@@ -150,7 +138,7 @@ void Ieee80211MgmtSta::handleTimer(cMessage *msg)
         delete msg;
         sendProbeRequest();
         cMessage *timerMsg = new cMessage("minChannelTime", MK_SCAN_MINCHANNELTIME);
-        scheduleAt(simTime() + scanning.minChannelTime, timerMsg);    //XXX actually, we should start waiting after ProbeReq actually got transmitted
+        scheduleAfter(scanning.minChannelTime, timerMsg); // TODO actually, we should start waiting after ProbeReq actually got transmitted
     }
     else if (msg->getKind() == MK_SCAN_MINCHANNELTIME) {
         // Active Scan: after minChannelTime, possibly listen for the remaining time until maxChannelTime
@@ -158,7 +146,7 @@ void Ieee80211MgmtSta::handleTimer(cMessage *msg)
         if (scanning.busyChannelDetected) {
             EV << "Busy channel detected during minChannelTime, continuing listening until maxChannelTime elapses\n";
             cMessage *timerMsg = new cMessage("maxChannelTime", MK_SCAN_MAXCHANNELTIME);
-            scheduleAt(simTime() + scanning.maxChannelTime - scanning.minChannelTime, timerMsg);
+            scheduleAfter(scanning.maxChannelTime - scanning.minChannelTime, timerMsg);
         }
         else {
             EV << "Channel was empty during minChannelTime, going to next channel\n";
@@ -199,7 +187,7 @@ void Ieee80211MgmtSta::handleCommand(int msgkind, cObject *ctrl)
 
 Ieee80211MgmtSta::ApInfo *Ieee80211MgmtSta::lookupAP(const MacAddress& address)
 {
-    for (auto & elem : apList)
+    for (auto& elem : apList)
         if (elem.address == address)
             return &(elem);
 
@@ -208,9 +196,9 @@ Ieee80211MgmtSta::ApInfo *Ieee80211MgmtSta::lookupAP(const MacAddress& address)
 
 void Ieee80211MgmtSta::clearAPList()
 {
-    for (auto & elem : apList)
+    for (auto& elem : apList)
         if (elem.authTimeoutMsg)
-            delete cancelEvent(elem.authTimeoutMsg);
+            cancelAndDelete(elem.authTimeoutMsg);
 
     apList.clear();
 }
@@ -244,9 +232,9 @@ void Ieee80211MgmtSta::sendManagementFrame(const char *name, const Ptr<Ieee80211
 void Ieee80211MgmtSta::startAuthentication(ApInfo *ap, simtime_t timeout)
 {
     if (ap->authTimeoutMsg)
-        throw cRuntimeError("startAuthentication: authentication currently in progress with AP address=", ap->address.str().c_str());
+        throw cRuntimeError("startAuthentication: authentication currently in progress with AP address='%s'", ap->address.str().c_str());
     if (ap->isAuthenticated)
-        throw cRuntimeError("startAuthentication: already authenticated with AP address=", ap->address.str().c_str());
+        throw cRuntimeError("startAuthentication: already authenticated with AP address='%s'", ap->address.str().c_str());
 
     changeChannel(ap->channel);
 
@@ -255,7 +243,7 @@ void Ieee80211MgmtSta::startAuthentication(ApInfo *ap, simtime_t timeout)
     // create and send first authentication frame
     const auto& body = makeShared<Ieee80211AuthenticationFrame>();
     body->setSequenceNumber(1);
-    //XXX frame length could be increased to account for challenge text length etc.
+    // TODO frame length could be increased to account for challenge text length etc.
     sendManagementFrame("Auth", body, ST_AUTHENTICATION, ap->address);
 
     ap->authSeqExpected = 2;
@@ -264,7 +252,7 @@ void Ieee80211MgmtSta::startAuthentication(ApInfo *ap, simtime_t timeout)
     ASSERT(ap->authTimeoutMsg == nullptr);
     ap->authTimeoutMsg = new cMessage("authTimeout", MK_AUTH_TIMEOUT);
     ap->authTimeoutMsg->setContextPointer(ap);
-    scheduleAt(simTime() + timeout, ap->authTimeoutMsg);
+    scheduleAfter(timeout, ap->authTimeoutMsg);
 }
 
 void Ieee80211MgmtSta::startAssociation(ApInfo *ap, simtime_t timeout)
@@ -272,7 +260,7 @@ void Ieee80211MgmtSta::startAssociation(ApInfo *ap, simtime_t timeout)
     if (mib->bssStationData.isAssociated || assocTimeoutMsg)
         throw cRuntimeError("startAssociation: already associated or association currently in progress");
     if (!ap->isAuthenticated)
-        throw cRuntimeError("startAssociation: not yet authenticated with AP address=", ap->address.str().c_str());
+        throw cRuntimeError("startAssociation: not yet authenticated with AP address='%s'", ap->address.str().c_str());
 
     // switch to that channel
     changeChannel(ap->channel);
@@ -280,9 +268,9 @@ void Ieee80211MgmtSta::startAssociation(ApInfo *ap, simtime_t timeout)
     // create and send association request
     const auto& body = makeShared<Ieee80211AssociationRequestFrame>();
 
-    //XXX set the following too?
+    // TODO set the following too?
     // string SSID
-    // Ieee80211SupportedRatesElement supportedRates;
+//    Ieee80211SupportedRatesElement supportedRates;
 
     body->setChunkLength(B(2 + 2 + strlen(body->getSSID()) + 2 + body->getSupportedRates().numRates + 2));
     sendManagementFrame("Assoc", body, ST_ASSOCIATIONREQUEST, ap->address);
@@ -291,12 +279,13 @@ void Ieee80211MgmtSta::startAssociation(ApInfo *ap, simtime_t timeout)
     ASSERT(assocTimeoutMsg == nullptr);
     assocTimeoutMsg = new cMessage("assocTimeout", MK_ASSOC_TIMEOUT);
     assocTimeoutMsg->setContextPointer(ap);
-    scheduleAt(simTime() + timeout, assocTimeoutMsg);
+    scheduleAfter(timeout, assocTimeoutMsg);
 }
 
 void Ieee80211MgmtSta::receiveSignal(cComponent *source, simsignal_t signalID, intval_t value, cObject *details)
 {
-    Enter_Method_Silent();
+    Enter_Method("%s", cComponent::getSignalName(signalID));
+
     // Note that we are only subscribed during scanning!
     if (signalID == IRadio::receptionStateChangedSignal) {
         IRadio::ReceptionState newReceptionState = static_cast<IRadio::ReceptionState>(value);
@@ -318,7 +307,7 @@ void Ieee80211MgmtSta::processScanCommand(Ieee80211Prim_ScanRequest *ctrl)
     }
     else if (assocTimeoutMsg) {
         EV << "Cancelling ongoing association process\n";
-        delete cancelEvent(assocTimeoutMsg);
+        cancelAndDelete(assocTimeoutMsg);
         assocTimeoutMsg = nullptr;
     }
 
@@ -343,11 +332,10 @@ void Ieee80211MgmtSta::processScanCommand(Ieee80211Prim_ScanRequest *ctrl)
         for (int i = 0; i < numChannels; i++)
             scanning.channelList.push_back(i);
 
-
     // start scanning
     if (scanning.activeScan)
         host->subscribe(IRadio::receptionStateChangedSignal, this);
-    scanning.currentChannelIndex = -1;    // so we'll start with index==0
+    scanning.currentChannelIndex = -1; // so we'll start with index==0
     isScanning = true;
     scanNextChannel();
 }
@@ -360,7 +348,7 @@ bool Ieee80211MgmtSta::scanNextChannel()
         if (scanning.activeScan)
             host->unsubscribe(IRadio::receptionStateChangedSignal, this);
         isScanning = false;
-        return true;    // we're done
+        return true; // we're done
     }
 
     // tune to next channel
@@ -371,12 +359,12 @@ bool Ieee80211MgmtSta::scanNextChannel()
     if (scanning.activeScan) {
         // Active Scan: first wait probeDelay, then send a probe. Listening
         // for minChannelTime or maxChannelTime takes place after that. (11.1.3.2)
-        scheduleAt(simTime() + scanning.probeDelay, new cMessage("sendProbe", MK_SCAN_SENDPROBE));
+        scheduleAfter(scanning.probeDelay, new cMessage("sendProbe", MK_SCAN_SENDPROBE));
     }
     else {
         // Passive Scan: spend maxChannelTime on the channel (11.1.3.1)
         cMessage *timerMsg = new cMessage("maxChannelTime", MK_SCAN_MAXCHANNELTIME);
-        scheduleAt(simTime() + scanning.maxChannelTime, timerMsg);
+        scheduleAfter(scanning.maxChannelTime, timerMsg);
     }
 
     return false;
@@ -400,7 +388,7 @@ void Ieee80211MgmtSta::sendScanConfirm()
     Ieee80211Prim_ScanConfirm *confirm = new Ieee80211Prim_ScanConfirm();
     confirm->setBssListArraySize(n);
     auto it = apList.begin();
-    //XXX filter for req'd bssid and ssid
+    // TODO filter for req'd bssid and ssid
     for (int i = 0; i < n; i++, it++) {
         ApInfo *ap = &(*it);
         Ieee80211Prim_BssDescription& bss = confirm->getBssListForUpdate(i);
@@ -438,7 +426,7 @@ void Ieee80211MgmtSta::processDeauthenticateCommand(Ieee80211Prim_Deauthenticate
 
     // cancel possible pending authentication timer
     if (ap->authTimeoutMsg) {
-        delete cancelEvent(ap->authTimeoutMsg);
+        cancelAndDelete(ap->authTimeoutMsg);
         ap->authTimeoutMsg = nullptr;
     }
 
@@ -460,7 +448,7 @@ void Ieee80211MgmtSta::processAssociateCommand(Ieee80211Prim_AssociateRequest *c
 void Ieee80211MgmtSta::processReassociateCommand(Ieee80211Prim_ReassociateRequest *ctrl)
 {
     // treat the same way as association
-    //XXX refine
+    // TODO refine
     processAssociateCommand(ctrl);
 }
 
@@ -473,7 +461,7 @@ void Ieee80211MgmtSta::processDisassociateCommand(Ieee80211Prim_DisassociateRequ
     }
     else if (assocTimeoutMsg) {
         // pending association
-        delete cancelEvent(assocTimeoutMsg);
+        cancelAndDelete(assocTimeoutMsg);
         assocTimeoutMsg = nullptr;
     }
 
@@ -488,9 +476,9 @@ void Ieee80211MgmtSta::disassociate()
     EV << "Disassociating from AP address=" << assocAP.address << "\n";
     ASSERT(mib->bssStationData.isAssociated);
     mib->bssStationData.isAssociated = false;
-    delete cancelEvent(assocAP.beaconTimeoutMsg);
+    cancelAndDelete(assocAP.beaconTimeoutMsg);
     assocAP.beaconTimeoutMsg = nullptr;
-    assocAP = AssociatedApInfo();    // clear it
+    assocAP = AssociatedApInfo(); // clear it
 }
 
 void Ieee80211MgmtSta::sendAuthenticationConfirm(ApInfo *ap, Ieee80211PrimResultCode resultCode)
@@ -556,9 +544,9 @@ void Ieee80211MgmtSta::handleAuthenticationFrame(Packet *packet, const Ptr<const
         delete packet;
 
         // cancel timeout, send error to agent
-        delete cancelEvent(ap->authTimeoutMsg);
+        cancelAndDelete(ap->authTimeoutMsg);
         ap->authTimeoutMsg = nullptr;
-        sendAuthenticationConfirm(ap, PRC_REFUSED);    //XXX or what resultCode?
+        sendAuthenticationConfirm(ap, PRC_REFUSED); // TODO or what resultCode?
         return;
     }
 
@@ -572,7 +560,7 @@ void Ieee80211MgmtSta::handleAuthenticationFrame(Packet *packet, const Ptr<const
         const auto& body = makeShared<Ieee80211AuthenticationFrame>();
         body->setSequenceNumber(frameAuthSeq + 1);
         body->setStatusCode(SC_SUCCESSFUL);
-        // XXX frame length could be increased to account for challenge text length etc.
+        // TODO frame length could be increased to account for challenge text length etc.
         sendManagementFrame("Auth", body, ST_AUTHENTICATION, address);
         ap->authSeqExpected += 2;
     }
@@ -584,7 +572,7 @@ void Ieee80211MgmtSta::handleAuthenticationFrame(Packet *packet, const Ptr<const
 
         // authentication completed
         ap->isAuthenticated = (statusCode == SC_SUCCESSFUL);
-        delete cancelEvent(ap->authTimeoutMsg);
+        cancelAndDelete(ap->authTimeoutMsg);
         ap->authTimeoutMsg = nullptr;
         sendAuthenticationConfirm(ap, statusCodeToPrimResultCode(statusCode));
     }
@@ -595,7 +583,7 @@ void Ieee80211MgmtSta::handleAuthenticationFrame(Packet *packet, const Ptr<const
 void Ieee80211MgmtSta::handleDeauthenticationFrame(Packet *packet, const Ptr<const Ieee80211MgmtHeader>& header)
 {
     EV << "Received Deauthentication frame\n";
-    const MacAddress& address = header->getAddress3();    // source address
+    const MacAddress& address = header->getAddress3(); // source address
     ApInfo *ap = lookupAP(address);
     if (!ap || !ap->isAuthenticated) {
         EV << "Unknown AP, or not authenticated with that AP -- ignoring frame\n";
@@ -603,7 +591,7 @@ void Ieee80211MgmtSta::handleDeauthenticationFrame(Packet *packet, const Ptr<con
         return;
     }
     if (ap->authTimeoutMsg) {
-        delete cancelEvent(ap->authTimeoutMsg);
+        cancelAndDelete(ap->authTimeoutMsg);
         ap->authTimeoutMsg = nullptr;
         EV << "Cancelling pending authentication\n";
         delete packet;
@@ -634,8 +622,8 @@ void Ieee80211MgmtSta::handleAssociationResponseFrame(Packet *packet, const Ptr<
     const auto& responseBody = packet->peekData<Ieee80211AssociationResponseFrame>();
     MacAddress address = header->getTransmitterAddress();
     int statusCode = responseBody->getStatusCode();
-    //XXX short aid;
-    //XXX Ieee80211SupportedRatesElement supportedRates;
+    // TODO short aid;
+    // TODO Ieee80211SupportedRatesElement supportedRates;
     delete packet;
 
     // look up AP data structure
@@ -646,12 +634,12 @@ void Ieee80211MgmtSta::handleAssociationResponseFrame(Packet *packet, const Ptr<
     if (mib->bssStationData.isAssociated) {
         EV << "Breaking existing association with AP address=" << assocAP.address << "\n";
         mib->bssStationData.isAssociated = false;
-        delete cancelEvent(assocAP.beaconTimeoutMsg);
+        cancelAndDelete(assocAP.beaconTimeoutMsg);
         assocAP.beaconTimeoutMsg = nullptr;
         assocAP = AssociatedApInfo();
     }
 
-    delete cancelEvent(assocTimeoutMsg);
+    cancelAndDelete(assocTimeoutMsg);
     assocTimeoutMsg = nullptr;
 
     if (statusCode != SC_SUCCESSFUL) {
@@ -669,7 +657,7 @@ void Ieee80211MgmtSta::handleAssociationResponseFrame(Packet *packet, const Ptr<
         emit(l2AssociatedSignal, myIface, ap);
 
         assocAP.beaconTimeoutMsg = new cMessage("beaconTimeout", MK_BEACON_TIMEOUT);
-        scheduleAt(simTime() + MAX_BEACONS_MISSED * assocAP.beaconInterval, assocAP.beaconTimeoutMsg);
+        scheduleAfter(MAX_BEACONS_MISSED * assocAP.beaconInterval, assocAP.beaconTimeoutMsg);
     }
 
     // report back to agent
@@ -684,17 +672,17 @@ void Ieee80211MgmtSta::handleReassociationRequestFrame(Packet *packet, const Ptr
 void Ieee80211MgmtSta::handleReassociationResponseFrame(Packet *packet, const Ptr<const Ieee80211MgmtHeader>& header)
 {
     EV << "Received Reassociation Response frame\n";
-    //TBD handle with the same code as Association Response?
+    // TODO handle with the same code as Association Response?
 }
 
 void Ieee80211MgmtSta::handleDisassociationFrame(Packet *packet, const Ptr<const Ieee80211MgmtHeader>& header)
 {
     EV << "Received Disassociation frame\n";
-    const MacAddress& address = header->getAddress3();    // source address
+    const MacAddress& address = header->getAddress3(); // source address
 
     if (assocTimeoutMsg) {
         // pending association
-        delete cancelEvent(assocTimeoutMsg);
+        cancelAndDelete(assocTimeoutMsg);
         assocTimeoutMsg = nullptr;
     }
     if (!mib->bssStationData.isAssociated || address != assocAP.address) {
@@ -705,7 +693,7 @@ void Ieee80211MgmtSta::handleDisassociationFrame(Packet *packet, const Ptr<const
 
     EV << "Setting isAssociated flag to false\n";
     mib->bssStationData.isAssociated = false;
-    delete cancelEvent(assocAP.beaconTimeoutMsg);
+    cancelAndDelete(assocAP.beaconTimeoutMsg);
     assocAP.beaconTimeoutMsg = nullptr;
 }
 
@@ -719,11 +707,10 @@ void Ieee80211MgmtSta::handleBeaconFrame(Packet *packet, const Ptr<const Ieee802
     if (mib->bssStationData.isAssociated && header->getTransmitterAddress() == assocAP.address) {
         EV << "Beacon is from associated AP, restarting beacon timeout timer\n";
         ASSERT(assocAP.beaconTimeoutMsg != nullptr);
-        cancelEvent(assocAP.beaconTimeoutMsg);
-        scheduleAt(simTime() + MAX_BEACONS_MISSED * assocAP.beaconInterval, assocAP.beaconTimeoutMsg);
+        rescheduleAfter(MAX_BEACONS_MISSED * assocAP.beaconInterval, assocAP.beaconTimeoutMsg);
 
-        //ApInfo *ap = lookupAP(frame->getTransmitterAddress());
-        //ASSERT(ap!=nullptr);
+//        ApInfo *ap = lookupAP(frame->getTransmitterAddress());
+//        ASSERT(ap!=nullptr);
     }
 
     delete packet;

@@ -1,18 +1,13 @@
+//
+// SPDX-License-Identifier: LGPL-3.0-or-later
+//
+
 /***************************************************************************
                           RtpAvProfilePayload32Receiver.cc  -  description
                              -------------------
     begin                : Sun Jan 6 2002
     copyright            : (C) 2002 by Matthias Oppitz
     email                : Matthias.Oppitz@gmx.de
-***************************************************************************/
-
-/***************************************************************************
-*                                                                         *
-*   This program is free software; you can redistribute it and/or modify  *
-*   it under the terms of the GNU General Public License as published by  *
-*   the Free Software Foundation; either version 2 of the License, or     *
-*   (at your option) any later version.                                   *
-*                                                                         *
 ***************************************************************************/
 
 /** \file RtpAvProfilePayload32Receiver.cc
@@ -23,8 +18,8 @@
 #include "inet/transportlayer/rtp/profiles/avprofile/RtpAvProfilePayload32Receiver.h"
 
 #include "inet/common/packet/chunk/ByteCountChunk.h"
-#include "inet/transportlayer/rtp/profiles/avprofile/RtpMpegPacket_m.h"
 #include "inet/transportlayer/rtp/RtpPacket_m.h"
+#include "inet/transportlayer/rtp/profiles/avprofile/RtpMpegPacket_m.h"
 
 namespace inet {
 
@@ -63,12 +58,12 @@ void RtpAvProfilePayload32Receiver::processRtpPacket(Packet *rtpPacket)
         _lowestAllowedTimeStamp = rtpHeader->getTimeStamp();
         _highestSequenceNumber = rtpHeader->getSequenceNumber();
         if (_outputLogLoss.is_open())
-        _outputLogLoss << "sequenceNumberBase" << rtpHeader->getSequenceNumber() << endl;
+            _outputLogLoss << "sequenceNumberBase" << rtpHeader->getSequenceNumber() << endl;
     }
     else if (_outputLogLoss.is_open()) {
         for (int i = _highestSequenceNumber + 1; i < rtpHeader->getSequenceNumber(); i++) {
-            //char line[100];
-            //sprintf(line, "%i", i);
+//            char line[100];
+//            sprintf(line, "%i", i);
             _outputLogLoss << i << endl;
         }
     }
@@ -109,7 +104,7 @@ void RtpAvProfilePayload32Receiver::processRtpPacket(Packet *rtpPacket)
             while (!_queue->isEmpty()) {
                 Packet *qPacket = check_and_cast<Packet *>(_queue->pop());
                 const auto& qRtpHeader = qPacket->popAtFront<RtpHeader>();
-                (void)qRtpHeader;       // unused variable
+                (void)qRtpHeader; // unused variable
                 const auto& mpegPacket = qPacket->peekAtFront<RtpMpegHeader>();
                 if (pictureType == 0)
                     pictureType = mpegPacket->getPictureType();

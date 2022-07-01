@@ -1,5 +1,55 @@
 ====== inet-4.x ======
 
+2022-05-13  ------ inet-4.4.0 released ------
+
+2022-03-10  Rudolf Hornig
+
+	Re-licensed mobility code from GPL -> LGPL.
+
+2022-01-28  Rudolf Hornig
+
+	Code is re-licensed now under LGPL v3 with the written permission of the authors.
+
+2021-11-15  Rudolf Hornig
+
+	Added @mutable property for OMNeT++ 6 compatibility.
+
+2021-04-26  Zoltan Bojthe
+
+	Added/updated Enter_Method() info to the signalname in receiveSignal().
+
+2021-04-19  Zoltan Bojthe
+
+	Switch to using ModuleRef, ModuleRefByPar, opp_component_ptr for pointers to other modules.
+
+2021-03-19  Zoltan Bojthe
+
+	Changed if-else-if ladders in initialize() to separate if statements because
+	different stages may have the same number.
+
+2021-01-11  ------ inet-4.3.0 released ------
+
+2020-06-12  Levente Mészáros
+
+	Added the possibility to use one of the elements as the result of the
+	superpoisition of the element positions or orientations in SuperpositioningMobility.
+
+2020-06-09  Levente Mészáros
+
+	Fixed CircleMobility initial orientation.
+
+2020-06-08  Rudolf Hornig
+
+	Allow changing the targetMobility and displayStringTextFormat parameter during runtime.
+
+2020-06-08  Levente Mészáros
+
+	Refactored mobility models to support returning const references.
+
+2020-05-29  Levente Mészáros
+
+	Fixed orientation calculation in FacingMobility.
+
 2020-01-08  ------ inet-4.2.0 released ------
 
 2019-11-13  Zoltan Bojthe

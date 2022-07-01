@@ -1,19 +1,9 @@
 //
-// Copyright (C) OpenSim Ltd.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 package inet.visualizer.base;
 
@@ -34,10 +24,9 @@ simple LinkBreakVisualizerBase extends VisualizerBase
     parameters:
         bool displayLinkBreaks = default(false); // display icons for link breaks, disabled by default
 
-        string nodeFilter = default("*"); // which network nodes are considered, matches all nodes by default
-        string interfaceFilter = default("*"); // which interfaces are considered, matches all interfaces by default
-        string packetFilter = default("*"); // which packets are considered, matches all packets by default
-        string packetDataFilter = default("*"); // which packets are considered based on the data they contain, matches all packets by default
+        string nodeFilter @mutable = default("*"); // which network nodes are considered, matches all nodes by default
+        string interfaceFilter @mutable = default("*"); // which interfaces are considered, matches all interfaces by default
+        object packetFilter @mutable = default("*"); // which packets are considered, matches all packets by default
 
         string icon = default("status/stop");
         double iconTintAmount = default(0);

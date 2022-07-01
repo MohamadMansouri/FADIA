@@ -1,19 +1,9 @@
 //
 // Copyright (C) 2016 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see http://www.gnu.org/licenses/.
-//
+
 
 package inet.linklayer.ieee80211.mac.coordinationfunction;
 
@@ -43,7 +33,7 @@ module Dcf like IDcf
         string txModule;
 
         *.rateSelectionModule = "^.rateSelection";
-        *.rxModule = "^." + rxModule;
+        *.rxModule = "^." + this.rxModule;
 
         @class(Dcf);
         @display("i=block/layer");
@@ -74,12 +64,12 @@ module Dcf like IDcf
         @statistic[frameSequenceFinished](title="finished frame sequences"; record=count);
         @statistic[frameSequenceDuration](title="frame sequence durations"; source=frameSequenceDuration(frameSequenceFinished); record=histogram,vector?);
         @statistic[frameSequenceNumPackets](title="frame sequences: number of packets"; source=frameSequenceNumPackets(frameSequenceFinished); record=histogram,vector?);
-        @statistic[frameSequenceActive](title="frame sequence active"; source=count(frameSequenceStarted)-count(frameSequenceFinished); record=vector; interpolationmode=sample-hold);
+        @statistic[frameSequenceActive](title="frame sequence active"; source=warmup(count(frameSequenceStarted)-count(frameSequenceFinished)); record=vector; interpolationmode=sample-hold; autoWarmupFilter=false);
         @statistic[datarateSelected](title="datarates selected"; record=vector; interpolationmode=none);
 
     submodules:
-        // TODO: consider merging Dcaf into Dcf, because its not like the relationship between Hcf and Edcaf or
-        // TODO: maybe move PendingQueue and InProgressFrames in Edcaf?
+        // TODO consider merging Dcaf into Dcf, because its not like the relationship between Hcf and Edcaf or
+        // TODO maybe move PendingQueue and InProgressFrames in Edcaf?
         channelAccess: Dcaf {
             parameters:
                 @display("p=150,100");

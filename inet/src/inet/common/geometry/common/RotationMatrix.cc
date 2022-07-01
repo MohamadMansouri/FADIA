@@ -1,23 +1,14 @@
 //
 // Copyright (C) 2014 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
+
+#include "inet/common/geometry/common/RotationMatrix.h"
 
 #include "inet/common/INETMath.h"
 #include "inet/common/geometry/common/Quaternion.h"
-#include "inet/common/geometry/common/RotationMatrix.h"
 
 namespace inet {
 
@@ -49,20 +40,20 @@ RotationMatrix::RotationMatrix(const EulerAngles& eulerAngles)
 void RotationMatrix::computeRotationMatrix(const double& q0, const double& q1, const double& q2, const double& q3)
 {
     // Ref: http://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles
-    matrix[0][0] = 1 - 2*(q2*q2 + q3*q3);
-    matrix[0][1] = 2*(q1*q2 - q0*q3);
-    matrix[0][2] = 2*(q0*q2 + q1*q3);
-    matrix[1][0] = 2*(q1*q2 + q0*q3);
-    matrix[1][1] = 1 - 2*(q1*q1 + q3*q3);
-    matrix[1][2] = 2*(q2*q3 - q0*q1);
-    matrix[2][0] = 2*(q1*q3 - q0*q2);
-    matrix[2][1] = 2*(q0*q1 + q2*q3);
-    matrix[2][2] = 1 - 2*(q1*q1 + q2*q2);
+    matrix[0][0] = 1 - 2 * (q2 * q2 + q3 * q3);
+    matrix[0][1] = 2 * (q1 * q2 - q0 * q3);
+    matrix[0][2] = 2 * (q0 * q2 + q1 * q3);
+    matrix[1][0] = 2 * (q1 * q2 + q0 * q3);
+    matrix[1][1] = 1 - 2 * (q1 * q1 + q3 * q3);
+    matrix[1][2] = 2 * (q2 * q3 - q0 * q1);
+    matrix[2][0] = 2 * (q1 * q3 - q0 * q2);
+    matrix[2][1] = 2 * (q0 * q1 + q2 * q3);
+    matrix[2][2] = 1 - 2 * (q1 * q1 + q2 * q2);
 }
 
 double RotationMatrix::computeDeterminant() const
 {
-    return matrix[0][0] * ((matrix[1][1] * matrix[2][2]) -(matrix[2][1] * matrix[1][2])) -matrix[0][1] * (matrix[1][0] * matrix[2][2] - matrix[2][0] * matrix[1][2]) + matrix[0][2] * (matrix[1][0] * matrix[2][1] - matrix[2][0] * matrix[1][1]);
+    return matrix[0][0] * ((matrix[1][1] * matrix[2][2]) - (matrix[2][1] * matrix[1][2])) - matrix[0][1] * (matrix[1][0] * matrix[2][2] - matrix[2][0] * matrix[1][2]) + matrix[0][2] * (matrix[1][0] * matrix[2][1] - matrix[2][0] * matrix[1][1]);
 }
 
 Coord RotationMatrix::rotateVector(const Coord& vector) const
@@ -128,3 +119,4 @@ Quaternion RotationMatrix::toQuaternion() const
 }
 
 } /* namespace inet */
+

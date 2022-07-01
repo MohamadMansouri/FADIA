@@ -1,20 +1,13 @@
 //
 // Copyright (C) 2001 Matthias Oppitz <Matthias.Oppitz@gmx.de>
 // Copyright (C) 2007 Ahmed Ayadi  <ahmed.ayadi@sophia.inria.fr>
-// Copyright (C) 2010 Zoltan Bojthe
+// Copyright (C) 2010 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
 #include "inet/applications/rtpapp/RtpApplication.h"
+
 #include "inet/applications/rtpapp/RtpApplication_m.h"
 #include "inet/common/ModuleAccess.h"
 #include "inet/common/lifecycle/LifecycleOperation.h"
@@ -80,7 +73,7 @@ void RtpApplication::initialize(int stage)
                   << "payloadType" << payloadType << endl;
 
         cMessage *selfMsg = new cMessage("enterSession", RTPAPP_ENTER_SESSION);
-        scheduleAt(simTime() + sessionEnterDelay, selfMsg);
+        scheduleAfter(sessionEnterDelay, selfMsg);
     }
 }
 
@@ -123,7 +116,7 @@ void RtpApplication::handleMessage(cMessage *msgIn)
                     send(msg, "rtpOut");
 
                     cMessage *selfMsg = new cMessage("stopTransmission", RTPAPP_STOP_TRANSMISSION);
-                    scheduleAt(simTime() + transmissionStopDelay, selfMsg);
+                    scheduleAfter(transmissionStopDelay, selfMsg);
                 }
                 break;
 
@@ -156,8 +149,7 @@ void RtpApplication::handleMessage(cMessage *msgIn)
                 break;
 
             default:
-                throw cRuntimeError("Invalid msgKind value %d in message '%s'",
-                    msgIn->getKind(), msgIn->getName());
+                throw cRuntimeError("Invalid msgKind value %d in message '%s'", msgIn->getKind(), msgIn->getName());
         }
     }
     else if (isActiveSession) {
@@ -181,7 +173,7 @@ void RtpApplication::handleMessage(cMessage *msgIn)
                     else {
                         cMessage *selfMsg = new cMessage("leaveSession", RTPAPP_LEAVE_SESSION);
                         EV_INFO << "Receiver Module : leaveSession" << endl;
-                        scheduleAt(simTime() + sessionLeaveDelay, selfMsg);
+                        scheduleAfter(sessionLeaveDelay, selfMsg);
                     }
                 }
                 break;
@@ -189,7 +181,7 @@ void RtpApplication::handleMessage(cMessage *msgIn)
                 case RTP_IFP_SENDER_MODULE_CREATED: {
                     EV_INFO << "Sender Module Created" << endl;
                     cMessage *selfMsg = new cMessage("startTransmission", RTPAPP_START_TRANSMISSION);
-                    scheduleAt(simTime() + transmissionStartDelay, selfMsg);
+                    scheduleAfter(transmissionStartDelay, selfMsg);
                 }
                 break;
 
@@ -204,13 +196,13 @@ void RtpApplication::handleMessage(cMessage *msgIn)
                         case RTP_SENDER_STATUS_FINISHED:
                             EV_INFO << "FINISHED" << endl;
                             selfMsg = new cMessage("leaveSession", RTPAPP_LEAVE_SESSION);
-                            scheduleAt(simTime() + sessionLeaveDelay, selfMsg);
+                            scheduleAfter(sessionLeaveDelay, selfMsg);
                             break;
 
                         case RTP_SENDER_STATUS_STOPPED:
                             EV_INFO << "STOPPED" << endl;
                             selfMsg = new cMessage("leaveSession", RTPAPP_LEAVE_SESSION);
-                            scheduleAt(simTime() + sessionLeaveDelay, selfMsg);
+                            scheduleAfter(sessionLeaveDelay, selfMsg);
                             break;
 
                         default:

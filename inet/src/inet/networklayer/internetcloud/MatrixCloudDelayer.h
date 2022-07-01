@@ -1,26 +1,14 @@
 //
-// Copyright (C) 2012 OpenSim Ltd
+// Copyright (C) 2012 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
-// @author Zoltan Bojthe
-//
+
 
 #ifndef __INET_MATRIXCLOUDDELAYER_H
 #define __INET_MATRIXCLOUDDELAYER_H
 
-#include "inet/common/INETDefs.h"
+#include "inet/common/ModuleRefByPar.h"
 #include "inet/networklayer/internetcloud/CloudDelayerBase.h"
 
 namespace inet {
@@ -34,12 +22,11 @@ class PatternMatcher;
 class INET_API MatrixCloudDelayer : public CloudDelayerBase
 {
   protected:
-    //FIXME modified copy of 'Matcher' class from Ipv4NetworkConfigurator
-    class Matcher
-    {
+    // FIXME modified copy of 'Matcher' class from Ipv4NetworkConfigurator
+    class Matcher {
       private:
         bool matchesany;
-        std::vector<inet::PatternMatcher *> matchers;    // TODO replace with a MatchExpression once it becomes available in OMNeT++
+        std::vector<inet::PatternMatcher *> matchers; // TODO replace with a MatchExpression once it becomes available in OMNeT++
 
       public:
         Matcher(const char *pattern);
@@ -48,8 +35,7 @@ class INET_API MatrixCloudDelayer : public CloudDelayerBase
         bool matchesAny() { return matchesany; }
     };
 
-    class MatrixEntry
-    {
+    class MatrixEntry {
       public:
         Matcher srcMatcher;
         Matcher destMatcher;
@@ -65,8 +51,7 @@ class INET_API MatrixCloudDelayer : public CloudDelayerBase
         bool matches(const char *src, const char *dest);
     };
 
-    class Descriptor
-    {
+    class Descriptor {
       public:
         cDynamicExpression *delayPar = nullptr;
         cDynamicExpression *dataratePar = nullptr;
@@ -84,7 +69,7 @@ class INET_API MatrixCloudDelayer : public CloudDelayerBase
     MatrixEntryPtrVector matrixEntries;
     IdPairToDescriptorMap idPairToDescriptorMap;
 
-    IInterfaceTable *ift = nullptr;
+    ModuleRefByPar<IInterfaceTable> ift;
     cModule *host = nullptr;
 
   protected:
@@ -105,5 +90,5 @@ class INET_API MatrixCloudDelayer : public CloudDelayerBase
 
 } // namespace inet
 
-#endif // ifndef __INET_MATRIXCLOUDDELAYER_H
+#endif
 

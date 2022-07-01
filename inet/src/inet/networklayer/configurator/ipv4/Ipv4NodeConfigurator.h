@@ -1,27 +1,14 @@
 //
-// Copyright (C) 2012 Opensim Ltd
+// Copyright (C) 2012 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
-//
-// Authors: Levente Meszaros
-//
+
 
 #ifndef __INET_IPV4NODECONFIGURATOR_H
 #define __INET_IPV4NODECONFIGURATOR_H
 
-#include "inet/common/INETDefs.h"
+#include "inet/common/ModuleRefByPar.h"
 #include "inet/common/lifecycle/ILifecycle.h"
 #include "inet/common/lifecycle/NodeStatus.h"
 #include "inet/networklayer/configurator/ipv4/Ipv4NetworkConfigurator.h"
@@ -39,10 +26,10 @@ namespace inet {
 class INET_API Ipv4NodeConfigurator : public cSimpleModule, public ILifecycle, protected cListener
 {
   protected:
-    NodeStatus *nodeStatus;
-    IInterfaceTable *interfaceTable;
-    IIpv4RoutingTable *routingTable;
-    Ipv4NetworkConfigurator *networkConfigurator;
+    opp_component_ptr<NodeStatus> nodeStatus;
+    ModuleRefByPar<IInterfaceTable> interfaceTable;
+    ModuleRefByPar<IIpv4RoutingTable> routingTable;
+    ModuleRefByPar<Ipv4NetworkConfigurator> networkConfigurator;
 
   public:
     Ipv4NodeConfigurator();
@@ -53,7 +40,7 @@ class INET_API Ipv4NodeConfigurator : public cSimpleModule, public ILifecycle, p
     virtual void initialize(int stage) override;
     virtual bool handleOperationStage(LifecycleOperation *operation, IDoneCallback *doneCallback) override;
     virtual void prepareAllInterfaces();
-    virtual void prepareInterface(InterfaceEntry *interfaceEntry);
+    virtual void prepareInterface(NetworkInterface *networkInterface);
     virtual void configureAllInterfaces();
     virtual void configureRoutingTable();
 
@@ -66,5 +53,5 @@ class INET_API Ipv4NodeConfigurator : public cSimpleModule, public ILifecycle, p
 
 } // namespace inet
 
-#endif // ifndef __INET_IPV4NODECONFIGURATOR_H
+#endif
 

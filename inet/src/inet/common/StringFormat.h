@@ -1,24 +1,15 @@
 //
-// Copyright (C) OpenSim Ltd.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 #ifndef __INET_STRINGFORMAT_H
 #define __INET_STRINGFORMAT_H
 
 #include <functional>
+
 #include "inet/common/INETDefs.h"
 
 namespace inet {
@@ -26,8 +17,7 @@ namespace inet {
 class INET_API StringFormat
 {
   public:
-    class INET_API IDirectiveResolver
-    {
+    class INET_API IDirectiveResolver {
       public:
         virtual const char *resolveDirective(char directive) const = 0;
     };
@@ -47,5 +37,5 @@ class INET_API StringFormat
 
 } // namespace inet
 
-#endif // ifndef __INET_STRINGFORMAT_H
+#endif
 

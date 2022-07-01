@@ -4,7 +4,7 @@ import inet.node.ospfv3.Ospfv3Router;
 import inet.networklayer.configurator.ipv4.Ipv4NetworkConfigurator;
 import inet.networklayer.configurator.ipv6.Ipv6FlatNetworkConfigurator;
 import inet.common.misc.ThruputMeteringChannel;
-import inet.node.ethernet.EtherSwitch;
+import inet.node.ethernet.EthernetSwitch;
 
 import inet.common.scenario.ScenarioManager;
 
@@ -33,7 +33,7 @@ network v3_2_routers
         }
         configurator: Ipv4NetworkConfigurator {
             @display("p=50,20;is=s");
-         	config = xmldoc("IPv4Config.xml");
+            config = xmldoc("IPv4Config.xml");
             addStaticRoutes = false;
             addDefaultRoutes = false;
             addSubnetRoutes = false;

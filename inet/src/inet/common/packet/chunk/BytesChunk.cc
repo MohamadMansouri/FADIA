@@ -1,32 +1,21 @@
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program.  If not, see http://www.gnu.org/licenses/.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
+
 #include "inet/common/packet/chunk/BytesChunk.h"
+
 #include "inet/common/packet/chunk/EmptyChunk.h"
 #include "inet/common/packet/chunk/SliceChunk.h"
 
 namespace inet {
 
+Register_Class(BytesChunk);
+
 BytesChunk::BytesChunk() :
     Chunk()
-{
-}
-
-BytesChunk::BytesChunk(const BytesChunk& other) :
-    Chunk(other),
-    bytes(other.bytes)
 {
 }
 
@@ -34,6 +23,22 @@ BytesChunk::BytesChunk(const std::vector<uint8_t>& bytes) :
     Chunk(),
     bytes(bytes)
 {
+}
+
+void BytesChunk::parsimPack(cCommBuffer *buffer) const
+{
+    Chunk::parsimPack(buffer);
+    buffer->pack(bytes.size());
+    buffer->pack(bytes.data(), bytes.size());
+}
+
+void BytesChunk::parsimUnpack(cCommBuffer *buffer)
+{
+    Chunk::parsimUnpack(buffer);
+    size_t size;
+    buffer->unpack(size);
+    bytes.resize(size);
+    buffer->unpack(bytes.data(), bytes.size());
 }
 
 const Ptr<Chunk> BytesChunk::peekUnchecked(PeekPredicate predicate, PeekConverter converter, const Iterator& iterator, b length, int flags) const
@@ -53,17 +58,17 @@ const Ptr<Chunk> BytesChunk::peekUnchecked(PeekPredicate predicate, PeekConverte
     }
     // 3. peeking without conversion returns a BytesChunk or SliceChunk
     if (converter == nullptr) {
-        // 3. peeking complete bytes without conversion returns a BytesChunk or SliceChunk
+        // 3.a) peeking complete bytes without conversion returns a BytesChunk
         if (b(iterator.getPosition()).get() % 8 == 0 && (length < b(0) || length.get() % 8 == 0)) {
             B startOffset = iterator.getPosition();
             B endOffset = iterator.getPosition() + (length < b(0) ? std::min(-length, chunkLength - iterator.getPosition()) : length);
             auto chunk = makeShared<BytesChunk>(std::vector<uint8_t>(bytes.begin() + B(startOffset).get(), bytes.begin() + B(endOffset).get()));
-            chunk->tags.copyTags(tags, iterator.getPosition(), b(0), chunk->getChunkLength());
+            chunk->regionTags.copyTags(regionTags, iterator.getPosition(), b(0), chunk->getChunkLength());
             chunk->markImmutable();
             return chunk;
         }
         else
-            // 4. peeking incomplete bytes without conversion returns a SliceChunk
+            // 3.b) peeking incomplete bytes without conversion returns a SliceChunk
             return peekConverted<SliceChunk>(iterator, length, flags);
     }
     // 4. peeking with conversion
@@ -79,7 +84,7 @@ const Ptr<Chunk> BytesChunk::convertChunk(const std::type_info& typeInfo, const 
     CHUNK_CHECK_IMPLEMENTATION(b(0) <= resultLength && resultLength <= chunkLength);
     MemoryOutputStream outputStream(chunkLength);
     Chunk::serialize(outputStream, chunk, offset, resultLength);
-    // TODO: this can return data which is contains garbage because the data length is not divisible by 8
+    // TODO this can return data which is contains garbage because the data length is not divisible by 8
     return makeShared<BytesChunk>(outputStream.getData());
 }
 
@@ -111,12 +116,22 @@ void BytesChunk::copyFromBuffer(const uint8_t *buffer, size_t bufferLength)
     bytes.assign(buffer, buffer + bufferLength);
 }
 
+bool BytesChunk::containsSameData(const Chunk& other) const
+{
+    return &other == this || (Chunk::containsSameData(other) && bytes == static_cast<const BytesChunk *>(&other)->bytes);
+}
+
 bool BytesChunk::canInsertAtFront(const Ptr<const Chunk>& chunk) const
 {
     return chunk->getChunkType() == CT_BYTES;
 }
 
 bool BytesChunk::canInsertAtBack(const Ptr<const Chunk>& chunk) const
+{
+    return chunk->getChunkType() == CT_BYTES;
+}
+
+bool BytesChunk::canInsertAt(const Ptr<const Chunk>& chunk, b offset) const
 {
     return chunk->getChunkType() == CT_BYTES;
 }
@@ -133,6 +148,12 @@ void BytesChunk::doInsertAtBack(const Ptr<const Chunk>& chunk)
     bytes.insert(bytes.end(), bytesChunk->bytes.begin(), bytesChunk->bytes.end());
 }
 
+void BytesChunk::doInsertAt(const Ptr<const Chunk>& chunk, b offset)
+{
+    const auto& bytesChunk = staticPtrCast<const BytesChunk>(chunk);
+    bytes.insert(bytes.begin() + B(offset).get(), bytesChunk->bytes.begin(), bytesChunk->bytes.end());
+}
+
 void BytesChunk::doRemoveAtFront(b length)
 {
     bytes.erase(bytes.begin(), bytes.begin() + B(length).get());
@@ -143,20 +164,25 @@ void BytesChunk::doRemoveAtBack(b length)
     bytes.erase(bytes.end() - B(length).get(), bytes.end());
 }
 
-std::string BytesChunk::str() const
+void BytesChunk::doRemoveAt(b offset, b length)
 {
-    std::ostringstream os;
-    os << "BytesChunk, length = " << B(getChunkLength()) << ", bytes = {";
+    bytes.erase(bytes.begin() + B(offset).get(), bytes.begin() + B(offset).get() + B(length).get());
+}
+
+std::ostream& BytesChunk::printFieldsToStream(std::ostream& stream, int level, int evFlags) const
+{
+    stream << ", " << EV_BOLD << "bytes" << EV_NORMAL << " = {";
     bool first = true;
     for (auto byte : bytes) {
         if (!first)
-            os << ", ";
+            stream << ", ";
         else
             first = false;
-        os << (int) (byte);
+        stream << (int)(byte);
     }
-    os << "}";
-    return os.str();
+    stream << "}";
+    return stream;
 }
 
 } // namespace
+

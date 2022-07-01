@@ -1,28 +1,17 @@
 //
-// Copyright (C) 2005 Andras Varga
+// Copyright (C) 2005 OpenSim Ltd.
 // Copyright (C) 2008 Alfonso Ariza
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-//
+
+#include "inet/mobility/single/Ns2MotionMobility.h"
 
 #include <fstream>
 #include <sstream>
 #include <string>
 
 #include "inet/common/INETMath.h"
-#include "inet/mobility/single/Ns2MotionMobility.h"
 
 #ifndef atoi
 #include <cstdlib>
@@ -45,8 +34,7 @@ Ns2MotionMobility::Ns2MotionMobility()
 void Ns2MotionMobility::computeMaxSpeed()
 {
     unsigned int fileSize = ns2File->lines.size();
-    for (unsigned int i = 0; i < fileSize; i++)
-    {
+    for (unsigned int i = 0; i < fileSize; i++) {
         const Ns2MotionFile::Line& vec = ns2File->lines[i];
         if (vec[3] > maxSpeed)
             maxSpeed = vec[3];
@@ -174,12 +162,12 @@ void Ns2MotionMobility::setTargetPosition()
     const Ns2MotionFile::Line& vec = ns2File->lines[vecpos];
     double time = vec[0];
     simtime_t now = simTime();
-    // TODO: this code is dubious at best
+    // TODO this code is dubious at best
     if (now < time) {
         nextChange = time;
         targetPosition = lastPosition;
     }
-    else if (vec[3] == 0) {    // the node is stopped
+    else if (vec[3] == 0) { // the node is stopped
         const Ns2MotionFile::Line& vec = ns2File->lines[vecpos + 1];
         double time = vec[0];
         nextChange = time;

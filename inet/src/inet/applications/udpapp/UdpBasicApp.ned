@@ -1,20 +1,9 @@
 //
-// Copyright (C) 2004 Andras Varga
-// Copyright (C) 2000 Institut fuer Telematik, Universitaet Karlsruhe
+// Copyright (C) 2004 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 package inet.applications.udpapp;
 
@@ -41,6 +30,7 @@ simple UdpBasicApp like IApp
 {
     parameters:
         string interfaceTableModule;   // The path to the InterfaceTable module
+        string clockModule = default(""); // relative path of a module that implements IClock; optional
         int localPort = default(-1);  // local port (-1: use ephemeral port)
         string destAddresses = default(""); // list of IP addresses, separated by spaces ("": don't send)
         string localAddress = default("");

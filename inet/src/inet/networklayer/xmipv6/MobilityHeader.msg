@@ -5,21 +5,9 @@
 // Christian Bauer
 // Institute of Communications and Navigation, German Aerospace Center (DLR)
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-//
-
 
 import inet.common.INETDefs;
 import inet.common.packet.chunk.Chunk;
@@ -31,7 +19,6 @@ namespace inet;
 
 enum MobilityHeaderType
 {
-
     BINDING_REFRESH_REQUEST = 0;
     HOME_TEST_INIT = 1;
     CARE_OF_TEST_INIT = 2;
@@ -46,7 +33,6 @@ class MobilityHeader extends FieldsChunk  // extends Ipv6ExtensionHeader // TODO
 {
     MobilityHeaderType mobilityHeaderType;
 }
-
 
 class BindingUpdate extends MobilityHeader
 {
@@ -63,12 +49,9 @@ class BindingUpdate extends MobilityHeader
     int bindingAuthorizationData = 0; // 28.08.07 - CB
 }
 
-
 //Defining the status fields for the Binding Acknowledgement Message
-
 enum BaStatus
 {
-
     BINDING_UPDATE_ACCEPTED = 0;
     BU_ACCEPT_BUT_DISCOVER_PREFIX = 1;
     REASON_UNSPECIFIED = 128;
@@ -86,7 +69,6 @@ enum BaStatus
 }
 
 //==================Defining Binding Acknowledgement Message===================
-
 class BindingAcknowledgement extends MobilityHeader
 {
     BaStatus status;
@@ -100,33 +82,27 @@ class BindingAcknowledgement extends MobilityHeader
 }
 
 //==================Defining Binding Error Status====================
-
 enum BeStatus
 {
-
     UNKNOWN_BINDING_FOR_HOME_ADDRESS_DEST_OPTION = 1;
     UNKNOWN_MH_TYPE = 2; //Unrecognised MH Type
 }
 
 //==================Defining Binding Error Message===================
-
 class BindingError extends MobilityHeader
 {
     BeStatus status;
     Ipv6Address homeAddress;
     //Mobility Options not defined
-
 }
 
 //=============Message definition of Home Test Init Message ==========
-
 class HomeTestInit extends MobilityHeader
 {
     unsigned int homeInitCookie;
 }
 
 //=============Message definition of Home Test Message ==========
-
 class HomeTest extends MobilityHeader
 {
     unsigned int homeInitCookie;
@@ -135,21 +111,18 @@ class HomeTest extends MobilityHeader
 }
 
 //=============Message definition of Care-of Test Init Message ==========
-
 class CareOfTestInit extends MobilityHeader
 {
     unsigned int careOfInitCookie;
 }
 
 //=============Message definition of Care-of Test Message ==========
-
 class CareOfTest extends MobilityHeader
 {
     unsigned int careOfInitCookie;
     unsigned int careOfKeyGenToken;
     // care-of nonce index not modelled
 }
-
 
 ///////////////////////////////////////////
 // 18.09.07 - CB
@@ -158,7 +131,6 @@ class BindingRefreshRequest extends MobilityHeader
 {
 }
 
-
 ///////////////////////////////////////////
 // 17.10.07 - CB
 ///////////////////////////////////////////
@@ -166,4 +138,3 @@ class HomeAddressOption extends Ipv6DestinationOptionsHeader
 {
     Ipv6Address homeAddress;
 }
-

@@ -1,3 +1,7 @@
+//
+// SPDX-License-Identifier: LGPL-3.0-or-later
+//
+//
 /* -*- mode:c++ -*- ********************************************************
  * file:        MoBanCoordinator.h
  *
@@ -9,13 +13,6 @@
  *              Eindhoven University of Technology (TU/e), the Netherlands.
  *
  *
- *              This program is free software; you can redistribute it
- *              and/or modify it under the terms of the GNU General Public
- *              License as published by the Free Software Foundation; either
- *              version 2 of the License, or (at your option) any later
- *              version.
- *              For further information see file COPYING
- *              in the top level directory
  ***************************************************************************
  * part of:    MoBAN (Mobility Model for wireless Body Area Networks)
  * description:     Implementation of the coordinator module of the MoBAN mobility model
@@ -46,7 +43,6 @@
 #include <sstream>
 #include <vector>
 
-#include "inet/common/INETDefs.h"
 #include "inet/mobility/base/LineSegmentsMobilityBase.h"
 #include "inet/mobility/group/Posture.h"
 #include "inet/mobility/group/PostureTransition.h"
@@ -56,7 +52,7 @@ namespace inet {
 class MoBanLocal;
 
 /**
-   *\page mobancpp MoBAN C++ reference
+ *\page mobancpp MoBAN C++ reference
  * This is the C++ implementation reference for MoBAN, which is a configurable mobility model for wireless Body Area Networks. MoBanCoordinator and MoBanLocal
  * classes describe the behavior of the Coordinator module and local mobility module of the MoBAN, respectively. There are two more classes which are used in the
  * coordinator module.
@@ -125,8 +121,7 @@ class INET_API MoBanCoordinator : public LineSegmentsMobilityBase
     bool useMobilityPattern;
 
     /** @brief Data type for one instance of mobility pattern. */
-    typedef struct pattern
-    {
+    typedef struct pattern {
         unsigned int postureID;
         Coord targetPos;
         double speed;
@@ -151,8 +146,8 @@ class INET_API MoBanCoordinator : public LineSegmentsMobilityBase
 
     /** @brief Possible (supported) strategies for posture selection. */
     enum posture_sel_type {
-        UNIFORM_RANDOM = 0,    // uniform random posture selection. No correlation is applied.
-        MARKOV_BASE    // Either a Markov model matrix or a steady state vector is given for space-time domains
+        UNIFORM_RANDOM = 0, // uniform random posture selection. No correlation is applied.
+        MARKOV_BASE // Either a Markov model matrix or a steady state vector is given for space-time domains
     };
 
     /** @brief The requested strategy for posture selection. To be given through configuration file. */
@@ -219,5 +214,5 @@ class INET_API MoBanCoordinator : public LineSegmentsMobilityBase
 
 } // namespace inet
 
-#endif // ifndef __INET_MOBANCOORDINATOR_H
+#endif
 

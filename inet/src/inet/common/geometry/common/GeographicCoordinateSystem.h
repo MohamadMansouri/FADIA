@@ -1,19 +1,9 @@
 //
 // Copyright (C) 2013 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 #ifndef __INET_GEOGRAPHICCOORDINATESYSTEM_H
 #define __INET_GEOGRAPHICCOORDINATESYSTEM_H
@@ -21,7 +11,7 @@
 #include "inet/common/geometry/common/Coord.h"
 #include "inet/common/geometry/common/Quaternion.h"
 
-#if defined(WITH_OSGEARTH) && defined(WITH_VISUALIZERS)
+#if defined(WITH_OSGEARTH) && defined(INET_WITH_VISUALIZATIONOSG)
 #include <osgEarth/MapNode>
 #endif
 
@@ -41,7 +31,7 @@ class INET_API GeoCoord
     /*@}*/
 
   public:
-    GeoCoord(deg latitude, deg longitude, m altitude) : latitude(latitude), longitude(longitude), altitude(altitude) { }
+    GeoCoord(deg latitude, deg longitude, m altitude) : latitude(latitude), longitude(longitude), altitude(altitude) {}
 };
 
 class INET_API IGeographicCoordinateSystem
@@ -73,7 +63,7 @@ class INET_API SimpleGeographicCoordinateSystem : public cSimpleModule, public I
     virtual GeoCoord computeGeographicCoordinate(const Coord& sceneCoordinate) const override;
 };
 
-#if defined(WITH_OSGEARTH) && defined(WITH_VISUALIZERS)
+#if defined(WITH_OSGEARTH) && defined(INET_WITH_VISUALIZATIONOSG)
 
 class INET_API OsgGeographicCoordinateSystem : public cSimpleModule, public IGeographicCoordinateSystem
 {
@@ -99,5 +89,5 @@ class INET_API OsgGeographicCoordinateSystem : public cSimpleModule, public IGeo
 
 } // namespace inet
 
-#endif // ifndef __INET_GEOGRAPHICCOORDINATESYSTEM_H
+#endif
 

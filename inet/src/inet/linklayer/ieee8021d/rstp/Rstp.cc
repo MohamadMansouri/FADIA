@@ -2,19 +2,10 @@
 // Copyright (C) 2011 Juan Luis Garrote Molinero
 // Copyright (C) 2013 Zsolt Prontvai
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
+#include "inet/linklayer/ieee8021d/rstp/Rstp.h"
 
 #include "inet/common/IProtocolRegistrationListener.h"
 #include "inet/common/ModuleAccess.h"
@@ -22,8 +13,7 @@
 #include "inet/common/lifecycle/NodeStatus.h"
 #include "inet/linklayer/common/InterfaceTag_m.h"
 #include "inet/linklayer/common/MacAddressTag_m.h"
-#include "inet/linklayer/ieee8021d/rstp/Rstp.h"
-#include "inet/networklayer/common/InterfaceEntry.h"
+#include "inet/networklayer/common/NetworkInterface.h"
 
 namespace inet {
 
@@ -51,19 +41,25 @@ void Rstp::initialize(int stage)
         upgradeTimer = new cMessage("upgrade", SELF_UPGRADE);
     }
     else if (stage == INITSTAGE_LINK_LAYER) {
-        registerService(Protocol::stp, nullptr, gate("relayIn"));
-        registerProtocol(Protocol::stp, gate("relayOut"), nullptr);
+        registerProtocol(Protocol::stp, gate("relayOut"), gate("relayIn"));
+
+        for (int i = 0; i < ifTable->getNumInterfaces(); i++) {
+            auto ie = ifTable->getInterface(i);
+            if (!ie->isLoopback() && ie->isWired() /* && ie->getProtocol() == &Protocol::ethernetMac */) {   // TODO check protocol
+                ie->addMulticastMacAddress(MacAddress::STP_MULTICAST_ADDRESS);
+            }
+        }
     }
 }
 
 void Rstp::scheduleNextUpgrade()
 {
     cancelEvent(upgradeTimer);
-    Ieee8021dInterfaceData *nextInterfaceData = nullptr;
+    const Ieee8021dInterfaceData *nextInterfaceData = nullptr;
     for (unsigned int i = 0; i < numPorts; i++) {
         int interfaceId = ifTable->getInterface(i)->getInterfaceId();
-        if (getPortInterfaceEntry(interfaceId)->hasCarrier()) {
-            Ieee8021dInterfaceData *iPort = getPortInterfaceData(interfaceId);
+        if (getPortNetworkInterface(interfaceId)->hasCarrier()) {
+            const Ieee8021dInterfaceData *iPort = getPortInterfaceData(interfaceId);
             if (iPort->getRole() == Ieee8021dInterfaceData::NOTASSIGNED) {
                 if (nextInterfaceData == nullptr)
                     nextInterfaceData = iPort;
@@ -110,7 +106,7 @@ void Rstp::handleMessageWhenUp(cMessage *msg)
         }
     }
     else {
-        handleIncomingFrame(check_and_cast<Packet *>(msg));    // handling BPDU
+        handleIncomingFrame(check_and_cast<Packet *>(msg)); // handling BPDU
     }
 }
 
@@ -118,12 +114,12 @@ void Rstp::handleUpgrade(cMessage *msg)
 {
     for (unsigned int i = 0; i < numPorts; i++) {
         int interfaceId = ifTable->getInterface(i)->getInterfaceId();
-        Ieee8021dInterfaceData *iPort = getPortInterfaceData(interfaceId);
-        if (getPortInterfaceEntry(interfaceId)->hasCarrier() && iPort->getNextUpgrade() == simTime()) {
+        auto iPort = getPortInterfaceDataForUpdate(interfaceId);
+        if (getPortNetworkInterface(interfaceId)->hasCarrier() && iPort->getNextUpgrade() == simTime()) {
             if (iPort->getRole() == Ieee8021dInterfaceData::NOTASSIGNED) {
                 EV_DETAIL << "MigrateTime. Setting port " << interfaceId << "to designated." << endl;
                 iPort->setRole(Ieee8021dInterfaceData::DESIGNATED);
-                iPort->setState(Ieee8021dInterfaceData::DISCARDING);    // contest to become forwarding.
+                iPort->setState(Ieee8021dInterfaceData::DISCARDING); // contest to become forwarding.
                 iPort->setNextUpgrade(simTime() + forwardDelay);
             }
             else if (iPort->getRole() == Ieee8021dInterfaceData::DESIGNATED) {
@@ -150,14 +146,14 @@ void Rstp::handleHelloTime(cMessage *msg)
         // sends hello through all active (learning, forwarding or not assigned) ports
         // increments LostBPDU just from ROOT, ALTERNATE and BACKUP
         int interfaceId = ifTable->getInterface(i)->getInterfaceId();
-        Ieee8021dInterfaceData *iPort = getPortInterfaceData(interfaceId);
+        auto iPort = getPortInterfaceDataForUpdate(interfaceId);
         if (!iPort->isEdge()
             && (iPort->getRole() == Ieee8021dInterfaceData::ROOT
                 || iPort->getRole() == Ieee8021dInterfaceData::ALTERNATE
                 || iPort->getRole() == Ieee8021dInterfaceData::BACKUP))
         {
             iPort->setLostBPDU(iPort->getLostBPDU() + 1);
-            if (iPort->getLostBPDU() > 3) {    // 3 HelloTime without the best BPDU.
+            if (iPort->getLostBPDU() > 3) { // 3 HelloTime without the best BPDU.
                 EV_DETAIL << "3 HelloTime without the best BPDU" << endl;
                 // starts contest
                 if (iPort->getRole() == Ieee8021dInterfaceData::ROOT) {
@@ -170,17 +166,17 @@ void Rstp::handleHelloTime(cMessage *msg)
                         // old root gate goes to DESIGNATED and DISCARDING
                         // a new contest should be done to determine the new root path from this LAN
                         // updating root vector.
-                        Ieee8021dInterfaceData *candidatePort = getPortInterfaceData(candidate);
+                        auto candidatePort = getPortInterfaceDataForUpdate(candidate);
                         iPort->setRole(Ieee8021dInterfaceData::DESIGNATED);
-                        iPort->setState(Ieee8021dInterfaceData::DISCARDING);    // if there is not a better BPDU, that will become FORWARDING
+                        iPort->setState(Ieee8021dInterfaceData::DISCARDING); // if there is not a better BPDU, that will become FORWARDING
                         iPort->setNextUpgrade(simTime() + forwardDelay);
                         scheduleNextUpgrade();
-                        initInterfacedata(interfaceId);    // reset, then a new BPDU will be allowed to upgrade the best received info for this port
+                        initInterfacedata(interfaceId); // reset, then a new BPDU will be allowed to upgrade the best received info for this port
                         candidatePort->setRole(Ieee8021dInterfaceData::ROOT);
                         candidatePort->setState(Ieee8021dInterfaceData::FORWARDING);
                         candidatePort->setLostBPDU(0);
                         flushOtherPorts(candidate);
-                        macTable->copyTable(interfaceId, candidate);    // copy cache from old to new root
+                        macTable->replaceForwardingInterface(interfaceId, candidate); // copy cache from old to new root
                     }
                     else {
                         // alternate not found, selects a new root
@@ -195,34 +191,34 @@ void Rstp::handleHelloTime(cMessage *msg)
                     EV_DETAIL << "Setting port " << interfaceId << " to designated." << endl;
                     // it should take care of this LAN, switching to designated
                     iPort->setRole(Ieee8021dInterfaceData::DESIGNATED);
-                    iPort->setState(Ieee8021dInterfaceData::DISCARDING);    // a new content will start in case of another switch were in alternate
+                    iPort->setState(Ieee8021dInterfaceData::DISCARDING); // a new content will start in case of another switch were in alternate
                     iPort->setNextUpgrade(simTime() + forwardDelay);
                     scheduleNextUpgrade();
                     // if there is no problem, this will become forwarding in a few seconds
                     initInterfacedata(interfaceId);
                 }
-                iPort->setLostBPDU(0);    // reseting lost bpdu counter after a change.
+                iPort->setLostBPDU(0); // reseting lost bpdu counter after a change.
             }
         }
     }
-    sendBPDUs();    // generating and sending new BPDUs
+    sendBPDUs(); // generating and sending new BPDUs
     sendTCNtoRoot();
-    scheduleAt(simTime() + helloTime, msg);    // programming next hello time
+    scheduleAfter(helloTime, msg); // programming next hello time
 }
 
 void Rstp::checkTC(const Ptr<const BpduCfg>& frame, int arrivalInterfaceId)
 {
-    Ieee8021dInterfaceData *port = getPortInterfaceData(arrivalInterfaceId);
+    const Ieee8021dInterfaceData *port = getPortInterfaceData(arrivalInterfaceId);
     if ((frame->getTcFlag() == true) && (port->getState() == Ieee8021dInterfaceData::FORWARDING)) {
         EV_DETAIL << "TCN received" << endl;
         findContainingNode(this)->bubble("TCN received");
         for (unsigned int i = 0; i < numPorts; i++) {
             int interfaceId = ifTable->getInterface(i)->getInterfaceId();
             if (interfaceId != arrivalInterfaceId) {
-                Ieee8021dInterfaceData *port2 = getPortInterfaceData(interfaceId);
+                auto port2 = getPortInterfaceDataForUpdate(interfaceId);
                 // flushing other ports
                 // TCN over other ports
-                macTable->flush(interfaceId);
+                macTable->removeForwardingInterface(interfaceId);
                 port2->setTCWhile(simTime() + tcWhileTime);
             }
         }
@@ -232,12 +228,12 @@ void Rstp::checkTC(const Ptr<const BpduCfg>& frame, int arrivalInterfaceId)
 void Rstp::handleBackup(const Ptr<const BpduCfg>& frame, unsigned int arrivalInterfaceId)
 {
     EV_DETAIL << "More than one port in the same LAN" << endl;
-    Ieee8021dInterfaceData *port = getPortInterfaceData(arrivalInterfaceId);
+    auto port = getPortInterfaceDataForUpdate(arrivalInterfaceId);
     if ((frame->getPortPriority() < port->getPortPriority())
         || ((frame->getPortPriority() == port->getPortPriority()) && (frame->getPortNum() < arrivalInterfaceId)))
     {
         // flushing arrival port
-        macTable->flush(arrivalInterfaceId);
+        macTable->removeForwardingInterface(arrivalInterfaceId);
         port->setRole(Ieee8021dInterfaceData::BACKUP);
         port->setState(Ieee8021dInterfaceData::DISCARDING);
         port->setLostBPDU(0);
@@ -246,21 +242,21 @@ void Rstp::handleBackup(const Ptr<const BpduCfg>& frame, unsigned int arrivalInt
     else if (frame->getPortPriority() > port->getPortPriority()
              || (frame->getPortPriority() == port->getPortPriority() && frame->getPortNum() > arrivalInterfaceId))
     {
-        Ieee8021dInterfaceData *port2 = getPortInterfaceData(frame->getPortNum());
+        auto port2 = getPortInterfaceDataForUpdate(frame->getPortNum());
         // flushing sender port
-        macTable->flush(frame->getPortNum());    // portNum is sender port number, it is not arrival port
+        macTable->removeForwardingInterface(frame->getPortNum()); // portNum is sender port number, it is not arrival port
         port2->setRole(Ieee8021dInterfaceData::BACKUP);
         port2->setState(Ieee8021dInterfaceData::DISCARDING);
         port2->setLostBPDU(0);
         EV_DETAIL << "Setting port " << frame->getPortNum() << "to backup" << endl;
     }
     else {
-        Ieee8021dInterfaceData *port2 = getPortInterfaceData(frame->getPortNum());
+        auto port2 = getPortInterfaceDataForUpdate(frame->getPortNum());
         // unavoidable loop, received its own message at the same port
         // switch to disabled
         EV_DETAIL << "Unavoidable loop. Received its own message at the same port. Setting port " << frame->getPortNum() << " to disabled." << endl;
         // flushing that port
-        macTable->flush(frame->getPortNum());    // portNum is sender port number, it is not arrival port
+        macTable->removeForwardingInterface(frame->getPortNum()); // portNum is sender port number, it is not arrival port
         port2->setRole(Ieee8021dInterfaceData::DISABLED);
         port2->setState(Ieee8021dInterfaceData::DISCARDING);
     }
@@ -276,7 +272,7 @@ void Rstp::handleIncomingFrame(Packet *packet)
     EV_INFO << "BPDU received at port " << arrivalInterfaceId << "." << endl;
     if (frame->getMessageAge() < maxAge) {
         // checking TC
-        checkTC(frame, arrivalInterfaceId);    // sets TCWhile if arrival port was FORWARDING
+        checkTC(frame, arrivalInterfaceId); // sets TCWhile if arrival port was FORWARDING
         // checking possible backup
         if (src.compareTo(bridgeAddress) == 0) // more than one port in the same LAN
             handleBackup(frame, arrivalInterfaceId);
@@ -290,21 +286,21 @@ void Rstp::handleIncomingFrame(Packet *packet)
 
 void Rstp::processBPDU(const Ptr<const BpduCfg>& frame, unsigned int arrivalInterfaceId)
 {
-    //three challenges.
+    // three challenges.
     //
-    //first:  vs best received BPDU for that port --------->case
-    //second: vs root BPDU--------------------------------->case1
-    //third:  vs BPDU that would be sent from this Bridge.->case2
-    Ieee8021dInterfaceData *arrivalPort = getPortInterfaceData(arrivalInterfaceId);
+    // first:  vs best received BPDU for that port --------->case
+    // second: vs root BPDU--------------------------------->case1
+    // third:  vs BPDU that would be sent from this Bridge.->case2
+    const Ieee8021dInterfaceData *arrivalPort = getPortInterfaceData(arrivalInterfaceId);
     bool flood = false;
-    if (compareInterfacedata(arrivalInterfaceId, frame, arrivalPort->getLinkCost()) > 0    //better root
+    if (compareInterfacedata(arrivalInterfaceId, frame, arrivalPort->getLinkCost()) > 0 // better root
         && frame->getRootAddress().compareTo(bridgeAddress) != 0) // root will not participate in a loop with its own address
         flood = processBetterSource(frame, arrivalInterfaceId);
-    else if (frame->getBridgeAddress().compareTo(arrivalPort->getBridgeAddress()) == 0    // worse or similar, but the same source
+    else if (frame->getBridgeAddress().compareTo(arrivalPort->getBridgeAddress()) == 0 // worse or similar, but the same source
              && frame->getRootAddress().compareTo(bridgeAddress) != 0) // root will not participate
         flood = processSameSource(frame, arrivalInterfaceId);
     if (flood) {
-        sendBPDUs();    //expedited BPDU
+        sendBPDUs(); // expedited BPDU
         sendTCNtoRoot();
     }
 }
@@ -314,7 +310,7 @@ bool Rstp::processBetterSource(const Ptr<const BpduCfg>& frame, unsigned int arr
     EV_DETAIL << "Better BPDU received than the current best for this port." << endl;
     // update that port rstp info
     updateInterfacedata(frame, arrivalInterfaceId);
-    Ieee8021dInterfaceData *arrivalPort = getPortInterfaceData(arrivalInterfaceId);
+    auto arrivalPort = getPortInterfaceDataForUpdate(arrivalInterfaceId);
     int r = getRootInterfaceId();
     if (r == -1) {
         EV_DETAIL << "There was no root. Setting the arrival port to root." << endl;
@@ -326,20 +322,20 @@ bool Rstp::processBetterSource(const Ptr<const BpduCfg>& frame, unsigned int arr
         return true;
     }
     else {
-        Ieee8021dInterfaceData *rootPort = getPortInterfaceData(r);
+        auto rootPort = getPortInterfaceDataForUpdate(r);
         // there was a Root -> challenge 2 (compare with the root)
-        int case2 = compareInterfacedata(r, frame, arrivalPort->getLinkCost());    // comparing with root port's BPDU
+        int case2 = compareInterfacedata(r, frame, arrivalPort->getLinkCost()); // comparing with root port's BPDU
         int case3 = 0;
 
         switch (case2) {
-            case SIMILAR:    // double link to the same port of the root source -> Tie breaking (better local port first)
+            case SIMILAR: // double link to the same port of the root source -> Tie breaking (better local port first)
                 EV_DETAIL << "Double link to the same port of the root source." << endl;
                 if (rootPort->getPortPriority() < arrivalPort->getPortPriority()
                     || (rootPort->getPortPriority() == arrivalPort->getPortPriority() && (unsigned int)r < arrivalInterfaceId))
                 {
                     // flushing that port
                     EV_DETAIL << "The current root has better local port. Setting the arrival port to alternate." << endl;
-                    macTable->flush(arrivalInterfaceId);
+                    macTable->removeForwardingInterface(arrivalInterfaceId);
                     arrivalPort->setRole(Ieee8021dInterfaceData::ALTERNATE);
                     arrivalPort->setState(Ieee8021dInterfaceData::DISCARDING);
                     arrivalPort->setLostBPDU(0);
@@ -348,27 +344,27 @@ bool Rstp::processBetterSource(const Ptr<const BpduCfg>& frame, unsigned int arr
                     if (arrivalPort->getState() != Ieee8021dInterfaceData::FORWARDING)
                         flushOtherPorts(arrivalInterfaceId);
                     else
-                        macTable->flush(r); // flushing r, needed in case arrival were previously FORWARDING
+                        macTable->removeForwardingInterface(r); // flushing r, needed in case arrival were previously FORWARDING
                     EV_DETAIL << "This has better local port. Setting the arrival port to root. Setting current root port (port " << r << ") to alternate." << endl;
                     rootPort->setRole(Ieee8021dInterfaceData::ALTERNATE);
-                    rootPort->setState(Ieee8021dInterfaceData::DISCARDING);    // comes from root, preserve lostBPDU
+                    rootPort->setState(Ieee8021dInterfaceData::DISCARDING); // comes from root, preserve lostBPDU
                     arrivalPort->setRole(Ieee8021dInterfaceData::ROOT);
                     arrivalPort->setState(Ieee8021dInterfaceData::FORWARDING);
                     arrivalPort->setLostBPDU(0);
-                    macTable->copyTable(r, arrivalInterfaceId);    // copy cache from old to new root
+                    macTable->replaceForwardingInterface(r, arrivalInterfaceId); // copy cache from old to new root
                     // the change does not deserve flooding
                 }
                 break;
 
-            case BETTER_ROOT:    // new port rstp info is better than the root in another gate -> root change
+            case BETTER_ROOT: // new port rstp info is better than the root in another gate -> root change
                 EV_DETAIL << "Better root received than the current root. Setting the arrival port to root." << endl;
                 for (unsigned int i = 0; i < numPorts; i++) {
                     int interfaceId = ifTable->getInterface(i)->getInterfaceId();
-                    Ieee8021dInterfaceData *iPort = getPortInterfaceData(interfaceId);
-                    if (!iPort->isEdge()) {    // avoiding clients reseting
+                    auto iPort = getPortInterfaceDataForUpdate(interfaceId);
+                    if (!iPort->isEdge()) { // avoiding clients reseting
                         if (arrivalPort->getState() != Ieee8021dInterfaceData::FORWARDING)
                             iPort->setTCWhile(simTime() + tcWhileTime);
-                        macTable->flush(interfaceId);
+                        macTable->removeForwardingInterface(interfaceId);
                         if ((unsigned int)interfaceId != arrivalInterfaceId) {
                             iPort->setRole(Ieee8021dInterfaceData::NOTASSIGNED);
                             iPort->setState(Ieee8021dInterfaceData::DISCARDING);
@@ -384,9 +380,9 @@ bool Rstp::processBetterSource(const Ptr<const BpduCfg>& frame, unsigned int arr
 
                 return true;
 
-            case BETTER_RPC:    // same that Root but better RPC
-            case BETTER_SRC:    // same that Root RPC but better source
-            case BETTER_PORT:    // same that root RPC and source but better port
+            case BETTER_RPC: // same that Root but better RPC
+            case BETTER_SRC: // same that Root RPC but better source
+            case BETTER_PORT: // same that root RPC and source but better port
                 if (arrivalPort->getState() != Ieee8021dInterfaceData::FORWARDING) {
                     EV_DETAIL << "Better route to the current root. Setting the arrival port to root." << endl;
                     flushOtherPorts(arrivalInterfaceId);
@@ -394,8 +390,8 @@ bool Rstp::processBetterSource(const Ptr<const BpduCfg>& frame, unsigned int arr
                 arrivalPort->setRole(Ieee8021dInterfaceData::ROOT);
                 arrivalPort->setState(Ieee8021dInterfaceData::FORWARDING);
                 arrivalPort->setLostBPDU(0);
-                rootPort->setRole(Ieee8021dInterfaceData::ALTERNATE);    // temporary, just one port can be root at contest time
-                macTable->copyTable(r, arrivalInterfaceId);    // copy cache from old to new root
+                rootPort->setRole(Ieee8021dInterfaceData::ALTERNATE); // temporary, just one port can be root at contest time
+                macTable->replaceForwardingInterface(r, arrivalInterfaceId); // copy cache from old to new root
                 case3 = contestInterfacedata(r);
                 if (case3 >= 0) {
                     EV_DETAIL << "Setting current root port (port " << r << ") to alternate." << endl;
@@ -403,7 +399,7 @@ bool Rstp::processBetterSource(const Ptr<const BpduCfg>& frame, unsigned int arr
                     rootPort->setState(Ieee8021dInterfaceData::DISCARDING);
                     // not lostBPDU reset
                     // flushing r
-                    macTable->flush(r);
+                    macTable->removeForwardingInterface(r);
                 }
                 else {
                     EV_DETAIL << "Setting current root port (port " << r << ") to designated." << endl;
@@ -416,25 +412,25 @@ bool Rstp::processBetterSource(const Ptr<const BpduCfg>& frame, unsigned int arr
 
             case WORSE_ROOT:
                 EV_DETAIL << "Worse BPDU received than the current root. Sending BPDU to show him a better root as soon as possible." << endl;
-                sendBPDU(arrivalInterfaceId);    // BPDU to show him a better root as soon as possible
+                sendBPDU(arrivalInterfaceId); // BPDU to show him a better root as soon as possible
                 break;
 
-            case WORSE_RPC:    // same Root but worse RPC
-            case WORSE_SRC:    // same Root RPC but worse source
-            case WORSE_PORT:    // same Root RPC and source but worse port
-                case3 = contestInterfacedata(frame, arrivalInterfaceId);    // case 0 not possible
+            case WORSE_RPC: // same Root but worse RPC
+            case WORSE_SRC: // same Root RPC but worse source
+            case WORSE_PORT: // same Root RPC and source but worse port
+                case3 = contestInterfacedata(frame, arrivalInterfaceId); // case 0 not possible
                 if (case3 < 0) {
                     EV_DETAIL << "Worse route to the current root. Setting the arrival port to designated." << endl;
                     arrivalPort->setRole(Ieee8021dInterfaceData::DESIGNATED);
                     arrivalPort->setState(Ieee8021dInterfaceData::DISCARDING);
                     arrivalPort->setNextUpgrade(simTime() + forwardDelay);
                     scheduleNextUpgrade();
-                    sendBPDU(arrivalInterfaceId);    // BPDU to show him a better root as soon as possible
+                    sendBPDU(arrivalInterfaceId); // BPDU to show him a better root as soon as possible
                 }
                 else {
                     EV_DETAIL << "Worse route to the current root. Setting the arrival port to alternate." << endl;
                     // flush arrival
-                    macTable->flush(arrivalInterfaceId);
+                    macTable->removeForwardingInterface(arrivalInterfaceId);
                     arrivalPort->setRole(Ieee8021dInterfaceData::ALTERNATE);
                     arrivalPort->setState(Ieee8021dInterfaceData::DISCARDING);
                     arrivalPort->setLostBPDU(0);
@@ -448,45 +444,45 @@ bool Rstp::processBetterSource(const Ptr<const BpduCfg>& frame, unsigned int arr
 bool Rstp::processSameSource(const Ptr<const BpduCfg>& frame, unsigned int arrivalInterfaceId)
 {
     EV_DETAIL << "BPDU received from the same source than the current best for this port" << endl;
-    Ieee8021dInterfaceData *arrivalPort = getPortInterfaceData(arrivalInterfaceId);
+    auto arrivalPort = getPortInterfaceDataForUpdate(arrivalInterfaceId);
     int case0 = compareInterfacedata(arrivalInterfaceId, frame, arrivalPort->getLinkCost());
     // source has updated BPDU information
     switch (case0) {
         case SIMILAR:
-            arrivalPort->setLostBPDU(0);    // same BPDU, not updated
+            arrivalPort->setLostBPDU(0); // same BPDU, not updated
             break;
 
         case WORSE_ROOT:
             EV_DETAIL << "Worse root received than the current best for this port." << endl;
             if (arrivalPort->getRole() == Ieee8021dInterfaceData::ROOT) {
-                int alternative = getBestAlternate();    // searching for alternate
+                int alternative = getBestAlternate(); // searching for alternate
                 if (alternative >= 0) {
                     EV_DETAIL << "This port was the root, but there is a better alternative. Setting the arrival port to designated and port " << alternative << "to root." << endl;
-                    Ieee8021dInterfaceData *alternativePort = getPortInterfaceData(alternative);
+                    auto alternativePort = getPortInterfaceDataForUpdate(alternative);
                     arrivalPort->setRole(Ieee8021dInterfaceData::DESIGNATED);
                     arrivalPort->setState(Ieee8021dInterfaceData::DISCARDING);
                     arrivalPort->setNextUpgrade(simTime() + forwardDelay);
                     scheduleNextUpgrade();
-                    macTable->copyTable(arrivalInterfaceId, alternative);    // copy cache from old to new root
+                    macTable->replaceForwardingInterface(arrivalInterfaceId, alternative); // copy cache from old to new root
                     flushOtherPorts(alternative);
                     alternativePort->setRole(Ieee8021dInterfaceData::ROOT);
-                    alternativePort->setState(Ieee8021dInterfaceData::FORWARDING);    // comes from alternate, preserves lostBPDU
+                    alternativePort->setState(Ieee8021dInterfaceData::FORWARDING); // comes from alternate, preserves lostBPDU
                     updateInterfacedata(frame, arrivalInterfaceId);
-                    sendBPDU(arrivalInterfaceId);    // show him a better Root as soon as possible
+                    sendBPDU(arrivalInterfaceId); // show him a better Root as soon as possible
                 }
                 else {
                     EV_DETAIL << "This port was the root and there no alternative. Initialize all ports" << endl;
                     int case2 = 0;
-                    initPorts();    // allowing other ports to contest again
+                    initPorts(); // allowing other ports to contest again
                     // flushing all ports
                     for (unsigned int j = 0; j < numPorts; j++) {
                         int interfaceId = ifTable->getInterface(j)->getInterfaceId();
-                        macTable->flush(interfaceId);
+                        macTable->removeForwardingInterface(interfaceId);
                     }
                     case2 = compareInterfacedata(arrivalInterfaceId, frame, arrivalPort->getLinkCost());
                     if (case2 > 0) {
                         EV_DETAIL << "This switch is not better, keep arrival port as a ROOT" << endl;
-                        updateInterfacedata(frame, arrivalInterfaceId);    // if this module is not better, keep it as a ROOT
+                        updateInterfacedata(frame, arrivalInterfaceId); // if this module is not better, keep it as a ROOT
                         arrivalPort->setRole(Ieee8021dInterfaceData::ROOT);
                         arrivalPort->setState(Ieee8021dInterfaceData::FORWARDING);
                     }
@@ -501,7 +497,7 @@ bool Rstp::processSameSource(const Ptr<const BpduCfg>& frame, unsigned int arriv
                 arrivalPort->setNextUpgrade(simTime() + forwardDelay);
                 scheduleNextUpgrade();
                 updateInterfacedata(frame, arrivalInterfaceId);
-                sendBPDU(arrivalInterfaceId);    //Show him a better Root as soon as possible
+                sendBPDU(arrivalInterfaceId); // Show him a better Root as soon as possible
             }
             break;
 
@@ -511,15 +507,15 @@ bool Rstp::processSameSource(const Ptr<const BpduCfg>& frame, unsigned int arriv
             EV_DETAIL << "Worse route to the current root than the current best for this port." << endl;
             if (arrivalPort->getRole() == Ieee8021dInterfaceData::ROOT) {
                 arrivalPort->setLostBPDU(0);
-                int alternative = getBestAlternate();    // searching for alternate
+                int alternative = getBestAlternate(); // searching for alternate
                 if (alternative >= 0) {
-                    Ieee8021dInterfaceData *alternativePort = getPortInterfaceData(alternative);
+                    auto alternativePort = getPortInterfaceDataForUpdate(alternative);
                     int case2 = 0;
                     case2 = compareInterfacedata(alternative, frame, arrivalPort->getLinkCost());
-                    if (case2 < 0) {    // if alternate is better, change
+                    if (case2 < 0) { // if alternate is better, change
                         alternativePort->setRole(Ieee8021dInterfaceData::ROOT);
                         alternativePort->setState(Ieee8021dInterfaceData::FORWARDING);
-                        arrivalPort->setRole(Ieee8021dInterfaceData::DESIGNATED);    // temporary, just one port can be root at contest time
+                        arrivalPort->setRole(Ieee8021dInterfaceData::DESIGNATED); // temporary, just one port can be root at contest time
                         int case3 = 0;
                         case3 = contestInterfacedata(frame, arrivalInterfaceId);
                         if (case3 < 0) {
@@ -535,7 +531,7 @@ bool Rstp::processSameSource(const Ptr<const BpduCfg>& frame, unsigned int arriv
                             arrivalPort->setState(Ieee8021dInterfaceData::DISCARDING);
                         }
                         flushOtherPorts(alternative);
-                        macTable->copyTable(arrivalInterfaceId, alternative);    // copy cache from old to new root
+                        macTable->replaceForwardingInterface(arrivalInterfaceId, alternative); // copy cache from old to new root
                     }
                 }
                 updateInterfacedata(frame, arrivalInterfaceId);
@@ -548,14 +544,14 @@ bool Rstp::processSameSource(const Ptr<const BpduCfg>& frame, unsigned int arriv
                 case2 = contestInterfacedata(frame, arrivalInterfaceId);
                 if (case2 < 0) {
                     EV_DETAIL << "This port was an alternate, setting to designated" << endl;
-                    arrivalPort->setRole(Ieee8021dInterfaceData::DESIGNATED);    // if the frame is worse than this module generated frame, switch to Designated/Discarding
+                    arrivalPort->setRole(Ieee8021dInterfaceData::DESIGNATED); // if the frame is worse than this module generated frame, switch to Designated/Discarding
                     arrivalPort->setState(Ieee8021dInterfaceData::DISCARDING);
                     arrivalPort->setNextUpgrade(simTime() + forwardDelay);
                     scheduleNextUpgrade();
-                    sendBPDU(arrivalInterfaceId);    // show him a better BPDU as soon as possible
+                    sendBPDU(arrivalInterfaceId); // show him a better BPDU as soon as possible
                 }
                 else {
-                    arrivalPort->setLostBPDU(0);    // if it is better than this module generated frame, keep it as alternate
+                    arrivalPort->setLostBPDU(0); // if it is better than this module generated frame, keep it as alternate
                     // this does not deserve expedited BPDU
                 }
             }
@@ -572,7 +568,7 @@ void Rstp::sendTCNtoRoot()
     EV_DETAIL << "SendTCNtoRoot" << endl;
     int r = getRootInterfaceId();
     if (r >= 0) {
-        Ieee8021dInterfaceData *rootPort = getPortInterfaceData(r);
+        const Ieee8021dInterfaceData *rootPort = getPortInterfaceData(r);
         if (rootPort->getRole() != Ieee8021dInterfaceData::DISABLED) {
             if (simTime() < rootPort->getTCWhile()) {
                 Packet *packet = new Packet("BPDU");
@@ -592,18 +588,13 @@ void Rstp::sendTCNtoRoot()
 
                 packet->insertAtBack(frame);
 
-                if (packet->getDataLength() < MIN_ETHERNET_FRAME_BYTES) {  //FIXME KLUDGE, unnecessary padding
-                    const auto& padding = makeShared<ByteCountChunk>(MIN_ETHERNET_FRAME_BYTES - packet->getDataLength());
-                    packet->insertAtBack(padding);
-                }
-
                 auto macAddressReq = packet->addTag<MacAddressReq>();
                 macAddressReq->setSrcAddress(bridgeAddress);
                 macAddressReq->setDestAddress(MacAddress::STP_MULTICAST_ADDRESS);
                 packet->addTag<InterfaceReq>()->setInterfaceId(r);
 
                 packet->addTag<PacketProtocolTag>()->setProtocol(&Protocol::stp);
-                packet->addTag<DispatchProtocolReq>()->setProtocol(&Protocol::ethernetMac);
+                packet->addTag<DispatchProtocolReq>()->setProtocol(&Protocol::ieee8022llc);
                 send(packet, "relayOut");
             }
         }
@@ -615,7 +606,7 @@ void Rstp::sendBPDUs()
     // send BPDUs through all ports, if they are required
     for (unsigned int i = 0; i < numPorts; i++) {
         int interfaceId = ifTable->getInterface(i)->getInterfaceId();
-        Ieee8021dInterfaceData *iPort = getPortInterfaceData(interfaceId);
+        const Ieee8021dInterfaceData *iPort = getPortInterfaceData(interfaceId);
         if ((iPort->getRole() != Ieee8021dInterfaceData::ROOT)
             && (iPort->getRole() != Ieee8021dInterfaceData::ALTERNATE)
             && (iPort->getRole() != Ieee8021dInterfaceData::DISABLED) && (!iPort->isEdge()))
@@ -628,9 +619,9 @@ void Rstp::sendBPDUs()
 void Rstp::sendBPDU(int interfaceId)
 {
     // send a BPDU throuth port
-    Ieee8021dInterfaceData *iport = getPortInterfaceData(interfaceId);
+    const Ieee8021dInterfaceData *iport = getPortInterfaceData(interfaceId);
     int r = getRootInterfaceId();
-    Ieee8021dInterfaceData *rootPort;
+    const Ieee8021dInterfaceData *rootPort;
     if (r != -1)
         rootPort = getPortInterfaceData(r);
     if (iport->getRole() != Ieee8021dInterfaceData::DISABLED) {
@@ -662,30 +653,25 @@ void Rstp::sendBPDU(int interfaceId)
 
         packet->insertAtBack(frame);
 
-        if (packet->getDataLength() < MIN_ETHERNET_FRAME_BYTES) {  //FIXME KLUDGE, unnecessary padding
-            const auto& padding = makeShared<ByteCountChunk>(MIN_ETHERNET_FRAME_BYTES - packet->getDataLength());
-            packet->insertAtBack(padding);
-        }
-
         auto macAddressReq = packet->addTag<MacAddressReq>();
         macAddressReq->setSrcAddress(bridgeAddress);
         macAddressReq->setDestAddress(MacAddress::STP_MULTICAST_ADDRESS);
         packet->addTag<InterfaceReq>()->setInterfaceId(interfaceId);
         packet->addTag<PacketProtocolTag>()->setProtocol(&Protocol::stp);
-        packet->addTag<DispatchProtocolReq>()->setProtocol(&Protocol::ethernetMac);
+        packet->addTag<DispatchProtocolReq>()->setProtocol(&Protocol::ieee8022llc);
         send(packet, "relayOut");
     }
 }
 
 void Rstp::printState()
 {
-    //  prints current database info
+    // prints current database info
     EV_DETAIL << "Switch " << findContainingNode(this)->getFullName() << " state:" << endl;
     int rootIndex = getRootInterfaceId();
     EV_DETAIL << "  Priority: " << bridgePriority << endl;
     EV_DETAIL << "  Local MAC: " << bridgeAddress << endl;
     if (rootIndex >= 0) {
-        Ieee8021dInterfaceData *rootPort = getPortInterfaceData(rootIndex);
+        const Ieee8021dInterfaceData *rootPort = getPortInterfaceData(rootIndex);
         EV_DETAIL << "  Root Priority: " << rootPort->getRootPriority() << endl;
         EV_DETAIL << "  Root Address: " << rootPort->getRootAddress().str() << endl;
         EV_DETAIL << "  Cost: " << rootPort->getRootPathCost() << endl;
@@ -698,13 +684,13 @@ void Rstp::printState()
     EV_DETAIL << "Port State/Role:" << endl;
     for (unsigned int i = 0; i < numPorts; i++) {
         int interfaceId = ifTable->getInterface(i)->getInterfaceId();
-        Ieee8021dInterfaceData *iPort = getPortInterfaceData(interfaceId);
+        const Ieee8021dInterfaceData *iPort = getPortInterfaceData(interfaceId);
         EV_DETAIL << "  " << i << ": " << iPort->getStateName() << "/" << iPort->getRoleName() << (iPort->isEdge() ? " (Client)" : "") << endl;
     }
     EV_DETAIL << "Per-port best sources, Root/Src:" << endl;
     for (unsigned int i = 0; i < numPorts; i++) {
         int interfaceId = ifTable->getInterface(i)->getInterfaceId();
-        Ieee8021dInterfaceData *iPort = getPortInterfaceData(interfaceId);
+        const Ieee8021dInterfaceData *iPort = getPortInterfaceData(interfaceId);
         EV_DETAIL << "  " << interfaceId << ": " << iPort->getRootAddress().str() << "/" << iPort->getBridgeAddress().str() << endl;
     }
     EV_DETAIL << endl;
@@ -712,7 +698,7 @@ void Rstp::printState()
 
 void Rstp::initInterfacedata(unsigned int interfaceId)
 {
-    Ieee8021dInterfaceData *ifd = getPortInterfaceData(interfaceId);
+    auto ifd = getPortInterfaceDataForUpdate(interfaceId);
     ifd->setRootPriority(bridgePriority);
     ifd->setRootAddress(bridgeAddress);
     ifd->setRootPathCost(0);
@@ -728,7 +714,7 @@ void Rstp::initPorts()
 {
     for (unsigned int j = 0; j < numPorts; j++) {
         int interfaceId = ifTable->getInterface(j)->getInterfaceId();
-        Ieee8021dInterfaceData *jPort = getPortInterfaceData(interfaceId);
+        auto jPort = getPortInterfaceDataForUpdate(interfaceId);
         if (!jPort->isEdge()) {
             jPort->setRole(Ieee8021dInterfaceData::NOTASSIGNED);
             jPort->setState(Ieee8021dInterfaceData::DISCARDING);
@@ -739,14 +725,14 @@ void Rstp::initPorts()
             jPort->setState(Ieee8021dInterfaceData::FORWARDING);
         }
         initInterfacedata(interfaceId);
-        macTable->flush(interfaceId);
+        macTable->removeForwardingInterface(interfaceId);
     }
     scheduleNextUpgrade();
 }
 
 void Rstp::updateInterfacedata(const Ptr<const BpduCfg>& frame, unsigned int portNum)
 {
-    Ieee8021dInterfaceData *ifd = getPortInterfaceData(portNum);
+    auto ifd = getPortInterfaceDataForUpdate(portNum);
     ifd->setRootPriority(frame->getRootPriority());
     ifd->setRootAddress(frame->getRootAddress());
     ifd->setRootPathCost(frame->getRootPathCost() + ifd->getLinkCost());
@@ -761,8 +747,8 @@ void Rstp::updateInterfacedata(const Ptr<const BpduCfg>& frame, unsigned int por
 Rstp::CompareResult Rstp::contestInterfacedata(unsigned int portNum)
 {
     int r = getRootInterfaceId();
-    Ieee8021dInterfaceData *rootPort = getPortInterfaceData(r);
-    Ieee8021dInterfaceData *ifd = getPortInterfaceData(portNum);
+    const Ieee8021dInterfaceData *rootPort = getPortInterfaceData(r);
+    const Ieee8021dInterfaceData *ifd = getPortInterfaceData(portNum);
 
     return compareRSTPData(rootPort->getRootPriority(), ifd->getRootPriority(),
             rootPort->getRootAddress(), ifd->getRootAddress(),
@@ -776,8 +762,8 @@ Rstp::CompareResult Rstp::contestInterfacedata(unsigned int portNum)
 Rstp::CompareResult Rstp::contestInterfacedata(const Ptr<const BpduCfg>& msg, unsigned int interfaceId)
 {
     int r = getRootInterfaceId();
-    Ieee8021dInterfaceData *rootPort = getPortInterfaceData(r);
-    Ieee8021dInterfaceData *ifd = getPortInterfaceData(interfaceId);
+    const Ieee8021dInterfaceData *rootPort = getPortInterfaceData(r);
+    const Ieee8021dInterfaceData *ifd = getPortInterfaceData(interfaceId);
 
     return compareRSTPData(rootPort->getRootPriority(), msg->getRootPriority(),
             rootPort->getRootAddress(), msg->getRootAddress(),
@@ -790,7 +776,7 @@ Rstp::CompareResult Rstp::contestInterfacedata(const Ptr<const BpduCfg>& msg, un
 
 Rstp::CompareResult Rstp::compareInterfacedata(unsigned int interfaceId, const Ptr<const BpduCfg>& msg, int linkCost)
 {
-    Ieee8021dInterfaceData *ifd = getPortInterfaceData(interfaceId);
+    const Ieee8021dInterfaceData *ifd = getPortInterfaceData(interfaceId);
 
     return compareRSTPData(ifd->getRootPriority(), msg->getRootPriority(),
             ifd->getRootAddress(), msg->getRootAddress(),
@@ -837,25 +823,25 @@ Rstp::CompareResult Rstp::compareRSTPData(int rootPriority1, int rootPriority2,
 
 int Rstp::getBestAlternate()
 {
-    int candidate = -1;    // index of the best alternate found
+    int candidate = -1; // index of the best alternate found
     for (unsigned int j = 0; j < numPorts; j++) {
         int interfaceId = ifTable->getInterface(j)->getInterfaceId();
-        Ieee8021dInterfaceData *jPort = getPortInterfaceData(interfaceId);
-        if (jPort->getRole() == Ieee8021dInterfaceData::ALTERNATE) {    // just from alternates, others are not updated
+        const Ieee8021dInterfaceData *jPort = getPortInterfaceData(interfaceId);
+        if (jPort->getRole() == Ieee8021dInterfaceData::ALTERNATE) { // just from alternates, others are not updated
             if (candidate < 0)
                 candidate = interfaceId;
             else {
-                Ieee8021dInterfaceData *candidatePort = getPortInterfaceData(candidate);
+                const Ieee8021dInterfaceData *candidatePort = getPortInterfaceData(candidate);
                 if (compareRSTPData(jPort->getRootPriority(), candidatePort->getRootPriority(),
-                            jPort->getRootAddress(), candidatePort->getRootAddress(),
-                            jPort->getRootPathCost(), candidatePort->getRootPathCost(),
-                            jPort->getBridgePriority(), candidatePort->getBridgePriority(),
-                            jPort->getBridgeAddress(), candidatePort->getBridgeAddress(),
-                            jPort->getPortPriority(), candidatePort->getPortPriority(),
-                            jPort->getPortNum(), candidatePort->getPortNum()) < 0)
+                        jPort->getRootAddress(), candidatePort->getRootAddress(),
+                        jPort->getRootPathCost(), candidatePort->getRootPathCost(),
+                        jPort->getBridgePriority(), candidatePort->getBridgePriority(),
+                        jPort->getBridgeAddress(), candidatePort->getBridgeAddress(),
+                        jPort->getPortPriority(), candidatePort->getPortPriority(),
+                        jPort->getPortNum(), candidatePort->getPortNum()) < 0)
                 {
                     // alternate better than the found one
-                    candidate = interfaceId;    // new candidate
+                    candidate = interfaceId; // new candidate
                 }
             }
         }
@@ -867,26 +853,26 @@ void Rstp::flushOtherPorts(unsigned int portId)
 {
     for (unsigned int i = 0; i < numPorts; i++) {
         int interfaceId = ifTable->getInterface(i)->getInterfaceId();
-        Ieee8021dInterfaceData *iPort = getPortInterfaceData(interfaceId);
+        auto iPort = getPortInterfaceDataForUpdate(interfaceId);
         iPort->setTCWhile(simTime() + tcWhileTime);
         if ((unsigned int)interfaceId != portId)
-            macTable->flush(interfaceId);
+            macTable->removeForwardingInterface(interfaceId);
     }
 }
 
 //void Rstp::receiveChangeNotification(int signalID, const cObject *obj)
 void Rstp::receiveSignal(cComponent *source, simsignal_t signalID, cObject *obj, cObject *details)
 {
-    Enter_Method_Silent();
+    Enter_Method("%s", cComponent::getSignalName(signalID));
 
     if (signalID == interfaceStateChangedSignal) {
-        InterfaceEntry *changedIE = check_and_cast<const InterfaceEntryChangeDetails *>(obj)->getInterfaceEntry();
+        NetworkInterface *changedIE = check_and_cast<const NetworkInterfaceChangeDetails *>(obj)->getNetworkInterface();
         for (unsigned int i = 0; i < numPorts; i++) {
             int interfaceId = ifTable->getInterface(i)->getInterfaceId();
-            InterfaceEntry *gateIfEntry = getPortInterfaceEntry(interfaceId);
+            NetworkInterface *gateIfEntry = getPortNetworkInterface(interfaceId);
             if (gateIfEntry == changedIE) {
                 if (gateIfEntry->hasCarrier()) {
-                    Ieee8021dInterfaceData *iPort = getPortInterfaceData(interfaceId);
+                    auto iPort = getPortInterfaceDataForUpdate(interfaceId);
                     if (iPort->getRole() == Ieee8021dInterfaceData::NOTASSIGNED)
                         iPort->setNextUpgrade(simTime() + migrateTime);
                     else if (iPort->getRole() == Ieee8021dInterfaceData::DESIGNATED
@@ -903,7 +889,7 @@ void Rstp::start()
 {
     StpBase::start();
     initPorts();
-    scheduleAt(simTime(), helloTimer);
+    scheduleAfter(SIMTIME_ZERO, helloTimer);
 }
 
 void Rstp::stop()

@@ -1,34 +1,30 @@
 //
-// Copyright (C) 2012 Opensim Ltd.
-// Author: Tamas Borbely
+// Copyright (C) 2012 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
+
+#include "inet/networklayer/diffserv/DscpMarker.h"
+
+#include "inet/common/ModuleAccess.h"
 #include "inet/common/ProtocolTag_m.h"
 #include "inet/networklayer/diffserv/DiffservUtil.h"
 #include "inet/networklayer/diffserv/Dscp_m.h"
-#include "inet/networklayer/diffserv/DscpMarker.h"
 
-#ifdef WITH_IPv4
+#ifdef INET_WITH_ETHERNET
+#include "inet/linklayer/ethernet/common/Ethernet.h"
+#include "inet/linklayer/ethernet/common/EthernetMacHeader_m.h"
+#endif // #ifdef INET_WITH_ETHERNET
+
+#ifdef INET_WITH_IPv4
 #include "inet/networklayer/ipv4/Ipv4.h"
 #include "inet/networklayer/ipv4/Ipv4Header_m.h"
-#endif // ifdef WITH_IPv4
+#endif // ifdef INET_WITH_IPv4
 
-#ifdef WITH_IPv6
+#ifdef INET_WITH_IPv6
 #include "inet/networklayer/ipv6/Ipv6Header.h"
-#endif // ifdef WITH_IPv6
+#endif // ifdef INET_WITH_IPv6
 
 namespace inet {
 
@@ -40,8 +36,10 @@ simsignal_t DscpMarker::packetMarkedSignal = registerSignal("packetMarked");
 
 void DscpMarker::initialize(int stage)
 {
-    PacketQueueingElementBase::initialize(stage);
+    PacketProcessorBase::initialize(stage);
     if (stage == INITSTAGE_LOCAL) {
+        outputGate = gate("out");
+        consumer = findConnectedModule<IPassivePacketSink>(outputGate);
         parseDSCPs(par("dscps"), "dscps", dscps);
         if (dscps.empty())
             dscps.push_back(DSCP_BE);
@@ -63,13 +61,15 @@ void DscpMarker::handleMessage(cMessage *message)
 
 void DscpMarker::pushPacket(Packet *packet, cGate *inputGate)
 {
+    Enter_Method("pushPacket");
+    take(packet);
     numRcvd++;
     int dscp = dscps.at(inputGate->getIndex());
     if (markPacket(packet, dscp)) {
         emit(packetMarkedSignal, packet);
         numMarked++;
     }
-    pushOrSendPacket(packet, gate("out"));
+    pushOrSendPacket(packet, outputGate, consumer);
 }
 
 void DscpMarker::refreshDisplay() const
@@ -86,31 +86,54 @@ bool DscpMarker::markPacket(Packet *packet, int dscp)
 {
     EV_DETAIL << "Marking packet with dscp=" << dscpToString(dscp) << "\n";
 
+    b offset(0);
     auto protocol = packet->getTag<PacketProtocolTag>()->getProtocol();
 
-    //TODO processing link-layer headers when exists
+    if (protocol->getLayer() == Protocol::LinkLayer) {
+        if (protocol == &Protocol::ethernetMac) {
+#ifdef INET_WITH_ETHERNET
+            auto ethHeader = packet->peekDataAt<EthernetMacHeader>(offset);
+            if (isEth2Header(*ethHeader)) {
+                offset += ethHeader->getChunkLength();
+                protocol = ProtocolGroup::ethertype.getProtocol(ethHeader->getTypeOrLength());
+            }
+#else
+        throw cRuntimeError("Ethernet feature is disabled");
+#endif // #ifdef INET_WITH_ETHERNET
+        }
+        else
+            return false;
+    }
 
-#ifdef WITH_IPv4
-    if (protocol == &Protocol::ipv4) {
-        packet->trimFront();
-        const auto& ipv4Header = packet->removeAtFront<Ipv4Header>();
+    if (protocol->getLayer() != Protocol::NetworkLayer)
+        return false;
+#ifdef INET_WITH_IPv4
+    else if (protocol == &Protocol::ipv4) {
+        packet->removeTagIfPresent<NetworkProtocolInd>();
+        auto ipv4Header = packet->removeDataAt<Ipv4Header>(offset);
         ipv4Header->setDscp(dscp);
-        Ipv4::insertCrc(ipv4Header);
-        packet->insertAtFront(ipv4Header);
+        Ipv4::insertCrc(ipv4Header); // recalculate IP header checksum
+        auto networkProtocolInd = packet->addTagIfAbsent<NetworkProtocolInd>();
+        networkProtocolInd->setProtocol(protocol);
+        networkProtocolInd->setNetworkProtocolHeader(ipv4Header);
+        packet->insertDataAt(ipv4Header, offset);
         return true;
     }
-#endif // ifdef WITH_IPv4
-#ifdef WITH_IPv6
-    if (protocol == &Protocol::ipv6) {
-        packet->trimFront();
-        const auto& ipv6Header = packet->removeAtFront<Ipv6Header>();
+#endif // ifdef INET_WITH_IPv4
+#ifdef INET_WITH_IPv6
+    else if (protocol == &Protocol::ipv6) {
+        packet->removeTagIfPresent<NetworkProtocolInd>();
+        auto ipv6Header = packet->removeDataAt<Ipv6Header>(offset);
         ipv6Header->setDscp(dscp);
-        packet->insertAtFront(ipv6Header);
+        auto networkProtocolInd = packet->addTagIfAbsent<NetworkProtocolInd>();
+        networkProtocolInd->setProtocol(protocol);
+        networkProtocolInd->setNetworkProtocolHeader(ipv6Header);
+        packet->insertDataAt(ipv6Header, offset);
         return true;
     }
-#endif // ifdef WITH_IPv6
-
+#endif // ifdef INET_WITH_IPv6
     return false;
 }
 
 } // namespace inet
+

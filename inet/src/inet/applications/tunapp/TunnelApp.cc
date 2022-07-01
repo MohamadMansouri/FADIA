@@ -1,30 +1,20 @@
 //
 // Copyright (C) 2013 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-#include "inet/applications/common/SocketTag_m.h"
+
+#include "inet/applications/tunapp/TunnelApp.h"
+
 #include "inet/common/ModuleAccess.h"
 #include "inet/common/ProtocolTag_m.h"
+#include "inet/common/socket/SocketTag_m.h"
 #include "inet/linklayer/tun/TunControlInfo_m.h"
 #include "inet/networklayer/common/L3AddressResolver.h"
 #include "inet/networklayer/common/L3AddressTag_m.h"
 #include "inet/networklayer/contract/IInterfaceTable.h"
 #include "inet/transportlayer/contract/udp/UdpControlInfo.h"
-
-#include "inet/applications/tunapp/TunnelApp.h"
 
 namespace inet {
 
@@ -71,11 +61,11 @@ void TunnelApp::initialize(int stage)
             socketMap.addSocket(&serverSocket);
         }
         IInterfaceTable *interfaceTable = getModuleFromPar<IInterfaceTable>(par("interfaceTableModule"), this);
-        InterfaceEntry *interfaceEntry = interfaceTable->findInterfaceByName(interface);
-        if (interfaceEntry == nullptr)
+        NetworkInterface *networkInterface = interfaceTable->findInterfaceByName(interface);
+        if (networkInterface == nullptr)
             throw cRuntimeError("TUN interface not found: %s", interface);
         tunSocket.setOutputGate(gate("socketOut"));
-        tunSocket.open(interfaceEntry->getInterfaceId());
+        tunSocket.open(networkInterface->getInterfaceId());
         tunSocket.setCallback(this);
         socketMap.addSocket(&tunSocket);
     }
@@ -98,7 +88,7 @@ void TunnelApp::handleMessageWhenUp(cMessage *message)
     if (operationalState == State::STOPPING_OPERATION) {
         if (ipv4Socket.isOpen() || serverSocket.isOpen() || clientSocket.isOpen())
             return;
-        for (auto s: socketMap.getMap())
+        for (auto s : socketMap.getMap())
             if (s.second->isOpen())
                 return;
         socketMap.deleteSockets();
@@ -114,7 +104,7 @@ void TunnelApp::socketDataArrived(UdpSocket *socket, Packet *packet)
         tunSocket.send(packet);
     }
     else
-        throw cRuntimeError("Unknown protocol: %s", packetProtocol->getName());;
+        throw cRuntimeError("Unknown protocol: %s", packetProtocol->getName());
 }
 
 void TunnelApp::socketErrorArrived(UdpSocket *socket, Indication *indication)
@@ -124,7 +114,7 @@ void TunnelApp::socketErrorArrived(UdpSocket *socket, Indication *indication)
 
 void TunnelApp::socketClosed(UdpSocket *socket)
 {
-    //TODO processing socket closed at stopOperation
+    // TODO processing socket closed at stopOperation
 }
 
 // Ipv4Socket::ICallback
@@ -136,12 +126,12 @@ void TunnelApp::socketDataArrived(Ipv4Socket *socket, Packet *packet)
         tunSocket.send(packet);
     }
     else
-        throw cRuntimeError("Unknown protocol: %s", packetProtocol->getName());;
+        throw cRuntimeError("Unknown protocol: %s", packetProtocol->getName());
 }
 
 void TunnelApp::socketClosed(Ipv4Socket *socket)
 {
-    //TODO processing socket closed at stopOperation
+    // TODO processing socket closed at stopOperation
 }
 
 // TunSocket::ICallback
@@ -159,7 +149,7 @@ void TunnelApp::socketDataArrived(TunSocket *socket, Packet *packet)
         clientSocket.send(packet);
     }
     else
-        throw cRuntimeError("Unknown protocol: %s", protocol->getName());;
+        throw cRuntimeError("Unknown protocol: %s", protocol->getName());
 }
 
 void TunnelApp::handleStopOperation(LifecycleOperation *operation)
@@ -167,7 +157,7 @@ void TunnelApp::handleStopOperation(LifecycleOperation *operation)
     ipv4Socket.close();
     serverSocket.close();
     clientSocket.close();
-    for (auto s: socketMap.getMap())
+    for (auto s : socketMap.getMap())
         s.second->close();
     delayActiveOperationFinish(par("stopOperationTimeout"));
 }
@@ -177,7 +167,7 @@ void TunnelApp::handleCrashOperation(LifecycleOperation *operation)
     ipv4Socket.destroy();
     serverSocket.destroy();
     clientSocket.destroy();
-    for (auto s: socketMap.getMap())
+    for (auto s : socketMap.getMap())
         s.second->destroy();
     socketMap.deleteSockets();
 }

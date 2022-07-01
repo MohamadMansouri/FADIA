@@ -1,31 +1,19 @@
 //
-// Copyright (C) 2012 Opensim Ltd.
-// Author: Tamas Borbely
+// Copyright (C) 2012 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-//
+
 
 package inet.showcases.general.diffserv;
 
-import inet.linklayer.contract.ITrafficConditioner;
 import inet.networklayer.diffserv.BehaviorAggregateClassifier;
 import inet.networklayer.diffserv.DscpMarker;
 import inet.networklayer.diffserv.MultiFieldClassifier;
 import inet.networklayer.diffserv.SingleRateThreeColorMeter;
 import inet.networklayer.diffserv.TokenBucketMeter;
 import inet.queueing.common.PacketMultiplexer;
+import inet.queueing.contract.ITrafficConditioner;
 import inet.queueing.sink.PassivePacketSink;
 
 //
@@ -35,7 +23,7 @@ module DiffservTrafficConditioner like ITrafficConditioner
 {
     parameters:
         string interfaceTableModule;
-        *.interfaceTableModule = default(absPath(interfaceTableModule));
+        *.interfaceTableModule = default(absPath(this.interfaceTableModule));
         @display("i=block/classifier");
     gates:
         input in;

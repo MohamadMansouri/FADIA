@@ -1,23 +1,13 @@
 //
-// Copyright (C) 2016 OpenSim Ltd
+// Copyright (C) 2016 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-#include "inet/common/INETUtils.h"
+
 #include "inet/common/figures/LinearGaugeFigure.h"
+
+#include "inet/common/INETUtils.h"
 
 namespace inet {
 
@@ -59,9 +49,9 @@ LinearGaugeFigure::LinearGaugeFigure(const char *name) : cGroupFigure(name)
 LinearGaugeFigure::~LinearGaugeFigure()
 {
     // delete figures which is not in canvas
-    for (uint32 i = numTicks; i < tickFigures.size(); ++i) {
-        delete tickFigures[i];
-        delete numberFigures[i];
+    for (uint32_t i = numTicks; i < tickFigures.size(); ++i) {
+        dropAndDelete(tickFigures[i]);
+        dropAndDelete(numberFigures[i]);
     }
 }
 
@@ -113,7 +103,7 @@ int LinearGaugeFigure::getLabelOffset() const
 
 void LinearGaugeFigure::setLabelOffset(int offset)
 {
-    if(labelOffset != offset) {
+    if (labelOffset != offset) {
         labelOffset = offset;
         labelFigure->setPosition(Point(getBounds().getCenter().x, getBounds().y + getBounds().height + labelOffset));
     }
@@ -209,7 +199,7 @@ void LinearGaugeFigure::parse(cProperty *property)
     if ((s = property->getValue(PKEY_LABEL)) != nullptr)
         setLabel(s);
     if ((s = property->getValue(PKEY_LABEL_OFFSET)) != nullptr)
-            setLabelOffset(atoi(s));
+        setLabelOffset(atoi(s));
     if ((s = property->getValue(PKEY_LABEL_FONT)) != nullptr)
         setLabelFont(parseFont(s));
     if ((s = property->getValue(PKEY_LABEL_COLOR)) != nullptr)
@@ -336,6 +326,8 @@ void LinearGaugeFigure::redrawTicks()
         while ((size_t)numTicks > tickFigures.size()) {
             cLineFigure *tick = new cLineFigure();
             cTextFigure *number = new cTextFigure();
+            take(tick);
+            take(number);
 
             number->setAnchor(cFigure::ANCHOR_N);
 
@@ -347,8 +339,12 @@ void LinearGaugeFigure::redrawTicks()
     for (int i = numTicks; i < prevNumTicks; ++i) {
         removeFigure(tickFigures[i]);
         removeFigure(numberFigures[i]);
+        take(tickFigures[i]);
+        take(numberFigures[i]);
     }
     for (int i = prevNumTicks; i < numTicks; ++i) {
+        drop(tickFigures[i]);
+        drop(numberFigures[i]);
         tickFigures[i]->insertBelow(needle);
         numberFigures[i]->insertBelow(needle);
     }

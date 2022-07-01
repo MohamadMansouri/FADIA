@@ -1,29 +1,18 @@
 //
-// Copyright (C) 2012 Opensim Ltd.
+// Copyright (C) 2012 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-//
+
 
 package inet.examples.inet.hierarchical99;
 
-import inet.networklayer.configurator.contract.INetworkConfigurator;
+import inet.networklayer.configurator.contract.IL3NetworkConfigurator;
 import inet.networklayer.ipv4.RoutingTableRecorder;
 import inet.node.ethernet.Eth100M;
 import inet.node.ethernet.Eth10G;
 import inet.node.ethernet.Eth1G;
-import inet.node.ethernet.EtherSwitch;
+import inet.node.ethernet.EthernetSwitch;
 import inet.node.inet.Router;
 import inet.node.inet.StandardHost;
 
@@ -42,7 +31,7 @@ network Hierarchical99
             gates:
                 inout ethg[];
             submodules:
-                switch: EtherSwitch {
+                switch: EthernetSwitch {
                     @display("p=250,100");
                 }
                 host1: StandardHost {
@@ -107,7 +96,7 @@ network Hierarchical99
         recorder: RoutingTableRecorder {
             @display("p=100,200;is=s");
         }
-        networkConfigurator: <> like INetworkConfigurator {
+        networkConfigurator: <> like IL3NetworkConfigurator {
             @display("p=100,100;is=s");
         }
         area11: Area {

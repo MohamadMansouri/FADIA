@@ -1,19 +1,8 @@
 //
 // Copyright (C) 2005 Wei Yang, Ng
-// Copyright (C) 2005 Andras Varga
+// Copyright (C) 2005 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public
-// License along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
 import inet.common.INETDefs;
@@ -47,6 +36,7 @@ enum Ipv6NdOptionTypes {
 
 class Ipv6NdOption extends cObject
 {
+    @packetData;
     Ipv6NdOptionTypes type = static_cast<Ipv6NdOptionTypes>(0);    // 1 byte, 0 is invalid
     short optionLength = 0;    // The length of the option in units of 8 octets, 0 is invalid.    // 1 byte
     char paddingBytes[];    // padding bytes on end of option
@@ -119,6 +109,7 @@ class Mipv6HaInformation extends Ipv6NdOption
 }
 
 class Ipv6NdOptions extends cObject {
+    @packetData;
     // TLV Options:
     Ipv6NdOption *option[] @owned;  // on end of message
 }
@@ -233,4 +224,3 @@ class Ipv6NdControlInfo extends cObject
     int interfaceId = -1; // interface on which the datagram should be sent
     bool fromHL = false;    // packet came from higher layer
 }
-

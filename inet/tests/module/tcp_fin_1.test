@@ -7,12 +7,6 @@ Test connection teardown: A closes, then later B closes too
 [General]
 ned-path = .;../../../../src;../../lib
 
-#omnetpp 5.0 - 5.1 compatibility:
-eventlog-file = "${resultdir}/${configname}-${runnumber}.elog"
-output-scalar-file = "${resultdir}/${configname}-${runnumber}.sca"
-output-vector-file = "${resultdir}/${configname}-${runnumber}.vec"
-snapshot-file = "${resultdir}/${configname}-${runnumber}.sna"
-
 cmdenv-event-banners=false
 cmdenv-express-mode=false
 
@@ -55,8 +49,7 @@ cli_tcp: TIME_WAIT --> CLOSED  (on TIMEOUT_2MSL)
 [243.002] tcpdump finished, A:4 B:3 segments
 
 %#--------------------------------------------------------------------------------------------------------------
-%not-contains: stdout
-undisposed object:
-%not-contains: stdout
--- check module destructor
+%postrun-command: grep "undisposed object:" test.out > test_undisposed.out || true
+%not-contains: test_undisposed.out
+undisposed object: (
 %#--------------------------------------------------------------------------------------------------------------

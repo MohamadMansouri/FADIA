@@ -1,19 +1,11 @@
 //
 // Copyright (C) 2016 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see http://www.gnu.org/licenses/.
-//
+
+
+#include "inet/linklayer/ieee80211/mac/recipient/RecipientQosMacDataService.h"
 
 #include "inet/common/Simsignals.h"
 #include "inet/linklayer/ieee80211/mac/aggregation/MpduDeaggregation.h"
@@ -22,14 +14,13 @@
 #include "inet/linklayer/ieee80211/mac/duplicateremoval/QosDuplicateRemoval.h"
 #include "inet/linklayer/ieee80211/mac/fragmentation/BasicReassembly.h"
 #include "inet/linklayer/ieee80211/mac/fragmentation/Defragmentation.h"
-#include "inet/linklayer/ieee80211/mac/recipient/RecipientQosMacDataService.h"
 
 namespace inet {
 namespace ieee80211 {
 
 Define_Module(RecipientQosMacDataService);
 
-// TODO: refactor to avoid code duplication
+// TODO refactor to avoid code duplication
 void RecipientQosMacDataService::initialize()
 {
     duplicateRemoval = new QoSDuplicateRemoval();
@@ -64,7 +55,9 @@ Packet *RecipientQosMacDataService::defragment(Packet *mgmtFragment)
 
 std::vector<Packet *> RecipientQosMacDataService::dataFrameReceived(Packet *dataPacket, const Ptr<const Ieee80211DataHeader>& dataHeader, IRecipientBlockAckAgreementHandler *blockAckAgreementHandler)
 {
-    // TODO: A-MPDU Deaggregation, MPDU Header+CRC Validation, Address1 Filtering, Duplicate Removal, MPDU Decryption
+    Enter_Method("dataFrameReceived");
+    take(dataPacket);
+    // TODO A-MPDU Deaggregation, MPDU Header+CRC Validation, Address1 Filtering, Duplicate Removal, MPDU Decryption
     if (duplicateRemoval && duplicateRemoval->isDuplicate(dataHeader)) {
         EV_WARN << "Dropping duplicate packet " << *dataPacket << ".\n";
         PacketDropDetails details;
@@ -74,7 +67,7 @@ std::vector<Packet *> RecipientQosMacDataService::dataFrameReceived(Packet *data
         return std::vector<Packet *>();
     }
     BlockAckReordering::ReorderBuffer frames;
-    frames[dataHeader->getSequenceNumber()].push_back(dataPacket);
+    frames[dataHeader->getSequenceNumber().get()].push_back(dataPacket);
     if (blockAckReordering && blockAckAgreementHandler) {
         Tid tid = dataHeader->getTid();
         MacAddress originatorAddr = dataHeader->getTransmitterAddress();
@@ -83,11 +76,11 @@ std::vector<Packet *> RecipientQosMacDataService::dataFrameReceived(Packet *data
             frames = blockAckReordering->processReceivedQoSFrame(agreement, dataPacket, dataHeader);
     }
     std::vector<Packet *> defragmentedFrames;
-    if (basicReassembly) { // FIXME: defragmentation
+    if (basicReassembly) { // FIXME defragmentation
         for (auto it : frames) {
             auto fragments = it.second;
             Packet *frame = defragment(fragments);
-            // TODO: revise
+            // TODO revise
             if (frame)
                 defragmentedFrames.push_back(frame);
         }
@@ -97,7 +90,7 @@ std::vector<Packet *> RecipientQosMacDataService::dataFrameReceived(Packet *data
             auto fragments = it.second;
             if (fragments.size() == 1)
                 defragmentedFrames.push_back(fragments.at(0));
-            else ; // TODO: drop?
+            else ; // TODO drop?
         }
     }
     std::vector<Packet *> deaggregatedFrames;
@@ -115,26 +108,34 @@ std::vector<Packet *> RecipientQosMacDataService::dataFrameReceived(Packet *data
                 deaggregatedFrames.push_back(defragmentedFrame);
         }
     }
-    // TODO: MSDU Integrity, Replay Detection, RX MSDU Rate Limiting
+    // TODO MSDU Integrity, Replay Detection, RX MSDU Rate Limiting
     return deaggregatedFrames;
 }
 
 std::vector<Packet *> RecipientQosMacDataService::managementFrameReceived(Packet *mgmtPacket, const Ptr<const Ieee80211MgmtHeader>& mgmtHeader)
 {
-    // TODO: MPDU Header+CRC Validation, Address1 Filtering, Duplicate Removal, MPDU Decryption
+    Enter_Method("managementFrameReceived");
+    take(mgmtPacket);
+    // TODO MPDU Header+CRC Validation, Address1 Filtering, Duplicate Removal, MPDU Decryption
     if (duplicateRemoval && duplicateRemoval->isDuplicate(mgmtHeader))
         return std::vector<Packet *>();
-    if (basicReassembly) { // FIXME: defragmentation
+    if (basicReassembly) { // FIXME defragmentation
         mgmtPacket = defragment(mgmtPacket);
     }
     if (auto delba = dynamicPtrCast<const Ieee80211Delba>(mgmtHeader))
         blockAckReordering->processReceivedDelba(delba);
-    // TODO: Defrag, MSDU Integrity, Replay Detection, RX MSDU Rate Limiting
-    return std::vector<Packet *>({mgmtPacket});
+    // TODO Defrag, MSDU Integrity, Replay Detection, RX MSDU Rate Limiting
+    if (dynamicPtrCast<const Ieee80211ActionFrame>(mgmtHeader)) {
+        delete mgmtPacket;
+        return std::vector<Packet *>();
+    }
+    else
+        return std::vector<Packet *>({ mgmtPacket });
 }
 
 std::vector<Packet *> RecipientQosMacDataService::controlFrameReceived(Packet *controlPacket, const Ptr<const Ieee80211MacHeader>& controlHeader, IRecipientBlockAckAgreementHandler *blockAckAgreementHandler)
 {
+    Enter_Method("controlFrameReceived");
     if (auto blockAckReq = dynamicPtrCast<const Ieee80211BasicBlockAckReq>(controlHeader)) {
         BlockAckReordering::ReorderBuffer frames;
         if (blockAckReordering) {
@@ -147,7 +148,7 @@ std::vector<Packet *> RecipientQosMacDataService::controlFrameReceived(Packet *c
                 return std::vector<Packet *>();
         }
         std::vector<Packet *> defragmentedFrames;
-        if (basicReassembly) { // FIXME: defragmentation
+        if (basicReassembly) { // FIXME defragmentation
             for (auto it : frames) {
                 auto fragments = it.second;
                 defragmentedFrames.push_back(defragment(fragments));
@@ -160,7 +161,7 @@ std::vector<Packet *> RecipientQosMacDataService::controlFrameReceived(Packet *c
                     defragmentedFrames.push_back(fragments.at(0));
                 }
                 else {
-                    // TODO: drop?
+                    // TODO drop?
                 }
             }
         }
@@ -178,7 +179,7 @@ std::vector<Packet *> RecipientQosMacDataService::controlFrameReceived(Packet *c
                     deaggregatedFrames.push_back(frame);
             }
         }
-        // TODO: MSDU Integrity, Replay Detection, RX MSDU Rate Limiting
+        // TODO MSDU Integrity, Replay Detection, RX MSDU Rate Limiting
         return deaggregatedFrames;
     }
     return std::vector<Packet *>();
@@ -195,3 +196,4 @@ RecipientQosMacDataService::~RecipientQosMacDataService()
 
 } /* namespace ieee80211 */
 } /* namespace inet */
+

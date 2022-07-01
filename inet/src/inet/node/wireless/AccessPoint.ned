@@ -1,28 +1,22 @@
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program.  If not, see http://www.gnu.org/licenses/.
-//
+
 
 package inet.node.wireless;
 
 import inet.common.MessageDispatcher;
 import inet.common.lifecycle.NodeStatus;
 import inet.linklayer.contract.IEthernetInterface;
-import inet.linklayer.contract.IMacAddressTable;
+import inet.linklayer.contract.IMacForwardingTable;
 import inet.linklayer.contract.IMacRelayUnit;
 import inet.linklayer.contract.IWirelessInterface;
+import inet.linklayer.ethernet.contract.IEthernetLayer;
 import inet.mobility.contract.IMobility;
 import inet.networklayer.common.InterfaceTable;
+
 
 //
 // A generic access point supporting multiple wireless radios, and
@@ -47,67 +41,78 @@ module AccessPoint
         @display("i=device/accesspoint");
         int numWlanInterfaces = default(1);               // the number of radios in the access point
         bool hasStatus = default(false);
+        string fcsMode @enum("declared","computed") = default("declared");
+        wlan[*].protocol = default("ethernetmac");
         wlan[*].mgmt.typename = default("Ieee80211MgmtAp");
         wlan[*].llc.typename = default("Ieee80211Portal");
         wlan[*].agent.typename = default("");
         wlan[*].radio.antenna.mobilityModule = default("^.^.^.mobility");
-        eth[*].encap.typename = "EtherEncapDummy";
+        eth[*].encap.typename = "";
+        *.macTableModule = default(absPath(".macTable"));
         *.interfaceTableModule = default(absPath(".interfaceTable"));
-        relayUnit.hasStp = false;
+        bridging.hasStp = false;
+        *.fcsMode = this.fcsMode;
+        ethernet.registerProtocol = default(true);
     gates:
         input radioIn[numWlanInterfaces] @directIn;
         inout ethg[] @labels(EtherFrame-conn);
     submodules:
         status: NodeStatus if hasStatus {
-            parameters:
-                @display("p=100,100;is=s");
+            @display("p=100,100;is=s");
         }
-
         interfaceTable: InterfaceTable {
-            parameters:
-                @display("p=100,200;is=s");
+            @display("p=100,200;is=s");
+        }
+        macTable: <default("MacForwardingTable")> like IMacForwardingTable {
+            @display("p=100,300;is=s");
         }
         mobility: <default("StationaryMobility")> like IMobility {
-            parameters:
-                @display("p=100,400;is=s");
+            @display("p=100,400;is=s");
         }
-        macTable: <default("MacAddressTable")> like IMacAddressTable {
-            parameters:
-                @display("p=100,300;is=s");
+        bridging: <default(firstAvailable("Ieee8021dRelay","MacRelayUnit"))> like IMacRelayUnit if sizeof(ethg)+numWlanInterfaces > 1 && typename != "" {
+            @display("p=800,100");
         }
-        relayUnit: <default(firstAvailable("Ieee8021dRelay","MacRelayUnit"))> like IMacRelayUnit if sizeof(ethg)+numWlanInterfaces > 1 && typename != "" {
-            parameters:
-                @display("p=400,100");
+        bl: MessageDispatcher if sizeof(ethg)+numWlanInterfaces > 1 && exists(bridging) {
+            @display("p=800,200;b=1200,5,,,,1");
         }
-        nl: MessageDispatcher if sizeof(ethg)+numWlanInterfaces > 1 && exists(relayUnit) {
-            parameters:
-                @display("p=800,200;b=1200,5,,,,1");
+        ethernet: <default("EthernetEncapsulation")> like IEthernetLayer if typename != "" && exists(bridging) {
+            @display("p=700,300");
+        }
+        li: MessageDispatcher {
+            @display("p=800,400;b=1000,5,,,,1");
         }
         wlan[numWlanInterfaces]: <default("Ieee80211Interface")> like IWirelessInterface {
-            parameters:
-                @display("p=250,300,row,150;q=queue");
+            @display("p=250,500,row,150;q=queue");
         }
         eth[sizeof(ethg)]: <default("EthernetInterface")> like IEthernetInterface {
-            parameters:
-                mac.promiscuous = true;
-                @display("p=850,300,row;q=txQueue");
+            mac.promiscuous = true;
+            @display("p=850,500,row;q=txQueue");
         }
     connections allowunconnected:
-        nl.out++--> relayUnit.ifIn if sizeof(ethg)+numWlanInterfaces > 1 && exists(relayUnit);
-        nl.in++ <-- relayUnit.ifOut if sizeof(ethg)+numWlanInterfaces > 1 && exists(relayUnit);
+        bl.out++ --> bridging.lowerLayerIn if sizeof(ethg)+numWlanInterfaces > 1 && exists(bridging);
+        bl.in++ <-- bridging.lowerLayerOut if sizeof(ethg)+numWlanInterfaces > 1 && exists(bridging);
+
+        bl.out++ --> li.in++ if exists(bl);
+        li.out++ --> bl.in++ if exists(bl);
+
+        bl.out++ --> ethernet.upperLayerIn if exists(ethernet);
+        ethernet.upperLayerOut --> bl.in++ if exists(ethernet);
+        ethernet.lowerLayerOut --> li.in++ if exists(ethernet);
+        li.out++ --> ethernet.lowerLayerIn if exists(ethernet);
+
         // connections to network outside
         // wireless interfaces MUST be connected first (i.e. ports 0..numWlanInterfaces-1)
-        // because broadcasts must be handled differently for wireless IFs by the relayUnit
+        // because broadcasts must be handled differently for wireless IFs by the bridging
         for i=0..numWlanInterfaces-1 {
             radioIn[i] --> { @display("m=s"); } --> wlan[i].radioIn;
-            wlan[i].upperLayerOut --> nl.in++ if sizeof(ethg)+numWlanInterfaces > 1 && exists(relayUnit);
-            wlan[i].upperLayerIn <-- nl.out++ if sizeof(ethg)+numWlanInterfaces > 1 && exists(relayUnit);
+            wlan[i].upperLayerOut --> li.in++ if sizeof(ethg)+numWlanInterfaces > 1 && exists(bridging);
+            wlan[i].upperLayerIn <-- li.out++ if sizeof(ethg)+numWlanInterfaces > 1 && exists(bridging);
         }
         // ethernet must be connected only AFTER wireless ports
         for i=0..sizeof(ethg)-1 {
             eth[i].phys <--> { @display("m=s"); } <--> ethg[i];
-            eth[i].upperLayerIn <-- nl.out++ if sizeof(ethg)+numWlanInterfaces>1;
-            eth[i].upperLayerOut --> nl.in++ if sizeof(ethg)+numWlanInterfaces>1;
+            eth[i].upperLayerIn <-- li.out++ if sizeof(ethg)+numWlanInterfaces>1;
+            eth[i].upperLayerOut --> li.in++ if sizeof(ethg)+numWlanInterfaces>1;
         }
 }
 

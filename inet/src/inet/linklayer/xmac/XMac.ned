@@ -2,18 +2,7 @@
 // Copyright (C) 2017 Jan Peter Drees
 // Copyright (C) 2015 Joaquim Oller
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
 package inet.linklayer.xmac;
@@ -29,9 +18,9 @@ import inet.linklayer.contract.IMacProtocol;
 module XMac extends MacProtocolBase like IMacProtocol
 {
     parameters:
-        string address = default("auto"); // MAC address as hex string (12 hex digits), or
-                                          // "auto". "auto" values will be replaced by
-                                          // a generated MAC address in init stage 0.
+        string address @mutable = default("auto"); // MAC address as hex string (12 hex digits), or
+                                                   // "auto". "auto" values will be replaced by
+                                                   // a generated MAC address in init stage 0.
 
         // debug switch
         bool debug = default(false);
@@ -45,11 +34,11 @@ module XMac extends MacProtocolBase like IMacProtocol
         // how long is the check interval (CCA)?
         double checkInterval @unit(s) = default(0.01s);
 
-        // should we animate the nodes with colors depending on their state or 
+        // should we animate the nodes with colors depending on their state or
         // not?
         bool animation = default(true);
 
-        // bit rate 
+        // bit rate
         double bitrate @unit(bps) = default(19200 bps);
 
         //tx power
@@ -72,17 +61,10 @@ module XMac extends MacProtocolBase like IMacProtocol
         // Maximum transmission attempts per data packet, when ACKs are used
         int maxTxAttempts = default(2);
 
-        string radioModule = default("^.radio");   // The path to the Radio module  //FIXME remove default value 
+        string radioModule = default("^.radio");   // The path to the Radio module  //FIXME remove default value
 
         @class(XMac);
         @signal[packetDropped](type=inet::Packet);
-        @selfMessageKinds(inet::XMacType);
-
-    submodules:
-        queue: <default("DropTailQueue")> like IPacketQueue {
-            parameters:
-                packetCapacity = default(20);
-                @display("p=100,100;q=l2queue");
-        }
+        @selfMessageKinds(inet::XMacTypes);
 }
 

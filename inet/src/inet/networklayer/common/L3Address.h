@@ -1,24 +1,13 @@
 //
-// Copyright (C) 2012 Andras Varga
+// Copyright (C) 2012 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 #ifndef __INET_L3ADDRESS_H
 #define __INET_L3ADDRESS_H
 
-#include "inet/common/INETDefs.h"
 #include "inet/linklayer/common/MacAddress.h"
 #include "inet/networklayer/common/ModuleIdAddress.h"
 #include "inet/networklayer/common/ModulePathAddress.h"
@@ -52,16 +41,16 @@ class INET_API L3Address
     };
 
   private:
-    uint64 hi;
-    uint64 lo;
+    uint64_t hi;
+    uint64_t lo;
 
   private:
-    uint64 get(AddressType type) const;
-    void set(AddressType type, uint64 lo);
+    uint64_t get(AddressType type) const;
+    void set(AddressType type, uint64_t lo);
 
   public:
     L3Address() { set(NONE, 0); }
-    L3Address(const L3Address& other) : hi(other.hi), lo(other.lo) { }
+    L3Address(const L3Address& other) : hi(other.hi), lo(other.lo) {}
     explicit L3Address(const char *str) { tryParse(str); }
     L3Address(const Ipv4Address& addr) { set(addr); }
     L3Address(const Ipv6Address& addr) { set(addr); }
@@ -111,6 +100,8 @@ class INET_API L3Address
 
     bool matches(const L3Address& other, int prefixLength) const;
 
+    MacAddress mapToMulticastMacAddress() const;
+
     static const char *getTypeName(AddressType t);
 
     inline void doParsimPacking(cCommBuffer *buf) const
@@ -143,5 +134,5 @@ inline void doParsimUnpacking(cCommBuffer *buf, L3Address& addr)
 
 } // namespace inet
 
-#endif // ifndef __INET_ADDRESS_H
+#endif
 

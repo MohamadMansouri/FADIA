@@ -1,19 +1,9 @@
 //
 // Copyright (C) 2016 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see http://www.gnu.org/licenses/.
-//
+
 
 package inet.linklayer.ieee80211.mac;
 
@@ -65,13 +55,13 @@ module Ieee80211Mac extends MacProtocolBase like IIeee80211Mac
         int mtu @unit(B) = default(2304B);
         bool qosStation = default(false);
 
-        *.mibModule = default(absPath(mibModule));
+        *.mibModule = default(absPath(this.mibModule));
         *.rxModule = "^.rx";
         *.txModule = "^.tx";
 
         @display("i=block/layer");
         @class(Ieee80211Mac);
-        @signal[linkBroken](type=inet::Packet); // TODO: this signal is only present for the statistic to pass the signal check, to be removed
+        @signal[linkBroken](type=inet::Packet); // TODO this signal is only present for the statistic to pass the signal check, to be removed
         @signal[modesetChanged](type=inet::physicallayer::Ieee80211ModeSet);
         @statistic[packetSentToUpper](title="packets sent to upper layer"; record=count,sum(packetBytes),vector(packetBytes); interpolationmode=none);
         @statistic[packetSentToLower](title="packets sent to lower layer"; record=count,sum(packetBytes),vector(packetBytes); interpolationmode=none);

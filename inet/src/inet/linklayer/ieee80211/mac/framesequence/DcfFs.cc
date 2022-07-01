@@ -1,21 +1,12 @@
 //
 // Copyright (C) 2016 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see http://www.gnu.org/licenses/.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
+
 #include "inet/linklayer/ieee80211/mac/framesequence/DcfFs.h"
+
 #include "inet/linklayer/ieee80211/mac/framesequence/PrimitiveFrameSequences.h"
 
 namespace inet {
@@ -66,7 +57,7 @@ bool DcfFs::hasMoreFragments(RepeatingFs *frameSequence, FrameSequenceContext *c
 
 bool DcfFs::isSelfCtsNeeded(OptionalFs *frameSequence, FrameSequenceContext *context)
 {
-    return false; // TODO: Implement
+    return false; // TODO Implement
 }
 
 bool DcfFs::isRtsCtsNeeded(OptionalFs *frameSequence, FrameSequenceContext *context)
@@ -92,7 +83,7 @@ bool DcfFs::isBroadcastManagementOrGroupDataSequenceNeeded(AlternativesFs *frame
         return false;
 }
 
-int DcfFs::selectMulticastDataOrMgmt(AlternativesFs* frameSequence, FrameSequenceContext* context)
+int DcfFs::selectMulticastDataOrMgmt(AlternativesFs *frameSequence, FrameSequenceContext *context)
 {
     auto frameToTransmit = context->getInProgressFrames()->getFrameToTransmit();
     return dynamicPtrCast<const Ieee80211MgmtHeader>(frameToTransmit->peekAtFront<Ieee80211MacHeader>()) ? 0 : 1;
@@ -105,3 +96,4 @@ bool DcfFs::isFragFrameSequenceNeeded(AlternativesFs *frameSequence, FrameSequen
 
 } // namespace ieee80211
 } // namespace inet
+

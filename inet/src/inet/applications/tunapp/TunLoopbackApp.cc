@@ -1,24 +1,16 @@
 //
 // Copyright (C) 2014 Irene Ruengeler
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
+
 #include "inet/applications/tunapp/TunLoopbackApp.h"
+
 #include "inet/common/ModuleAccess.h"
 #include "inet/common/ProtocolGroup.h"
 #include "inet/networklayer/common/L3Tools.h"
+#include "inet/networklayer/common/NetworkInterface.h"
 #include "inet/networklayer/contract/IInterfaceTable.h"
 #include "inet/networklayer/contract/NetworkHeaderBase_m.h"
 #include "inet/transportlayer/common/L4Tools.h"
@@ -38,11 +30,11 @@ void TunLoopbackApp::initialize(int stage)
     }
     else if (stage == INITSTAGE_APPLICATION_LAYER) {
         IInterfaceTable *interfaceTable = getModuleFromPar<IInterfaceTable>(par("interfaceTableModule"), this);
-        InterfaceEntry *interfaceEntry = interfaceTable->findInterfaceByName(tunInterface);
-        if (interfaceEntry == nullptr)
+        NetworkInterface *networkInterface = interfaceTable->findInterfaceByName(tunInterface);
+        if (networkInterface == nullptr)
             throw cRuntimeError("TUN interface not found: %s", tunInterface);
         tunSocket.setOutputGate(gate("socketOut"));
-        tunSocket.open(interfaceEntry->getInterfaceId());
+        tunSocket.open(networkInterface->getInterfaceId());
     }
 }
 
@@ -81,7 +73,6 @@ void TunLoopbackApp::handleMessage(cMessage *message)
         throw cRuntimeError("Unknown message: %s", message->getName());
 }
 
-
 void TunLoopbackApp::finish()
 {
     EV_INFO << "packets sent: " << packetsSent << endl;
@@ -89,3 +80,4 @@ void TunLoopbackApp::finish()
 }
 
 } // namespace inet
+

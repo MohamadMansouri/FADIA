@@ -1,25 +1,17 @@
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program.  If not, see http://www.gnu.org/licenses/.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-#ifndef __INET_MATH_IFUNCTION_H_
-#define __INET_MATH_IFUNCTION_H_
 
+#ifndef __INET_IFUNCTION_H
+#define __INET_IFUNCTION_H
+
+#include "inet/common/Ptr.h"
 #include "inet/common/math/Domain.h"
 #include "inet/common/math/Interval.h"
 #include "inet/common/math/Point.h"
-#include "inet/common/Ptr.h"
 
 namespace inet {
 
@@ -31,14 +23,7 @@ namespace math {
  * D is a Domain<>.
  */
 template<typename R, typename D>
-class INET_API IFunction : public cObject,
-#if INET_PTR_IMPLEMENTATION == INET_STD_SHARED_PTR
-    public std::enable_shared_from_this<IFunction<R, D>>
-#elif INET_PTR_IMPLEMENTATION == INET_INTRUSIVE_PTR
-    public IntrusivePtrCounter<IFunction<R, D>>
-#else
-#error "Unknown Ptr implementation"
-#endif
+class INET_API IFunction : public cObject, public SharedBase<IFunction<R, D>>
 {
   public:
     virtual ~IFunction() {}
@@ -69,7 +54,7 @@ class INET_API IFunction : public cObject,
      * Subdivides the provided domain and calls back f with the subdomains and
      * the corresponding potentially simpler domain limited functions.
      */
-    virtual void partition(const typename D::I& i, const std::function<void (const typename D::I&, const IFunction<R, D> *)> f) const = 0;
+    virtual void partition(const typename D::I& i, const std::function<void(const typename D::I&, const IFunction<R, D> *)> f) const = 0;
 
     /**
      * Returns true if the function value is finite in the whole domain.
@@ -175,17 +160,13 @@ class INET_API IFunction : public cObject,
      * Prints the internal data structure of this function in a human readable form to the provided stream.
      */
     virtual void printStructure(std::ostream& os, int level = 0) const = 0;
-};
 
-template<typename R, typename ... T>
-inline std::ostream& operator<<(std::ostream& os, const IFunction<R, Domain<T ...> >& f) {
-    f.print(os);
-    return os;
-}
+    virtual std::ostream& printOn(std::ostream& os) const override { print(os); return os; }
+};
 
 } // namespace math
 
 } // namespace inet
 
-#endif // #ifndef __INET_MATH_IFUNCTION_H_
+#endif
 

@@ -1,42 +1,33 @@
 //
-// Copyright (C) OpenSim Ltd.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
+
+#include "inet/visualizer/base/MediumVisualizerBase.h"
 
 #include "inet/common/ModuleAccess.h"
 #include "inet/networklayer/common/L3AddressResolver.h"
-#include "inet/visualizer/base/MediumVisualizerBase.h"
 
-#ifdef WITH_RADIO
-#include "inet/physicallayer/analogmodel/packetlevel/DimensionalAnalogModel.h"
-#include "inet/physicallayer/analogmodel/packetlevel/DimensionalReception.h"
-#include "inet/physicallayer/analogmodel/packetlevel/DimensionalTransmission.h"
-#endif // WITH_RADIO
+#ifdef INET_WITH_PHYSICALLAYERWIRELESSCOMMON
+#include "inet/physicallayer/wireless/common/analogmodel/packetlevel/DimensionalAnalogModel.h"
+#include "inet/physicallayer/wireless/common/analogmodel/packetlevel/DimensionalReception.h"
+#include "inet/physicallayer/wireless/common/analogmodel/packetlevel/DimensionalTransmission.h"
+#endif // INET_WITH_PHYSICALLAYERWIRELESSCOMMON
 
 namespace inet {
 
 namespace visualizer {
 
-#ifdef WITH_RADIO
+#ifdef INET_WITH_PHYSICALLAYERWIRELESSCOMMON
 
 using namespace inet::physicallayer;
 
-MediumVisualizerBase::~MediumVisualizerBase()
+void MediumVisualizerBase::preDelete(cComponent *root)
 {
     // NOTE: lookup the medium module again because it may have been deleted first
-    auto radioMediumModule = getModuleFromPar<cModule>(par("mediumModule"), this, false);
+    auto radioMediumModule = findModuleFromPar<cModule>(par("mediumModule"), this);
     if (radioMediumModule != nullptr) {
         radioMediumModule->unsubscribe(IRadioMedium::radioAddedSignal, this);
         radioMediumModule->unsubscribe(IRadioMedium::radioRemovedSignal, this);
@@ -56,7 +47,7 @@ void MediumVisualizerBase::initialize(int stage)
     if (stage == INITSTAGE_LOCAL) {
         networkNodeFilter.setPattern(par("nodeFilter"));
         interfaceFilter.setPattern(par("interfaceFilter"));
-        packetFilter.setPattern(par("packetFilter"), par("packetDataFilter"));
+        packetFilter.setExpression(par("packetFilter").objectValue());
         displaySignals = par("displaySignals");
         signalColorSet.parseColors(par("signalColor"));
         signalPropagationAnimationSpeed = par("signalPropagationAnimationSpeed");
@@ -64,6 +55,15 @@ void MediumVisualizerBase::initialize(int stage)
         signalPropagationAdditionalTime = par("signalPropagationAdditionalTime");
         signalTransmissionAnimationSpeed = par("signalTransmissionAnimationSpeed");
         signalTransmissionAnimationTime = par("signalTransmissionAnimationTime");
+        const char *s = par("signalAnimationSpeedChangeTimeMode");
+        if (!strcmp(s, "simulationTime"))
+            signalAnimationSpeedChangeTimeMode = AnimationPosition::SIMULATION_TIME;
+        else if (!strcmp(s, "animationTime"))
+            signalAnimationSpeedChangeTimeMode = AnimationPosition::ANIMATION_TIME;
+        else if (!strcmp(s, "realTime"))
+            signalAnimationSpeedChangeTimeMode = AnimationPosition::REAL_TIME;
+        else
+            throw cRuntimeError("Unknown signalAnimationSpeedChangeTimeMode: %s", s);
         signalAnimationSpeedChangeTime = par("signalAnimationSpeedChangeTime");
         displaySignalDepartures = par("displaySignalDepartures");
         displaySignalArrivals = par("displaySignalArrivals");
@@ -108,7 +108,7 @@ void MediumVisualizerBase::initialize(int stage)
         mainPowerDensityMapFigureYTickCount = par("mainPowerDensityMapFigureYTickCount");
         displayPowerDensityMaps = par("displayPowerDensityMaps");
         powerDensityMapMode = par("powerDensityMapMode");
-        powerDensityMapSampling = par("powerDensityMapSampling");
+        powerDensityMapPixelMode = par("powerDensityMapPixelMode");
         powerDensityMapApproximationSize = par("powerDensityMapApproximationSize");
         powerDensityMapCenterFrequency = Hz(par("powerDensityMapCenterFrequency"));
         powerDensityMapBandwidth = Hz(par("powerDensityMapBandwidth"));
@@ -130,6 +130,7 @@ void MediumVisualizerBase::initialize(int stage)
         spectrumPlacementPriority = par("spectrumPlacementPriority");
         displaySpectrograms = par("displaySpectrograms");
         spectrogramMode = par("spectrogramMode");
+        spectrogramPixelMode = par("spectrogramPixelMode");
         spectrogramFigureWidth = par("spectrogramFigureWidth");
         spectrogramFigureHeight = par("spectrogramFigureHeight");
         spectrogramPixmapWidth = par("spectrogramPixmapWidth");
@@ -139,7 +140,7 @@ void MediumVisualizerBase::initialize(int stage)
         spectrogramPlacementHint = parsePlacement(par("spectrogramPlacementHint"));
         spectrogramPlacementPriority = par("spectrogramPlacementPriority");
         mediumPowerDensityFunction = makeShared<SummedFunction<WpHz, Domain<m, m, m, simsec, Hz>>>();
-        radioMedium = getModuleFromPar<IRadioMedium>(par("mediumModule"), this, false);
+        radioMedium = findModuleFromPar<IRadioMedium>(par("mediumModule"), this);
         if (radioMedium != nullptr) {
             cModule *radioMediumModule = check_and_cast<cModule *>(radioMedium);
             radioMediumModule->subscribe(IRadioMedium::radioAddedSignal, this);
@@ -182,7 +183,7 @@ void MediumVisualizerBase::handleParameterChange(const char *name)
         else if (!strcmp(name, "interfaceFilter"))
             interfaceFilter.setPattern(par("interfaceFilter"));
         else if (!strcmp(name, "packetFilter"))
-            packetFilter.setPattern(par("packetFilter"), par("packetDataFilter"));
+            packetFilter.setExpression(par("packetFilter").objectValue());
         else if (!strcmp(name, "signalPropagationAnimationSpeed"))
             signalPropagationAnimationSpeed = par("signalPropagationAnimationSpeed");
         else if (!strcmp(name, "signalTransmissionAnimationSpeed"))
@@ -191,13 +192,14 @@ void MediumVisualizerBase::handleParameterChange(const char *name)
             powerDensityMapCenterFrequency = Hz(par("powerDensityMapCenterFrequency"));
         else if (!strcmp(name, "powerDensityMapBandwidth"))
             powerDensityMapBandwidth = Hz(par("powerDensityMapBandwidth"));
-        // TODO:
+        // TODO
     }
 }
 
 void MediumVisualizerBase::receiveSignal(cComponent *source, simsignal_t signal, cObject *object, cObject *details)
 {
-    Enter_Method_Silent();
+    Enter_Method("%s", cComponent::getSignalName(signal));
+
     if (signal == IRadioMedium::radioAddedSignal)
         handleRadioAdded(check_and_cast<IRadio *>(object));
     else if (signal == IRadioMedium::radioRemovedSignal)
@@ -245,8 +247,8 @@ bool MediumVisualizerBase::matchesTransmission(const ITransmission *transmission
     auto networkNode = getContainingNode(radio);
     if (!networkNodeFilter.matches(networkNode))
         return false;
-    auto interfaceEntry = getContainingNicModule(radio);
-    if (!interfaceFilter.matches(interfaceEntry))
+    auto networkInterface = findContainingNicModule(radio);
+    if (networkInterface != nullptr && !interfaceFilter.matches(networkInterface))
         return false;
     auto packet = transmission->getPacket();
     return packet == nullptr || packetFilter.matches(packet);
@@ -280,14 +282,14 @@ void MediumVisualizerBase::handleSignalAdded(const physicallayer::ITransmission 
             signalPowerDensityFunction = propagatedTransmissionPowerFunction->multiply(approximatedAtteunuationFunction);
         }
         mediumPowerDensityFunction->addElement(signalPowerDensityFunction);
-        signalPowerDensityFunctions[transmission] = signalPowerDensityFunction;
+        signalPowerDensityFunctions[transmission->getId()] = signalPowerDensityFunction;
         for (auto it : noisePowerDensityFunctions)
             it.second->addElement(signalPowerDensityFunction);
         auto noisePowerFunction = makeShared<SummedFunction<WpHz, Domain<m, m, m, simsec, Hz>>>();
         for (auto elementFunction : mediumPowerDensityFunction->getElements())
             if (elementFunction != signalPowerDensityFunction)
                 noisePowerFunction->addElement(elementFunction);
-        noisePowerDensityFunctions[transmission] = noisePowerFunction;
+        noisePowerDensityFunctions[transmission->getId()] = noisePowerFunction;
         if (autoPowerAxis) {
             auto l = concat(startPosition, transmissionPowerFunction->getDomain().getLower());
             auto u = concat(startPosition, transmissionPowerFunction->getDomain().getUpper());
@@ -331,7 +333,7 @@ void MediumVisualizerBase::handleSignalAdded(const physicallayer::ITransmission 
 void MediumVisualizerBase::handleSignalRemoved(const physicallayer::ITransmission *transmission)
 {
     if (displayMainPowerDensityMap || displayPowerDensityMaps || displaySpectrums || displaySpectrograms) {
-        auto it = signalPowerDensityFunctions.find(transmission);
+        auto it = signalPowerDensityFunctions.find(transmission->getId());
         if (it != signalPowerDensityFunctions.end()) {
             mediumPowerDensityFunction->removeElement(it->second);
             noisePowerDensityFunctions.erase(it->first);
@@ -371,7 +373,7 @@ void MediumVisualizerBase::handleSignalArrivalStarted(const physicallayer::IRece
     }
 }
 
-#endif // WITH_RADIO
+#endif // INET_WITH_PHYSICALLAYERWIRELESSCOMMON
 
 } // namespace visualizer
 

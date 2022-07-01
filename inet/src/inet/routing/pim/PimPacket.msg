@@ -2,22 +2,11 @@
 // Copyright (C) 2013 Brno University of Technology (http://nes.fit.vutbr.cz/ansa)
 // Copyright (C) 2019 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 3
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 // Authors: Veronika Rybova, Vladimir Vesely (ivesely@fit.vutbr.cz),
 //          Tamas Borbely (tomi@omnetpp.org)
-
 
 import inet.common.INETDefs;
 import inet.common.Units;
@@ -60,11 +49,13 @@ enum PimHelloOptionType
 
 struct EncodedUnicastAddress
 {
+    @packetData;
     L3Address unicastAddress;
 }
 
 struct EncodedGroupAddress
 {
+    @packetData;
     bool        B;
     short       reserved = 0;
     bool        Z;
@@ -74,6 +65,7 @@ struct EncodedGroupAddress
 
 struct EncodedSourceAddress
 {
+    @packetData;
     short       reserved = 0;
     bool        S;
     bool        W;                //WC bit
@@ -84,6 +76,7 @@ struct EncodedSourceAddress
 
 class HelloOption extends cObject
 {
+    @packetData;
     PimHelloOptionType type;
 }
 
@@ -156,6 +149,7 @@ class PimHello extends PimPacket
 // in structure it is not possible to use dynamic arrays, it is needed to use class
 class JoinPruneGroup extends cObject
 {
+    @packetData;
     EncodedGroupAddress   groupAddress;
     EncodedSourceAddress  joinedSourceAddress[];
     EncodedSourceAddress  prunedSourceAddress[];
@@ -166,7 +160,7 @@ class JoinPruneGroup extends cObject
 class PimJoinPrune extends PimPacket
 {
     type = JoinPrune;
-    EncodedUnicastAddress  upstreamNeighborAddress;    //TODO: replace to L3Address
+    EncodedUnicastAddress  upstreamNeighborAddress;    //TODO replace to L3Address
     int                    reserved2 = 0;
     int                    holdTime;    // in seconds
     JoinPruneGroup         joinPruneGroups[];
@@ -233,4 +227,3 @@ class PimRegisterStop extends PimPacket
     EncodedGroupAddress    groupAddress;
     EncodedUnicastAddress  sourceAddress;
 }
-

@@ -1,36 +1,27 @@
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program.  If not, see http://www.gnu.org/licenses/.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-#ifndef __INET_PACKETPRINTER_H_
-#define __INET_PACKETPRINTER_H_
+
+#ifndef __INET_PACKETPRINTER_H
+#define __INET_PACKETPRINTER_H
 
 #include "inet/common/StringFormat.h"
 #include "inet/common/packet/dissector/PacketDissector.h"
 #include "inet/common/packet/printer/ProtocolPrinter.h"
 
-#ifdef WITH_RADIO
-#include "inet/physicallayer/common/packetlevel/Signal.h"
-#endif // WITH_RADIO
+#ifdef INET_WITH_PHYSICALLAYERWIRELESSCOMMON
+#include "inet/physicallayer/common/Signal.h"
+#endif // INET_WITH_PHYSICALLAYERWIRELESSCOMMON
 
 namespace inet {
 
 class INET_API PacketPrinter : public cMessagePrinter
 {
   protected:
-    class INET_API Context
-    {
+    class INET_API Context {
       public:
         int infoLevel = -1;
         bool isCorrect = true;
@@ -42,13 +33,13 @@ class INET_API PacketPrinter : public cMessagePrinter
         std::stringstream infoColumn;
     };
 
-    class DirectiveResolver : public inet::StringFormat::IDirectiveResolver {
+    class DirectiveResolver : public StringFormat::IDirectiveResolver {
       protected:
         const Context& context;
         const int numPacket;
 
       public:
-        DirectiveResolver(const Context& context, const int numPacket) : context(context), numPacket(numPacket) { }
+        DirectiveResolver(const Context& context, const int numPacket) : context(context), numPacket(numPacket) {}
 
         virtual const char *resolveDirective(char directive) const override;
     };
@@ -61,9 +52,9 @@ class INET_API PacketPrinter : public cMessagePrinter
     virtual bool isEnabledInfo(const Options *options, const Protocol *protocol) const;
     virtual const ProtocolPrinter& getProtocolPrinter(const Protocol *protocol) const;
     virtual void printContext(std::ostream& stream, const Options *options, Context& context) const;
-#ifdef WITH_RADIO
-    virtual void printSignal(inet::physicallayer::Signal *signal, const Options *options, Context& context) const;
-#endif // WITH_RADIO
+#ifdef INET_WITH_PHYSICALLAYERWIRELESSCOMMON
+    virtual void printSignal(physicallayer::Signal *signal, const Options *options, Context& context) const;
+#endif // INET_WITH_PHYSICALLAYERWIRELESSCOMMON
     virtual void printPacket(Packet *packet, const Options *options, Context& context) const;
     virtual void printPacketInsideOut(const Ptr<const PacketDissector::ProtocolDataUnit>& protocolDataUnit, const Options *options, Context& context) const;
     virtual void printPacketLeftToRight(const Ptr<const PacketDissector::ProtocolDataUnit>& protocolDataUnit, const Options *options, Context& context) const;
@@ -82,10 +73,10 @@ class INET_API PacketPrinter : public cMessagePrinter
     virtual void printMessage(std::ostream& stream, cMessage *message) const;
     virtual void printMessage(std::ostream& stream, cMessage *message, const Options *options) const override;
 
-#ifdef WITH_RADIO
-    virtual void printSignal(std::ostream& stream, inet::physicallayer::Signal *signal) const;
-    virtual void printSignal(std::ostream& stream, inet::physicallayer::Signal *signal, const Options *options) const;
-#endif // WITH_RADIO
+#ifdef INET_WITH_PHYSICALLAYERWIRELESSCOMMON
+    virtual void printSignal(std::ostream& stream, physicallayer::Signal *signal) const;
+    virtual void printSignal(std::ostream& stream, physicallayer::Signal *signal, const Options *options) const;
+#endif // INET_WITH_PHYSICALLAYERWIRELESSCOMMON
 
     virtual void printPacket(std::ostream& stream, Packet *packet, const char *format = nullptr) const;
     virtual void printPacket(std::ostream& stream, Packet *packet, const Options *options, const char *format = nullptr) const;
@@ -96,5 +87,5 @@ class INET_API PacketPrinter : public cMessagePrinter
 
 } // namespace
 
-#endif // #ifndef __INET_PACKETPRINTER_H_
+#endif
 

@@ -39,26 +39,7 @@ class INET_API ProbabilisticBroadcast : public NetworkProtocolBase, public INetw
     ProbabilisticBroadcast& operator=(const ProbabilisticBroadcast&);
 
   public:
-    ProbabilisticBroadcast()
-        : NetworkProtocolBase()
-        , broadcastPeriod()
-        , beta(0)
-        , timeToLive()
-        , maxNbBcast(0)
-        , maxFirstBcastBackoff(0)
-        , timeInQueueAfterDeath(0)
-        , headerLength(0)
-        , broadcastTimer(nullptr)
-        , knownMsgIds()
-        , msgQueue()
-        , debugMsgIdSet()
-        , nbDataPacketsReceived(0)
-        , nbDataPacketsSent(0)
-        , nbHops(0)
-        , debugNbMessageKnown(0)
-        , nbDataPacketsForwarded(0)
-        , oneHopLatencies()
-    {}
+    ProbabilisticBroadcast() {}
 
     /** @brief Initialization of the module and some variables*/
     virtual int numInitStages() const override { return NUM_INIT_STAGES; }
@@ -80,13 +61,12 @@ class INET_API ProbabilisticBroadcast : public NetworkProtocolBase, public INetw
     /** @brief Store messages in a structure so that we can keep some
      *         information needed by the protocol
      **/
-    typedef struct tMsgDesc
-    {
+    typedef struct tMsgDesc {
         Packet *pkt;
-        int nbBcast;    // number of times the present node has passed the
-                        // message through a broadcast attempt.
-        bool initialSend;    // true if message to be sent for first
-                             // time by its creator.
+        int nbBcast; // number of times the present node has passed the
+                     // message through a broadcast attempt.
+        bool initialSend; // true if message to be sent for first
+                          // time by its creator.
     } tMsgDesc;
 
     typedef std::set<unsigned int> MsgIdSet;
@@ -160,9 +140,9 @@ class INET_API ProbabilisticBroadcast : public NetworkProtocolBase, public INetw
     virtual void setDownControlInfo(Packet *const pMsg, const MacAddress& pDestAddr);
 
     // OperationalBase:
-    virtual void handleStartOperation(LifecycleOperation *operation) override {}    //TODO implementation
-    virtual void handleStopOperation(LifecycleOperation *operation) override {}    //TODO implementation
-    virtual void handleCrashOperation(LifecycleOperation *operation) override {}    //TODO implementation
+    virtual void handleStartOperation(LifecycleOperation *operation) override {} // TODO implementation
+    virtual void handleStopOperation(LifecycleOperation *operation) override {} // TODO implementation
+    virtual void handleCrashOperation(LifecycleOperation *operation) override {} // TODO implementation
 
     /**
      * @brief Period (in sim time) between two broadcast attempts.
@@ -174,7 +154,7 @@ class INET_API ProbabilisticBroadcast : public NetworkProtocolBase, public INetw
      * @brief Probability of each broadcast attempt.
      * Read from omnetpp.ini
      **/
-    double beta;
+    double beta = 0.0;
 
     /*
      * @brief Default time to live for packets to send.
@@ -194,7 +174,7 @@ class INET_API ProbabilisticBroadcast : public NetworkProtocolBase, public INetw
      * @brief Maximal number of broadcast attempts for each packet.
      * Read from omnetpp.ini
      **/
-    int maxNbBcast;
+    int maxNbBcast = 0;
 
     /**
      * @brief Maximal back-off before first broadcast attempt [seconds].
@@ -215,10 +195,10 @@ class INET_API ProbabilisticBroadcast : public NetworkProtocolBase, public INetw
      * @brief Length of the NetwPkt header
      * Read from omnetpp.ini
      **/
-    int headerLength;
+    int headerLength = 0;
 
     // perform broadcast attempt for the first message in the list each time it expires
-    cMessage *broadcastTimer;
+    cMessage *broadcastTimer = nullptr;
 
     // we use two containers: a set which stores the ID's of the messages which are kept
     // in memory and a multimap which stores a pair <Key, Value> where Key is the next
@@ -229,11 +209,11 @@ class INET_API ProbabilisticBroadcast : public NetworkProtocolBase, public INetw
     MsgIdSet debugMsgIdSet;
 
     // variables for statistics
-    long nbDataPacketsReceived;    // total number of received packets from lower layer
-    long nbDataPacketsSent;
-    long nbHops;
-    int debugNbMessageKnown;
-    long nbDataPacketsForwarded;
+    long nbDataPacketsReceived = 0; // total number of received packets from lower layer
+    long nbDataPacketsSent = 0;
+    long nbHops = 0;
+    int debugNbMessageKnown = 0;
+    long nbDataPacketsForwarded = 0;
     // records the time packets take between submission to MAC layer and reception at
     // networking layer (over one hop).
     cOutVector oneHopLatencies;
@@ -243,5 +223,5 @@ class INET_API ProbabilisticBroadcast : public NetworkProtocolBase, public INetw
 
 } // namespace inet
 
-#endif // ifndef __INET_PROBABILISTICBROADCAST_H
+#endif
 

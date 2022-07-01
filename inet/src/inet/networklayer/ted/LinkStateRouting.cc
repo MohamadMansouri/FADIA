@@ -1,16 +1,10 @@
 //
-// (C) 2005 Vojtech Janota, Andras Varga
+// Copyright (C) 2005 Vojtech Janota, Andras Varga
 //
-// This library is free software, you can redistribute it
-// and/or modify
-// it under  the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation;
-// either version 2 of the License, or any later version.
-// The library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-// See the GNU Lesser General Public License for more details.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
+
+#include "inet/networklayer/ted/LinkStateRouting.h"
 
 #include <algorithm>
 
@@ -18,11 +12,11 @@
 #include "inet/common/ModuleAccess.h"
 #include "inet/common/ProtocolTag_m.h"
 #include "inet/common/Simsignals.h"
+#include "inet/common/stlutils.h"
 #include "inet/networklayer/common/L3AddressTag_m.h"
 #include "inet/networklayer/contract/IInterfaceTable.h"
 #include "inet/networklayer/ipv4/IIpv4RoutingTable.h"
 #include "inet/networklayer/ipv4/Ipv4InterfaceData.h"
-#include "inet/networklayer/ted/LinkStateRouting.h"
 #include "inet/networklayer/ted/Ted.h"
 
 namespace inet {
@@ -41,9 +35,9 @@ LinkStateRouting::~LinkStateRouting()
 void LinkStateRouting::initialize(int stage)
 {
     cSimpleModule::initialize(stage);
-    // TODO: INITSTAGE
+    // TODO INITSTAGE
     if (stage == INITSTAGE_ROUTING_PROTOCOLS) {
-        tedmod = getModuleFromPar<Ted>(par("tedModule"), this);
+        tedmod.reference(this, "tedModule", true);
 
         IIpv4RoutingTable *rt = getModuleFromPar<IIpv4RoutingTable>(par("routingTableModule"), this);
         routerId = rt->getRouterId();
@@ -64,8 +58,7 @@ void LinkStateRouting::initialize(int stage)
         // schedule start of flooding link state info
         announceMsg = new cMessage("announce");
         scheduleAt(simTime() + exponential(0.01), announceMsg);
-        registerService(Protocol::linkStateRouting, nullptr, gate("ipIn"));
-        registerProtocol(Protocol::linkStateRouting, gate("ipOut"), nullptr);
+        registerProtocol(Protocol::linkStateRouting, gate("ipOut"), gate("ipIn"));
     }
 }
 
@@ -87,7 +80,8 @@ void LinkStateRouting::handleMessage(cMessage *msg)
 
 void LinkStateRouting::receiveSignal(cComponent *source, simsignal_t signalID, cObject *obj, cObject *details)
 {
-    Enter_Method_Silent();
+    Enter_Method("%s", cComponent::getSignalName(signalID));
+
     printSignalBanner(signalID, obj, details);
 
     ASSERT(signalID == tedChangedSignal);
@@ -121,7 +115,7 @@ void LinkStateRouting::processLINK_STATE_MESSAGE(Packet *pk, Ipv4Address sender)
 
     unsigned int n = msg->getLinkInfoArraySize();
 
-    bool change = false;    // in topology
+    bool change = false; // in topology
 
     // loop through every link in the message
     for (unsigned int i = 0; i < n; i++) {
@@ -178,7 +172,7 @@ void LinkStateRouting::sendToPeers(const std::vector<TeLinkStateInfo>& list, boo
     EV_INFO << "sending LINK_STATE message to peers" << endl;
 
     // send "list" to every peer (linkid in our ted[] entries???) in a LinkStateMsg
-    for (auto & elem : tedmod->ted) {
+    for (auto& elem : tedmod->ted) {
         if (elem.advrouter != routerId)
             continue;
 
@@ -188,7 +182,7 @@ void LinkStateRouting::sendToPeers(const std::vector<TeLinkStateInfo>& list, boo
         if (!elem.state)
             continue;
 
-        if (find(peerIfAddrs.begin(), peerIfAddrs.end(), elem.local) == peerIfAddrs.end())
+        if (!contains(peerIfAddrs, elem.local))
             continue;
 
         // send a copy

@@ -1,24 +1,15 @@
 //
 // Copyright (C) 2016 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see http://www.gnu.org/licenses/.
-//
+
+
+#include "inet/linklayer/ieee80211/mac/recipient/RecipientMacDataService.h"
 
 #include "inet/common/Simsignals.h"
 #include "inet/linklayer/ieee80211/mac/duplicateremoval/LegacyDuplicateRemoval.h"
 #include "inet/linklayer/ieee80211/mac/fragmentation/BasicReassembly.h"
-#include "inet/linklayer/ieee80211/mac/recipient/RecipientMacDataService.h"
 
 namespace inet {
 namespace ieee80211 {
@@ -53,24 +44,29 @@ std::vector<Packet *> RecipientMacDataService::dataOrMgmtFrameReceived(Packet *p
         return std::vector<Packet *>();
     }
     Packet *defragmentedFrame = nullptr;
-    if (basicReassembly) { // FIXME: defragmentation
+    if (basicReassembly) { // FIXME defragmentation
         defragmentedFrame = defragment(packet);
     }
-    return defragmentedFrame != nullptr ? std::vector<Packet *>({defragmentedFrame}) : std::vector<Packet *>();
+    return defragmentedFrame != nullptr ? std::vector<Packet *>({ defragmentedFrame }) : std::vector<Packet *>();
 }
 
 std::vector<Packet *> RecipientMacDataService::dataFrameReceived(Packet *dataPacket, const Ptr<const Ieee80211DataHeader>& dataHeader)
 {
+    Enter_Method("dataFrameReceived");
+    take(dataPacket);
     return dataOrMgmtFrameReceived(dataPacket, dataHeader);
 }
 
 std::vector<Packet *> RecipientMacDataService::managementFrameReceived(Packet *mgmtPacket, const Ptr<const Ieee80211MgmtHeader>& mgmtHeader)
 {
+    Enter_Method("managementFrameReceived");
+    take(mgmtPacket);
     return dataOrMgmtFrameReceived(mgmtPacket, mgmtHeader);
 }
 
 std::vector<Packet *> RecipientMacDataService::controlFrameReceived(Packet *controlPacket, const Ptr<const Ieee80211MacHeader>& controlHeader)
 {
+    Enter_Method("controlFrameReceived");
     return std::vector<Packet *>(); // has nothing to do
 }
 
@@ -82,3 +78,4 @@ RecipientMacDataService::~RecipientMacDataService()
 
 } /* namespace ieee80211 */
 } /* namespace inet */
+

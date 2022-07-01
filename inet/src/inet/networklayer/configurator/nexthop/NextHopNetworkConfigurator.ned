@@ -1,32 +1,19 @@
 //
-// Copyright (C) 2012 Opensim Ltd.
+// Copyright (C) 2012 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
-//
-// Authors: Levente Meszaros (primary author), Andras Varga, Tamas Borbely
-//
+
 
 package inet.networklayer.configurator.nexthop;
 
-import inet.networklayer.configurator.base.NetworkConfiguratorBase;
+import inet.networklayer.configurator.base.L3NetworkConfiguratorBase;
 
 //
 // Adds routes to a ~NextHopRoutingTable similarly how ~Ipv4NetworkConfigurator adds
 // static routes to ~Ipv4RoutingTable.
 //
-simple NextHopNetworkConfigurator extends NetworkConfiguratorBase
+simple NextHopNetworkConfigurator extends L3NetworkConfiguratorBase
 {
     parameters:
         @class(NextHopNetworkConfigurator);

@@ -1,15 +1,8 @@
 //
-// This library is free software, you can redistribute it
-// and/or modify
-// it under  the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation;
-// either version 2 of the License, or any later version.
-// The library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-// See the GNU Lesser General Public License for more details.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-
+// SPDX-License-Identifier: LGPL-3.0-or-later
+//
 
 import inet.common.INETDefs;
 import inet.common.packet.chunk.Chunk;
@@ -22,7 +15,6 @@ namespace inet;
 //
 enum LdpMessageTypes
 {
-
     NOTIFICATION = 10;
     HELLO = 11;
     INITIALIZATION = 12;
@@ -38,7 +30,6 @@ enum LdpMessageTypes
 
 enum LdpStatusTypes
 {
-
     NO_ROUTE = 13;
 }
 
@@ -58,7 +49,6 @@ class LdpPacket extends FieldsChunk
     Ipv4Address receiverAddress;
 }
 
-
 //
 // LDP Label Mapping Message
 //
@@ -75,7 +65,6 @@ class LdpLabelRequest extends LdpPacket
 {
     FecTlv fec;
 }
-
 
 //
 // LDP Hello Message
@@ -119,6 +108,3 @@ class LdpAddress extends LdpPacket
     string family;
     string addresses[];
 }
-
-
-

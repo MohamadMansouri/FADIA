@@ -1,26 +1,15 @@
 //
 // Copyright (C) 2013 Brno University of Technology (http://nes.fit.vutbr.cz/ansa)
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 3
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 // Authors: Veronika Rybova, Tomas Prochazka (xproch21@stud.fit.vutbr.cz),
 //          Vladimir Vesely (ivesely@fit.vutbr.cz), Tamas Borbely (tomi@omnetpp.org)
 
 #ifndef __INET_PIMSM_H
 #define __INET_PIMSM_H
 
-#include "inet/common/INETDefs.h"
 #include "inet/networklayer/ipv4/Ipv4Header_m.h"
 #include "inet/networklayer/ipv4/Ipv4Route.h"
 #include "inet/routing/pim/modes/PimBase.h"
@@ -53,18 +42,17 @@ class INET_API PimSm : public PimBase, protected cListener
   private:
     struct Route;
 
-    struct PimsmInterface : public Interface
-    {
+    struct PimsmInterface : public Interface {
         cMessage *expiryTimer;
 
         enum Flags {
-            RECEIVER_INCLUDE = 1 << 0,    // local_receiver_include(S,G,I) or local_receiver_include(*,G,I)
-            RECEIVER_EXCLUDE = 1 << 1,    // local_receiver_exclude(S,G,I)
-            COULD_ASSERT = 1 << 2,    // CouldAssert(S,G,I)
-            ASSERT_TRACKING_DESIRED = 1 << 3    // AssertTrackingDesired(S,G,I)
+            RECEIVER_INCLUDE        = 1 << 0, // local_receiver_include(S,G,I) or local_receiver_include(*,G,I)
+            RECEIVER_EXCLUDE        = 1 << 1, // local_receiver_exclude(S,G,I)
+            COULD_ASSERT            = 1 << 2, // CouldAssert(S,G,I)
+            ASSERT_TRACKING_DESIRED = 1 << 3, // AssertTrackingDesired(S,G,I)
         };
 
-        PimsmInterface(Route *owner, InterfaceEntry *ie);
+        PimsmInterface(Route *owner, NetworkInterface *ie);
         virtual ~PimsmInterface();
         Route *route() const { return check_and_cast<Route *>(owner); }
         PimSm *pimsm() const { return check_and_cast<PimSm *>(owner->owner); }
@@ -82,36 +70,34 @@ class INET_API PimSm : public PimBase, protected cListener
         bool pimInclude() const
         {
             return localReceiverInclude() &&
-                   ((    /*I_am_DR AND*/ assertState != I_LOST_ASSERT) || assertState == I_WON_ASSERT);
+                   (( /*I_am_DR AND*/ assertState != I_LOST_ASSERT) || assertState == I_WON_ASSERT);
         }
 
         bool pimExclude() const
         {
             return localReceiverExclude() &&
-                   ((    /*I_am_DR AND*/ assertState != I_LOST_ASSERT) || assertState == I_WON_ASSERT);
+                   (( /*I_am_DR AND*/ assertState != I_LOST_ASSERT) || assertState == I_WON_ASSERT);
         }
     };
 
     // upstream interface is toward the RP or toward the source
-    struct UpstreamInterface : public PimsmInterface
-    {
-        Ipv4Address nextHop;    // RPF nexthop, <unspec> at the DR in (S,G) routes
+    struct UpstreamInterface : public PimsmInterface {
+        Ipv4Address nextHop; // RPF nexthop, <unspec> at the DR in (S,G) routes
 
-        UpstreamInterface(Route *owner, InterfaceEntry *ie, Ipv4Address nextHop)
+        UpstreamInterface(Route *owner, NetworkInterface *ie, Ipv4Address nextHop)
             : PimsmInterface(owner, ie), nextHop(nextHop) {}
         int getInterfaceId() const { return ie->getInterfaceId(); }
         Ipv4Address rpfNeighbor() { return assertState == I_LOST_ASSERT ? winnerMetric.address : nextHop; }
     };
 
-    struct DownstreamInterface : public PimsmInterface
-    {
+    struct DownstreamInterface : public PimsmInterface {
         /** States of each outgoing interface. */
         enum JoinPruneState { NO_INFO, JOIN, PRUNE_PENDING };
 
         JoinPruneState joinPruneState;
         cMessage *prunePendingTimer;
 
-        DownstreamInterface(Route *owner, InterfaceEntry *ie, JoinPruneState joinPruneState, bool show = true)
+        DownstreamInterface(Route *owner, NetworkInterface *ie, JoinPruneState joinPruneState, bool show = true)
             : PimsmInterface(owner, ie), joinPruneState(joinPruneState), prunePendingTimer(nullptr) {}
         virtual ~DownstreamInterface();
 
@@ -123,8 +109,7 @@ class INET_API PimSm : public PimBase, protected cListener
 
     typedef std::vector<DownstreamInterface *> DownstreamInterfaceVector;
 
-    class PimSmOutInterface : public IMulticastRoute::OutInterface
-    {
+    class PimSmOutInterface : public IMulticastRoute::OutInterface {
         DownstreamInterface *downstream;
 
       public:
@@ -134,20 +119,19 @@ class INET_API PimSm : public PimBase, protected cListener
     };
 
     enum RouteType {
-        RP,    // (*,*,RP)
-        G,    // (*,G)
-        SG,    // (S,G)
-        SGrpt    // (S,G,rpt)
+        RP, // (*,*,RP)
+        G, // (*,G)
+        SG, // (S,G)
+        SGrpt // (S,G,rpt)
     };
 
     // Holds (*,G), (S,G) or (S,G,rpt) state
-    struct Route : public RouteEntry
-    {
+    struct Route : public RouteEntry {
         enum Flags {
-            PRUNED = 0x01,    // UpstreamJPState
-            REGISTER = 0x02,    // Register flag
-            SPT_BIT = 0x04,    // used to distinguish whether to forward on (*,*,RP)/(*,G) or on (S,G) state
-            JOIN_DESIRED = 0x08,
+            PRUNED                    = 0x01, // UpstreamJPState
+            REGISTER                  = 0x02, // Register flag
+            SPT_BIT                   = 0x04, // used to distinguish whether to forward on (*,*,RP)/(*,G) or on (S,G) state
+            JOIN_DESIRED              = 0x08,
             SOURCE_DIRECTLY_CONNECTED = 0x10
         };
 
@@ -159,12 +143,12 @@ class INET_API PimSm : public PimBase, protected cListener
         Route *gRoute;
         Route *sgrptRoute;
 
-        //Originated from destination.Ensures loop freeness.
+        // Originated from destination.Ensures loop freeness.
         unsigned int sequencenumber;
-        //Time of routing table entry creation
-        simtime_t installtime;    // XXX not used
+        // Time of routing table entry creation
+        simtime_t installtime; // TODO not used
 
-        cMessage *keepAliveTimer;    // only for (S,G) routes
+        cMessage *keepAliveTimer; // only for (S,G) routes
         cMessage *joinTimer;
 
         // Register state (only for (S,G) at the DR)
@@ -173,8 +157,8 @@ class INET_API PimSm : public PimBase, protected cListener
         cMessage *registerStopTimer;
 
         // interface specific state
-        UpstreamInterface *upstreamInterface;    // may be nullptr at RP and at DR
-        DownstreamInterfaceVector downstreamInterfaces;    ///< Out interfaces (downstream)
+        UpstreamInterface *upstreamInterface; // may be nullptr at RP and at DR
+        DownstreamInterfaceVector downstreamInterfaces; ///< Out interfaces (downstream)
 
       public:
         Route(PimSm *owner, RouteType type, Ipv4Address origin, Ipv4Address group);
@@ -186,7 +170,7 @@ class INET_API PimSm : public PimBase, protected cListener
 
         DownstreamInterface *findDownstreamInterfaceByInterfaceId(int interfaceId);
         DownstreamInterface *getDownstreamInterfaceByInterfaceId(int interfaceId);
-        int findDownstreamInterface(InterfaceEntry *ie);
+        int findDownstreamInterface(NetworkInterface *ie);
 
         bool isImmediateOlistNull();
         bool isInheritedOlistNull();
@@ -249,12 +233,12 @@ class INET_API PimSm : public PimBase, protected cListener
     void processRegisterStopPacket(Packet *pk);
     void processAssertPacket(Packet *pk);
 
-    void processJoinG(Ipv4Address group, Ipv4Address rp, Ipv4Address upstreamNeighborField, int holdTime, InterfaceEntry *inInterface);
-    void processJoinSG(Ipv4Address origin, Ipv4Address group, Ipv4Address upstreamNeighborField, int holdTime, InterfaceEntry *inInterface);
-    void processJoinSGrpt(Ipv4Address origin, Ipv4Address group, Ipv4Address upstreamNeighborField, int holdTime, InterfaceEntry *inInterface);
-    void processPruneG(Ipv4Address multGroup, Ipv4Address upstreamNeighborField, InterfaceEntry *inInterface);
-    void processPruneSG(Ipv4Address source, Ipv4Address group, Ipv4Address upstreamNeighborField, InterfaceEntry *inInterface);
-    void processPruneSGrpt(Ipv4Address source, Ipv4Address group, Ipv4Address upstreamNeighborField, InterfaceEntry *inInterface);
+    void processJoinG(Ipv4Address group, Ipv4Address rp, Ipv4Address upstreamNeighborField, int holdTime, NetworkInterface *inInterface);
+    void processJoinSG(Ipv4Address origin, Ipv4Address group, Ipv4Address upstreamNeighborField, int holdTime, NetworkInterface *inInterface);
+    void processJoinSGrpt(Ipv4Address origin, Ipv4Address group, Ipv4Address upstreamNeighborField, int holdTime, NetworkInterface *inInterface);
+    void processPruneG(Ipv4Address multGroup, Ipv4Address upstreamNeighborField, NetworkInterface *inInterface);
+    void processPruneSG(Ipv4Address source, Ipv4Address group, Ipv4Address upstreamNeighborField, NetworkInterface *inInterface);
+    void processPruneSGrpt(Ipv4Address source, Ipv4Address group, Ipv4Address upstreamNeighborField, NetworkInterface *inInterface);
     void processAssertSG(PimsmInterface *interface, const AssertMetric& receivedMetric);
     void processAssertG(PimsmInterface *interface, const AssertMetric& receivedMetric);
 
@@ -270,46 +254,46 @@ class INET_API PimSm : public PimBase, protected cListener
     void unroutableMulticastPacketArrived(Ipv4Address srcAddr, Ipv4Address destAddr);
     void multicastPacketArrivedOnRpfInterface(Route *route);
     void multicastPacketArrivedOnNonRpfInterface(Route *route, int interfaceId);
-    void multicastPacketForwarded(Packet *pk);          // pk should begin with Ipv4Header
-    void multicastReceiverAdded(InterfaceEntry *ie, Ipv4Address group);
-    void multicastReceiverRemoved(InterfaceEntry *ie, Ipv4Address group);
+    void multicastPacketForwarded(Packet *pk); // pk should begin with Ipv4Header
+    void multicastReceiverAdded(NetworkInterface *ie, Ipv4Address group);
+    void multicastReceiverRemoved(NetworkInterface *ie, Ipv4Address group);
 
     // internal events
     void joinDesiredChanged(Route *route);
-    void designatedRouterAddressHasChanged(InterfaceEntry *ie);
-    void iAmDRHasChanged(InterfaceEntry *ie, bool iAmDR);
+    void designatedRouterAddressHasChanged(NetworkInterface *ie);
+    void iAmDRHasChanged(NetworkInterface *ie, bool iAmDR);
 
     // send pim messages
-    void sendPIMRegister(Packet *pk, Ipv4Address dest, int outInterfaceId);     // pk should begin with Ipv4Header
+    void sendPIMRegister(Packet *pk, Ipv4Address dest, int outInterfaceId); // pk should begin with Ipv4Header
     void sendPIMRegisterStop(Ipv4Address source, Ipv4Address dest, Ipv4Address multGroup, Ipv4Address multSource);
     void sendPIMRegisterNull(Ipv4Address multSource, Ipv4Address multDest);
     void sendPIMJoin(Ipv4Address group, Ipv4Address source, Ipv4Address upstreamNeighbor, RouteType JPtype);
     void sendPIMPrune(Ipv4Address group, Ipv4Address source, Ipv4Address upstreamNeighbor, RouteType JPtype);
-    void sendPIMAssert(Ipv4Address source, Ipv4Address group, AssertMetric metric, InterfaceEntry *ie, bool rptBit);
+    void sendPIMAssert(Ipv4Address source, Ipv4Address group, AssertMetric metric, NetworkInterface *ie, bool rptBit);
     void sendToIP(Packet *packet, Ipv4Address source, Ipv4Address dest, int outInterfaceId, short ttl);
-    void forwardMulticastData(Packet *pk, int outInterfaceId);    // pk should begin with Ipv4Header
+    void forwardMulticastData(Packet *pk, int outInterfaceId); // pk should begin with Ipv4Header
 
     // computed intervals
-    double joinPruneHoldTime() { return 3.5 * joinPrunePeriod; }    // Holdtime in Join/Prune messages
+    double joinPruneHoldTime() { return 3.5 * joinPrunePeriod; } // Holdtime in Join/Prune messages
     double effectivePropagationDelay() { return defaultPropagationDelay; }
     double effectiveOverrideInterval() { return defaultOverrideInterval; }
     double joinPruneOverrideInterval() { return effectivePropagationDelay() + effectiveOverrideInterval(); }
 
     // update actions
     void updateJoinDesired(Route *route);
-    void updateDesignatedRouterAddress(InterfaceEntry *ie);
+    void updateDesignatedRouterAddress(NetworkInterface *ie);
     void updateCouldAssert(DownstreamInterface *interface);
     void updateAssertTrackingDesired(PimsmInterface *interface);
 
     // helpers
     bool IamRP(Ipv4Address rpAddr) { return rt->isLocalAddress(rpAddr); }
-    bool IamDR(InterfaceEntry *ie);
-    PimInterface *getIncomingInterface(InterfaceEntry *fromIE);
+    bool IamDR(NetworkInterface *ie);
+    PimInterface *getIncomingInterface(NetworkInterface *fromIE);
     bool deleteMulticastRoute(Route *route);
     void clearRoutes();
     void cancelAndDeleteTimer(cMessage *& timer);
     void restartTimer(cMessage *timer, double interval);
-    void restartExpiryTimer(Route *route, InterfaceEntry *originIntf, int holdTime);
+    void restartExpiryTimer(Route *route, NetworkInterface *originIntf, int holdTime);
 
     // routing table access
     bool removeRoute(Route *route);
@@ -321,7 +305,7 @@ class INET_API PimSm : public PimBase, protected cListener
     Ipv4MulticastRoute *findIpv4Route(Ipv4Address source, Ipv4Address group);
 };
 
-}    // namespace inet
+} // namespace inet
 
-#endif // ifndef __INET_PIMSM_H
+#endif
 

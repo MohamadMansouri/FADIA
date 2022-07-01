@@ -1,24 +1,13 @@
 //
-// Copyright (C) 2005 Andras Varga
+// Copyright (C) 2005 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 #ifndef __INET_CIRCLEMOBILITY_H
 #define __INET_CIRCLEMOBILITY_H
 
-#include "inet/common/INETDefs.h"
 #include "inet/mobility/base/MovingMobilityBase.h"
 
 namespace inet {
@@ -27,22 +16,21 @@ namespace inet {
  * @brief Circle movement model. See NED file for more info.
  *
  * @ingroup mobility
- * @author Andras Varga
  */
 class INET_API CircleMobility : public MovingMobilityBase
 {
   protected:
-    double cx;
-    double cy;
-    double cz;
-    double r;
-    rad startAngle;
-    double speed;
+    double cx = 0;
+    double cy = 0;
+    double cz = 0;
+    double r = -1;
+    rad startAngle = rad(0);
+    double speed = 0;
     /** @brief angular velocity [rad/s], derived from speed and radius. */
-    double omega;
+    double omega = 0;
 
     /** @brief Direction from the center of the circle. */
-    rad angle;
+    rad angle = rad(0);
 
   protected:
     virtual int numInitStages() const override { return NUM_INIT_STAGES; }
@@ -58,13 +46,12 @@ class INET_API CircleMobility : public MovingMobilityBase
 
   public:
     virtual double getMaxSpeed() const override { return speed; }
-    CircleMobility();
 
-    virtual Quaternion getCurrentAngularVelocity() override { return Quaternion(EulerAngles(rad(omega), rad(0), rad(0))); }
-    virtual Quaternion getCurrentAngularAcceleration() override { return Quaternion(); }
+    virtual const Quaternion& getCurrentAngularVelocity() override { return lastAngularVelocity; }
+    virtual const Quaternion& getCurrentAngularAcceleration() override { return Quaternion::IDENTITY; }
 };
 
 } // namespace inet
 
-#endif // ifndef __INET_CIRCLEMOBILITY_H
+#endif
 

@@ -1,21 +1,9 @@
 //
-// Copyright (C) 2013 Opensim Ltd
-// Author: Levente Meszaros
+// Copyright (C) 2013 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-//
+
 
 package inet.routing.gpsr;
 
@@ -49,7 +37,7 @@ simple Gpsr like IManetRouting
         int positionByteLength @unit(B) = default(2 * 4B);
 
         // visualization parameters
-        bool displayBubbles = default(false);	// display bubble messages about changes in routing state for packets
+        bool displayBubbles = default(false);   // display bubble messages about changes in routing state for packets
     gates:
         input ipIn;
         output ipOut;

@@ -2,30 +2,20 @@
 // Copyright (C) 2005 Christian Dankbar, Irene Ruengeler, Michael Tuexen, Andras Varga
 //               2009 Zoltan Bojthe
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 #include "inet/transportlayer/sctp/SctpChecksum.h"
 
 #if !defined(_WIN32) && !defined(__WIN32__) && !defined(WIN32) && !defined(__CYGWIN__) && !defined(_WIN64)
-#include <netinet/in.h>    // htonl, ntohl, ...
+#include <netinet/in.h> // htonl, ntohl, ...
 #endif // if !defined(_WIN32) && !defined(__WIN32__) && !defined(WIN32) && !defined(__CYGWIN__) && !defined(_WIN64)
 
 namespace inet {
 namespace sctp {
 
-#define CRC32C(c, d)     (c = (c >> 8) ^ crc_c[(c ^ (d)) & 0xFF])
+#define CRC32C(c, d)    (c = (c >> 8) ^ crc_c[(c ^ (d)) & 0xFF])
 
 static uint32_t crc_c[256] = {
     0x00000000L, 0xF26B8303L, 0xE13B70F7L, 0x1350F3F4L,
@@ -96,12 +86,12 @@ static uint32_t crc_c[256] = {
 
 uint32_t SctpChecksum::checksum(const void *addr, unsigned int len)
 {
-    uint32 h;
+    uint32_t h;
     const uint8_t *buf = static_cast<const uint8_t *>(addr);
     unsigned char byte0, byte1, byte2, byte3;
-    uint32 crc32c;
-    uint32 i;
-    uint32 res = (~0L);
+    uint32_t crc32c;
+    uint32_t i;
+    uint32_t res = (~0L);
     for (i = 0; i < len; i++) {
         CRC32C(res, buf[i]);
     }
@@ -116,3 +106,4 @@ uint32_t SctpChecksum::checksum(const void *addr, unsigned int len)
 
 } // namespace sctp
 } // namespace inet
+

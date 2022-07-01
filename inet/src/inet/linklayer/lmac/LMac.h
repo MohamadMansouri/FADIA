@@ -12,12 +12,13 @@
 #ifndef __INET_LMAC_H
 #define __INET_LMAC_H
 
-#include "inet/queueing/contract/IPacketQueue.h"
 #include "inet/linklayer/base/MacProtocolBase.h"
 #include "inet/linklayer/common/MacAddress.h"
 #include "inet/linklayer/contract/IMacProtocol.h"
 #include "inet/linklayer/lmac/LMacHeader_m.h"
-#include "inet/physicallayer/contract/packetlevel/IRadio.h"
+#include "inet/physicallayer/wireless/common/contract/packetlevel/IRadio.h"
+#include "inet/queueing/contract/IActivePacketSink.h"
+#include "inet/queueing/contract/IPacketQueue.h"
 
 namespace inet {
 
@@ -59,7 +60,7 @@ namespace inet {
  *
  * @ingroup macLayer
  **/
-class INET_API LMac : public MacProtocolBase, public IMacProtocol
+class INET_API LMac : public MacProtocolBase, public IMacProtocol, public queueing::IActivePacketSink
 {
   private:
     /** @brief Copy constructor is not allowed.
@@ -84,7 +85,6 @@ class INET_API LMac : public MacProtocolBase, public IMacProtocol
         , numSlots(0)
         , currSlot()
         , reservedMobileSlots(0)
-        , radio(nullptr)
         , transmissionState(physicallayer::IRadio::TRANSMISSION_STATE_UNDEFINED)
         , wakeup(nullptr)
         , timeout(nullptr)
@@ -117,9 +117,14 @@ class INET_API LMac : public MacProtocolBase, public IMacProtocol
     virtual void encapsulate(Packet *);
     virtual void decapsulate(Packet *);
 
+    // IActivePacketSink:
+    virtual queueing::IPassivePacketSource *getProvider(cGate *gate) override;
+    virtual void handleCanPullPacketChanged(cGate *gate) override;
+    virtual void handlePullPacketProcessed(Packet *packet, cGate *gate, bool successful) override;
+
   protected:
     /** @brief Generate new interface address*/
-    virtual void configureInterfaceEntry() override;
+    virtual void configureNetworkInterface() override;
     virtual void handleCommand(cMessage *msg) {}
 
     /** @brief MAC states
@@ -175,7 +180,7 @@ class INET_API LMac : public MacProtocolBase, public IMacProtocol
     int reservedMobileSlots;
 
     /** @brief The radio. */
-    physicallayer::IRadio *radio;
+    ModuleRefByPar<physicallayer::IRadio> radio;
     physicallayer::IRadio::TransmissionState transmissionState;
 
     cMessage *wakeup;
@@ -198,5 +203,5 @@ class INET_API LMac : public MacProtocolBase, public IMacProtocol
 
 } // namespace inet
 
-#endif // ifndef __INET_LMAC_H
+#endif
 

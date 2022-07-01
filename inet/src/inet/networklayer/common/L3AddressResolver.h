@@ -1,26 +1,15 @@
 //
-// Copyright (C) 2004 Andras Varga
+// Copyright (C) 2004 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public
-// License along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 #ifndef __INET_L3ADDRESSRESOLVER_H
 #define __INET_L3ADDRESSRESOLVER_H
 
 #include <vector>
 
-#include "inet/common/INETDefs.h"
 #include "inet/networklayer/common/L3Address.h"
 #include "inet/networklayer/contract/IRoutingTable.h"
 
@@ -28,7 +17,7 @@ namespace inet {
 
 // Forward declarations:
 class IInterfaceTable;
-class InterfaceEntry;
+class NetworkInterface;
 class IIpv4RoutingTable;
 class Ipv6RoutingTable;
 class NextHopRoutingTable;
@@ -64,26 +53,26 @@ class INET_API L3AddressResolver
     // internal
     virtual bool getModuleIdAddressFrom(L3Address& retAddr, IInterfaceTable *ift, bool netmask);
     // internal
-    virtual bool getInterfaceIpv4Address(L3Address& ret, InterfaceEntry *ie, bool mask);
+    virtual bool getInterfaceIpv4Address(L3Address& ret, NetworkInterface *ie, bool mask);
     // internal
-    virtual bool getInterfaceIpv6Address(L3Address& ret, InterfaceEntry *ie, bool mask);
+    virtual bool getInterfaceIpv6Address(L3Address& ret, NetworkInterface *ie, bool mask);
     // internal
-    virtual bool getInterfaceMacAddress(L3Address& ret, InterfaceEntry *ie, bool mask);
+    virtual bool getInterfaceMacAddress(L3Address& ret, NetworkInterface *ie, bool mask);
     // internal
-    virtual bool getInterfaceModulePathAddress(L3Address& ret, InterfaceEntry *ie, bool mask);
+    virtual bool getInterfaceModulePathAddress(L3Address& ret, NetworkInterface *ie, bool mask);
     // internal
-    virtual bool getInterfaceModuleIdAddress(L3Address& ret, InterfaceEntry *ie, bool mask);
+    virtual bool getInterfaceModuleIdAddress(L3Address& ret, NetworkInterface *ie, bool mask);
     // internal
-    virtual void doCollectNetworkNodes(cModule *parent, std::vector<cModule*>& result);
+    virtual void doCollectNetworkNodes(cModule *parent, std::vector<cModule *>& result);
 
   public:
     enum {
-        ADDR_IPv4 = 1,
-        ADDR_IPv6 = 2,
-        ADDR_MAC = 4,
+        ADDR_IPv4       = 1,
+        ADDR_IPv6       = 2,
+        ADDR_MAC        = 4,
         ADDR_MODULEPATH = 8,
-        ADDR_MODULEID = 16,
-        ADDR_MASK = 32
+        ADDR_MODULEID   = 16,
+        ADDR_MASK       = 32
     };
 
   public:
@@ -154,7 +143,7 @@ class INET_API L3AddressResolver
     /**
      * Returns the Ipv4 or Ipv6 address of the given interface (of a host or router).
      */
-    virtual L3Address getAddressFrom(InterfaceEntry *ie, int addrType = DEFAULT_ADDR_TYPE);
+    virtual L3Address getAddressFrom(NetworkInterface *ie, int addrType = DEFAULT_ADDR_TYPE);
 
     /**
      * The function tries to look up the IInterfaceTable module as submodule
@@ -200,7 +189,7 @@ class INET_API L3AddressResolver
     /**
      * Collect modules that represent network nodes, as denoted by the @networkNode(true) annotation.
      */
-    virtual std::vector<cModule*> collectNetworkNodes();
+    virtual std::vector<cModule *> collectNetworkNodes();
 
     /**
      * Find the Host with the specified address.
@@ -210,7 +199,7 @@ class INET_API L3AddressResolver
     /**
      * Find the interface with the specified MAC address. Returns nullptr if not found.
      */
-    virtual InterfaceEntry *findInterfaceWithMacAddress(const MacAddress& addr);
+    virtual NetworkInterface *findInterfaceWithMacAddress(const MacAddress& addr);
 
     /**
      * Find the host with the specified MAC address. Returns nullptr if not found.
@@ -221,5 +210,5 @@ class INET_API L3AddressResolver
 
 } // namespace inet
 
-#endif // ifndef __INET_L3ADDRESSRESOLVER_H
+#endif
 

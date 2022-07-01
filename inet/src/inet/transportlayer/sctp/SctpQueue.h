@@ -2,24 +2,13 @@
 // Copyright (C) 2005-2009 Irene Ruengeler
 // Copyright (C) 2009-2012 Thomas Dreibholz
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 #ifndef __INET_SCTPQUEUE_H
 #define __INET_SCTPQUEUE_H
 
-#include "inet/common/INETDefs.h"
 #include "inet/networklayer/common/L3Address.h"
 #include "inet/transportlayer/sctp/Sctp.h"
 
@@ -60,46 +49,46 @@ class INET_API SctpQueue : public cObject
      */
     ~SctpQueue();
 
-    bool checkAndInsertChunk(const uint32 key, SctpDataVariables *chunk);
+    bool checkAndInsertChunk(const uint32_t key, SctpDataVariables *chunk);
     /* returns true if new data is inserted and false if data was present */
 
-    SctpDataVariables *getAndExtractChunk(const uint32 tsn);
+    SctpDataVariables *getAndExtractChunk(const uint32_t tsn);
     SctpDataVariables *extractMessage();
 
     void printQueue() const;
 
-    uint32 getQueueSize() const;
+    uint32_t getQueueSize() const;
 
     SctpDataVariables *getFirstChunk() const;
 
-    cMessage *getMsg(const uint32 key) const;
+    cMessage *getMsg(const uint32_t key) const;
 
-    SctpDataVariables *getChunk(const uint32 key) const;
+    SctpDataVariables *getChunk(const uint32_t key) const;
 
-    SctpDataVariables *getChunkFast(const uint32 tsn, bool& firstTime);
+    SctpDataVariables *getChunkFast(const uint32_t tsn, bool& firstTime);
 
-    void removeMsg(const uint32 key);
+    void removeMsg(const uint32_t key);
 
-    bool deleteMsg(const uint32 tsn);
+    bool deleteMsg(const uint32_t tsn);
 
-    int32 getNumBytes() const;
+    int32_t getNumBytes() const;
 
-    SctpDataVariables *dequeueChunkBySSN(const uint16 ssn);
+    SctpDataVariables *dequeueChunkBySSN(const uint16_t ssn);
 
-    uint32 getSizeOfFirstChunk(const L3Address& remoteAddress);
+    uint32_t getSizeOfFirstChunk(const L3Address& remoteAddress);
 
-    uint16 getFirstSsnInQueue(const uint16 sid);
+    uint16_t getFirstSsnInQueue(const uint16_t sid);
 
     void findEarliestOutstandingTsnsForPath(const L3Address& remoteAddress,
-            uint32& earliestOutstandingTsn,
-            uint32& rtxEarliestOutstandingTsn) const;
+            uint32_t& earliestOutstandingTsn,
+            uint32_t& rtxEarliestOutstandingTsn) const;
 
   public:
-    typedef std::map<uint32, SctpDataVariables *> PayloadQueue;
+    typedef std::map<uint32_t, SctpDataVariables *> PayloadQueue;
     PayloadQueue payloadQueue;
 
   protected:
-    SctpAssociation *assoc;    // SCTP connection object
+    SctpAssociation *assoc; // SCTP connection object
 
   private:
     PayloadQueue::iterator GetChunkFastIterator;
@@ -108,5 +97,5 @@ class INET_API SctpQueue : public cObject
 } // namespace sctp
 } // namespace inet
 
-#endif // ifndef __INET_SCTPQUEUE_H
+#endif
 

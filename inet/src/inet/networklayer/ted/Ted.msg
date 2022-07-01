@@ -1,17 +1,8 @@
 //
-// (C) 2005 Vojtech Janota
+// Copyright (C) 2005 Vojtech Janota
 //
-// This library is free software, you can redistribute it
-// and/or modify
-// it under  the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation;
-// either version 2 of the License, or any later version.
-// The library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-// See the GNU Lesser General Public License for more details.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-
 
 import inet.common.INETDefs;
 import inet.networklayer.contract.ipv4.Ipv4Address;
@@ -27,6 +18,7 @@ typedef std::vector<struct TeLinkStateInfo> TeLinkStateInfoVector;
 //
 struct TeLinkStateInfo
 {
+    @packetData;
     Ipv4Address advrouter; // routerId of originator of this link state entry
     Ipv4Address linkid;    // identifies link within advrouter; set to peer's address
     Ipv4Address local;     // address of local interface of this link
@@ -41,7 +33,6 @@ struct TeLinkStateInfo
     bool state;             // false = down, true = up
 }
 
-
 //
 // Data structure supplied with NF_TED_CHANGE signal.
 // This triggers the link state protocol to send out up-to-date link state info
@@ -51,5 +42,3 @@ class TedChangeInfo extends cObject
 {
     int tedLinkIndices[];
 }
-
-

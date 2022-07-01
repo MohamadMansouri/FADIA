@@ -1,21 +1,13 @@
 //
 // Copyright (C) 2013 Brno University of Technology (http://nes.fit.vutbr.cz/ansa)
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 3
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 // Authors: Veronika Rybova, Vladimir Vesely (ivesely@fit.vutbr.cz),
 //          Tamas Borbely (tomi@omnetpp.org)
+
+#include "inet/routing/pim/modes/PimBase.h"
 
 #include "inet/common/IProtocolRegistrationListener.h"
 #include "inet/common/ModuleAccess.h"
@@ -27,7 +19,6 @@
 #include "inet/networklayer/contract/ipv4/Ipv4Address.h"
 #include "inet/networklayer/ipv4/Ipv4Header_m.h"
 #include "inet/networklayer/ipv4/Ipv4InterfaceData.h"
-#include "inet/routing/pim/modes/PimBase.h"
 
 namespace inet {
 
@@ -48,10 +39,10 @@ void PimBase::initialize(int stage)
     RoutingProtocolBase::initialize(stage);
 
     if (stage == INITSTAGE_LOCAL) {
-        ift = getModuleFromPar<IInterfaceTable>(par("interfaceTableModule"), this);
-        rt = getModuleFromPar<IIpv4RoutingTable>(par("routingTableModule"), this);
-        pimIft = getModuleFromPar<PimInterfaceTable>(par("pimInterfaceTableModule"), this);
-        pimNbt = getModuleFromPar<PimNeighborTable>(par("pimNeighborTableModule"), this);
+        ift.reference(this, "interfaceTableModule", true);
+        rt.reference(this, "routingTableModule", true);
+        pimIft.reference(this, "pimInterfaceTableModule", true);
+        pimNbt.reference(this, "pimNeighborTableModule", true);
 
         cModule *host = findContainingNode(this);
         if (!host)
@@ -75,7 +66,7 @@ void PimBase::handleStartOperation(LifecycleOperation *operation)
     for (int i = 0; i < pimIft->getNumInterfaces(); i++) {
         PimInterface *pimInterface = pimIft->getInterface(i);
         if (pimInterface->getMode() == mode) {
-            pimInterface->getInterfacePtr()->getProtocolData<Ipv4InterfaceData>()->joinMulticastGroup(ALL_PIM_ROUTERS_MCAST);
+            pimInterface->getInterfacePtr()->getProtocolDataForUpdate<Ipv4InterfaceData>()->joinMulticastGroup(ALL_PIM_ROUTERS_MCAST);
             isEnabled = true;
         }
     }
@@ -83,7 +74,7 @@ void PimBase::handleStartOperation(LifecycleOperation *operation)
     if (isEnabled) {
         EV_INFO << "PIM is enabled on device " << hostname << endl;
         helloTimer = new cMessage("PIM HelloTimer", HelloTimer);
-        scheduleAt(simTime() + par("triggeredHelloDelay"), helloTimer);
+        scheduleAfter(par("triggeredHelloDelay"), helloTimer);
     }
 }
 
@@ -106,7 +97,7 @@ void PimBase::processHelloTimer(cMessage *timer)
     ASSERT(timer == helloTimer);
     EV_DETAIL << "Hello Timer expired.\n";
     sendHelloPackets();
-    scheduleAt(simTime() + helloPeriod, helloTimer);
+    scheduleAfter(helloPeriod, helloTimer);
 }
 
 void PimBase::sendHelloPackets()
@@ -125,7 +116,7 @@ void PimBase::sendHelloPacket(PimInterface *pimInterface)
     Packet *pk = new Packet("PimHello");
     const auto& msg = makeShared<PimHello>();
 
-    B byteLength = PIM_HEADER_LENGTH + B(6) + B(8);    // HoldTime + GenerationID option
+    B byteLength = PIM_HEADER_LENGTH + B(6) + B(8); // HoldTime + GenerationID option
 
     msg->setOptionsArraySize(designatedRouterPriority < 0 ? 2 : 3);
     HoldtimeOption *holdtimeOption = new HoldtimeOption();
@@ -190,7 +181,7 @@ void PimBase::processHelloPacket(Packet *packet)
         }
     }
 
-    InterfaceEntry *ie = ift->getInterfaceById(interfaceId);
+    NetworkInterface *ie = ift->getInterfaceById(interfaceId);
 
     EV_INFO << "Received PIM Hello from neighbor: interface=" << ie->getInterfaceName() << " address=" << address << "\n";
 
@@ -246,5 +237,5 @@ std::ostream& operator<<(std::ostream& out, const PimBase::SourceAndGroup& sourc
     return out;
 }
 
-}    // namespace inet
+} // namespace inet
 

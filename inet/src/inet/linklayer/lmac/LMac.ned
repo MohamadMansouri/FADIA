@@ -25,9 +25,9 @@ import inet.linklayer.contract.IMacProtocol;
 module LMac extends MacProtocolBase like IMacProtocol
 {
     parameters:
-        string address = default("auto"); // MAC address as hex string (12 hex digits), or
-                                          // "auto". "auto" values will be replaced by
-                                          // a generated MAC address in init stage 0.
+        string address @mutable = default("auto"); // MAC address as hex string (12 hex digits), or
+                                                   // "auto". "auto" values will be replaced by
+                                                   // a generated MAC address in init stage 0.
         // how long is a slot?
         double slotDuration @unit(s) = default(100ms);
         int headerLength @unit(b) = default(10b);
@@ -48,11 +48,5 @@ module LMac extends MacProtocolBase like IMacProtocol
         @statistic[packetDropIncorrectlyReceived](title="packet drop: incorrectly received"; source=packetDropReasonIsIncorrectlyReceived(packetDropped); record=count,sum(packetBytes),vector(packetBytes); interpolationmode=none);
         @statistic[packetDropNotAddressedToUs](title="packet drop: not addressed to us"; source=packetDropReasonIsNotAddressedToUs(packetDropped); record=count,sum(packetBytes),vector(packetBytes); interpolationmode=none);
         @selfMessageKinds(inet::LMacType);
-    submodules:
-        queue: <default("DropTailQueue")> like IPacketQueue {
-            parameters:
-                packetCapacity = default(10);
-                @display("p=100,100;q=l2queue");
-        }
 }
 

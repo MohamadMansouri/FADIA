@@ -1,5 +1,50 @@
 ====== inet-4.x ======
 
+2022-05-13  ------ inet-4.4.0 released ------
+
+2022-04-11  Levente Mészáros
+
+	NextHopRoutingTable: Added guard condition for division by zero found by sanitizer tests.
+
+2021-05-07  Edward Longman
+
+	Replaces duplicate implementations of findInterfaceByAddress and isLocalAddress in RoutingTables.
+
+2021-05-07  Zoltan Bojthe
+
+	Added parent or this to parameter access for OMNeT++ 6 compatibility.
+
+2021-05-05  Zoltan Bojthe
+
+	Added missing Enter_Method() calls.
+
+2021-04-26  Zoltan Bojthe
+
+	Added/updated Enter_Method() info to the signalname in receiveSignal().
+
+2021-04-19  Zoltan Bojthe
+
+	Switch to using ModuleRef, ModuleRefByPar, opp_component_ptr for pointers to other modules.
+
+2021-03-18  Zoltan Bojthe
+
+	Set/clear DispatchProtocolReq tag on sent down packets based on outgoing interface.
+
+2021-03-19  Zoltan Bojthe
+
+	Changed if-else-if ladders in initialize() to separate if statements because
+	different stages may have the same number.
+
+2021-01-11  ------ inet-4.3.0 released ------
+
+2020-08-03  Levente Mészáros
+
+	Updated all registerService, registerProtocol methods and calls.
+
+2020-07-22  Levente Mészáros
+
+	Renamed InterfaceEntry -> NetworkInterface and interfaceEntry -> networkInterface.
+
 2020-01-08  ------ inet-4.2.0 released ------
 
 2019-11-11  Zoltan Bojthe

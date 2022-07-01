@@ -1,19 +1,9 @@
 //
-// Copyright (C) 2016 OpenSim Ltd
+// Copyright (C) 2016 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 #ifndef __INET_HEATMAPPLOTFIGURE_H
 #define __INET_HEATMAPPLOTFIGURE_H
@@ -24,8 +14,7 @@ namespace inet {
 
 class INET_API HeatMapPlotFigure : public cGroupFigure
 {
-    struct Tick
-    {
+    struct Tick {
         cLineFigure *tick;
         cLineFigure *dashLine;
         cLabelFigure *number;
@@ -68,7 +57,7 @@ class INET_API HeatMapPlotFigure : public cGroupFigure
 
   public:
     HeatMapPlotFigure(const char *name = nullptr);
-    virtual ~HeatMapPlotFigure() {};
+    virtual ~HeatMapPlotFigure() {}
 
     virtual void parse(cProperty *property) override;
     const char **getAllowedPropertyKeys() const override;
@@ -83,7 +72,7 @@ class INET_API HeatMapPlotFigure : public cGroupFigure
     void setBilinearValue(double x1, double x2, double y1, double y2, double v11, double v21, double v12, double v22, int channel);
     void bakeValues();
 
-    //getters and setters
+    // getters and setters
     void setPlotSize(const Point& figureSize, const Point& pixmapSize);
     const Point getPlotSize() const { return pixmapFigure->getBounds().getSize(); }
     const Point getPixmapSize() const { return Point(pixmapFigure->getPixmapWidth(), pixmapFigure->getPixmapHeight()); }
@@ -124,14 +113,14 @@ class INET_API HeatMapPlotFigure : public cGroupFigure
     void invertXAxis() { invertedXAxis = !invertedXAxis; }
     void invertYAxis() { invertedYAxis = !invertedYAxis; }
 
-    const char* getXAxisLabel() const { return xAxisLabelFigure->getText(); }
-    void setXAxisLabel(const char* text) { xAxisLabelFigure->setText(text); }
+    const char *getXAxisLabel() const { return xAxisLabelFigure->getText(); }
+    void setXAxisLabel(const char *text) { xAxisLabelFigure->setText(text); }
 
-    const char* getYAxisLabel() const { return yAxisLabelFigure->getText(); }
-    void setYAxisLabel(const char* text) { yAxisLabelFigure->setText(text); }
+    const char *getYAxisLabel() const { return yAxisLabelFigure->getText(); }
+    void setYAxisLabel(const char *text) { yAxisLabelFigure->setText(text); }
 
-    const char* getLabel() const { return labelFigure->getText(); }
-    void setLabel(const char* text) { labelFigure->setText(text); }
+    const char *getLabel() const { return labelFigure->getText(); }
+    void setLabel(const char *text) { labelFigure->setText(text); }
 
     int getLabelOffset() const;
     void setLabelOffset(int offset);
@@ -145,5 +134,5 @@ class INET_API HeatMapPlotFigure : public cGroupFigure
 
 } // namespace inet
 
-#endif // ifndef __INET_HEATMAPPLOTFIGURE_H
+#endif
 

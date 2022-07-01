@@ -1,20 +1,9 @@
-/**
- * Copyright (C) 2005 Andras Varga
- * Copyright (C) 2005 Wei Yang, Ng
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program; if not, see <http://www.gnu.org/licenses/>.
- */
+//
+// Copyright (C) 2005 OpenSim Ltd.
+// Copyright (C) 2005 Wei Yang, Ng
+//
+// SPDX-License-Identifier: LGPL-3.0-or-later
+//
 
 #ifndef __INET_IPV6NEIGHBOURCACHE_H
 #define __INET_IPV6NEIGHBOURCACHE_H
@@ -46,7 +35,7 @@ namespace inet {
 class INET_API Ipv6NeighbourCache
 {
   public:
-    typedef std::vector<Packet *> MsgPtrVector;    // TODO verify this is really needed --Andras
+    typedef std::vector<Packet *> MsgPtrVector; // TODO verify this is really needed --Andras
 
     /** Neighbour's reachability state */
     enum ReachabilityState { INCOMPLETE, REACHABLE, STALE, DELAY, PROBE };
@@ -56,8 +45,7 @@ class INET_API Ipv6NeighbourCache
      * neighbour itself, because link-local addresses are in common use
      * between routers.
      */
-    struct Key
-    {
+    struct Key {
         Ipv6Address address;
         int interfaceID;
         Key(Ipv6Address addr, int ifaceID) { address = addr; interfaceID = ifaceID; }
@@ -68,28 +56,27 @@ class INET_API Ipv6NeighbourCache
     };
 
     /** Stores a neighbour (or router) entry */
-    struct Neighbour
-    {
+    struct Neighbour {
         // Neighbour info
-        const Key *nceKey = nullptr;    // points back to the key that links to this NCE
+        const Key *nceKey = nullptr; // points back to the key that links to this NCE
         MacAddress macAddress;
         bool isRouter = false;
-        bool isHomeAgent = false;    //is the router also a Home Agent (RFC 3775-MIPv6)...Zarrar Yousaf 09.03.07
+        bool isHomeAgent = false; // is the router also a Home Agent (RFC 3775-MIPv6)...Zarrar Yousaf 09.03.07
 
         // Neighbour Unreachability Detection variables
         ReachabilityState reachabilityState = static_cast<ReachabilityState>(-1);
-        simtime_t reachabilityExpires;    // reachabilityLastConfirmed+reachableTime
+        simtime_t reachabilityExpires; // reachabilityLastConfirmed+reachableTime
         short numProbesSent = 0;
-        cMessage *nudTimeoutEvent = nullptr;    // DELAY or PROBE timer
+        cMessage *nudTimeoutEvent = nullptr; // DELAY or PROBE timer
 
-        //WEI-We could have a separate AREntry in the ND module.
-        //But we should merge those information in the neighbour cache for a
-        //cleaner solution. if reachability state is INCOMPLETE, it means that
-        //addr resolution is being performed for this NCE.
+        // WEI-We could have a separate AREntry in the ND module.
+        // But we should merge those information in the neighbour cache for a
+        // cleaner solution. if reachability state is INCOMPLETE, it means that
+        // addr resolution is being performed for this NCE.
         unsigned int numOfARNSSent = 0;
-        cMessage *arTimer = nullptr;    //Address Resolution self-message timer
-        MsgPtrVector pendingPackets;    //ptrs to queued packets associated with this NCE
-        Ipv6Address nsSrcAddr;    //the src addr that was used to send the previous NS
+        cMessage *arTimer = nullptr; // Address Resolution self-message timer
+        MsgPtrVector pendingPackets; // ptrs to queued packets associated with this NCE
+        Ipv6Address nsSrcAddr; // the src addr that was used to send the previous NS
 
         // Router variables.
         // NOTE: we only store lifetime expiry. Other Router Advertisement
@@ -98,7 +85,7 @@ class INET_API Ipv6NeighbourCache
         // for router lifetime; instead, we'll check the expirytime every time
         // we bump into a router entry (as nexthop in dest cache, or during
         // default router selection
-        simtime_t routerExpiryTime;    // time when router lifetime expires
+        simtime_t routerExpiryTime; // time when router lifetime expires
 
         // for double-linked list of default routers, see DefaultRouterList
         Neighbour *prevDefaultRouter = nullptr;
@@ -121,11 +108,9 @@ class INET_API Ipv6NeighbourCache
     typedef std::map<Key, Neighbour> NeighbourMap;
 
     // cyclic double-linked list of default routers
-    class DefaultRouterList
-    {
+    class DefaultRouterList {
       public:
-        class iterator
-        {
+        class iterator {
             friend class DefaultRouterList;
 
           private:
@@ -136,8 +121,8 @@ class INET_API Ipv6NeighbourCache
           public:
             iterator(const iterator& other) : start(other.start), current(other.current) {}
             Neighbour& operator*() { return *current; }
-            iterator& operator++()    /*prefix*/ { current = current->nextDefaultRouter == start ? nullptr : current->nextDefaultRouter; return *this; }
-            iterator operator++(int)    /*postfix*/ { iterator tmp(*this); operator++(); return tmp; }
+            iterator& operator++() /*prefix*/ { current = current->nextDefaultRouter == start ? nullptr : current->nextDefaultRouter; return *this; }
+            iterator operator++(int) /*postfix*/ { iterator tmp(*this); operator++(); return tmp; }
             bool operator==(const iterator& rhs) const { return current == rhs.current; }
             bool operator!=(const iterator& rhs) const { return !(*this == rhs); }
         };
@@ -157,7 +142,7 @@ class INET_API Ipv6NeighbourCache
     };
 
   protected:
-    cSimpleModule& neighbourDiscovery;    // for cancelAndDelete() calls
+    cSimpleModule& neighbourDiscovery; // for cancelAndDelete() calls
     NeighbourMap neighbourMap;
     DefaultRouterList defaultRouterList;
 
@@ -180,7 +165,7 @@ class INET_API Ipv6NeighbourCache
     NeighbourMap::iterator end() { return neighbourMap.end(); }
 
     /** Creates and initializes a neighbour entry with isRouter=false, state=INCOMPLETE. */
-    //TODO merge into next one (using default arg)
+    // TODO merge into next one (using default arg)
     virtual Neighbour *addNeighbour(const Ipv6Address& addr, int interfaceID);
 
     /** Creates and initializes a neighbour entry with isRouter=false, MAC address and state=STALE. */
@@ -189,7 +174,7 @@ class INET_API Ipv6NeighbourCache
 
     /** Creates and initializes a router entry (isRouter=isDefaultRouter=true), MAC address and state=STALE. */
     virtual Neighbour *addRouter(const Ipv6Address& addr, int interfaceID,
-            MacAddress macAddress, simtime_t expiryTime, bool isHomeAgent = false);    // added HA flag, 3.9.07 - CB
+            MacAddress macAddress, simtime_t expiryTime, bool isHomeAgent = false); // added HA flag, 3.9.07 - CB
 
     /** Deletes the given neighbour from the cache. */
     virtual void remove(const Ipv6Address& addr, int interfaceID);
@@ -211,5 +196,5 @@ class INET_API Ipv6NeighbourCache
 
 } // namespace inet
 
-#endif // ifndef __INET_IPV6NEIGHBOURCACHE_H
+#endif
 

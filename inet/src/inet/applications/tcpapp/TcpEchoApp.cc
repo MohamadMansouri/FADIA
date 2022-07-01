@@ -1,26 +1,18 @@
 //
-// Copyright (C) 2004 Andras Varga
+// Copyright (C) 2004 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-#include "inet/applications/common/SocketTag_m.h"
+
 #include "inet/applications/tcpapp/TcpEchoApp.h"
+
 #include "inet/common/ModuleAccess.h"
 #include "inet/common/ProtocolTag_m.h"
+#include "inet/common/Simsignals.h"
 #include "inet/common/lifecycle/ModuleOperations.h"
 #include "inet/common/packet/Packet_m.h"
+#include "inet/common/socket/SocketTag_m.h"
 #include "inet/transportlayer/contract/tcp/TcpCommand_m.h"
 
 namespace inet {
@@ -73,7 +65,6 @@ void TcpEchoApp::refreshDisplay() const
     getDisplayString().setTagArg("t", 0, buf);
 }
 
-
 void TcpEchoApp::finish()
 {
     TcpServerHostApp::finish();
@@ -104,7 +95,7 @@ void TcpEchoAppThread::dataArrived(Packet *rcvdPkt, bool urgent)
             outByteLen = 1;
 
         int64_t len = 0;
-        for ( ; len + rcvdBytes <= outByteLen; len += rcvdBytes) {
+        for (; len + rcvdBytes <= outByteLen; len += rcvdBytes) {
             outPkt->insertAtBack(rcvdPkt->peekDataAt(B(0), B(rcvdBytes)));
         }
         if (len < outByteLen)
@@ -115,14 +106,14 @@ void TcpEchoAppThread::dataArrived(Packet *rcvdPkt, bool urgent)
         if (echoAppModule->delay == 0)
             echoAppModule->sendDown(outPkt);
         else
-            scheduleAt(simTime() + echoAppModule->delay, outPkt); // send after a delay
+            scheduleAfter(echoAppModule->delay, outPkt); // send after a delay
     }
     delete rcvdPkt;
 }
 
-  /*
-   * Called when a timer (scheduled via scheduleAt()) expires. To be redefined.
-   */
+/*
+ * Called when a timer (scheduled via scheduleAt()) expires. To be redefined.
+ */
 void TcpEchoAppThread::timerExpired(cMessage *timer)
 {
     Packet *pkt = check_and_cast<Packet *>(timer);

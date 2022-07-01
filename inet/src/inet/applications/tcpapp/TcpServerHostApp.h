@@ -1,24 +1,12 @@
 //
-// Copyright (C) 2004 Andras Varga
+// Copyright (C) 2004 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-#ifndef __INET_TCPSRVHOSTAPP_H
-#define __INET_TCPSRVHOSTAPP_H
 
-#include "inet/common/INETDefs.h"
+#ifndef __INET_TCPSERVERHOSTAPP_H
+#define __INET_TCPSERVERHOSTAPP_H
 
 #include "inet/applications/base/ApplicationBase.h"
 #include "inet/common/socket/SocketMap.h"
@@ -26,7 +14,7 @@
 
 namespace inet {
 
-//forward declaration:
+// forward declaration:
 class TcpServerThreadBase;
 
 /**
@@ -48,14 +36,14 @@ class INET_API TcpServerHostApp : public ApplicationBase, public TcpSocket::ICal
     virtual void finish() override;
     virtual void refreshDisplay() const override;
 
-    virtual void socketDataArrived(TcpSocket* socket, Packet *packet, bool urgent) override { throw cRuntimeError("Unexpected data"); }
+    virtual void socketDataArrived(TcpSocket *socket, Packet *packet, bool urgent) override { throw cRuntimeError("Unexpected data"); }
     virtual void socketAvailable(TcpSocket *socket, TcpAvailableInfo *availableInfo) override;
     virtual void socketEstablished(TcpSocket *socket) override {}
     virtual void socketPeerClosed(TcpSocket *socket) override {}
     virtual void socketClosed(TcpSocket *socket) override;
     virtual void socketFailure(TcpSocket *socket, int code) override {}
-    virtual void socketStatusArrived(TcpSocket *socket, TcpStatusInfo *status) override { }
-    virtual void socketDeleted(TcpSocket *socket) override {}
+    virtual void socketStatusArrived(TcpSocket *socket, TcpStatusInfo *status) override {}
+    virtual void socketDeleted(TcpSocket *socket) override { socketMap.removeSocket(socket); }
 
     virtual void handleStartOperation(LifecycleOperation *operation) override;
     virtual void handleStopOperation(LifecycleOperation *operation) override;
@@ -79,7 +67,7 @@ class INET_API TcpServerThreadBase : public cSimpleModule, public TcpSocket::ICa
 {
   protected:
     TcpServerHostApp *hostmod;
-    TcpSocket *sock;    // ptr into socketMap managed by TcpServerHostApp
+    TcpSocket *sock; // ptr into socketMap managed by TcpServerHostApp
 
     // internal: TcpSocket::ICallback methods
     virtual void socketDataArrived(TcpSocket *socket, Packet *msg, bool urgent) override { dataArrived(msg, urgent); }
@@ -89,7 +77,7 @@ class INET_API TcpServerThreadBase : public cSimpleModule, public TcpSocket::ICa
     virtual void socketClosed(TcpSocket *socket) override { hostmod->threadClosed(this); }
     virtual void socketFailure(TcpSocket *socket, int code) override { failure(code); }
     virtual void socketStatusArrived(TcpSocket *socket, TcpStatusInfo *status) override { statusArrived(status); }
-    virtual void socketDeleted(TcpSocket *socket) override { if (socket == sock) sock = nullptr; }
+    virtual void socketDeleted(TcpSocket *socket) override;
 
     virtual void refreshDisplay() const override;
 
@@ -143,10 +131,10 @@ class INET_API TcpServerThreadBase : public cSimpleModule, public TcpSocket::ICa
      * By default it deletes the status object, redefine it to add code
      * to examine the status.
      */
-    virtual void statusArrived(TcpStatusInfo *status) { }
+    virtual void statusArrived(TcpStatusInfo *status) {}
 };
 
 } // namespace inet
 
-#endif // ifndef __INET_TCPSRVHOSTAPP_H
+#endif
 

@@ -1,26 +1,15 @@
 //
-// Copyright (C) 2006 Andras Varga
+// Copyright (C) 2006 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 #ifndef __INET_IEEE80211AGENTSTA_H
 #define __INET_IEEE80211AGENTSTA_H
 
 #include <vector>
 
-#include "inet/common/INETDefs.h"
 #include "inet/linklayer/ieee80211/mgmt/Ieee80211Primitives_m.h"
 #include "inet/networklayer/common/InterfaceTable.h"
 
@@ -35,12 +24,11 @@ namespace ieee80211 {
  *
  * See corresponding NED file for a detailed description.
  *
- * @author Andras Varga
  */
-class INET_API Ieee80211AgentSta : public cSimpleModule, public cListener       //TODO add ILifecycle
+class INET_API Ieee80211AgentSta : public cSimpleModule, public cListener // TODO add ILifecycle
 {
   protected:
-    InterfaceEntry *myIface = nullptr;
+    NetworkInterface *myIface = nullptr;
     MacAddress prevAP;
     bool activeScan = false;
     std::vector<int> channelsToScan;
@@ -52,7 +40,7 @@ class INET_API Ieee80211AgentSta : public cSimpleModule, public cListener       
 
     std::string defaultSsid;
 
-    //Statistics:
+    // Statistics:
     static simsignal_t sentRequestSignal;
     static simsignal_t acceptConfirmSignal;
     static simsignal_t dropConfirmSignal;
@@ -108,5 +96,5 @@ class INET_API Ieee80211AgentSta : public cSimpleModule, public cListener       
 
 } // namespace inet
 
-#endif // ifndef __INET_IEEE80211AGENTSTA_H
+#endif
 

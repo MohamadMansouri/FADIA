@@ -1,5 +1,125 @@
 ====== inet-4.x ======
 
+2022-05-13  ------ inet-4.4.0 released ------
+
+2022-04-11  Levente Mészáros
+
+	Ipv4InterfaceData: Added guard condition for using a multicast interface.
+
+2022-03-31  Zoltan Bojthe
+
+	RoutingTableRecorder: Fixed recording was destroyed during cleanup.
+
+2022-03-10  Rudolf Hornig
+
+	Removed unused NetworkInfo class (was used only in Quagga tests).
+
+2022-01-28  Rudolf Hornig
+
+	Serializer code is re-licensed now under LGPL v3 with the written permission of the original authors.
+
+2022-01-19  Zoltan Bojthe
+
+	Fixed missing @toValue, @fromValue, or remove @byValue
+
+2021-11-15  Rudolf Hornig
+
+	Added @mutable property for OMNeT++ 6 compatibility.
+
+2021-11-08  Levente Mészáros
+
+	Ipv4NatTable: Fixed default packet filter expression.
+	Ipv4: Changed to consider EncapsulationProtocolReq for outgoing packets.
+
+2021-05-07  Zoltan Bojthe
+
+	Added parent or this to parameter access for OMNeT++ 6 compatibility.
+
+2021-05-05  Zoltan Bojthe
+
+	Added missing Enter_Method() calls.
+
+2020-04-30  Zoltan Bojthe
+
+	Converted hook classes to modules.
+
+2021-04-26  Zoltan Bojthe
+
+	Added/updated Enter_Method() info to the signalname in receiveSignal().
+
+2021-04-19  Zoltan Bojthe
+
+	Switch to using ModuleRef, ModuleRefByPar, opp_component_ptr for pointers to other modules.
+
+2021-03-19  Zoltan Bojthe
+
+	Changed if-else-if ladders in initialize() to separate if statements because
+	different stages may have the same number.
+
+2021-01-15  Zoltan Bojthe
+
+	Moved code from updateDisplayString() to resolveDirective().
+
+2021-01-12  Levente Mészáros
+
+	Ipv4NatTable: Removed unnecessary peekData call.
+
+2021-01-11  ------ inet-4.3.0 released ------
+
+2020-12-17  Zoltan Bojthe
+
+	icmp, ipv4: Fixed delete packet by owner.
+
+2020-11-25  Zoltan Bojthe
+
+	Added handleParameterChange() function and read parameters at initialization
+	and when the parameter is changed.
+	Added serialization/deserialization of IcmpPtb to IcmpHeaderSerializer.
+	Fixed fields in IcmpHeader and IcmpPtb.
+
+2020-11-19  Timo Voelker
+
+	Added functions to send ICMP PTB.
+	Added parameter quoteLength to specify the number of bytes to quote in ICMP messages.
+
+2020-09-15  Levente Mészáros
+
+	Added missing registerProtocol call to Igmpv2.
+	Added missing icons to module interfaces.
+
+2020-09-11  Levente Mészáros
+
+	Changed Ipv4 to add DispatchProtocolReq only if there's a protocol required
+	by the network interface, otherwise send to the network interface directly.
+
+2020-08-03  Levente Mészáros
+
+	Updated all registerService, registerProtocol methods and calls.
+
+2020-07-22  Levente Mészáros
+
+	Renamed InterfaceEntry -> NetworkInterface and interfaceEntry -> networkInterface.
+
+2020-07-06  Zoltan Bojthe
+
+	Fix Igmpv2 for missing Ipv4InterfaceData.
+
+2020-07-02  Zoltan Bojthe
+
+	Fixed init stages to use new INITSTAGE_NETWORK_LAYER_PROTOCOLS.
+
+2020-06-30  Levente Mészáros
+
+	Added DispatchProtocolReq tags in Ipv4 to outgoing packets with the protocol of the interface.
+
+2020-04-14  Levente Mészáros
+
+	Added TosInd, EcnInd, and DscpInd for outgoing packets in Ipv4.
+
+2020-02-19  Zoltan Bojthe
+
+	Remove obsolete unused procDelay NED parameter from Ipv4.
+
 2020-01-08  ------ inet-4.2.0 released ------
 
 2019-12-16  Zoltan Bojthe

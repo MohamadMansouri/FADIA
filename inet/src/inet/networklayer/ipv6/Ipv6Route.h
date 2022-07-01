@@ -1,33 +1,21 @@
 //
-// Copyright (C) 2005 Andras Varga
+// Copyright (C) 2005 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 #ifndef __INET_IPV6ROUTE_H
 #define __INET_IPV6ROUTE_H
 
 #include <vector>
 
-#include "inet/common/INETDefs.h"
-
 #include "inet/networklayer/contract/IRoute.h"
 #include "inet/networklayer/contract/ipv6/Ipv6Address.h"
 
 namespace inet {
 
-class InterfaceEntry;
+class NetworkInterface;
 class Ipv6RoutingTable;
 
 /**
@@ -40,36 +28,36 @@ class INET_API Ipv6Route : public cObject, public IRoute
     /** Cisco like administrative distances (includes Ipv4 protocols)*/
     enum RouteAdminDist {
         dDirectlyConnected = 0,
-        dStatic = 1,
-        dEIGRPSummary = 5,
-        dBGPExternal = 20,
-        dEIGRPInternal = 90,
-        dIGRP = 100,
-        dOSPF = 110,
-        dISIS = 115,
-        dRIP = 120,
-        dEGP = 140,
-        dODR = 160,
-        dEIGRPExternal = 170,
-        dBGPInternal = 200,
-        dDHCPlearned = 254,
-        dBABEL = 125,
-        dLISP = 210,
-        dUnknown = 255
+        dStatic            = 1,
+        dEIGRPSummary      = 5,
+        dBGPExternal       = 20,
+        dEIGRPInternal     = 90,
+        dIGRP              = 100,
+        dOSPF              = 110,
+        dISIS              = 115,
+        dRIP               = 120,
+        dEGP               = 140,
+        dODR               = 160,
+        dEIGRPExternal     = 170,
+        dBGPInternal       = 200,
+        dDHCPlearned       = 254,
+        dBABEL             = 125,
+        dLISP              = 210,
+        dUnknown           = 255
     };
 
   protected:
-    Ipv6RoutingTable *_rt;    // TODO introduce IIPv6RoutingTable
+    Ipv6RoutingTable *_rt; // TODO introduce IIPv6RoutingTable
     Ipv6Address _destPrefix;
     short _prefixLength;
     SourceType _sourceType;
-    InterfaceEntry *_interfacePtr;
-    Ipv6Address _nextHop;    // unspecified means "direct"
-    simtime_t _expiryTime;    // if route is an advertised prefix: prefix lifetime
+    NetworkInterface *_interfacePtr;
+    Ipv6Address _nextHop; // unspecified means "direct"
+    simtime_t _expiryTime; // if route is an advertised prefix: prefix lifetime
     int _metric;
     unsigned int _adminDist;
-    cObject *_source;    /// Object identifying the source
-    cObject *_protocolData;    /// Routing Protocol specific data
+    cObject *_source; /// Object identifying the source
+    cObject *_protocolData; /// Routing Protocol specific data
 
   protected:
     void changed(int fieldCode);
@@ -96,7 +84,7 @@ class INET_API Ipv6Route : public cObject, public IRoute
     virtual ~Ipv6Route() { delete _protocolData; }
 
     virtual std::string str() const override;
-    virtual std::string detailedInfo() const OMNETPP5_CODE(override);
+    virtual std::string detailedInfo() const;
 
     /** To be called by the routing table when this route is added or removed from it */
     virtual void setRoutingTable(Ipv6RoutingTable *rt) { _rt = rt; }
@@ -121,11 +109,11 @@ class INET_API Ipv6Route : public cObject, public IRoute
     virtual void setNextHop(const L3Address& nextHop) override { if (_nextHop != nextHop.toIpv6()) { _nextHop = nextHop.toIpv6(); changed(F_NEXTHOP); } }
     virtual void setSource(cObject *source) override { if (_source != source) { _source = source; changed(F_SOURCE); } }
     virtual void setSourceType(SourceType type) override { if (_sourceType != type) { _sourceType = type; changed(F_TYPE); } }
-    const char* getSourceTypeAbbreviation() const;
-    virtual L3Address getDestinationAsGeneric() const override { return getDestPrefix(); }    //TODO rename Ipv6 method
+    const char *getSourceTypeAbbreviation() const;
+    virtual L3Address getDestinationAsGeneric() const override { return getDestPrefix(); } // TODO rename Ipv6 method
     virtual L3Address getNextHopAsGeneric() const override { return getNextHop(); }
-    virtual InterfaceEntry *getInterface() const override { return _interfacePtr; }
-    virtual void setInterface(InterfaceEntry *ie) override { if (_interfacePtr != ie) { _interfacePtr = ie; changed(F_IFACE); } }
+    virtual NetworkInterface *getInterface() const override { return _interfacePtr; }
+    virtual void setInterface(NetworkInterface *ie) override { if (_interfacePtr != ie) { _interfacePtr = ie; changed(F_IFACE); } }
     virtual cObject *getSource() const override { return _source; }
     virtual cObject *getProtocolData() const override { return _protocolData; }
     virtual void setProtocolData(cObject *protocolData) override { _protocolData = protocolData; }
@@ -133,5 +121,5 @@ class INET_API Ipv6Route : public cObject, public IRoute
 
 } // namespace inet
 
-#endif // ifndef __INET_IPV6ROUTE_H
+#endif
 

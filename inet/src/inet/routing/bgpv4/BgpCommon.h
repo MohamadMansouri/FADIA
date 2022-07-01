@@ -1,31 +1,19 @@
 //
 // Copyright (C) 2010 Helene Lageber
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
 #ifndef __INET_BGPCOMMON_H
 #define __INET_BGPCOMMON_H
 
-#include "inet/common/INETDefs.h"
-#include "inet/networklayer/common/InterfaceEntry.h"
+#include "inet/networklayer/common/NetworkInterface.h"
 #include "inet/networklayer/ipv4/Ipv4Header_m.h"
 #include "inet/routing/bgpv4/BgpCommon_m.h"
 
 namespace inet {
 
-//Forward declarations:
+// Forward declarations:
 class TcpSocket;
 
 namespace bgp {
@@ -55,7 +43,7 @@ static const int BGP_TCP_KEEP_ALIVE_RCV = 75;
 
 static const int BGP_RETRY_TIME = 120;
 static const int BGP_HOLD_TIME = 180;
-static const int BGP_KEEP_ALIVE = 60;    // 1/3 of BGP_HOLD_TIME
+static const int BGP_KEEP_ALIVE = 60; // 1/3 of BGP_HOLD_TIME
 static const int NB_SEC_START_EGP_SESSION = 1;
 
 typedef Ipv4Address RouterId;
@@ -75,7 +63,7 @@ struct SessionInfo
     int localPreference = 0;
     bool checkConnection = false;
     int ebgpMultihop = 0;
-    InterfaceEntry *linkIntf = nullptr;
+    NetworkInterface *linkIntf = nullptr;
     TcpSocket *socket = nullptr;
     TcpSocket *socketListen = nullptr;
     bool sessionEstablished = false;
@@ -85,5 +73,5 @@ struct SessionInfo
 
 } // namespace inet
 
-#endif // ifndef __INET_BGPCOMMON_H
+#endif
 

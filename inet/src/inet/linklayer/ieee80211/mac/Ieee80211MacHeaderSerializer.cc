@@ -1,22 +1,13 @@
 //
 // Copyright (C) 2014 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-#include "inet/common/packet/serializer/ChunkSerializerRegistry.h"
+
 #include "inet/linklayer/ieee80211/mac/Ieee80211MacHeaderSerializer.h"
+
+#include "inet/common/packet/serializer/ChunkSerializerRegistry.h"
 
 namespace inet {
 
@@ -68,7 +59,7 @@ void copyBlockAckFrameFields(const Ptr<ieee80211::Ieee80211BlockAck> to, const P
     to->setReserved(from->getReserved());
 }
 
-}
+} // namespace
 
 namespace ieee80211 {
 
@@ -105,6 +96,7 @@ void Ieee80211MsduSubframeHeaderSerializer::serialize(MemoryOutputStream& stream
     stream.writeMacAddress(msduSubframe->getSa());
     stream.writeUint16Be(msduSubframe->getLength());
 }
+
 const Ptr<Chunk> Ieee80211MsduSubframeHeaderSerializer::deserialize(MemoryInputStream& stream) const
 {
     auto msduSubframe = makeShared<Ieee80211MsduSubframeHeader>();
@@ -123,6 +115,7 @@ void Ieee80211MpduSubframeHeaderSerializer::serialize(MemoryOutputStream& stream
     stream.writeByte(0);
     stream.writeByte(0x4E);
 }
+
 const Ptr<Chunk> Ieee80211MpduSubframeHeaderSerializer::deserialize(MemoryInputStream& stream) const
 {
     auto mpduSubframe = makeShared<Ieee80211MpduSubframeHeader>();
@@ -170,7 +163,7 @@ void Ieee80211MacHeaderSerializer::serialize(MemoryOutputStream& stream, const P
             stream.writeMacAddress(mgmtHeader->getTransmitterAddress());
             stream.writeMacAddress(mgmtHeader->getAddress3());
             stream.writeUint4(mgmtHeader->getFragmentNumber());
-            stream.writeNBitsOfUint64Be(mgmtHeader->getSequenceNumber().getRaw(), 12);
+            stream.writeNBitsOfUint64Be(mgmtHeader->getSequenceNumber().get(), 12);
             if (mgmtHeader->getOrder())
                 stream.writeUint32Be(0);
             if (type == ST_ACTION) {
@@ -179,45 +172,45 @@ void Ieee80211MacHeaderSerializer::serialize(MemoryOutputStream& stream, const P
                     case 3: {
                         stream.writeByte(actionFrame->getCategory());
                         switch (actionFrame->getBlockAckAction()) {
-                        case 0: {
-                            auto addbaRequest = dynamicPtrCast<const Ieee80211AddbaRequest>(chunk);
-                            stream.writeByte(addbaRequest->getBlockAckAction());
-                            stream.writeByte(addbaRequest->getDialogToken());
-                            stream.writeBit(addbaRequest->getAMsduSupported());
-                            stream.writeBit(addbaRequest->getBlockAckPolicy());
-                            stream.writeUint4(addbaRequest->getTid());
-                            stream.writeNBitsOfUint64Be(addbaRequest->getBufferSize(), 10);
-                            stream.writeUint16Be(addbaRequest->getBlockAckTimeoutValue().inUnit(SIMTIME_US) / 1024);
-                            stream.writeUint4(addbaRequest->get_fragmentNumber());
-                            stream.writeNBitsOfUint64Be(addbaRequest->getStartingSequenceNumber().getRaw(), 12);
-                            ASSERT(stream.getLength() - startPos == addbaRequest->getChunkLength());
-                            break;
-                        }
-                        case 1: {
-                            auto addbaResponse = dynamicPtrCast<const Ieee80211AddbaResponse>(chunk);
-                            stream.writeByte(addbaResponse->getBlockAckAction());
-                            stream.writeByte(addbaResponse->getDialogToken());
-                            stream.writeUint16Be(addbaResponse->getStatusCode());
-                            stream.writeBit(addbaResponse->getAMsduSupported());
-                            stream.writeBit(addbaResponse->getBlockAckPolicy());
-                            stream.writeUint4(addbaResponse->getTid());
-                            stream.writeNBitsOfUint64Be(addbaResponse->getBufferSize(), 10);
-                            stream.writeUint16Be(addbaResponse->getBlockAckTimeoutValue().inUnit(SIMTIME_US) / 1024);
-                            ASSERT(stream.getLength() - startPos == addbaResponse->getChunkLength());
-                            break;
-                        }
-                        case 2: {
-                            auto delba = dynamicPtrCast<const Ieee80211Delba>(chunk);
-                            stream.writeByte(delba->getBlockAckAction());
-                            stream.writeNBitsOfUint64Be(delba->getReserved(), 11);
-                            stream.writeBit(delba->getInitiator());
-                            stream.writeUint4(delba->getTid());
-                            stream.writeUint16Be(delba->getReasonCode());
-                            ASSERT(stream.getLength() - startPos == delba->getChunkLength());
-                            break;
-                        }
-                        default:
-                            throw cRuntimeError("Ieee80211MacHeaderSerializer: cannot serialize the Ieee80211ActionFrame frame, blockAckAction %d not supported.", actionFrame->getBlockAckAction());
+                            case 0: {
+                                auto addbaRequest = dynamicPtrCast<const Ieee80211AddbaRequest>(chunk);
+                                stream.writeByte(addbaRequest->getBlockAckAction());
+                                stream.writeByte(addbaRequest->getDialogToken());
+                                stream.writeBit(addbaRequest->getAMsduSupported());
+                                stream.writeBit(addbaRequest->getBlockAckPolicy());
+                                stream.writeUint4(addbaRequest->getTid());
+                                stream.writeNBitsOfUint64Be(addbaRequest->getBufferSize(), 10);
+                                stream.writeUint16Be(addbaRequest->getBlockAckTimeoutValue().inUnit(SIMTIME_US) / 1024);
+                                stream.writeUint4(addbaRequest->get_fragmentNumber());
+                                stream.writeNBitsOfUint64Be(addbaRequest->getStartingSequenceNumber().get(), 12);
+                                ASSERT(stream.getLength() - startPos == addbaRequest->getChunkLength());
+                                break;
+                            }
+                            case 1: {
+                                auto addbaResponse = dynamicPtrCast<const Ieee80211AddbaResponse>(chunk);
+                                stream.writeByte(addbaResponse->getBlockAckAction());
+                                stream.writeByte(addbaResponse->getDialogToken());
+                                stream.writeUint16Be(addbaResponse->getStatusCode());
+                                stream.writeBit(addbaResponse->getAMsduSupported());
+                                stream.writeBit(addbaResponse->getBlockAckPolicy());
+                                stream.writeUint4(addbaResponse->getTid());
+                                stream.writeNBitsOfUint64Be(addbaResponse->getBufferSize(), 10);
+                                stream.writeUint16Be(addbaResponse->getBlockAckTimeoutValue().inUnit(SIMTIME_US) / 1024);
+                                ASSERT(stream.getLength() - startPos == addbaResponse->getChunkLength());
+                                break;
+                            }
+                            case 2: {
+                                auto delba = dynamicPtrCast<const Ieee80211Delba>(chunk);
+                                stream.writeByte(delba->getBlockAckAction());
+                                stream.writeNBitsOfUint64Be(delba->getReserved(), 11);
+                                stream.writeBit(delba->getInitiator());
+                                stream.writeUint4(delba->getTid());
+                                stream.writeUint16Be(delba->getReasonCode());
+                                ASSERT(stream.getLength() - startPos == delba->getChunkLength());
+                                break;
+                            }
+                            default:
+                                throw cRuntimeError("Ieee80211MacHeaderSerializer: cannot serialize the Ieee80211ActionFrame frame, blockAckAction %d not supported.", actionFrame->getBlockAckAction());
                         }
                         break;
                     }
@@ -268,7 +261,7 @@ void Ieee80211MacHeaderSerializer::serialize(MemoryOutputStream& stream, const P
                 stream.writeUint4(basicBlockAckReq->getTidInfo());
                 stream.writeUint32Be(basicBlockAckReq->getFragmentNumber());
                 stream.writeUint64Be(0);
-                stream.writeUint64Be(basicBlockAckReq->getStartingSequenceNumber().getRaw());
+                stream.writeUint64Be(basicBlockAckReq->getStartingSequenceNumber().get());
                 ASSERT(stream.getLength() - startPos == basicBlockAckReq->getChunkLength());
             }
             else if (!multiTid && compressedBitmap) {
@@ -276,7 +269,7 @@ void Ieee80211MacHeaderSerializer::serialize(MemoryOutputStream& stream, const P
                 stream.writeUint4(compressedBlockAckReq->getTidInfo());
                 stream.writeUint32Be(compressedBlockAckReq->getFragmentNumber());
                 stream.writeUint64Be(0);
-                stream.writeUint64Be(compressedBlockAckReq->getStartingSequenceNumber().getRaw());
+                stream.writeUint64Be(compressedBlockAckReq->getStartingSequenceNumber().get());
                 ASSERT(stream.getLength() - startPos == compressedBlockAckReq->getChunkLength());
             }
             else if (multiTid && compressedBitmap) {
@@ -300,7 +293,7 @@ void Ieee80211MacHeaderSerializer::serialize(MemoryOutputStream& stream, const P
             if (!multiTid && !compressedBitmap) {
                 auto basicBlockAck = dynamicPtrCast<const Ieee80211BasicBlockAck>(chunk);
                 stream.writeUint4(basicBlockAck->getTidInfo());
-                stream.writeUint16Be(basicBlockAck->getStartingSequenceNumber().getRaw());
+                stream.writeUint16Be(basicBlockAck->getStartingSequenceNumber().get());
                 for (size_t i = 0; i < 64; ++i) {
                     stream.writeByte(basicBlockAck->getBlockAckBitmap(i).getBytes()[0]);
                     stream.writeByte(basicBlockAck->getBlockAckBitmap(i).getBytes()[1]);
@@ -310,7 +303,7 @@ void Ieee80211MacHeaderSerializer::serialize(MemoryOutputStream& stream, const P
             else if (!multiTid && compressedBitmap) {
                 auto compressedBlockAck = dynamicPtrCast<const Ieee80211CompressedBlockAck>(chunk);
                 stream.writeUint4(compressedBlockAck->getTidInfo());
-                stream.writeUint16Be(compressedBlockAck->getStartingSequenceNumber().getRaw());
+                stream.writeUint16Be(compressedBlockAck->getStartingSequenceNumber().get());
                 for (size_t i = 0; i < 8; ++i) {
                     stream.writeByte(compressedBlockAck->getBlockAckBitmap().getBytes()[i]);
                 }
@@ -333,7 +326,7 @@ void Ieee80211MacHeaderSerializer::serialize(MemoryOutputStream& stream, const P
             stream.writeMacAddress(dataHeader->getTransmitterAddress());
             stream.writeMacAddress(dataHeader->getAddress3());
             stream.writeUint4(dataHeader->getFragmentNumber());
-            stream.writeNBitsOfUint64Be(dataHeader->getSequenceNumber().getRaw(), 12);
+            stream.writeNBitsOfUint64Be(dataHeader->getSequenceNumber().get(), 12);
             if (dataHeader->getFromDS() && dataHeader->getToDS())
                 stream.writeMacAddress(dataHeader->getAddress4());
             if (type == ST_DATA_WITH_QOS) {
@@ -393,7 +386,7 @@ const Ptr<Chunk> Ieee80211MacHeaderSerializer::deserialize(MemoryInputStream& st
             mgmtHeader->setTransmitterAddress(stream.readMacAddress());
             mgmtHeader->setAddress3(stream.readMacAddress());
             mgmtHeader->setFragmentNumber(stream.readUint4());
-            mgmtHeader->setSequenceNumber(SequenceNumber(stream.readNBitsToUint64Be(12)));
+            mgmtHeader->setSequenceNumber(SequenceNumberCyclic(stream.readNBitsToUint64Be(12)));
             if (order)
                 stream.readUint32Be();
             return mgmtHeader;
@@ -406,7 +399,7 @@ const Ptr<Chunk> Ieee80211MacHeaderSerializer::deserialize(MemoryInputStream& st
             actionFrame->setTransmitterAddress(stream.readMacAddress());
             actionFrame->setAddress3(stream.readMacAddress());
             actionFrame->setFragmentNumber(stream.readUint4());
-            actionFrame->setSequenceNumber(SequenceNumber(stream.readNBitsToUint64Be(12)));
+            actionFrame->setSequenceNumber(SequenceNumberCyclic(stream.readNBitsToUint64Be(12)));
             if (order)
                 stream.readUint32Be();
             actionFrame->setCategory(stream.readByte());
@@ -426,7 +419,7 @@ const Ptr<Chunk> Ieee80211MacHeaderSerializer::deserialize(MemoryInputStream& st
                             addbaRequest->setBufferSize(stream.readNBitsToUint64Be(10));
                             addbaRequest->setBlockAckTimeoutValue(SimTime(stream.readUint16Be() * 1024, SIMTIME_US));
                             addbaRequest->set_fragmentNumber(stream.readUint4());
-                            addbaRequest->setStartingSequenceNumber(SequenceNumber(stream.readNBitsToUint64Be(12)));
+                            addbaRequest->setStartingSequenceNumber(SequenceNumberCyclic(stream.readNBitsToUint64Be(12)));
                             return addbaRequest;
                         }
                         case 1: {
@@ -506,7 +499,7 @@ const Ptr<Chunk> Ieee80211MacHeaderSerializer::deserialize(MemoryInputStream& st
                 basicBlockAckReq->setTidInfo(stream.readUint4());
                 basicBlockAckReq->setFragmentNumber(stream.readUint32Be());
                 stream.readUint64Be();
-                basicBlockAckReq->setStartingSequenceNumber(SequenceNumber(stream.readUint64Be()));
+                basicBlockAckReq->setStartingSequenceNumber(SequenceNumberCyclic(stream.readUint64Be()));
                 return basicBlockAckReq;
             }
             else if (!multiTid && compressedBitmap) {
@@ -516,7 +509,7 @@ const Ptr<Chunk> Ieee80211MacHeaderSerializer::deserialize(MemoryInputStream& st
                 compressedBlockAckReq->setTidInfo(stream.readUint4());
                 compressedBlockAckReq->setFragmentNumber(stream.readUint32Be());
                 stream.readUint64Be();
-                compressedBlockAckReq->setStartingSequenceNumber(SequenceNumber(stream.readUint64Be()));
+                compressedBlockAckReq->setStartingSequenceNumber(SequenceNumberCyclic(stream.readUint64Be()));
                 return compressedBlockAckReq;
             }
             else
@@ -540,12 +533,12 @@ const Ptr<Chunk> Ieee80211MacHeaderSerializer::deserialize(MemoryInputStream& st
                 copyBasicFields(basicBlockAck, macHeader);
                 copyBlockAckFrameFields(basicBlockAck, blockAck);
                 basicBlockAck->setTidInfo(stream.readUint4());
-                basicBlockAck->setStartingSequenceNumber(SequenceNumber(stream.readUint16Be()));
+                basicBlockAck->setStartingSequenceNumber(SequenceNumberCyclic(stream.readUint16Be()));
                 for (size_t i = 0; i < 64; ++i) {
                     std::vector<uint8_t> bytes;
                     bytes.push_back(stream.readByte());
                     bytes.push_back(stream.readByte());
-                    BitVector* blockAckBitmap = new BitVector(bytes);
+                    BitVector *blockAckBitmap = new BitVector(bytes);
                     basicBlockAck->setBlockAckBitmap(i, *blockAckBitmap);
                 }
                 return basicBlockAck;
@@ -556,7 +549,7 @@ const Ptr<Chunk> Ieee80211MacHeaderSerializer::deserialize(MemoryInputStream& st
                 copyBlockAckFrameFields(compressedBlockAck, blockAck);
 
                 compressedBlockAck->setTidInfo(stream.readUint4());
-                compressedBlockAck->setStartingSequenceNumber(SequenceNumber(stream.readUint16Be()));
+                compressedBlockAck->setStartingSequenceNumber(SequenceNumberCyclic(stream.readUint16Be()));
                 std::vector<uint8_t> bytes;
                 for (size_t i = 0; i < 8; ++i) {
                     bytes.push_back(stream.readByte());
@@ -580,7 +573,7 @@ const Ptr<Chunk> Ieee80211MacHeaderSerializer::deserialize(MemoryInputStream& st
             dataHeader->setTransmitterAddress(stream.readMacAddress());
             dataHeader->setAddress3(stream.readMacAddress());
             dataHeader->setFragmentNumber(stream.readUint4());
-            dataHeader->setSequenceNumber(SequenceNumber(stream.readNBitsToUint64Be(12)));
+            dataHeader->setSequenceNumber(SequenceNumberCyclic(stream.readNBitsToUint64Be(12)));
             if (dataHeader->getFromDS() && dataHeader->getToDS())
                 dataHeader->setAddress4(stream.readMacAddress());
             if (type == ST_DATA_WITH_QOS) {

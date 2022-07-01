@@ -9,7 +9,7 @@ Topology:
 import inet.test.moduletest.lib.*;
 import inet.networklayer.configurator.ipv4.Ipv4NetworkConfigurator;
 import inet.node.ethernet.Eth10M;
-import inet.node.ethernet.EtherSwitch;
+import inet.node.ethernet.EthernetSwitch;
 import inet.node.inet.Router;
 import inet.node.inet.StandardHost;
 
@@ -22,9 +22,9 @@ network Test
             parameters:
                 dumpAddresses = true;
         }
-        switch1: EtherSwitch;
-        switch2: EtherSwitch;
-        switch3: EtherSwitch;
+        switch1: EthernetSwitch;
+        switch2: EthernetSwitch;
+        switch3: EthernetSwitch;
         server: StandardHost;
         router: Router;
         client[numHosts]: StandardHost;
@@ -67,8 +67,7 @@ Link 1
 
 
 %#--------------------------------------------------------------------------------------------------------------
-%not-contains: stdout
-undisposed object:
-%not-contains: stdout
--- check module destructor
+%postrun-command: grep "undisposed object:" test.out > test_undisposed.out || true
+%not-contains: test_undisposed.out
+undisposed object: (
 %#--------------------------------------------------------------------------------------------------------------

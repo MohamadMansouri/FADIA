@@ -1,14 +1,9 @@
 //
-// This library is free software, you can redistribute it
-// and/or modify
-// it under  the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation;
-// either version 2 of the License, or any later version.
-// The library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-// See the GNU Lesser General Public License for more details.
+// Copyright (C) 2020 OpenSim Ltd.
 //
+// SPDX-License-Identifier: LGPL-3.0-or-later
+//
+
 package inet.node.mpls;
 
 import inet.common.MessageDispatcher;
@@ -43,7 +38,7 @@ module LdpMplsRouter
         string peers;
         string routerId = default("auto");
         *.forwarding = true;
-        *.routingTable.routerId = routerId;
+        *.routingTable.routerId = this.routerId;
         *.interfaceTableModule = default(absPath(".interfaceTable"));
         *.routingTableModule = default(absPath(".ipv4.routingTable"));
         *.tedModule = default(absPath(".ted"));
@@ -60,8 +55,8 @@ module LdpMplsRouter
         }
         ldp: Ldp {
             parameters:
-                holdTime = holdTime;
-                helloInterval = helloInterval;
+                holdTime = parent.holdTime;
+                helloInterval = parent.helloInterval;
                 @display("p=450,80");
         }
         at: MessageDispatcher {
@@ -74,7 +69,7 @@ module LdpMplsRouter
         }
         linkStateRouting: LinkStateRouting {
             parameters:
-                peers = peers;
+                peers = parent.peers;
                 @display("p=900,80");
         }
         tcp: <default(firstAvailable("Tcp","TcpLwip","TcpNsc"))> like ITcp {
@@ -106,7 +101,7 @@ module LdpMplsRouter
         }
         mpls: Mpls {
             parameters:
-                //peers = peers,
+                //peers = parent.peers;
                 classifierModule = "^.ldp";
                 @display("p=500,480");
         }
@@ -154,9 +149,9 @@ module LdpMplsRouter
         tn.out++ --> ipv4.transportIn;
         ipv4.ifOut --> nm.in++;
         nm.out++ --> ipv4.ifIn;
-        nm.out++ --> mpls.netwIn;
-        mpls.netwOut --> nm.in++;
-        mpls.ifOut --> ml.in++;
-        ml.out++ --> mpls.ifIn;
+        nm.out++ --> mpls.upperLayerIn;
+        mpls.upperLayerOut --> nm.in++;
+        mpls.lowerLayerOut --> ml.in++;
+        ml.out++ --> mpls.lowerLayerIn;
 }
 

@@ -1,17 +1,12 @@
 //
-// Copyright 2017 OpenSim Ltd.
+// Copyright (C) 2017 OpenSim Ltd.
 //
-// This library is free software, you can redistribute it and/or modify
-// it under  the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation;
-// either version 3 of the License, or any later version.
-// The library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-// See the GNU Lesser General Public License for more details.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-#include "inet/common/INETDefs.h"
+
+#include "inet/transportlayer/tcp_common/TcpCrcInsertionHook.h"
+
 #include "inet/common/ProtocolTag_m.h"
 #include "inet/common/checksum/TcpIpChecksum.h"
 #include "inet/common/packet/Packet.h"
@@ -21,15 +16,18 @@
 #include "inet/networklayer/common/L3Tools.h"
 #include "inet/networklayer/contract/INetfilter.h"
 #include "inet/transportlayer/common/TransportPseudoHeader_m.h"
-#include "inet/transportlayer/tcp_common/TcpCrcInsertionHook.h"
 
 namespace inet {
 namespace tcp {
 
-INetfilter::IHook::Result TcpCrcInsertion::datagramPostRoutingHook(Packet *packet)
+Define_Module(TcpCrcInsertionHook);
+
+INetfilter::IHook::Result TcpCrcInsertionHook::datagramPostRoutingHook(Packet *packet)
 {
+    Enter_Method("datagramPostRoutingHook");
+
     if (packet->findTag<InterfaceInd>())
-        return ACCEPT;  // FORWARD
+        return ACCEPT; // FORWARD
     auto networkProtocol = packet->getTag<PacketProtocolTag>()->getProtocol();
     const auto& networkHeader = getNetworkProtocolHeader(packet);
     if (networkHeader->getProtocol() == &Protocol::tcp) {
@@ -46,7 +44,7 @@ INetfilter::IHook::Result TcpCrcInsertion::datagramPostRoutingHook(Packet *packe
     return ACCEPT;
 }
 
-void TcpCrcInsertion::insertCrc(const Protocol *networkProtocol, const L3Address& srcAddress, const L3Address& destAddress, const Ptr<TcpHeader>& tcpHeader, Packet *packet)
+void TcpCrcInsertionHook::insertCrc(const Protocol *networkProtocol, const L3Address& srcAddress, const L3Address& destAddress, const Ptr<TcpHeader>& tcpHeader, Packet *packet)
 {
     auto crcMode = tcpHeader->getCrcMode();
     switch (crcMode) {
@@ -72,7 +70,7 @@ void TcpCrcInsertion::insertCrc(const Protocol *networkProtocol, const L3Address
     }
 }
 
-uint16_t TcpCrcInsertion::computeCrc(const Protocol *networkProtocol, const L3Address& srcAddress, const L3Address& destAddress, const Ptr<const TcpHeader>& tcpHeader, const Ptr<const Chunk>& tcpData)
+uint16_t TcpCrcInsertionHook::computeCrc(const Protocol *networkProtocol, const L3Address& srcAddress, const L3Address& destAddress, const Ptr<const TcpHeader>& tcpHeader, const Ptr<const Chunk>& tcpData)
 {
     auto pseudoHeader = makeShared<TransportPseudoHeader>();
     pseudoHeader->setSrcAddress(srcAddress);

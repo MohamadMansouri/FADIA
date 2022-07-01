@@ -1,22 +1,14 @@
 //
-// Copyright (C) 2011 Andras Varga
+// Copyright (C) 2011 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
+
 #include "inet/applications/udpapp/UdpEchoApp.h"
+
 #include "inet/common/ModuleAccess.h"
+#include "inet/common/Simsignals.h"
 #include "inet/networklayer/common/L3AddressTag_m.h"
 #include "inet/transportlayer/common/L4PortTag_m.h"
 #include "inet/transportlayer/contract/udp/UdpControlInfo_m.h"
@@ -100,8 +92,8 @@ void UdpEchoApp::handleStopOperation(LifecycleOperation *operation)
 
 void UdpEchoApp::handleCrashOperation(LifecycleOperation *operation)
 {
-    if (operation->getRootModule() != getContainingNode(this))     // closes socket when the application crashed only
-        socket.destroy();         //TODO  in real operating systems, program crash detected by OS and OS closes sockets of crashed programs.
+    if (operation->getRootModule() != getContainingNode(this)) // closes socket when the application crashed only
+        socket.destroy(); // TODO  in real operating systems, program crash detected by OS and OS closes sockets of crashed programs.
     socket.setCallback(nullptr);
 }
 

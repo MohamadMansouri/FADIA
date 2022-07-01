@@ -1,25 +1,16 @@
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program.  If not, see http://www.gnu.org/licenses/.
-//
-// Author: Zsolt Prontvai
-//
+
+
+#include "inet/linklayer/ieee8021d/common/StpBase.h"
 
 #include "inet/common/ModuleAccess.h"
 #include "inet/common/lifecycle/ModuleOperations.h"
 #include "inet/common/lifecycle/NodeStatus.h"
-#include "inet/linklayer/ieee8021d/common/StpBase.h"
-#include "inet/networklayer/common/InterfaceEntry.h"
+#include "inet/networklayer/common/NetworkInterface.h"
 
 namespace inet {
 
@@ -33,7 +24,7 @@ StpBase::StpBase()
 
 void StpBase::initialize(int stage)
 {
-    if (stage == INITSTAGE_LINK_LAYER) {    // "auto" MAC addresses assignment takes place in stage 0
+    if (stage == INITSTAGE_LINK_LAYER) { // "auto" MAC addresses assignment takes place in stage 0
         numPorts = ifTable->getNumInterfaces();
         switchModule->subscribe(interfaceStateChangedSignal, this);
     }
@@ -48,8 +39,8 @@ void StpBase::initialize(int stage)
         helloTime = par("helloTime");
         forwardDelay = par("forwardDelay");
 
-        macTable = getModuleFromPar<IMacAddressTable>(par("macTableModule"), this);
-        ifTable = getModuleFromPar<IInterfaceTable>(par("interfaceTableModule"), this);
+        macTable.reference(this, "macTableModule", true);
+        ifTable.reference(this, "interfaceTableModule", true);
         switchModule = getContainingNode(this);
     }
 }
@@ -69,7 +60,7 @@ void StpBase::stop()
     ie = nullptr;
 }
 
-void StpBase::colorLink(InterfaceEntry *ie, bool forwarding) const
+void StpBase::colorLink(NetworkInterface *ie, bool forwarding) const
 {
     if (visualize) {
         cGate *inGate = switchModule->gate(ie->getNodeInputGateId());
@@ -79,8 +70,8 @@ void StpBase::colorLink(InterfaceEntry *ie, bool forwarding) const
         cGate *inGatePrev = inGate ? inGate->getPreviousGate() : nullptr;
         cGate *inGatePrev2 = inGatePrev ? inGatePrev->getPreviousGate() : nullptr;
 
-        //TODO The Gate::getDisplayString() has a side effect: create a channel when gate currently not connected.
-        //     Should check the channel existing with Gate::getChannel() before use the Gate::getDisplayString().
+        // TODO The Gate::getDisplayString() has a side effect: create a channel when gate currently not connected.
+        //      Should check the channel existing with Gate::getChannel() before use the Gate::getDisplayString().
         if (outGate && inGate && inGatePrev && outGateNext && outGatePrev && inGatePrev2) {
             if (forwarding) {
                 outGatePrev->getDisplayString().setTagArg("ls", 0, ENABLED_LINK_COLOR);
@@ -107,7 +98,7 @@ void StpBase::refreshDisplay() const
 {
     if (visualize) {
         for (unsigned int i = 0; i < numPorts; i++) {
-            InterfaceEntry *ie = ifTable->getInterface(i);
+            NetworkInterface *ie = ifTable->getInterface(i);
             cModule *nicModule = ie;
             if (isUp()) {
                 const Ieee8021dInterfaceData *port = getPortInterfaceData(ie->getInterfaceId());
@@ -141,18 +132,19 @@ void StpBase::refreshDisplay() const
     }
 }
 
-Ieee8021dInterfaceData *StpBase::getPortInterfaceData(unsigned int interfaceId)
+const Ieee8021dInterfaceData *StpBase::getPortInterfaceData(unsigned int interfaceId) const
 {
-    Ieee8021dInterfaceData *portData = getPortInterfaceEntry(interfaceId)->getProtocolData<Ieee8021dInterfaceData>();
-    if (!portData)
-        throw cRuntimeError("Ieee8021dInterfaceData not found!");
-
-    return portData;
+    return getPortNetworkInterface(interfaceId)->getProtocolData<Ieee8021dInterfaceData>();
 }
 
-InterfaceEntry *StpBase::getPortInterfaceEntry(unsigned int interfaceId)
+Ieee8021dInterfaceData *StpBase::getPortInterfaceDataForUpdate(unsigned int interfaceId)
 {
-    InterfaceEntry *gateIfEntry = ifTable->getInterfaceById(interfaceId);
+    return getPortNetworkInterface(interfaceId)->getProtocolDataForUpdate<Ieee8021dInterfaceData>();
+}
+
+NetworkInterface *StpBase::getPortNetworkInterface(unsigned int interfaceId) const
+{
+    NetworkInterface *gateIfEntry = ifTable->getInterfaceById(interfaceId);
     if (!gateIfEntry)
         throw cRuntimeError("gate's Interface is nullptr");
 
@@ -162,7 +154,7 @@ InterfaceEntry *StpBase::getPortInterfaceEntry(unsigned int interfaceId)
 int StpBase::getRootInterfaceId() const
 {
     for (unsigned int i = 0; i < numPorts; i++) {
-        InterfaceEntry *ie = ifTable->getInterface(i);
+        NetworkInterface *ie = ifTable->getInterface(i);
         if (ie->getProtocolData<Ieee8021dInterfaceData>()->getRole() == Ieee8021dInterfaceData::ROOT)
             return ie->getInterfaceId();
     }
@@ -170,13 +162,13 @@ int StpBase::getRootInterfaceId() const
     return -1;
 }
 
-InterfaceEntry *StpBase::chooseInterface()
+NetworkInterface *StpBase::chooseInterface()
 {
-    // TODO: Currently, we assume that the first non-loopback interface is an Ethernet interface
-    //       since STP and RSTP work on EtherSwitches.
-    //       NOTE that, we doesn't check if the returning interface is an Ethernet interface!
+    // TODO Currently, we assume that the first non-loopback interface is an Ethernet interface
+    //      since STP and RSTP work on EtherSwitches.
+    // NOTE that, we doesn't check if the returning interface is an Ethernet interface!
     for (int i = 0; i < ifTable->getNumInterfaces(); i++) {
-        InterfaceEntry *current = ifTable->getInterface(i);
+        NetworkInterface *current = ifTable->getInterface(i);
         if (!current->isLoopback())
             return current;
     }

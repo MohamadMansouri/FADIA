@@ -1,19 +1,11 @@
 //
-// Copyright (C) 2006 Andras Varga
+// Copyright (C) 2006 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
+
+#include "inet/linklayer/ieee80211/mgmt/Ieee80211MgmtBase.h"
 
 #include "inet/common/INETUtils.h"
 #include "inet/common/ModuleAccess.h"
@@ -22,8 +14,8 @@
 #include "inet/common/lifecycle/ModuleOperations.h"
 #include "inet/common/lifecycle/NodeStatus.h"
 #include "inet/linklayer/common/InterfaceTag_m.h"
-#include "inet/linklayer/ieee80211/mgmt/Ieee80211MgmtBase.h"
-#include "inet/physicallayer/ieee80211/packetlevel/Ieee80211Tag_m.h"
+#include "inet/networklayer/common/NetworkInterface.h"
+#include "inet/physicallayer/wireless/ieee80211/packetlevel/Ieee80211Tag_m.h"
 
 namespace inet {
 
@@ -36,8 +28,8 @@ void Ieee80211MgmtBase::initialize(int stage)
     OperationalBase::initialize(stage);
 
     if (stage == INITSTAGE_LOCAL) {
-        mib = getModuleFromPar<Ieee80211Mib>(par("mibModule"), this);
-        interfaceTable = getModuleFromPar<IInterfaceTable>(par("interfaceTableModule"), this);
+        mib.reference(this, "mibModule", true);
+        interfaceTable.reference(this, "interfaceTableModule", true);
         myIface = getContainingNicModule(this);
         numMgmtFramesReceived = 0;
         numMgmtFramesDropped = 0;

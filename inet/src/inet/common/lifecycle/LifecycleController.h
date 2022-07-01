@@ -1,23 +1,13 @@
 //
-// (C) 2013 Opensim Ltd.
+// Copyright (C) 2013 OpenSim Ltd.
 //
-// This library is free software, you can redistribute it
-// and/or modify
-// it under  the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation;
-// either version 2 of the License, or any later version.
-// The library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-// See the GNU Lesser General Public License for more details.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// Author: Andras Varga (andras@omnetpp.org)
-//
+
 
 #ifndef __INET_LIFECYCLECONTROLLER_H
 #define __INET_LIFECYCLECONTROLLER_H
 
-#include "inet/common/INETDefs.h"
 #include "inet/common/lifecycle/ILifecycle.h"
 #include "inet/common/scenario/IScriptable.h"
 
@@ -63,8 +53,7 @@ namespace inet {
 class INET_API LifecycleController
 {
   protected:
-    class INET_API Callback : public IDoneCallback
-    {
+    class INET_API Callback : public IDoneCallback {
       public:
         LifecycleController *controller = nullptr;
         LifecycleOperation *operation = nullptr;
@@ -79,7 +68,7 @@ class INET_API LifecycleController
   protected:
     virtual bool resumeOperation(LifecycleOperation *operation);
     virtual void doOneStage(LifecycleOperation *operation, cModule *submodule);
-    virtual void moduleOperationStageCompleted(Callback *callback);    // invoked from the callback
+    virtual void moduleOperationStageCompleted(Callback *callback); // invoked from the callback
 
   public:
     LifecycleController() : spareCallback(nullptr) {}
@@ -101,5 +90,5 @@ class INET_API LifecycleController
 
 } // namespace inet
 
-#endif // ifndef __INET_LIFECYCLECONTROLLER_H
+#endif
 

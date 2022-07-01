@@ -1,21 +1,15 @@
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program.  If not, see http://www.gnu.org/licenses/.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-#include "inet/common/ProtocolTag_m.h"
+
 #include "inet/common/packet/printer/PacketPrinter.h"
+
+#include "inet/common/ProtocolTag_m.h"
 #include "inet/common/packet/printer/ProtocolPrinterRegistry.h"
+#include "inet/common/stlutils.h"
 
 namespace inet {
 
@@ -59,7 +53,7 @@ int PacketPrinter::getScoreFor(cMessage *msg) const
 
 bool PacketPrinter::isEnabledOption(const Options *options, const char *name) const
 {
-    return options->enabledTags.find(name) != options->enabledTags.end();
+    return contains(options->enabledTags, name);
 }
 
 bool PacketPrinter::isEnabledInfo(const Options *options, const Protocol *protocol) const
@@ -88,18 +82,18 @@ const ProtocolPrinter& PacketPrinter::getProtocolPrinter(const Protocol *protoco
 
 std::set<std::string> PacketPrinter::getSupportedTags() const
 {
-    return {"Print inside out", "Print left to right",
-            "Show 'Source' column", "Show 'Destination' column", "Show 'Protocol' column", "Show 'Type' column", "Show 'Length' column", "Show 'Info' column",
-            "Show all PDU source fields", "Show all PDU destination fields", "Show all PDU protocols", "Show all PDU lengths",
-            "Show physical layer info", "Show link layer info", "Show network layer info", "Show transport layer info", "Show all info", "Show innermost info",
-            "Show auto source fields", "Show auto destination fields", "Show auto info"};
+    return { "Print inside out", "Print left to right",
+             "Show 'Source' column", "Show 'Destination' column", "Show 'Protocol' column", "Show 'Type' column", "Show 'Length' column", "Show 'Info' column",
+             "Show all PDU source fields", "Show all PDU destination fields", "Show all PDU protocols", "Show all PDU lengths",
+             "Show physical layer info", "Show link layer info", "Show network layer info", "Show transport layer info", "Show all info", "Show innermost info",
+             "Show auto source fields", "Show auto destination fields", "Show auto info" };
 }
 
 std::set<std::string> PacketPrinter::getDefaultEnabledTags() const
 {
-    return {"Print inside out",
-            "Show 'Source' column", "Show 'Destination' column", "Show 'Protocol' column", "Show 'Type' column", "Show 'Length' column", "Show 'Info' column",
-            "Show auto source fields", "Show auto destination fields", "Show auto info"};
+    return { "Print inside out",
+             "Show 'Source' column", "Show 'Destination' column", "Show 'Protocol' column", "Show 'Type' column", "Show 'Length' column", "Show 'Info' column",
+             "Show auto source fields", "Show auto destination fields", "Show auto info" };
 }
 
 std::vector<std::string> PacketPrinter::getColumnNames(const Options *options) const
@@ -126,17 +120,17 @@ void PacketPrinter::printContext(std::ostream& stream, const Options *options, C
         stream << "\x1b[103m";
     stream << "\x1b[30m";
     if (isEnabledOption(options, "Show 'Source' column"))
-       stream << context.sourceColumn.str() << "\t";
+        stream << context.sourceColumn.str() << "\t";
     if (isEnabledOption(options, "Show 'Destination' column"))
-       stream << context.destinationColumn.str() << "\t";
+        stream << context.destinationColumn.str() << "\t";
     if (isEnabledOption(options, "Show 'Protocol' column"))
-       stream << "\x1b[34m" << context.protocolColumn.str() << "\x1b[30m\t";
+        stream << "\x1b[34m" << context.protocolColumn.str() << "\x1b[30m\t";
     if (isEnabledOption(options, "Show 'Type' column"))
-       stream << "\x1b[34m" << context.typeColumn.str() << "\x1b[30m\t";
+        stream << "\x1b[34m" << context.typeColumn.str() << "\x1b[30m\t";
     if (isEnabledOption(options, "Show 'Length' column"))
-       stream << context.lengthColumn.str() << "\t";
+        stream << context.lengthColumn.str() << "\t";
     if (isEnabledOption(options, "Show 'Info' column"))
-       stream << context.infoColumn.str();
+        stream << context.infoColumn.str();
     stream << std::endl;
 }
 
@@ -151,11 +145,11 @@ void PacketPrinter::printMessage(std::ostream& stream, cMessage *message, const 
 {
     Context context;
     for (auto cpacket = dynamic_cast<cPacket *>(message); cpacket != nullptr; cpacket = cpacket->getEncapsulatedPacket()) {
-        if (false) {}
-#ifdef WITH_RADIO
-        else if (auto signal = dynamic_cast<inet::physicallayer::Signal *>(cpacket))
+        if (false) ;
+#ifdef INET_WITH_PHYSICALLAYERWIRELESSCOMMON
+        else if (auto signal = dynamic_cast<physicallayer::Signal *>(cpacket))
             printSignal(signal, options, context);
-#endif // WITH_RADIO
+#endif // INET_WITH_PHYSICALLAYERWIRELESSCOMMON
         else if (auto packet = dynamic_cast<Packet *>(cpacket))
             printPacket(packet, options, context);
         else
@@ -164,26 +158,26 @@ void PacketPrinter::printMessage(std::ostream& stream, cMessage *message, const 
     printContext(stream, options, context);
 }
 
-#ifdef WITH_RADIO
-void PacketPrinter::printSignal(std::ostream& stream, inet::physicallayer::Signal *signal) const
+#ifdef INET_WITH_PHYSICALLAYERWIRELESSCOMMON
+void PacketPrinter::printSignal(std::ostream& stream, physicallayer::Signal *signal) const
 {
     Options options;
     options.enabledTags = getDefaultEnabledTags();
     printSignal(stream, signal, &options);
 }
 
-void PacketPrinter::printSignal(std::ostream& stream, inet::physicallayer::Signal *signal, const Options *options) const
+void PacketPrinter::printSignal(std::ostream& stream, physicallayer::Signal *signal, const Options *options) const
 {
     Context context;
     printSignal(signal, options, context);
     printContext(stream, options, context);
 }
 
-void PacketPrinter::printSignal(inet::physicallayer::Signal *signal, const Options *options, Context& context) const
+void PacketPrinter::printSignal(physicallayer::Signal *signal, const Options *options, Context& context) const
 {
     context.infoColumn << signal->str();
 }
-#endif // WITH_RADIO
+#endif // INET_WITH_PHYSICALLAYERWIRELESSCOMMON
 
 void PacketPrinter::printPacket(std::ostream& stream, Packet *packet, const char *format) const
 {
@@ -209,15 +203,21 @@ void PacketPrinter::printPacket(std::ostream& stream, Packet *packet, const Opti
 void PacketPrinter::printPacket(Packet *packet, const Options *options, Context& context) const
 {
     PacketDissector::PduTreeBuilder pduTreeBuilder;
-    auto packetProtocolTag = packet->findTag<PacketProtocolTag>();
-    auto protocol = packetProtocolTag != nullptr ? packetProtocolTag->getProtocol() : nullptr;
-    PacketDissector packetDissector(ProtocolDissectorRegistry::globalRegistry, pduTreeBuilder);
-    packetDissector.dissectPacket(packet, protocol);
-    auto& protocolDataUnit = pduTreeBuilder.getTopLevelPdu();
-    if (pduTreeBuilder.isSimplyEncapsulatedPacket() && isEnabledOption(options, "Print inside out"))
-        const_cast<PacketPrinter *>(this)->printPacketInsideOut(protocolDataUnit, options, context);
-    else
-        const_cast<PacketPrinter *>(this)->printPacketLeftToRight(protocolDataUnit, options, context);
+    try {
+        PacketDissector packetDissector(ProtocolDissectorRegistry::globalRegistry, pduTreeBuilder);
+        packetDissector.dissectPacket(packet);
+    }
+    catch (cRuntimeError& e) {
+        // NOTE: don't propagate errors from printPacket, becaue it can break Qtenv for example
+        context.infoColumn << e.what() << ": ";
+    }
+    const auto& protocolDataUnit = pduTreeBuilder.getTopLevelPdu();
+    if (protocolDataUnit != nullptr) {
+        if (pduTreeBuilder.isSimplyEncapsulatedPacket() && isEnabledOption(options, "Print inside out"))
+            const_cast<PacketPrinter *>(this)->printPacketInsideOut(protocolDataUnit, options, context);
+        else
+            const_cast<PacketPrinter *>(this)->printPacketLeftToRight(protocolDataUnit, options, context);
+    }
 }
 
 std::string PacketPrinter::printPacketToString(Packet *packet, const char *format) const

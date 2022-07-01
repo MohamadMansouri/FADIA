@@ -1,28 +1,17 @@
 //
 // Copyright (C) 2011 Adriano (University of Pisa)
-// Copyright (C) 2012 Opensim Ltd.
+// Copyright (C) 2012 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
 #ifndef __INET_SIMPLEVOIPRECEIVER_H
 #define __INET_SIMPLEVOIPRECEIVER_H
 
-#include <list>
 #include <string.h>
 
-#include "inet/common/INETDefs.h"
+#include <list>
+
 #include "inet/common/INETMath.h"
 #include "inet/common/lifecycle/LifecycleUnsupported.h"
 #include "inet/networklayer/common/L3AddressResolver.h"
@@ -38,8 +27,7 @@ class SimpleVoipPacket;
 class INET_API SimpleVoipReceiver : public cSimpleModule, public LifecycleUnsupported, public UdpSocket::ICallback
 {
   private:
-    class VoipPacketInfo
-    {
+    class VoipPacketInfo {
       public:
         unsigned int packetID = 0;
         simtime_t creationTime;
@@ -50,8 +38,7 @@ class INET_API SimpleVoipReceiver : public cSimpleModule, public LifecycleUnsupp
     typedef std::list<VoipPacketInfo *> PacketsList;
     typedef std::vector<VoipPacketInfo> PacketsVector;
 
-    class TalkspurtInfo
-    {
+    class TalkspurtInfo {
       public:
         enum Status {
             EMPTY,
@@ -80,7 +67,7 @@ class INET_API SimpleVoipReceiver : public cSimpleModule, public LifecycleUnsupp
     int emodelBpl = -1;
     int emodelA = -1;
     simtime_t playoutDelay;
-    simtime_t mosSpareTime;    // spare time before calculating MOS (after calculated playout time of last packet)
+    simtime_t mosSpareTime; // spare time before calculating MOS (after calculated playout time of last packet)
 
     // state
     UdpSocket socket;
@@ -104,7 +91,7 @@ class INET_API SimpleVoipReceiver : public cSimpleModule, public LifecycleUnsupp
     void handleMessage(cMessage *msg) override;
     virtual void finish() override;
 
-    //UdpSocket::ICallback methods
+    // UdpSocket::ICallback methods
     virtual void socketDataArrived(UdpSocket *socket, Packet *packet) override;
     virtual void socketErrorArrived(UdpSocket *socket, Indication *indication) override;
     virtual void socketClosed(UdpSocket *socket) override {}
@@ -116,5 +103,5 @@ class INET_API SimpleVoipReceiver : public cSimpleModule, public LifecycleUnsupp
 
 } // namespace inet
 
-#endif // ifndef __INET_SIMPLEVOIPRECEIVER_H
+#endif
 

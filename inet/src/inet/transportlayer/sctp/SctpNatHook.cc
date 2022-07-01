@@ -1,3 +1,5 @@
+#include "inet/transportlayer/sctp/SctpNatHook.h"
+
 #include "inet/common/ModuleAccess.h"
 #include "inet/linklayer/common/InterfaceTag_m.h"
 #include "inet/networklayer/common/L3Tools.h"
@@ -7,7 +9,6 @@
 #include "inet/transportlayer/common/L4Tools.h"
 #include "inet/transportlayer/contract/sctp/SctpCommand_m.h"
 #include "inet/transportlayer/sctp/SctpAssociation.h"
-#include "inet/transportlayer/sctp/SctpNatHook.h"
 
 namespace inet {
 namespace sctp {
@@ -17,9 +18,6 @@ Define_Module(SctpNatHook);
 SctpNatHook::SctpNatHook()
 {
     ipLayer = nullptr;
-    natTable = nullptr;
-    rt = nullptr;
-    ift = nullptr;
     nattedPackets = 0;
 }
 
@@ -29,24 +27,23 @@ SctpNatHook::~SctpNatHook()
 
 void SctpNatHook::initialize()
 {
-    rt = getModuleFromPar<IRoutingTable>(par("routingTableModule"), this);
-    ift = getModuleFromPar<IInterfaceTable>(par("interfaceTableModule"), this);
-   // ipLayer = getModuleFromPar<IPv4>(par("networkProtocolModule"), this);
-    natTable = getModuleFromPar<SctpNatTable>(par("natTableModule"), this);
+    rt.reference(this, "routingTableModule", true);
+    ift.reference(this, "interfaceTableModule", true);
+    natTable.reference(this, "natTableModule", true);
     auto ipv4 = dynamic_cast<INetfilter *>(getModuleByPath("^.ipv4.ip"));
     ipv4->registerHook(0, this);
 }
 
-/*INetfilter::IHook::Result SctpNatHook::datagramForwardHook(INetworkHeader *datagram, const InterfaceEntry *inIE, const InterfaceEntry *& outIE, L3Address& nextHopAddr)*/
+/*INetfilter::IHook::Result SctpNatHook::datagramForwardHook(INetworkHeader *datagram, const NetworkInterface *inIE, const NetworkInterface *& outIE, L3Address& nextHopAddr)*/
 INetfilter::IHook::Result SctpNatHook::datagramForwardHook(Packet *datagram)
 {
     SctpNatEntry *entry;
     SctpChunk *chunk;
-    auto tag = datagram->findTag<InterfaceReq>();
-    const InterfaceEntry *outIE = (tag != nullptr ? ift->getInterfaceById(tag->getInterfaceId()) : nullptr);
+    const auto& tag = datagram->findTag<InterfaceReq>();
+    const NetworkInterface *outIE = (tag != nullptr ? ift->getInterfaceById(tag->getInterfaceId()) : nullptr);
 
-    auto inIeTag = datagram->findTag<InterfaceInd>();
-    const InterfaceEntry *inIE = (inIeTag != nullptr ? ift->getInterfaceById(inIeTag->getInterfaceId()) : nullptr);
+    const auto& inIeTag = datagram->findTag<InterfaceInd>();
+    const NetworkInterface *inIE = (inIeTag != nullptr ? ift->getInterfaceById(inIeTag->getInterfaceId()) : nullptr);
 
     const auto& dgram = removeNetworkProtocolHeader<Ipv4Header>(datagram);
 
@@ -55,7 +52,7 @@ INetfilter::IHook::Result SctpNatHook::datagramForwardHook(Packet *datagram)
         return INetfilter::IHook::ACCEPT;
     }
     if (dgram->isFragment()) {
-        //TODO process fragmented packets
+        // TODO process fragmented packets
         insertNetworkProtocolHeader(datagram, Protocol::ipv4, dgram);
         return INetfilter::IHook::ACCEPT;
     }
@@ -70,7 +67,8 @@ INetfilter::IHook::Result SctpNatHook::datagramForwardHook(Packet *datagram)
     unsigned int numberOfChunks = sctpMsg->getSctpChunksArraySize();
     if (numberOfChunks == 1) {
         chunk = sctpMsg->peekFirstChunk();
-    } else {
+    }
+    else {
         chunk = sctpMsg->peekLastChunk();
     }
     EV << "findEntry for " << dgram->getSrcAddress() << ":" << sctpMsg->getSrcPort() << " to " << dgram->getDestAddress() << ":" << sctpMsg->getDestPort() << " vTag=" << sctpMsg->getVTag() << "\n";
@@ -99,7 +97,8 @@ INetfilter::IHook::Result SctpNatHook::datagramForwardHook(Packet *datagram)
         sctp->setSrcPort(entry->getNattedPort());
         natTable->natEntries.push_back(entry);
         natTable->printNatTable();
-    } else {
+    }
+    else {
         EV << "other chunkType: " << (chunk->getSctpChunkType() == COOKIE_ECHO ? "Cookie_Echo" : "other") << ", VTag=" << sctpMsg->getVTag() << "\n";
         entry = natTable->findNatEntry(networkHeader->getSrcAddress(), sctp->getSrcPort(), networkHeader->getDestAddress(), sctp->getDestPort(), sctp->getVTag());
         if (entry == nullptr) {
@@ -141,7 +140,7 @@ INetfilter::IHook::Result SctpNatHook::datagramForwardHook(Packet *datagram)
     return INetfilter::IHook::ACCEPT;
 }
 
-/*INetfilter::IHook::Result SctpNatHook::datagramPreRoutingHook(INetworkHeader *datagram, const InterfaceEntry *inIE, const InterfaceEntry *& outIE, L3Address& nextHopAddr)*/
+/*INetfilter::IHook::Result SctpNatHook::datagramPreRoutingHook(INetworkHeader *datagram, const NetworkInterface *inIE, const NetworkInterface *& outIE, L3Address& nextHopAddr)*/
 INetfilter::IHook::Result SctpNatHook::datagramPreRoutingHook(Packet *datagram)
 {
     SctpNatEntry *entry;
@@ -155,7 +154,7 @@ INetfilter::IHook::Result SctpNatHook::datagramPreRoutingHook(Packet *datagram)
     }
 
     if (dgram->isFragment()) {
-        //TODO process fragmented packets
+        // TODO process fragmented packets
         insertNetworkProtocolHeader(datagram, Protocol::ipv4, dgram);
         return INetfilter::IHook::ACCEPT;
     }
@@ -172,7 +171,7 @@ INetfilter::IHook::Result SctpNatHook::datagramPreRoutingHook(Packet *datagram)
     if (!local) {
         entry = natTable->getEntry(dgram->getSourceAddress(), sctpMsg->getSrcPort(), dgram->getDestinationAddress(), sctpMsg->getDestPort(), sctpMsg->getVTag());
         EV_INFO << "getEntry for " << dgram->getSourceAddress() << ":" << sctpMsg->getSrcPort() << " to " << dgram->getDestinationAddress() << ":" << sctpMsg->getDestPort() << " peerVTag=" << sctpMsg->getVTag() << "\n";
-        uint32 numberOfChunks = sctpMsg->getSctpChunksArraySize();
+        uint32_t numberOfChunks = sctpMsg->getSctpChunksArraySize();
         if (entry == nullptr) {
             EV_INFO << "no entry found\n";
             if (numberOfChunks == 1)
@@ -206,7 +205,7 @@ INetfilter::IHook::Result SctpNatHook::datagramPreRoutingHook(Packet *datagram)
                /* SctpChunk *schunk = nullptr;
                 if (numberOfChunks > 0) {
                     EV << "number of chunks=" << numberOfChunks << "\n";
-                    for (uint32 i = 0; i < numberOfChunks; i++) {
+                    for (uint32_t i = 0; i < numberOfChunks; i++) {
                         schunk = (SctpChunk *)(sctpMsg->removeChunk());
                         if (schunk->getSctpChunkType() == DATA)
                             delete (SctpSimpleMessage *)schunk->decapsulate();
@@ -295,10 +294,9 @@ INetfilter::IHook::Result SctpNatHook::datagramPreRoutingHook(Packet *datagram)
     return INetfilter::IHook::ACCEPT;
 }
 
-
-void SctpNatHook::sendBackError(SctpHeader* sctp)
+void SctpNatHook::sendBackError(SctpHeader *sctp)
 {
-  //  SctpHeader *sctpmsg = new SctpHeader();
+//    SctpHeader *sctpmsg = new SctpHeader();
     delete sctp->removeFirstChunk();
     sctp->setChunkLength(B(SCTP_COMMON_HEADER));
     SctpErrorChunk *errorChunk = new SctpErrorChunk("NatError");
@@ -307,11 +305,11 @@ void SctpNatHook::sendBackError(SctpHeader* sctp)
     SctpSimpleErrorCauseParameter *cause = new SctpSimpleErrorCauseParameter("Cause");
     cause->setParameterType(MISSING_NAT_ENTRY);
     cause->setByteLength(4);
-   // cause->encapsulate(dgram->dup());
+//    cause->encapsulate(dgram->dup());
     errorChunk->setMBit(true);
     errorChunk->setTBit(true);
     errorChunk->addParameters(cause);
-    sctp->insertSctpChunks(errorChunk);
+    sctp->appendSctpChunks(errorChunk);
 }
 
 void SctpNatHook::finish()
@@ -320,7 +318,7 @@ void SctpNatHook::finish()
     if (isRegisteredHook(ipv4))
         ipv4->unregisterHook(this);
     ipLayer = nullptr;
-    EV_INFO<< getFullPath() << ": Natted packets: " << nattedPackets << "\n";
+    EV_INFO << getFullPath() << ": Natted packets: " << nattedPackets << "\n";
 }
 
 } // namespace sctp

@@ -1,26 +1,15 @@
 //
 // Copyright (C) 2013 Brno University of Technology (http://nes.fit.vutbr.cz/ansa)
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 3
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 // Authors: Veronika Rybova, Vladimir Vesely (ivesely@fit.vutbr.cz),
 //          Tamas Borbely (tomi@omnetpp.org)
 
 #ifndef __INET_PIMDM_H
 #define __INET_PIMDM_H
 
-#include "inet/common/INETDefs.h"
 #include "inet/common/Simsignals.h"
 #include "inet/common/packet/Packet.h"
 #include "inet/networklayer/ipv4/Ipv4InterfaceData.h"
@@ -42,8 +31,7 @@ class INET_API PimDm : public PimBase, protected cListener
   private:
     struct Route;
 
-    struct UpstreamInterface : public Interface
-    {
+    struct UpstreamInterface : public Interface {
         enum Flags {
             SOURCE_DIRECTLY_CONNECTED = 0x01
         };
@@ -56,21 +44,21 @@ class INET_API PimDm : public PimBase, protected cListener
 
         enum OriginatorState { NOT_ORIGINATOR, ORIGINATOR };
 
-        Ipv4Address nextHop;    // rpf neighbor
+        Ipv4Address nextHop; // rpf neighbor
 
         // graft prune state
         GraftPruneState graftPruneState;
-        cMessage *graftRetryTimer;    // scheduled in ACK_PENDING state for sending the next Graft message
-        cMessage *overrideTimer;      // when expires we are overriding a prune
-        simtime_t lastPruneSentTime;  // for rate limiting prune messages, 0 if no prune was sent
+        cMessage *graftRetryTimer; // scheduled in ACK_PENDING state for sending the next Graft message
+        cMessage *overrideTimer; // when expires we are overriding a prune
+        simtime_t lastPruneSentTime; // for rate limiting prune messages, 0 if no prune was sent
 
         // originator state
         OriginatorState originatorState;
-        cMessage *sourceActiveTimer;    // when expires we are going back to NOT_ORIGINATOR state
-        cMessage *stateRefreshTimer;    // scheduled in ORIGINATOR state for sending the next StateRefresh message
+        cMessage *sourceActiveTimer; // when expires we are going back to NOT_ORIGINATOR state
+        cMessage *stateRefreshTimer; // scheduled in ORIGINATOR state for sending the next StateRefresh message
         unsigned short maxTtlSeen;
 
-        UpstreamInterface(Route *owner, InterfaceEntry *ie, Ipv4Address neighbor, bool isSourceDirectlyConnected)
+        UpstreamInterface(Route *owner, NetworkInterface *ie, Ipv4Address neighbor, bool isSourceDirectlyConnected)
             : Interface(owner, ie), nextHop(neighbor),
             graftPruneState(FORWARDING), graftRetryTimer(nullptr), overrideTimer(nullptr), lastPruneSentTime(0.0),
             originatorState(NOT_ORIGINATOR), sourceActiveTimer(nullptr), stateRefreshTimer(nullptr), maxTtlSeen(0)
@@ -81,13 +69,13 @@ class INET_API PimDm : public PimBase, protected cListener
         int getInterfaceId() const { return ie->getInterfaceId(); }
         Ipv4Address rpfNeighbor() { return assertState == I_LOST_ASSERT ? winnerMetric.address : nextHop; }
         GraftPruneState getGraftPruneState() const { return graftPruneState; }
-        cMessage * getGraftRetryTimer() const { return graftRetryTimer; }
-        cMessage * getOverrideTimer() const { return overrideTimer; }
+        cMessage *getGraftRetryTimer() const { return graftRetryTimer; }
+        cMessage *getOverrideTimer() const { return overrideTimer; }
         simtime_t getLastPruneSentTime() const { return lastPruneSentTime; }
         bool isSourceDirectlyConnected() const { return isFlagSet(SOURCE_DIRECTLY_CONNECTED); }
         OriginatorState getOriginatorState() const { return originatorState; }
-        cMessage * getSourceActiveTimer() const { return sourceActiveTimer; }
-        cMessage * getStateRefreshTimer() const { return stateRefreshTimer; }
+        cMessage *getSourceActiveTimer() const { return sourceActiveTimer; }
+        cMessage *getStateRefreshTimer() const { return stateRefreshTimer; }
         unsigned short getMaxTtlSeen() const { return maxTtlSeen; }
 
         void startGraftRetryTimer();
@@ -99,8 +87,7 @@ class INET_API PimDm : public PimBase, protected cListener
         bool isPruneLimitTimerRunning() { return lastPruneSentTime > 0.0 && simTime() < lastPruneSentTime + pimdm()->pruneLimitInterval; }
     };
 
-    struct DownstreamInterface : public Interface
-    {
+    struct DownstreamInterface : public Interface {
         enum Flags {
             HAS_CONNECTED_RECEIVERS = 0x01
         };
@@ -113,10 +100,10 @@ class INET_API PimDm : public PimBase, protected cListener
 
         // prune state
         PruneState pruneState;
-        cMessage *pruneTimer;         // scheduled when entering into PRUNED state, when expires the interface goes to NO_INFO (forwarding) state
-        cMessage *prunePendingTimer;  // scheduled when a Prune is received, when expires the interface goes to PRUNED state
+        cMessage *pruneTimer; // scheduled when entering into PRUNED state, when expires the interface goes to NO_INFO (forwarding) state
+        cMessage *prunePendingTimer; // scheduled when a Prune is received, when expires the interface goes to PRUNED state
 
-        DownstreamInterface(Route *owner, InterfaceEntry *ie)
+        DownstreamInterface(Route *owner, NetworkInterface *ie)
             : Interface(owner, ie),
             pruneState(NO_INFO), pruneTimer(nullptr), prunePendingTimer(nullptr)
         { ASSERT(owner), ASSERT(ie); }
@@ -124,8 +111,8 @@ class INET_API PimDm : public PimBase, protected cListener
         Route *route() const { return check_and_cast<Route *>(owner); }
         PimDm *pimdm() const { return check_and_cast<PimDm *>(owner->owner); }
         PruneState getPruneState() { return pruneState; }
-        cMessage * getPruneTimer() const { return pruneTimer; }
-        cMessage * getPrunePendingTimer() const { return prunePendingTimer; }
+        cMessage *getPruneTimer() const { return pruneTimer; }
+        cMessage *getPrunePendingTimer() const { return prunePendingTimer; }
         bool hasConnectedReceivers() const { return isFlagSet(HAS_CONNECTED_RECEIVERS); }
         void setHasConnectedReceivers(bool value) { setFlag(HAS_CONNECTED_RECEIVERS, value); }
         bool isInOlist() const;
@@ -135,8 +122,7 @@ class INET_API PimDm : public PimBase, protected cListener
         void stopPrunePendingTimer();
     };
 
-    struct Route : public RouteEntry
-    {
+    struct Route : public RouteEntry {
         UpstreamInterface *upstreamInterface;
         std::vector<DownstreamInterface *> downstreamInterfaces;
 
@@ -144,7 +130,7 @@ class INET_API PimDm : public PimBase, protected cListener
             : RouteEntry(owner, source, group), upstreamInterface(nullptr) {}
         virtual ~Route();
         DownstreamInterface *findDownstreamInterfaceByInterfaceId(int interfaceId) const;
-        DownstreamInterface *createDownstreamInterface(InterfaceEntry *ie);
+        DownstreamInterface *createDownstreamInterface(NetworkInterface *ie);
         DownstreamInterface *removeDownstreamInterface(int interfaceId);
         bool isOilistNull();
     };
@@ -154,12 +140,11 @@ class INET_API PimDm : public PimBase, protected cListener
     typedef std::map<SourceAndGroup, Route *> RoutingTable;
 
     // for updating the forwarding state of the route when the state of the downstream interface changes
-    class PimDmOutInterface : public IMulticastRoute::OutInterface
-    {
+    class PimDmOutInterface : public IMulticastRoute::OutInterface {
         DownstreamInterface *downstream;
 
       public:
-        PimDmOutInterface(InterfaceEntry *ie, DownstreamInterface *downstream)
+        PimDmOutInterface(NetworkInterface *ie, DownstreamInterface *downstream)
             : IMulticastRoute::OutInterface(ie), downstream(downstream) {}
         virtual bool isEnabled() override { return downstream->isInOlist(); }
     };
@@ -204,8 +189,8 @@ class INET_API PimDm : public PimBase, protected cListener
     void unroutableMulticastPacketArrived(Ipv4Address srcAddress, Ipv4Address destAddress, unsigned short ttl);
     void multicastPacketArrivedOnNonRpfInterface(Ipv4Address group, Ipv4Address source, int interfaceId);
     void multicastPacketArrivedOnRpfInterface(int interfaceId, Ipv4Address group, Ipv4Address source, unsigned short ttl);
-    void multicastReceiverAdded(InterfaceEntry *ie, Ipv4Address newAddr);
-    void multicastReceiverRemoved(InterfaceEntry *ie, Ipv4Address oldAddr);
+    void multicastReceiverAdded(NetworkInterface *ie, Ipv4Address newAddr);
+    void multicastReceiverRemoved(NetworkInterface *ie, Ipv4Address oldAddr);
     void rpfInterfaceHasChanged(Ipv4MulticastRoute *route, Ipv4Route *routeToSource);
 
     // process timers
@@ -239,13 +224,13 @@ class INET_API PimDm : public PimBase, protected cListener
     void sendGraftPacket(Ipv4Address nextHop, Ipv4Address src, Ipv4Address grp, int intId);
     void sendGraftAckPacket(Packet *pk, const Ptr<const PimGraft>& graftPacket);
     void sendStateRefreshPacket(Ipv4Address originator, Route *route, DownstreamInterface *downstream, unsigned short ttl);
-    void sendAssertPacket(Ipv4Address source, Ipv4Address group, AssertMetric metric, InterfaceEntry *ie);
+    void sendAssertPacket(Ipv4Address source, Ipv4Address group, AssertMetric metric, NetworkInterface *ie);
     void sendToIP(Packet *packet, Ipv4Address source, Ipv4Address dest, int outInterfaceId);
 
     // helpers
     void restartTimer(cMessage *timer, double interval);
     void cancelAndDeleteTimer(cMessage *& timer);
-    PimInterface *getIncomingInterface(InterfaceEntry *fromIE);
+    PimInterface *getIncomingInterface(NetworkInterface *fromIE);
     Ipv4MulticastRoute *findIpv4MulticastRoute(Ipv4Address group, Ipv4Address source);
     Route *findRoute(Ipv4Address source, Ipv4Address group);
     void deleteRoute(Ipv4Address source, Ipv4Address group);
@@ -261,7 +246,7 @@ class INET_API PimDm : public PimBase, protected cListener
     virtual void stopPIMRouting();
 };
 
-}    // namespace inet
+} // namespace inet
 
-#endif // ifndef __INET_PIMDM_H
+#endif
 

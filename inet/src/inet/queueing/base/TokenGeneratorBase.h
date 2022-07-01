@@ -1,54 +1,41 @@
 //
-// Copyright (C) OpenSim Ltd.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see http://www.gnu.org/licenses/.
-//
+
 
 #ifndef __INET_TOKENGENERATORBASE_H
 #define __INET_TOKENGENERATORBASE_H
 
-#include "inet/common/StringFormat.h"
-#include "inet/queueing/contract/IPacketQueueingElement.h"
-#include "inet/queueing/server/TokenBasedServer.h"
+#include "inet/common/ModuleRefByPar.h"
+#include "inet/queueing/base/PacketProcessorBase.h"
+#include "inet/queueing/contract/IPacketProcessor.h"
+#include "inet/queueing/contract/ITokenStorage.h"
 
 namespace inet {
 namespace queueing {
 
-class INET_API TokenGeneratorBase : public PacketQueueingElementBase, public StringFormat::IDirectiveResolver
+class INET_API TokenGeneratorBase : public PacketProcessorBase
 {
   public:
     static simsignal_t tokensCreatedSignal;
 
   protected:
-    const char *displayStringTextFormat = nullptr;
-    TokenBasedServer *server = nullptr;
+    ModuleRefByPar<ITokenStorage> storage;
     int numTokensGenerated = -1;
 
   protected:
     virtual void initialize(int stage) override;
 
-    virtual void updateDisplayString();
-
   public:
-    virtual bool supportsPushPacket(cGate *gate) const override { return false; }
-    virtual bool supportsPopPacket(cGate *gate) const override { return false; }
-
+    virtual bool supportsPacketPushing(cGate *gate) const override { return false; }
+    virtual bool supportsPacketPulling(cGate *gate) const override { return false; }
     virtual const char *resolveDirective(char directive) const override;
 };
 
 } // namespace queueing
 } // namespace inet
 
-#endif // ifndef __INET_TOKENGENERATORBASE_H
+#endif
 

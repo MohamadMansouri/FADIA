@@ -1,19 +1,9 @@
 //
-// Copyright (C) OpenSim Ltd.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 #include "inet/common/MatchableObject.h"
 
@@ -52,7 +42,7 @@ void MatchableObject::splitIndex(char *indexedName, int& index)
             throw cRuntimeError("Unmatched '['");
         *startbracket = '\0';
         char *end;
-        index = strtol(startbracket+1, &end, 10);
+        index = strtol(startbracket + 1, &end, 10);
         if (end != lastcharp)
             throw cRuntimeError("Brackets [] must contain numeric index");
     }
@@ -61,7 +51,7 @@ void MatchableObject::splitIndex(char *indexedName, int& index)
 bool MatchableObject::findDescriptorField(cClassDescriptor *classDescriptor, const char *attribute, int& fieldId, int& index)
 {
     // attribute may be in the form "fieldName[index]"; split the two
-    char *fieldNameBuf = new char[strlen(attribute)+1];
+    char *fieldNameBuf = new char[strlen(attribute) + 1];
     strcpy(fieldNameBuf, attribute);
     splitIndex(fieldNameBuf, index);
 
@@ -79,7 +69,7 @@ const char *MatchableObject::getAsString(const char *attribute) const
             return nullptr;
     }
 
-/*FIXME TBD
+/*FIXME
     // start tokenizing the path
     cStringTokenizer tokenizer(attribute, ".");
     const char *token;
@@ -99,9 +89,9 @@ const char *MatchableObject::getAsString(const char *attribute) const
     if (!found)
         return nullptr;
 
-    attributeValue = classDescriptor->getFieldValueAsString((void *)object, fieldId, index);
+    attributeValue = classDescriptor->getFieldValueAsString(toAnyPtr(object), fieldId, index);
     return attributeValue.c_str();
 }
 
-}  // namespace inet
+} // namespace inet
 

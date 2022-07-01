@@ -1,24 +1,16 @@
 //
-// Copyright (C) 2004 Andras Varga
+// Copyright (C) 2004 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 package inet.networklayer.ipv4;
 
 moduleinterface IIpv4
 {
+    parameters:
+        @display("i=block/routing");
     gates:
         input transportIn @labels(Ipv4ControlInfo/down,TcpHeader,UdpHeader,SctpHeader);
         output transportOut @labels(Ipv4ControlInfo/up,TcpHeader,UdpHeader,SctpHeader);
@@ -86,8 +78,6 @@ moduleinterface IIpv4
 //
 // @see ~Ipv4RoutingTable, ~Arp
 //
-// @author Andras Varga
-//
 simple Ipv4 like IIpv4
 {
     parameters:
@@ -96,7 +86,6 @@ simple Ipv4 like IIpv4
         string arpModule;
         string icmpModule;
         string crcMode @enum("declared", "computed") = default("declared");
-        double procDelay @unit(s) = default(0s);
         int timeToLive = default(32);
         int multicastTimeToLive = default(32);
         double fragmentTimeout @unit(s) = default(60s);

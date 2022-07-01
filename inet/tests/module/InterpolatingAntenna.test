@@ -3,7 +3,7 @@
 Tests InterpolatingAntenna for a simple configuration.
 
 %file: test.cc
-#include "inet/physicallayer/contract/packetlevel/IAntenna.h"
+#include "inet/physicallayer/wireless/common/contract/packetlevel/IAntenna.h"
 
 namespace InterpolatingAntenna {
 
@@ -41,7 +41,7 @@ void AntennaTest::initialize(int stage)
 
 import inet.networklayer.configurator.ipv4.Ipv4NetworkConfigurator;
 import inet.node.inet.WirelessHost;
-import inet.physicallayer.ieee80211.packetlevel.Ieee80211ScalarRadioMedium;
+import inet.physicallayer.wireless.ieee80211.packetlevel.Ieee80211ScalarRadioMedium;
 
 simple AntennaTest
 {
@@ -92,8 +92,7 @@ snapshot-file = "${resultdir}/${configname}-${runnumber}.sna"
 %contains: stdout
 1 5.5 10 5.5 1
 %#--------------------------------------------------------------------------------------------------------------
-%not-contains: stdout
-undisposed object:
-%not-contains: stdout
--- check module destructor
+%postrun-command: grep "undisposed object:" test.out > test_undisposed.out || true
+%not-contains: test_undisposed.out
+undisposed object: (
 %#--------------------------------------------------------------------------------------------------------------

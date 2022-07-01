@@ -1,19 +1,9 @@
 //
-// Copyright (C) OpenSim Ltd.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see http://www.gnu.org/licenses/.
-//
+
 
 #ifndef __INET_PACKETTAGGERBASE_H
 #define __INET_PACKETTAGGERBASE_H
@@ -33,6 +23,7 @@ class INET_API PacketTaggerBase : public PacketMarkerBase
     int interfaceId = -1;
     int hopLimit = -1;
     int vlanId = -1;
+    int pcp = -1;
     W transmissionPower = W(NaN);
 
   protected:
@@ -43,5 +34,5 @@ class INET_API PacketTaggerBase : public PacketMarkerBase
 } // namespace queueing
 } // namespace inet
 
-#endif // ifndef __INET_PACKETTAGGERBASE_H
+#endif
 

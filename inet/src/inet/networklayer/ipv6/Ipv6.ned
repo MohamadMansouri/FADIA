@@ -1,18 +1,9 @@
 //
-// Copyright (C) 2005 Andras Varga
+// Copyright (C) 2005 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public
-// License along with this program; if not, see <http://www.gnu.org/licenses/>.
+
 
 package inet.networklayer.ipv6;
 
@@ -44,7 +35,7 @@ package inet.networklayer.ipv6;
 // calling C++ methods of ~Ipv6RoutingTable. No message exchange with ~Ipv6RoutingTable
 // takes place.
 //
-//#FIXME TBD describe operation
+//#FIXME describe operation
 //
 // Routing protocol implementations can also query and manipulate the route table
 // by calling ~Ipv6RoutingTable's methods in C++.
@@ -57,8 +48,6 @@ package inet.networklayer.ipv6;
 //
 // @see ~Ipv6RoutingTable, ~Ipv6NeighbourDiscovery, ~Icmpv6
 //
-// @author Andras Varga
-//
 simple Ipv6
 {
     parameters:
@@ -69,8 +58,11 @@ simple Ipv6
         string ipv6TunnelingModule;
         double procDelay @unit(s) = default(0s);
         @display("i=block/network2");
-        @signal[packetDropped](type=cPacket);
+        @signal[packetDropped](type=inet::Packet);
         @signal[packetSentToUpper](type=inet::Packet);
+        @signal[packetReceivedFromUpper](type=inet::Packet);
+        @signal[packetSentToLower](type=inet::Packet);
+        @signal[packetReceivedFromLower](type=inet::Packet);
     gates:
         input transportIn @labels(Ipv6ControlInfo/down,TcpHeader,UdpHeader);
         output transportOut @labels(Ipv6ControlInfo/up,TcpHeader,UdpHeader);

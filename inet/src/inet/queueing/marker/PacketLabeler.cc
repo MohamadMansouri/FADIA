@@ -1,22 +1,13 @@
 //
-// Copyright (C) OpenSim Ltd.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see http://www.gnu.org/licenses/.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-#include "inet/queueing/common/LabelsTag_m.h"
+
 #include "inet/queueing/marker/PacketLabeler.h"
+
+#include "inet/queueing/common/LabelsTag_m.h"
 
 namespace inet {
 namespace queueing {
@@ -52,8 +43,8 @@ void PacketLabeler::markPacket(Packet *packet)
     for (int i = 0; i < (int)filters.size(); i++) {
         auto filter = filters[i];
         if (filter->matchesPacket(packet)) {
-            EV_INFO << "Marking packet " << packet->getName() << " with " << labels[i] << ".\n";
-            labelsTag->insertLabels(labels[i].c_str());
+            EV_INFO << "Marking packet" << EV_FIELD(label, labels[i]) << EV_FIELD(packet) << EV_ENDL;
+            labelsTag->appendLabels(labels[i].c_str());
         }
     }
 }

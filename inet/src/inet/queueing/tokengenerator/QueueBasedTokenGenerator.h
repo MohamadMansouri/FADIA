@@ -1,23 +1,14 @@
 //
-// Copyright (C) OpenSim Ltd.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see http://www.gnu.org/licenses/.
-//
+
 
 #ifndef __INET_QUEUEBASEDTOKENGENERATOR_H
 #define __INET_QUEUEBASEDTOKENGENERATOR_H
 
+#include "inet/common/ModuleRefByPar.h"
 #include "inet/queueing/base/TokenGeneratorBase.h"
 #include "inet/queueing/contract/IPacketQueue.h"
 
@@ -29,7 +20,7 @@ class INET_API QueueBasedTokenGenerator : public TokenGeneratorBase, public cLis
   protected:
     int minNumPackets = -1;
     b minTotalLength = b(-1);
-    IPacketQueue *queue = nullptr;
+    ModuleRefByPar<IPacketQueue> queue;
     cPar *numTokensParameter = nullptr;
 
   protected:
@@ -38,8 +29,8 @@ class INET_API QueueBasedTokenGenerator : public TokenGeneratorBase, public cLis
     virtual void generateTokens();
 
   public:
-    virtual bool supportsPushPacket(cGate *gate) const override { return false; }
-    virtual bool supportsPopPacket(cGate *gate) const override { return false; }
+    virtual bool supportsPacketPushing(cGate *gate) const override { return false; }
+    virtual bool supportsPacketPulling(cGate *gate) const override { return false; }
 
     virtual void receiveSignal(cComponent *source, simsignal_t signal, cObject *object, cObject *details) override;
 };
@@ -47,5 +38,5 @@ class INET_API QueueBasedTokenGenerator : public TokenGeneratorBase, public cLis
 } // namespace queueing
 } // namespace inet
 
-#endif // ifndef __INET_QUEUEBASEDTOKENGENERATOR_H
+#endif
 

@@ -1,19 +1,8 @@
-/***************************************************************************
-                          RtpPayloadSender.h  -  description
-                             -------------------
-    begin                : Wed Nov 28 2001
-    copyright            : (C) 2001 by Matthias Oppitz
-    email                : Matthias.Oppitz@gmx.de
-***************************************************************************/
-
-/***************************************************************************
-*                                                                         *
-*   This program is free software; you can redistribute it and/or modify  *
-*   it under the terms of the GNU General Public License as published by  *
-*   the Free Software Foundation; either version 2 of the License, or     *
-*   (at your option) any later version.                                   *
-*                                                                         *
-***************************************************************************/
+//
+// Copyright (C) 2001 Matthias Oppitz <Matthias.Oppitz@gmx.de>
+//
+// SPDX-License-Identifier: LGPL-3.0-or-later
+//
 
 #ifndef __INET_RTPPAYLOADSENDER_H
 #define __INET_RTPPAYLOADSENDER_H
@@ -26,7 +15,7 @@ namespace inet {
 
 namespace rtp {
 
-//Forward declarations:
+// Forward declarations:
 class RtpInnerPacket;
 
 /**
@@ -61,8 +50,8 @@ class INET_API RtpPayloadSender : public cSimpleModule
      * A sender module's transmission can be in different states.
      */
     enum SenderStatus {
-        STOPPED,    //< No transmission.
-        PLAYING    ///< Data is being sent.
+        STOPPED, // < No transmission.
+        PLAYING ///< Data is being sent.
     };
 
     /**
@@ -162,7 +151,7 @@ class INET_API RtpPayloadSender : public cSimpleModule
     /**
      * The ssrc identifier of this sender module.
      */
-    uint32 _ssrc = 0;
+    uint32_t _ssrc = 0;
 
     /**
      * The payload type this sender creates.
@@ -178,23 +167,23 @@ class INET_API RtpPayloadSender : public cSimpleModule
      * The first rtp time stamp used for created rtp data
      * packets. The value is chosen randomly.
      */
-    uint32 _timeStampBase = 0;
+    uint32_t _timeStampBase = 0;
 
     /**
      * The current rtp time stamp.
      */
-    uint32 _timeStamp = 0;
+    uint32_t _timeStamp = 0;
 
     /**
      * The first sequence number used for created rtp data
      * packets. The value is chosen randomly.
      */
-    uint16 _sequenceNumberBase = 0;
+    uint16_t _sequenceNumberBase = 0;
 
     /**
      * The current sequence number.
      */
-    uint16 _sequenceNumber = 0;
+    uint16_t _sequenceNumber = 0;
 
     /**
      * The current state of data transmission.
@@ -213,5 +202,5 @@ class INET_API RtpPayloadSender : public cSimpleModule
 
 } // namespace inet
 
-#endif // ifndef __INET_RTPPAYLOADSENDER_H
+#endif
 

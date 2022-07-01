@@ -1,32 +1,22 @@
 //
-// Copyright (C) 2005,2011 Andras Varga
+// Copyright (C) 2005,2011 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-#include "inet/applications/common/SocketTag_m.h"
+
 #include "inet/common/ProtocolTag_m.h"
 #include "inet/common/packet/Message.h"
+#include "inet/common/socket/SocketTag_m.h"
 #include "inet/linklayer/common/InterfaceTag_m.h"
 #include "inet/networklayer/common/DscpTag_m.h"
-#include "inet/networklayer/common/TosTag_m.h"
 #include "inet/networklayer/common/HopLimitTag_m.h"
 #include "inet/networklayer/common/L3AddressTag_m.h"
+#include "inet/networklayer/common/TosTag_m.h"
 
-#ifdef WITH_IPv4
+#ifdef INET_WITH_IPv4
 #include "inet/networklayer/ipv4/Ipv4InterfaceData.h"
-#endif // ifdef WITH_IPv4
+#endif // ifdef INET_WITH_IPv4
 
 #include "inet/transportlayer/common/L4PortTag_m.h"
 #include "inet/transportlayer/contract/udp/UdpControlInfo.h"
@@ -96,15 +86,19 @@ void UdpSocket::send(Packet *pk)
 
 void UdpSocket::close()
 {
+    if (sockState == CLOSED)
+        return;
     auto request = new Request("close", UDP_C_CLOSE);
     UdpCloseCommand *ctrl = new UdpCloseCommand();
     request->setControlInfo(ctrl);
     sendToUDP(request);
-    sockState = CONNECTED;
+    sockState = CLOSED;
 }
 
 void UdpSocket::destroy()
 {
+    if (this->gateToUdp == nullptr)
+        return;
     auto request = new Request("destroy", UDP_C_DESTROY);
     auto ctrl = new UdpDestroyCommand();
     request->setControlInfo(ctrl);
@@ -311,14 +305,8 @@ void UdpSocket::sendToUDP(cMessage *msg)
 {
     if (!gateToUdp)
         throw cRuntimeError("UdpSocket: setOutputGate() must be invoked before socket can be used");
-
-    cObject *ctrl = msg->getControlInfo();
-    EV_TRACE << "UdpSocket: Send (" << msg->getClassName() << ")" << msg->getFullName();
-    if (ctrl)
-        EV_TRACE << "  control info: (" << ctrl->getClassName() << ")" << ctrl->getFullName();
-    EV_TRACE << endl;
-
-    auto& tags = getTags(msg);
+    EV_DEBUG << "Sending to UDP protocol" << EV_FIELD(msg) << EV_ENDL;
+    auto& tags = check_and_cast<ITaggedObject *>(msg)->getTags();
     tags.addTagIfAbsent<DispatchProtocolReq>()->setProtocol(&Protocol::udp);
     tags.addTagIfAbsent<SocketReq>()->setSocketId(socketId);
     check_and_cast<cSimpleModule *>(gateToUdp->getOwnerModule())->send(msg, gateToUdp);
@@ -384,11 +372,10 @@ void UdpSocket::processMessage(cMessage *msg)
 
 bool UdpSocket::belongsToSocket(cMessage *msg) const
 {
-    auto& tags = getTags(msg);
-    auto socketInd = tags.findTag<SocketInd>();
+    auto& tags = check_and_cast<ITaggedObject *>(msg)->getTags();
+    const auto& socketInd = tags.findTag<SocketInd>();
     return socketInd != nullptr && socketInd->getSocketId() == socketId;
 }
-
 
 } // namespace inet
 

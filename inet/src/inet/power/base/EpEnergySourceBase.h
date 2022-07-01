@@ -1,19 +1,9 @@
 //
-// Copyright (C) OpenSim Ltd.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 #ifndef __INET_EPENERGYSOURCEBASE_H
 #define __INET_EPENERGYSOURCEBASE_H
@@ -28,8 +18,6 @@ namespace power {
 
 class INET_API EpEnergySourceBase : public EnergySourceBase, public virtual IEpEnergySource, public cListener
 {
-  public:
-    W totalPowerConsumption = W(NaN);
 
   protected:
     virtual W computeTotalPowerConsumption() const;
@@ -37,6 +25,7 @@ class INET_API EpEnergySourceBase : public EnergySourceBase, public virtual IEpE
 
   public:
     virtual W getTotalPowerConsumption() const override { return totalPowerConsumption; }
+    W totalPowerConsumption = W(NaN);
 
     virtual void addEnergyConsumer(const IEnergyConsumer *energyConsumer) override;
     virtual void removeEnergyConsumer(const IEnergyConsumer *energyConsumer) override;
@@ -46,5 +35,5 @@ class INET_API EpEnergySourceBase : public EnergySourceBase, public virtual IEpE
 
 } // namespace inet
 
-#endif // ifndef __INET_EPENERGYSOURCEBASE_H
+#endif
 

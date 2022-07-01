@@ -1,58 +1,42 @@
 //
-// Copyright (C) OpenSim Ltd.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see http://www.gnu.org/licenses/.
-//
+
 
 #ifndef __INET_ACTIVEPACKETSINK_H
 #define __INET_ACTIVEPACKETSINK_H
 
-#include "inet/queueing/base/PacketSinkBase.h"
-#include "inet/queueing/contract/IActivePacketSink.h"
+#include "inet/common/clock/ClockUserModuleMixin.h"
+#include "inet/queueing/base/ActivePacketSinkBase.h"
 
 namespace inet {
 namespace queueing {
 
-class INET_API ActivePacketSink : public PacketSinkBase, public IActivePacketSink
+class INET_API ActivePacketSink : public ClockUserModuleMixin<ActivePacketSinkBase>
 {
-  public:
-    cGate *inputGate = nullptr;
-    IPassivePacketSource *provider = nullptr;
-
+  protected:
     cPar *collectionIntervalParameter = nullptr;
-    cMessage *collectionTimer = nullptr;
+    ClockEvent *collectionTimer = nullptr;
+    bool scheduleForAbsoluteTime = false;
 
   protected:
     virtual void initialize(int stage) override;
     virtual void handleMessage(cMessage *message) override;
 
-    virtual void scheduleCollectionTimer();
+    virtual void scheduleCollectionTimer(double delay);
     virtual void collectPacket();
 
   public:
-    virtual ~ActivePacketSink() { cancelAndDelete(collectionTimer); }
+    virtual ~ActivePacketSink() { cancelAndDeleteClockEvent(collectionTimer); }
 
-    virtual IPassivePacketSource *getProvider(cGate *gate) override { return provider; }
-
-    virtual bool supportsPushPacket(cGate *gate) const override { return false; }
-    virtual bool supportsPopPacket(cGate *gate) const override { return inputGate == gate; }
-
-    virtual void handleCanPopPacket(cGate *gate) override;
+    virtual void handleCanPullPacketChanged(cGate *gate) override;
+    virtual void handlePullPacketProcessed(Packet *packet, cGate *gate, bool successful) override;
 };
 
 } // namespace queueing
 } // namespace inet
 
-#endif // ifndef __INET_ACTIVEPACKETSINK_H
+#endif
 

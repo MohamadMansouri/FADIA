@@ -1,22 +1,17 @@
 //
-// Copyright 2006 Andras Varga
+// Copyright (C) 2006 OpenSim Ltd.
 //
-// This library is free software, you can redistribute it and/or modify
-// it under  the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation;
-// either version 2 of the License, or any later version.
-// The library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-// See the GNU Lesser General Public License for more details.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
+
+
+#include "inet/transportlayer/tcp_common/TcpSpoof.h"
 
 #include "inet/common/ProtocolTag_m.h"
 #include "inet/networklayer/common/IpProtocolId_m.h"
 #include "inet/networklayer/common/L3AddressTag_m.h"
 #include "inet/networklayer/contract/IL3AddressType.h"
 #include "inet/transportlayer/common/L4Tools.h"
-#include "inet/transportlayer/tcp_common/TcpSpoof.h"
 
 namespace inet {
 namespace tcp {
@@ -55,7 +50,7 @@ void TcpSpoof::sendSpoofPacket()
     tcpseg->setDestPort(destPort);
     tcpseg->setChunkLength(TCP_MIN_HEADER_LENGTH);
     tcpseg->setSequenceNo(seq);
-    //tcpseg->setAckNo(...);
+//    tcpseg->setAckNo(...);
     tcpseg->setSynBit(isSYN);
     tcpseg->setWindow(16384);
     insertTransportProtocolHeader(packet, Protocol::tcp, tcpseg);
@@ -66,7 +61,7 @@ void TcpSpoof::sendSpoofPacket()
 void TcpSpoof::sendToIP(Packet *pk, L3Address src, L3Address dest)
 {
     EV_INFO << "Sending: ";
-    //printSegmentBrief(tcpseg);
+//    printSegmentBrief(tcpseg);
 
     ASSERT(pk != nullptr);
     IL3AddressType *addressType = dest.getAddressType();

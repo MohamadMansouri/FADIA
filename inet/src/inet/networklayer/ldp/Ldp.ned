@@ -1,16 +1,8 @@
 //
-// (C) 2005 Vojta Janota
-// (C) 2004 Andras Varga
+// Copyright (C) 2005 Vojta Janota
+// Copyright (C) 2004 Andras Varga
 //
-// This library is free software, you can redistribute it
-// and/or modify
-// it under  the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation;
-// either version 2 of the License, or any later version.
-// The library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-// See the GNU Lesser General Public License for more details.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
 package inet.networklayer.ldp;
@@ -33,7 +25,7 @@ import inet.applications.contract.IApp;
 // Message processing in the ~Ldp module is explained in
 // <a href="ldp-processing.html">LDP Message Processing</a>
 //
-// @author Andras Varga, Vojta Janota
+// @author Vojta Janota
 //
 simple Ldp like IApp
 {

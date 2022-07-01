@@ -1,18 +1,7 @@
 //
 // Copyright (C) 2006 Andras Babos and Andras Varga
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
 #ifndef __INET_OSPFV2INTERFACE_H
@@ -22,7 +11,6 @@
 #include <map>
 #include <vector>
 
-#include "inet/common/INETDefs.h"
 #include "inet/common/packet/Packet.h"
 #include "inet/networklayer/contract/IInterfaceTable.h"
 #include "inet/routing/ospfv2/neighbor/Ospfv2Neighbor.h"
@@ -40,38 +28,38 @@ class INET_API Ospfv2Interface
 {
   public:
     enum Ospfv2InterfaceType {
-        UNKNOWN_TYPE = 0,
-        POINTTOPOINT = 1,
-        BROADCAST = 2,
-        NBMA = 3,
+        UNKNOWN_TYPE      = 0,
+        POINTTOPOINT      = 1,
+        BROADCAST         = 2,
+        NBMA              = 3,
         POINTTOMULTIPOINT = 4,
-        VIRTUAL = 5
+        VIRTUAL           = 5
     };
 
     enum Ospfv2InterfaceEventType {
-        INTERFACE_UP = 0,
-        HELLO_TIMER = 1,
-        WAIT_TIMER = 2,
+        INTERFACE_UP          = 0,
+        HELLO_TIMER           = 1,
+        WAIT_TIMER            = 2,
         ACKNOWLEDGEMENT_TIMER = 3,
-        BACKUP_SEEN = 4,
-        NEIGHBOR_CHANGE = 5,
-        LOOP_INDICATION = 6,
-        UNLOOP_INDICATION = 7,
-        INTERFACE_DOWN = 8
+        BACKUP_SEEN           = 4,
+        NEIGHBOR_CHANGE       = 5,
+        LOOP_INDICATION       = 6,
+        UNLOOP_INDICATION     = 7,
+        INTERFACE_DOWN        = 8
     };
 
     enum Ospfv2InterfaceStateType {
-        DOWN_STATE = 0,
-        LOOPBACK_STATE = 1,
-        WAITING_STATE = 2,
-        POINTTOPOINT_STATE = 3,
+        DOWN_STATE                  = 0,
+        LOOPBACK_STATE              = 1,
+        WAITING_STATE               = 2,
+        POINTTOPOINT_STATE          = 3,
         NOT_DESIGNATED_ROUTER_STATE = 4,
-        BACKUP_STATE = 5,
-        DESIGNATED_ROUTER_STATE = 6
+        BACKUP_STATE                = 5,
+        DESIGNATED_ROUTER_STATE     = 6
     };
 
     enum Ospfv2InterfaceMode {
-        ACTIVE = 0,
+        ACTIVE  = 0,
         PASSIVE = 1,
         NO_OSPF = 2,
     };
@@ -99,7 +87,7 @@ class INET_API Ospfv2Interface
     std::map<RouterId, Neighbor *> neighboringRoutersByID;
     std::map<Ipv4Address, Neighbor *> neighboringRoutersByAddress;
     std::vector<Neighbor *> neighboringRouters;
-    std::map<Ipv4Address, std::list<Ospfv2LsaHeader> > delayedAcknowledgements;
+    std::map<Ipv4Address, std::list<Ospfv2LsaHeader>> delayedAcknowledgements;
     DesignatedRouterId designatedRouter;
     DesignatedRouterId backupDesignatedRouter;
     Metric interfaceOutputCost;
@@ -198,5 +186,5 @@ class INET_API Ospfv2Interface
 
 } // namespace inet
 
-#endif // ifndef __INET_OSPFV2INTERFACE_H
+#endif
 

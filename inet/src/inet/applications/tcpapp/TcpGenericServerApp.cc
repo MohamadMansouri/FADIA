@@ -1,30 +1,20 @@
 //
-// Copyright (C) 2004 Andras Varga
+// Copyright (C) 2004 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 #include "inet/applications/tcpapp/TcpGenericServerApp.h"
 
-#include "inet/applications/common/SocketTag_m.h"
 #include "inet/applications/tcpapp/GenericAppMsg_m.h"
 #include "inet/common/ModuleAccess.h"
 #include "inet/common/ProtocolTag_m.h"
+#include "inet/common/TimeTag_m.h"
 #include "inet/common/lifecycle/NodeStatus.h"
 #include "inet/common/packet/Message.h"
 #include "inet/common/packet/chunk/ByteCountChunk.h"
-#include "inet/common/TimeTag_m.h"
+#include "inet/common/socket/SocketTag_m.h"
 #include "inet/networklayer/common/L3AddressResolver.h"
 #include "inet/transportlayer/contract/tcp/TcpCommand_m.h"
 
@@ -40,7 +30,7 @@ void TcpGenericServerApp::initialize(int stage)
         delay = par("replyDelay");
         maxMsgDelay = 0;
 
-        //statistics
+        // statistics
         msgsRcvd = msgsSent = bytesRcvd = bytesSent = 0;
 
         WATCH(msgsRcvd);
@@ -68,7 +58,7 @@ void TcpGenericServerApp::sendOrSchedule(cMessage *msg, simtime_t delay)
     if (delay == 0)
         sendBack(msg);
     else
-        scheduleAt(simTime() + delay, msg);
+        scheduleAfter(delay, msg);
 }
 
 void TcpGenericServerApp::sendBack(cMessage *msg)
@@ -86,7 +76,7 @@ void TcpGenericServerApp::sendBack(cMessage *msg)
         EV_INFO << "sending \"" << msg->getName() << "\" to TCP\n";
     }
 
-    auto& tags = getTags(msg);
+    auto& tags = check_and_cast<ITaggedObject *>(msg)->getTags();
     tags.addTagIfAbsent<DispatchProtocolReq>()->setProtocol(&Protocol::tcp);
     send(msg, "socketOut");
 }
@@ -108,13 +98,14 @@ void TcpGenericServerApp::handleMessage(cMessage *msg)
     else if (msg->getKind() == TCP_I_DATA || msg->getKind() == TCP_I_URGENT_DATA) {
         Packet *packet = check_and_cast<Packet *>(msg);
         int connId = packet->getTag<SocketInd>()->getSocketId();
-        ChunkQueue &queue = socketQueue[connId];
+        ChunkQueue& queue = socketQueue[connId];
         auto chunk = packet->peekDataAt(B(0), packet->getTotalLength());
         queue.push(chunk);
         emit(packetReceivedSignal, packet);
 
         bool doClose = false;
-        while (const auto& appmsg = queue.pop<GenericAppMsg>(b(-1), Chunk::PF_ALLOW_NULLPTR)) {
+        while (queue.has<GenericAppMsg>(b(-1))) {
+            const auto& appmsg = queue.pop<GenericAppMsg>(b(-1));
             msgsRcvd++;
             bytesRcvd += B(appmsg->getChunkLength()).get();
             B requestedBytes = appmsg->getExpectedReplyLength();

@@ -1,23 +1,13 @@
-/***************************************************************************
-                       Rtcp.h  -  description
-                             -------------------
-    (C) 2007 Ahmed Ayadi  <ahmed.ayadi@sophia.inria.fr>
-    (C) 2001 Matthias Oppitz <Matthias.Oppitz@gmx.de>
-***************************************************************************/
-
-/***************************************************************************
-*                                                                         *
-*   This program is free software; you can redistribute it and/or modify  *
-*   it under the terms of the GNU General Public License as published by  *
-*   the Free Software Foundation; either version 2 of the License, or     *
-*   (at your option) any later version.                                   *
-*                                                                         *
-***************************************************************************/
+//
+// Copyright (C) 2001 Matthias Oppitz <Matthias.Oppitz@gmx.de>
+// Copyright (C) 2007 Ahmed Ayadi <ahmed.ayadi@sophia.inria.fr>
+//
+// SPDX-License-Identifier: LGPL-3.0-or-later
+//
 
 #ifndef __INET_RTCP_H
 #define __INET_RTCP_H
 
-#include "inet/common/INETDefs.h"
 #include "inet/common/lifecycle/LifecycleUnsupported.h"
 #include "inet/common/packet/Packet.h"
 #include "inet/networklayer/contract/ipv4/Ipv4Address.h"
@@ -26,7 +16,7 @@
 namespace inet {
 namespace rtp {
 
-//Forward declarations:
+// Forward declarations:
 class RtcpByePacket;
 class RtcpCompoundPacket;
 class RtcpReceiverReportPacket;
@@ -158,7 +148,7 @@ class INET_API Rtcp : public cSimpleModule, public LifecycleUnsupported
      * about the Rtp end system with this ssrc identifier.
      * Returns nullptr if this end system is unknown.
      */
-    virtual RtpParticipantInfo *findParticipantInfo(uint32 ssrc);
+    virtual RtpParticipantInfo *findParticipantInfo(uint32_t ssrc);
 
     /**
      * Recalculates the average size of an RtcpCompoundPacket when
@@ -234,11 +224,11 @@ class INET_API Rtcp : public cSimpleModule, public LifecycleUnsupported
      * behaviour of rtcp. Every participant's rtcp module
      * writes its calculated rtcp interval (without variation
      */
-//  cOutVector *_rtcpIntervalOutVector;
+//    cOutVector *_rtcpIntervalOutVector;
 };
 
 } // namespace rtp
 } // namespace inet
 
-#endif // ifndef __INET_RTCP_H
+#endif
 

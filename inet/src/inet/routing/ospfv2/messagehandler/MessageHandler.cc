@@ -1,26 +1,16 @@
 //
 // Copyright (C) 2006 Andras Babos and Andras Varga
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
+#include "inet/routing/ospfv2/messagehandler/MessageHandler.h"
 
 #include "inet/common/ProtocolTag_m.h"
 #include "inet/linklayer/common/InterfaceTag_m.h"
 #include "inet/networklayer/common/HopLimitTag_m.h"
 #include "inet/networklayer/common/L3AddressTag_m.h"
 #include "inet/networklayer/ipv4/IcmpHeader.h"
-#include "inet/routing/ospfv2/messagehandler/MessageHandler.h"
 #include "inet/routing/ospfv2/router/Ospfv2Router.h"
 
 namespace inet {
@@ -312,11 +302,11 @@ void MessageHandler::processPacket(Packet *pk, Ospfv2Interface *unused1, Neighbo
 
 void MessageHandler::sendPacket(Packet *packet, Ipv4Address destination, Ospfv2Interface *outputIf, short ttl)
 {
-    if(outputIf->getMode() == Ospfv2Interface::NO_OSPF) {
+    if (outputIf->getMode() == Ospfv2Interface::NO_OSPF) {
         delete packet;
         throw cRuntimeError("Interface '%u' is in NoOSPF mode and cannot send out OSPF messages", outputIf->getIfIndex());
     }
-    else if(outputIf->getMode() == Ospfv2Interface::PASSIVE) {
+    else if (outputIf->getMode() == Ospfv2Interface::PASSIVE) {
         delete packet;
         return;
     }
@@ -384,10 +374,10 @@ void MessageHandler::clearTimer(cMessage *timer)
 
 void MessageHandler::startTimer(cMessage *timer, simtime_t delay)
 {
-    ospfModule->scheduleAt(simTime() + delay, timer);
+    ospfModule->scheduleAfter(delay, timer);
 }
 
-void MessageHandler::printEvent(const char *eventString, const Ospfv2Interface *onInterface, const Neighbor *forNeighbor    /*= nullptr*/) const
+void MessageHandler::printEvent(const char *eventString, const Ospfv2Interface *onInterface, const Neighbor *forNeighbor /*= nullptr*/) const
 {
     EV_DETAIL << eventString;
     if ((onInterface != nullptr) || (forNeighbor != nullptr)) {
@@ -493,7 +483,7 @@ void MessageHandler::printLinkStateUpdatePacket(const Ospfv2LinkStateUpdatePacke
 
         switch (ospfLsa->getHeader().getLsType()) {
             case Ospfv2LsaType::ROUTERLSA_TYPE: {
-                const Ospfv2RouterLsa& lsa = *check_and_cast<const Ospfv2RouterLsa*>(ospfLsa);
+                const Ospfv2RouterLsa& lsa = *check_and_cast<const Ospfv2RouterLsa *>(ospfLsa);
                 EV_DETAIL << "  bits="
                           << ((lsa.getV_VirtualLinkEndpoint()) ? "V " : "_ ")
                           << ((lsa.getE_ASBoundaryRouter()) ? "E " : "_ ")
@@ -534,7 +524,7 @@ void MessageHandler::printLinkStateUpdatePacket(const Ospfv2LinkStateUpdatePacke
                 break;
             }
             case Ospfv2LsaType::NETWORKLSA_TYPE: {
-                const Ospfv2NetworkLsa& lsa = *check_and_cast<const Ospfv2NetworkLsa*>(ospfLsa);
+                const Ospfv2NetworkLsa& lsa = *check_and_cast<const Ospfv2NetworkLsa *>(ospfLsa);
                 EV_DETAIL << "  netMask=" << lsa.getNetworkMask() << "\n";
                 EV_DETAIL << "  attachedRouters:\n";
 
@@ -546,13 +536,13 @@ void MessageHandler::printLinkStateUpdatePacket(const Ospfv2LinkStateUpdatePacke
             }
             case Ospfv2LsaType::SUMMARYLSA_NETWORKS_TYPE:
             case Ospfv2LsaType::SUMMARYLSA_ASBOUNDARYROUTERS_TYPE: {
-                const Ospfv2SummaryLsa& lsa = *check_and_cast<const Ospfv2SummaryLsa*>(ospfLsa);
+                const Ospfv2SummaryLsa& lsa = *check_and_cast<const Ospfv2SummaryLsa *>(ospfLsa);
                 EV_DETAIL << "  netMask=" << lsa.getNetworkMask() << "\n";
                 EV_DETAIL << "  cost=" << lsa.getRouteCost() << "\n";
                 break;
             }
             case Ospfv2LsaType::AS_EXTERNAL_LSA_TYPE: {
-                const Ospfv2AsExternalLsa& lsa = *check_and_cast<const Ospfv2AsExternalLsa*>(ospfLsa);
+                const Ospfv2AsExternalLsa& lsa = *check_and_cast<const Ospfv2AsExternalLsa *>(ospfLsa);
 
                 const Ospfv2AsExternalLsaContents& contents = lsa.getContents();
                 EV_DETAIL << "  netMask=" << contents.getNetworkMask() << "\n";

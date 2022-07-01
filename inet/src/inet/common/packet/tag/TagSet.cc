@@ -1,21 +1,29 @@
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program.  If not, see http://www.gnu.org/licenses/.
-//
+
 
 #include "inet/common/packet/tag/TagSet.h"
 
 namespace inet {
+
+#ifdef INET_WITH_SELFDOC
+void TagSet::selfDoc(const char * tagAction, const char *typeName)
+{
+    if (SelfDoc::generateSelfdoc) {
+        std::ostringstream os;
+        os << "=SelfDoc={ " << SelfDoc::keyVal("module", getSimulation()->getContextModule()->getComponentType()->getFullName())
+           << ", " << SelfDoc::keyVal("action", "TAG")
+           << ", \"details\" : { "
+           << SelfDoc::keyVal("tagAction", tagAction)
+           << ", " << SelfDoc::keyVal("tagType", typeName)
+           << " } }";
+        globalSelfDoc.insert(os.str());
+    }
+}
+#endif // INET_WITH_SELFDOC
 
 TagSet::TagSet() :
     tags(nullptr)
@@ -95,6 +103,10 @@ cObject *TagSet::removeTag(int index)
 
 void TagSet::clearTags()
 {
+#ifdef INET_WITH_SELFDOC
+    selfDoc(__FUNCTION__, "");
+    SelfDocTempOff;
+#endif // INET_WITH_SELFDOC
     if (tags != nullptr) {
         int numTags = tags->size();
         for (int index = 0; index < numTags; index++) {

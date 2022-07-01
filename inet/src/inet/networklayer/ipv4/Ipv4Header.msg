@@ -1,21 +1,9 @@
 //
 // Copyright (C) 2000 Institut fuer Telematik, Universitaet Karlsruhe
-// Copyright (C) 2004, 2009 Andras Varga
+// Copyright (C) 2004, 2009 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
-
 
 import inet.common.INETDefs;
 import inet.common.TlvOptions;
@@ -48,7 +36,6 @@ const unsigned int MAX_IPADDR_OPTION_ENTRIES = 9;
 const unsigned int MAX_TIMESTAMP_OPTION_ENTRIES = 4;
 
 }}
-
 
 //
 // Ipv4 options class
@@ -166,7 +153,6 @@ class Ipv4OptionUnknown extends Ipv4Option
     uint8_t bytes[];
 }
 
-
 //
 // Represents an Ipv4 datagram.
 //
@@ -179,7 +165,7 @@ class Ipv4OptionUnknown extends Ipv4Option
 //
 // Only one of the option fields can exist at a time.
 //
-// TODO: cleanup order of fields
+// TODO cleanup order of fields
 class Ipv4Header extends NetworkHeaderBase
 {
     chunkLength = IPv4_MIN_HEADER_LENGTH;
@@ -258,4 +244,3 @@ cplusplus(Ipv4Header) {{
     virtual void setProtocol(const Protocol *protocol) override { setProtocolId(static_cast<IpProtocolId>(ProtocolGroup::ipprotocol.getProtocolNumber(protocol))); }
     virtual bool isFragment() const override { return getMoreFragments() || (getFragmentOffset() != 0); }
 }}
-

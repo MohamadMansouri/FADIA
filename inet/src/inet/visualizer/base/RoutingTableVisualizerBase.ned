@@ -1,19 +1,9 @@
 //
-// Copyright (C) OpenSim Ltd.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 package inet.visualizer.base;
 
@@ -45,8 +35,8 @@ simple RoutingTableVisualizerBase extends VisualizerBase
         bool displayRoutesIndividually = default(true); // display routes between the same network nodes individually, enabled by default
         bool displayLabels = default(true); // display labels on arrows, enabled by default
 
-        string destinationFilter = default("*"); // which destinations are considered, matches all destinations by default
-        string nodeFilter = default("*"); // which nodes are considered, matches all nodes by default
+        string destinationFilter @mutable = default("*"); // which destinations are considered, matches all destinations by default
+        string nodeFilter @mutable = default("*"); // which nodes are considered, matches all nodes by default
 
         string lineColor = default("black"); // route line color, black by default
         string lineStyle = default("solid"); // route line style (solid, dashed, dotted)
@@ -58,7 +48,7 @@ simple RoutingTableVisualizerBase extends VisualizerBase
         double lineContactSpacing = default(3); // spacing between arrow end and submodule icon
         string lineContactMode @enum("circular", "rectangular") = default("rectangular"); // determines how arrows are clipped at the submodules
 
-        string labelFormat = default("%d/%m -> %g (%n)"); // determines what route data is displayed
+        string labelFormat @mutable = default("%d/%m -> %g (%n)"); // determines what route data is displayed
         string labelFont = default("<default>, 8px"); // label font, automatic by default
         string labelColor = default("black"); // label color, black by default
 

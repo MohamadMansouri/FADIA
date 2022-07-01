@@ -1,20 +1,9 @@
 //
-// Copyright (C) 2006-2012 Opensim Ltd
-//  Author: Andras Varga
+// Copyright (C) 2006-2012 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 // NOTE: This file is a near copy of the similar file in OMNeT++ 4.2, but under LGPL.
 // Added here until the same functionality becomes available in OMNeT++ as public API.
@@ -26,12 +15,6 @@ namespace inet {
 // from common/stringutil.h
 inline bool opp_isdigit(unsigned char c) { return isdigit(c); }
 inline char opp_toupper(unsigned char c) { return toupper(c); }
-static bool opp_stringendswith(const char *s, const char *ending)
-{
-    int slen = strlen(s);
-    int endinglen = strlen(ending);
-    return slen >= endinglen && strcmp(s + slen - endinglen, ending) == 0;
-}
 
 PatternMatcher::PatternMatcher()
 {
@@ -111,7 +94,7 @@ void PatternMatcher::setPattern(const char *patt, bool dottedpath, bool fullstri
 
 void PatternMatcher::parseSet(const char *& s, Elem& e)
 {
-    s++;    // skip "{"
+    s++; // skip "{"
     e.type = SET;
     if (*s == '^') {
         e.type = NEGSET;
@@ -142,7 +125,7 @@ void PatternMatcher::parseSet(const char *& s, Elem& e)
     }
     if (!*s)
         throw cRuntimeError("unmatched '}' in expression");
-    s++;    // skip "}"
+    s++; // skip "}"
 }
 
 void PatternMatcher::parseLiteralString(const char *& s, Elem& e)
@@ -170,7 +153,7 @@ bool PatternMatcher::parseNumRange(const char *& str, char closingchar, long& lo
     // They are optional -- if missing, lo or up will be set to -1.
     //
     lo = up = -1L;
-    const char *s = str + 1;    // skip "[" or "{"
+    const char *s = str + 1; // skip "[" or "{"
     if (opp_isdigit(*s)) {
         lo = atol(s);
         while (opp_isdigit(*s))
@@ -242,7 +225,7 @@ std::string PatternMatcher::debugStrFrom(int from)
     return result;
 }
 
-bool PatternMatcher::isInSet(char c, const char *set)
+bool PatternMatcher::isInSet(char c, const char *set) const
 {
     ASSERT((strlen(set) & 1) == 0);
     if (!iscasesensitive)
@@ -255,12 +238,12 @@ bool PatternMatcher::isInSet(char c, const char *set)
     return false;
 }
 
-bool PatternMatcher::doMatch(const char *s, int k, int suffixlen)
+bool PatternMatcher::doMatch(const char *s, int k, int suffixlen) const
 {
     while (true) {
-        Elem& e = pattern[k];
-        long num;    // case NUMRANGE
-        int len;    // case LITERALSTRING
+        const Elem& e = pattern[k];
+        long num; // case NUMRANGE
+        int len; // case LITERALSTRING
         switch (e.type) {
             case LITERALSTRING:
                 len = e.literalstring.length();
@@ -268,10 +251,7 @@ bool PatternMatcher::doMatch(const char *s, int k, int suffixlen)
                 if (suffixlen > 0 && k == (int)pattern.size() - 2)
                     len -= suffixlen;
                 // compare
-                if (iscasesensitive ?
-                    strncmp(s, e.literalstring.c_str(), len) :
-                    strncasecmp(s, e.literalstring.c_str(), len)
-                    )
+                if (iscasesensitive ? strncmp(s, e.literalstring.c_str(), len) : strncasecmp(s, e.literalstring.c_str(), len))
                     return false;
                 s += len;
                 break;
@@ -331,7 +311,7 @@ bool PatternMatcher::doMatch(const char *s, int k, int suffixlen)
                         return false;
                     s++;
                 }
-                break;    // at EOS
+                break; // at EOS
 
             case COMMONSEQ:
                 while (true) {
@@ -355,7 +335,7 @@ bool PatternMatcher::doMatch(const char *s, int k, int suffixlen)
     }
 }
 
-bool PatternMatcher::matches(const char *line)
+bool PatternMatcher::matches(const char *line) const
 {
     ASSERT(pattern[pattern.size() - 1].type == END);
 
@@ -366,13 +346,13 @@ bool PatternMatcher::matches(const char *line)
     // case. omnetpp.ini is case sensitive.)
 
     if (pattern.size() >= 2 && iscasesensitive) {
-        Elem& e = pattern[pattern.size() - 2];
+        const Elem& e = pattern[pattern.size() - 2];
         if (e.type == LITERALSTRING) {
             // return if last 2 chars don't match
             int pattlen = e.literalstring.size();
             int linelen = strlen(line);
             if (pattlen >= 2 && linelen >= 2 && (line[linelen - 1] != e.literalstring.at(pattlen - 1) ||
-                                                 line[linelen - 2] != e.literalstring.at(pattlen - 2))) //FIXME why doesn't work for pattlen==1 ?
+                                                 line[linelen - 2] != e.literalstring.at(pattlen - 2))) // FIXME why doesn't work for pattlen==1 ?
                 return false;
         }
     }
@@ -413,5 +393,6 @@ bool PatternMatcher::containsWildcards(const char *pattern)
            strchr(pattern, '\\') || strchr(pattern, '{') ||
            strstr(pattern, "..");
 }
-};
+
+} // namespace inet
 

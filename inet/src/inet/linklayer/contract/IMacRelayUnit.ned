@@ -1,21 +1,12 @@
 //
 // Copyright (C) 2003 Andras Varga; CTIE, Monash University, Australia
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
 package inet.linklayer.contract;
+
+import inet.protocolelement.contract.IProtocolLayer;
 
 //
 // Module interface for modules providing Ethernet switch functionality.
@@ -32,7 +23,7 @@ package inet.linklayer.contract;
 // Entries are also deleted if their age exceeds a certain limit.
 //
 // If needed, address tables can be pre-loaded from text files at the beginning
-// of the simulation; this controlled by the addressTableFile module parameter.
+// of the simulation; this controlled by the forwardingTableFile module parameter.
 //
 // This module is not a concrete implementation, it just defines gates and
 // parameters a ~IMacRelayUnit should have. Concrete inplementations add
@@ -41,14 +32,9 @@ package inet.linklayer.contract;
 //
 // Known implementations are ~MacRelayUnit and ~Ieee8021dRelay.
 //
-moduleinterface IMacRelayUnit
+moduleinterface IMacRelayUnit extends IProtocolLayer
 {
     parameters:
         @display("i=block/switch");
-    gates:
-        input ifIn @labels(EtherFrame);
-        output ifOut @labels(EtherFrame);
-        input upperLayerIn;
-        output upperLayerOut;
 }
 

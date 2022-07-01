@@ -1,22 +1,13 @@
 //
-// Copyright (C) OpenSim Ltd.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see http://www.gnu.org/licenses/.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-#include "inet/common/ModuleAccess.h"
+
 #include "inet/queueing/tokengenerator/SignalBasedTokenGenerator.h"
+
+#include "inet/common/ModuleAccess.h"
 
 namespace inet {
 namespace queueing {
@@ -42,25 +33,28 @@ void SignalBasedTokenGenerator::generateTokens()
     auto numTokens = numTokensParameter->doubleValue();
     numTokensGenerated += numTokens;
     emit(tokensCreatedSignal, numTokens);
-    server->addTokens(numTokens);
+    storage->addTokens(numTokens);
     updateDisplayString();
 }
 
 void SignalBasedTokenGenerator::receiveSignal(cComponent *source, simsignal_t signal, intval_t value, cObject *details)
 {
-    Enter_Method(cComponent::getSignalName(signal));
+    Enter_Method("%s", cComponent::getSignalName(signal));
+
     generateTokens();
 }
 
 void SignalBasedTokenGenerator::receiveSignal(cComponent *source, simsignal_t signal, double value, cObject *details)
 {
-    Enter_Method(cComponent::getSignalName(signal));
+    Enter_Method("%s", cComponent::getSignalName(signal));
+
     generateTokens();
 }
 
 void SignalBasedTokenGenerator::receiveSignal(cComponent *source, simsignal_t signal, cObject *object, cObject *details)
 {
-    Enter_Method(cComponent::getSignalName(signal));
+    Enter_Method("%s", cComponent::getSignalName(signal));
+
     generateTokens();
 }
 

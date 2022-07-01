@@ -1,26 +1,15 @@
 //
 // Copyright (C) 2013 Brno University of Technology (http://nes.fit.vutbr.cz/ansa)
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 3
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 // Authors: Veronika Rybova, Vladimir Vesely (ivesely@fit.vutbr.cz),
 //          Tamas Borbely (tomi@omnetpp.org)
 
 #ifndef __INET_PIMBASE_H
 #define __INET_PIMBASE_H
 
-#include "inet/common/INETDefs.h"
 #include "inet/common/packet/Packet.h"
 #include "inet/networklayer/contract/IInterfaceTable.h"
 #include "inet/networklayer/ipv4/IIpv4RoutingTable.h"
@@ -39,8 +28,7 @@ class INET_API PimBase : public RoutingProtocolBase
 {
   protected:
 
-    struct AssertMetric
-    {
+    struct AssertMetric {
         short rptBit;
         short preference;
         int metric;
@@ -60,17 +48,16 @@ class INET_API PimBase : public RoutingProtocolBase
         AssertMetric setAddress(Ipv4Address address) const { return AssertMetric(rptBit, preference, metric, address); }
     };
 
-    struct RouteEntry
-    {
+    struct RouteEntry {
         PimBase *owner;
         Ipv4Address source;
         Ipv4Address group;
         int flags;
-        AssertMetric metric;    // our metric of the unicast route to the source or RP(group)
+        AssertMetric metric; // our metric of the unicast route to the source or RP(group)
 
         RouteEntry(PimBase *owner, Ipv4Address source, Ipv4Address group)
             : owner(owner), source(source), group(group), flags(0) {}
-        virtual ~RouteEntry() {};
+        virtual ~RouteEntry() {}
 
         bool isFlagSet(int flag) const { return (flags & flag) != 0; }
         void setFlags(int flags) { this->flags |= flags; }
@@ -78,10 +65,9 @@ class INET_API PimBase : public RoutingProtocolBase
         void setFlag(int flag, bool value) { if (value) setFlags(flag); else clearFlag(flag); }
     };
 
-    struct Interface
-    {
+    struct Interface {
         RouteEntry *owner;
-        InterfaceEntry *ie;
+        NetworkInterface *ie;
         int flags;
 
         // assert winner state
@@ -90,7 +76,7 @@ class INET_API PimBase : public RoutingProtocolBase
         cMessage *assertTimer;
         AssertMetric winnerMetric;
 
-        Interface(RouteEntry *owner, InterfaceEntry *ie)
+        Interface(RouteEntry *owner, NetworkInterface *ie)
             : owner(owner), ie(ie), flags(0),
             assertState(NO_ASSERT_INFO), assertTimer(nullptr)
         { ASSERT(owner), ASSERT(ie); }
@@ -106,7 +92,7 @@ class INET_API PimBase : public RoutingProtocolBase
             ASSERT(assertTimer == nullptr);
             assertTimer = new cMessage("PimAssertTimer", AssertTimer);
             assertTimer->setContextPointer(this);
-            owner->owner->scheduleAt(simTime() + assertTime, assertTimer);
+            owner->owner->scheduleAfter(assertTime, assertTimer);
         }
 
         void deleteAssertInfo()
@@ -118,8 +104,7 @@ class INET_API PimBase : public RoutingProtocolBase
         }
     };
 
-    struct SourceAndGroup
-    {
+    struct SourceAndGroup {
         Ipv4Address source;
         Ipv4Address group;
 
@@ -148,7 +133,7 @@ class INET_API PimBase : public RoutingProtocolBase
         SourceActiveTimer,
         StateRefreshTimer,
 
-        //PIM-SM specific timers
+        // PIM-SM specific timers
         KeepAliveTimer,
         RegisterStopTimer,
         ExpiryTimer,
@@ -158,11 +143,11 @@ class INET_API PimBase : public RoutingProtocolBase
     static const Ipv4Address ALL_PIM_ROUTERS_MCAST;
 
   protected:
-    IIpv4RoutingTable *rt = nullptr;
-    IInterfaceTable *ift = nullptr;
-    PimInterfaceTable *pimIft = nullptr;
-    PimNeighborTable *pimNbt = nullptr;
-    Pim *pimModule = nullptr;
+    ModuleRefByPar<IIpv4RoutingTable> rt;
+    ModuleRefByPar<IInterfaceTable> ift;
+    ModuleRefByPar<PimInterfaceTable> pimIft;
+    ModuleRefByPar<PimNeighborTable> pimNbt;
+    opp_component_ptr<Pim> pimModule;
 
     bool isUp = false;
     bool isEnabled = false;
@@ -199,7 +184,7 @@ class INET_API PimBase : public RoutingProtocolBase
     virtual void handleCrashOperation(LifecycleOperation *operation) override;
 };
 
-}    // namespace inet
+} // namespace inet
 
-#endif // ifndef __INET_PIMBASE_H
+#endif
 

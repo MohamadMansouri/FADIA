@@ -2,22 +2,13 @@
 // Copyright (C) 2008-2009 Irene Ruengeler
 // Copyright (C) 2009-2012 Thomas Dreibholz
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-#include "inet/transportlayer/sctp/SctpAssociation.h"
+
 #include "inet/transportlayer/sctp/SctpHeader.h"
+
+#include "inet/transportlayer/sctp/SctpAssociation.h"
 
 namespace inet {
 namespace sctp {
@@ -34,15 +25,14 @@ SctpHeader& SctpHeader::operator=(const SctpHeader& other)
     return *this;
 }
 
-
 void SctpHeader::copy(const SctpHeader& other)
 {
-   // handleChange();
+//    handleChange();
     setVTag(other.getVTag());
     setSrcPort(other.getSrcPort());
     setDestPort(other.getDestPort());
     setChecksumOk(other.getChecksumOk());
-    for (const auto & elem : other.sctpChunkList) {
+    for (const auto& elem : other.sctpChunkList) {
         SctpChunk *chunk = (elem)->dup();
         take(chunk);
         sctpChunkList.push_back(chunk);
@@ -57,25 +47,26 @@ SctpHeader::~SctpHeader()
 
 void SctpHeader::clean()
 {
-  // handleChange();
+//    handleChange();
 
     if (this->getSctpChunksArraySize() > 0) {
         auto iterator = sctpChunkList.begin();
         while (iterator != sctpChunkList.end()) {
-           // SctpChunk *chunk = (*iterator);
+            SctpChunk *chunk = (*iterator);
             sctpChunkList.erase(iterator);
-           // delete chunk;
+            drop(chunk);
+            delete chunk;
         }
     }
 
-   /* sctpChunkList.clear();
-    setHeaderLength(SCTP_COMMON_HEADER);
-    setChunkLength(B(SCTP_COMMON_HEADER));*/
+    /* sctpChunkList.clear();
+     setHeaderLength(SCTP_COMMON_HEADER);
+     setChunkLength(B(SCTP_COMMON_HEADER));*/
 }
 
 void SctpHeader::setSctpChunksArraySize(size_t size)
 {
-    throw cException(this, "setSctpChunkArraySize() not supported, use insertSctpChunks()");
+    throw cException(this, "setSctpChunkArraySize() not supported, use appendSctpChunks()");
 }
 
 void SctpHeader::setSctpChunks(size_t k, SctpChunk *chunk)
@@ -97,13 +88,12 @@ size_t SctpHeader::getSctpChunksArraySize() const
     return sctpChunkList.size();
 }
 
-
-void SctpHeader::replaceSctpChunk(SctpChunk *chunk, uint32 k)
+void SctpHeader::replaceSctpChunk(SctpChunk *chunk, uint32_t k)
 {
     setSctpChunks(k, chunk);
 }
 
-void SctpHeader::insertSctpChunks(SctpChunk * chunk)
+void SctpHeader::appendSctpChunks(SctpChunk *chunk)
 {
     handleChange();
     sctpChunkList.push_back(chunk);
@@ -112,16 +102,16 @@ void SctpHeader::insertSctpChunks(SctpChunk * chunk)
     setChunkLength(B(headerLength));
 }
 
-void SctpHeader::insertSctpChunks(size_t k, SctpChunk * chunk)
+void SctpHeader::insertSctpChunks(size_t k, SctpChunk *chunk)
 {
     handleChange();
-    sctpChunkList.insert(sctpChunkList.begin()+k, chunk);
+    sctpChunkList.insert(sctpChunkList.begin() + k, chunk);
     take(chunk);
     headerLength += ADD_PADDING(chunk->getByteLength());
     setChunkLength(B(headerLength));
 }
 
-//void SctpHeader::eraseSctpChunks(size_t k)
+// void SctpHeader::eraseSctpChunks(size_t k)
 SctpChunk *SctpHeader::removeFirstChunk()
 {
     handleChange();
@@ -181,7 +171,7 @@ SctpErrorChunk& SctpErrorChunk::operator=(const SctpErrorChunk& other)
 
 void SctpErrorChunk::copy(const SctpErrorChunk& other)
 {
-    for (const auto & elem : other.parameterList) {
+    for (const auto& elem : other.parameterList) {
         SctpParameter *param = (elem)->dup();
         take(param);
         parameterList.push_back(param);
@@ -198,12 +188,12 @@ size_t SctpErrorChunk::getParametersArraySize() const
     return parameterList.size();
 }
 
-SctpParameter * SctpErrorChunk::getParameters(size_t k) const
+SctpParameter *SctpErrorChunk::getParameters(size_t k) const
 {
     return parameterList.at(k);
 }
 
-void SctpErrorChunk::setParameters(size_t k, SctpParameter * parameters)
+void SctpErrorChunk::setParameters(size_t k, SctpParameter *parameters)
 {
     throw cException(this, "setParameter() not supported, use addParameter()");
 }
@@ -249,7 +239,7 @@ SctpStreamResetChunk& SctpStreamResetChunk::operator=(const SctpStreamResetChunk
     SctpStreamResetChunk_Base::operator=(other);
 
     this->setByteLength(SCTP_STREAM_RESET_CHUNK_LENGTH);
-    for (const auto & elem : other.parameterList)
+    for (const auto& elem : other.parameterList)
         addParameter((elem)->dup());
 
     return *this;
@@ -257,7 +247,7 @@ SctpStreamResetChunk& SctpStreamResetChunk::operator=(const SctpStreamResetChunk
 
 void SctpStreamResetChunk::copy(const SctpStreamResetChunk& other)
 {
-    for (const auto & elem : other.parameterList) {
+    for (const auto& elem : other.parameterList) {
         SctpParameter *param = (elem)->dup();
         take(param);
         parameterList.push_back(param);
@@ -274,12 +264,12 @@ size_t SctpStreamResetChunk::getParametersArraySize() const
     return parameterList.size();
 }
 
-const SctpParameter * SctpStreamResetChunk::getParameters(size_t k) const
+const SctpParameter *SctpStreamResetChunk::getParameters(size_t k) const
 {
     return parameterList.at(k);
 }
 
-void SctpStreamResetChunk::setParameters(size_t k, SctpParameter * parameters)
+void SctpStreamResetChunk::setParameters(size_t k, SctpParameter *parameters)
 {
     throw cException(this, "setParameters() not supported, use addParameter()");
 }
@@ -327,7 +317,7 @@ void SctpIncomingSsnResetRequestParameter::copy(const SctpIncomingSsnResetReques
 {
     setSrReqSn(other.getSrReqSn());
     setStreamNumbersArraySize(other.getStreamNumbersArraySize());
-    for (uint16 i = 0; i < other.getStreamNumbersArraySize(); i++) {
+    for (uint16_t i = 0; i < other.getStreamNumbersArraySize(); i++) {
         setStreamNumbers(i, other.getStreamNumbers(i));
     }
 }
@@ -340,7 +330,7 @@ SctpAsconfChunk& SctpAsconfChunk::operator=(const SctpAsconfChunk& other)
 
     this->setByteLength(SCTP_ADD_IP_CHUNK_LENGTH + 8);
     this->setAddressParam(other.getAddressParam());
-    for (const auto & elem : other.parameterList)
+    for (const auto& elem : other.parameterList)
         addAsconfParam((elem)->dup());
 
     return *this;
@@ -356,12 +346,12 @@ size_t SctpAsconfChunk::getAsconfParamsArraySize() const
     return parameterList.size();
 }
 
-const SctpParameter * SctpAsconfChunk::getAsconfParams(size_t k) const
+const SctpParameter *SctpAsconfChunk::getAsconfParams(size_t k) const
 {
     return parameterList.at(k);
 }
 
-void SctpAsconfChunk::setAsconfParams(size_t k, SctpParameter * asconfParams)
+void SctpAsconfChunk::setAsconfParams(size_t k, SctpParameter *asconfParams)
 {
     throw cException(this, "setAsconfParams() not supported, use addAsconfParam()");
 }
@@ -392,7 +382,7 @@ SctpAsconfAckChunk& SctpAsconfAckChunk::operator=(const SctpAsconfAckChunk& othe
     SctpAsconfAckChunk_Base::operator=(other);
 
     this->setByteLength(SCTP_ADD_IP_CHUNK_LENGTH);
-    for (const auto & elem : other.parameterList)
+    for (const auto& elem : other.parameterList)
         addAsconfResponse((elem)->dup());
 
     return *this;
@@ -408,12 +398,12 @@ size_t SctpAsconfAckChunk::getAsconfResponseArraySize() const
     return parameterList.size();
 }
 
-SctpParameter * SctpAsconfAckChunk::getAsconfResponse(size_t k) const
+SctpParameter *SctpAsconfAckChunk::getAsconfResponse(size_t k) const
 {
     return parameterList.at(k);
 }
 
-void SctpAsconfAckChunk::setAsconfResponse(size_t k, SctpParameter * asconfResponse)
+void SctpAsconfAckChunk::setAsconfResponse(size_t k, SctpParameter *asconfResponse)
 {
     throw cException(this, "setAsconfresponse() not supported, use addAsconfResponse()");
 }

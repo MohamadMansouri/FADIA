@@ -1,27 +1,16 @@
 //
 // Copyright (C) 2014 OpenSim Ltd.
-// Author: Benjamin Seregi
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program.  If not, see http://www.gnu.org/licenses/.
-//
+
 
 #ifndef __INET_AODV_H
 #define __INET_AODV_H
 
 #include <map>
 
-#include "inet/common/INETDefs.h"
+#include "inet/common/ModuleRefByPar.h"
 #include "inet/networklayer/contract/IInterfaceTable.h"
 #include "inet/networklayer/contract/IL3AddressType.h"
 #include "inet/networklayer/contract/INetfilter.h"
@@ -47,8 +36,7 @@ class INET_API Aodv : public RoutingProtocolBase, public NetfilterBase::HookBase
      * It implements a unique identifier for an arbitrary RREQ message
      * in the network. See: rreqsArrivalTime.
      */
-    class RreqIdentifier
-    {
+    class RreqIdentifier {
       public:
         L3Address originatorAddr;
         unsigned int rreqID;
@@ -59,9 +47,8 @@ class INET_API Aodv : public RoutingProtocolBase, public NetfilterBase::HookBase
         }
     };
 
-    class RreqIdentifierCompare
-    {
-    public:
+    class RreqIdentifierCompare {
+      public:
         bool operator()(const RreqIdentifier& lhs, const RreqIdentifier& rhs) const
         {
             if (lhs.originatorAddr < rhs.originatorAddr)
@@ -74,13 +61,13 @@ class INET_API Aodv : public RoutingProtocolBase, public NetfilterBase::HookBase
     };
 
     // context
-    IL3AddressType *addressType = nullptr;    // to support both Ipv4 and v6 addresses.
+    IL3AddressType *addressType = nullptr; // to support both Ipv4 and v6 addresses.
 
     // environment
     cModule *host = nullptr;
-    IRoutingTable *routingTable = nullptr;
-    IInterfaceTable *interfaceTable = nullptr;
-    INetfilter *networkProtocol = nullptr;
+    ModuleRefByPar<IRoutingTable> routingTable;
+    ModuleRefByPar<IInterfaceTable> interfaceTable;
+    ModuleRefByPar<INetfilter> networkProtocol;
     UdpSocket socket;
     bool usingIpv6 = false;
 
@@ -116,29 +103,29 @@ class INET_API Aodv : public RoutingProtocolBase, public NetfilterBase::HookBase
     simtime_t pathDiscoveryTime;
 
     // state
-    unsigned int rreqId = 0;    // when sending a new RREQ packet, rreqID incremented by one from the last id used by this node
-    unsigned int sequenceNum = 0;    // it helps to prevent loops in the routes (RFC 3561 6.1 p11.)
-    std::map<L3Address, WaitForRrep *> waitForRREPTimers;    // timeout for Route Replies
-    std::map<RreqIdentifier, simtime_t, RreqIdentifierCompare> rreqsArrivalTime;    // maps RREQ id to its arriving time
-    L3Address failedNextHop;    // next hop to the destination who failed to send us RREP-ACK
-    std::map<L3Address, simtime_t> blacklist;    // we don't accept RREQs from blacklisted nodes
-    unsigned int rerrCount = 0;    // num of originated RERR in the last second
-    unsigned int rreqCount = 0;    // num of originated RREQ in the last second
-    simtime_t lastBroadcastTime;    // the last time when any control packet was broadcasted
-    std::map<L3Address, unsigned int> addressToRreqRetries;    // number of re-discovery attempts per address
+    unsigned int rreqId = 0; // when sending a new RREQ packet, rreqID incremented by one from the last id used by this node
+    unsigned int sequenceNum = 0; // it helps to prevent loops in the routes (RFC 3561 6.1 p11.)
+    std::map<L3Address, WaitForRrep *> waitForRREPTimers; // timeout for Route Replies
+    std::map<RreqIdentifier, simtime_t, RreqIdentifierCompare> rreqsArrivalTime; // maps RREQ id to its arriving time
+    L3Address failedNextHop; // next hop to the destination who failed to send us RREP-ACK
+    std::map<L3Address, simtime_t> blacklist; // we don't accept RREQs from blacklisted nodes
+    unsigned int rerrCount = 0; // num of originated RERR in the last second
+    unsigned int rreqCount = 0; // num of originated RREQ in the last second
+    simtime_t lastBroadcastTime; // the last time when any control packet was broadcasted
+    std::map<L3Address, unsigned int> addressToRreqRetries; // number of re-discovery attempts per address
 
     // self messages
-    cMessage *helloMsgTimer = nullptr;    // timer to send hello messages (only if the feature is enabled)
-    cMessage *expungeTimer = nullptr;    // timer to clean the routing table out
-    cMessage *counterTimer = nullptr;    // timer to set rrerCount = rreqCount = 0 in each second
-    cMessage *rrepAckTimer = nullptr;    // timer to wait for RREP-ACKs (RREP-ACK timeout)
-    cMessage *blacklistTimer = nullptr;    // timer to clean the blacklist out
+    cMessage *helloMsgTimer = nullptr; // timer to send hello messages (only if the feature is enabled)
+    cMessage *expungeTimer = nullptr; // timer to clean the routing table out
+    cMessage *counterTimer = nullptr; // timer to set rrerCount = rreqCount = 0 in each second
+    cMessage *rrepAckTimer = nullptr; // timer to wait for RREP-ACKs (RREP-ACK timeout)
+    cMessage *blacklistTimer = nullptr; // timer to clean the blacklist out
 
     // lifecycle
-    simtime_t rebootTime;    // the last time when the node rebooted
+    simtime_t rebootTime; // the last time when the node rebooted
 
     // internal
-    std::multimap<L3Address, Packet *> targetAddressToDelayedPackets;    // queue for the datagrams we have no route for
+    std::multimap<L3Address, Packet *> targetAddressToDelayedPackets; // queue for the datagrams we have no route for
 
   protected:
     void handleMessageWhenUp(cMessage *msg) override;
@@ -228,5 +215,5 @@ class INET_API Aodv : public RoutingProtocolBase, public NetfilterBase::HookBase
 } // namespace aodv
 } // namespace inet
 
-#endif // ifndef __INET_AODV_H
+#endif
 

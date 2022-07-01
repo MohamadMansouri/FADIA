@@ -1,18 +1,7 @@
 //
 // Copyright (C) 2006 Andras Babos and Andras Varga
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
 import inet.common.INETDefs;
@@ -42,6 +31,7 @@ enum Ospfv2TimerType {
 // should be a byte long bitfield
 struct Ospfv2Options
 {
+    @packetData;
     bool unused_1;
     bool E_ExternalRoutingCapability;
     bool MC_MulticastForwarding;
@@ -84,7 +74,6 @@ class Ospfv2HelloPacket extends Ospfv2Packet
     Ipv4Address neighbor[];
 }
 
-
 enum Ospfv2LsaType
 {
     ROUTERLSA_TYPE = 1;
@@ -99,6 +88,7 @@ enum Ospfv2LsaType
 //
 class Ospfv2LsaHeader extends cObject
 {
+    @packetData;
     unsigned short lsAge = 0;
     Ospfv2Options lsOptions;
     Ospfv2LsaType lsType = static_cast<Ospfv2LsaType>(-1);
@@ -115,6 +105,7 @@ class Ospfv2LsaHeader extends cObject
 //
 class Ospfv2Lsa extends cObject
 {
+    @packetData;
     Ospfv2LsaHeader header;
 }
 
@@ -129,6 +120,7 @@ enum LinkType
 // (RFC 1583 Section A.4.2.)
 struct Ospfv2TosData
 {
+    @packetData;
     unsigned char tos;
     unsigned long tosMetric;
 }
@@ -136,6 +128,7 @@ struct Ospfv2TosData
 // Router LSA Link section (RFC 1583 Section A.4.2.)
 class Ospfv2Link extends cObject
 {
+    @packetData;
     Ipv4Address linkID;
     unsigned long linkData = 0;
     LinkType type = POINTTOPOINT_LINK;
@@ -182,7 +175,8 @@ class Ospfv2SummaryLsa extends Ospfv2Lsa
 
 struct Ospfv2ExternalTosInfo
 {
-    // TODO: tosData (?)
+    @packetData;
+    // TODO tosData (?)
     unsigned short tos;
     bool E_ExternalMetricType = false;
     unsigned long routeCost = 1;
@@ -195,6 +189,7 @@ struct Ospfv2ExternalTosInfo
 //
 class Ospfv2AsExternalLsaContents extends cObject
 {
+    @packetData;
     Ipv4Address networkMask;
     Ospfv2ExternalTosInfo externalTOSInfo[];
 }
@@ -208,10 +203,10 @@ class Ospfv2AsExternalLsa extends Ospfv2Lsa
     Ospfv2AsExternalLsaContents contents;
 }
 
-
 // should be a byte long bitfield
 struct Ospfv2DdOptions
 {
+    @packetData;
     unsigned short unused = 0;  // 5 bit
     bool I_Init;
     bool M_More;
@@ -232,6 +227,7 @@ class Ospfv2DatabaseDescriptionPacket extends Ospfv2Packet
 
 struct Ospfv2LsaRequest
 {
+    @packetData;
     unsigned long lsType;
     Ipv4Address linkStateID;
     Ipv4Address advertisingRouter;
@@ -260,4 +256,3 @@ class Ospfv2LinkStateAcknowledgementPacket extends Ospfv2Packet
 {
     Ospfv2LsaHeader lsaHeaders[];     //TODO
 }
-

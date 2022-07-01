@@ -1,19 +1,9 @@
 //
-// Copyright (C) 2005 Andras Varga
+// Copyright (C) 2005 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 #include "inet/common/INETUtils.h"
 
@@ -33,6 +23,58 @@ std::string dtostr(double d)
     std::ostringstream os;
     os << d;
     return os.str();
+}
+
+std::string hex(uint16_t l)
+{
+    std::ostringstream os;
+    os << std::hex << l;
+    return os.str();
+}
+
+std::string hex(int16_t l)
+{
+    std::ostringstream os;
+    os << std::hex << l;
+    return os.str();
+}
+
+std::string hex(uint32_t l)
+{
+    std::ostringstream os;
+    os << std::hex << l;
+    return os.str();
+}
+
+std::string hex(int32_t l)
+{
+    std::ostringstream os;
+    os << std::hex << l;
+    return os.str();
+}
+
+std::string hex(uint64_t l)
+{
+    std::ostringstream os;
+    os << std::hex << l;
+    return os.str();
+}
+
+std::string hex(int64_t l)
+{
+    std::ostringstream os;
+    os << std::hex << l;
+    return os.str();
+}
+
+long hex(const char *s)
+{
+    return strtol(s, nullptr, 16);
+}
+
+unsigned long uhex(const char *s)
+{
+    return strtoul(s, nullptr, 16);
 }
 
 double atod(const char *s)
@@ -56,7 +98,7 @@ unsigned long atoul(const char *s)
 std::string stripnonalnum(const char *s)
 {
     std::string result;
-    for ( ; *s; s++)
+    for (; *s; s++)
         if (isalnum(*s))
             result += *s;
 
@@ -129,7 +171,7 @@ void splitFileName(const char *pathname, std::string& dir, std::string& fnameonl
 
     // find last "/" or "\"
     const char *s = pathname + strlen(pathname) - 1;
-    s--;  // ignore potential trailing "/"
+    s--; // ignore potential trailing "/"
     while (s > pathname && *s != '\\' && *s != '/')
         s--;
     const char *sep = s <= pathname ? nullptr : s;
@@ -147,8 +189,8 @@ void splitFileName(const char *pathname, std::string& dir, std::string& fnameonl
         }
     }
     else {
-        fnameonly = s+1;
-        dir = std::string(pathname, s-pathname+1);
+        fnameonly = s + 1;
+        dir = std::string(pathname, s - pathname + 1);
     }
 }
 

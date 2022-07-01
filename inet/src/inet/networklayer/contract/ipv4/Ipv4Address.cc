@@ -2,27 +2,16 @@
 // Copyright (C) 2001  Vincent Oberle (vincent@oberle.com)
 // Institute of Telematics, University of Karlsruhe, Germany.
 // University Comillas, Madrid, Spain.
-// Copyright (C) 2004, 2008 Andras Varga
+// Copyright (C) 2004, 2008 OpenSim Ltd.
 // Copyright (C) 2008  Ingmar Baumgart
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public
-// License along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
 //
-//  Author: Vincent Oberle
-//  Date: Jan-March 2001
-//  Cleanup and rewrite: Andras Varga, 2004
+// Author: Vincent Oberle
+// Date: Jan-March 2001
+// Cleanup and rewrite: Andras Varga, 2004
 //
 
 #include "inet/networklayer/contract/ipv4/Ipv4Address.h"
@@ -90,7 +79,7 @@ bool Ipv4Address::parseIPAddress(const char *text, unsigned char tobytes[])
         // skip '.'
         s++;
     }
-    return i == 4;    // must have all 4 numbers
+    return i == 4; // must have all 4 numbers
 }
 
 void Ipv4Address::set(const char *text)
@@ -106,7 +95,7 @@ void Ipv4Address::set(const char *text)
     set(buf[0], buf[1], buf[2], buf[3]);
 }
 
-std::string Ipv4Address::str(bool printUnspec    /* = true */) const
+std::string Ipv4Address::str(bool printUnspec /* = true */) const
 {
     if (printUnspec && isUnspecified())
         return std::string("<unspec>");
@@ -145,7 +134,7 @@ Ipv4Address::AddressCategory Ipv4Address::getAddressCategory() const
         return MULTICAST; // 224.0.0.0/4
     if (addr == 0xFFFFFFFFu)
         return BROADCAST; // 255.255.255.255/32
-    uint32 addr24 = addr & 0xFFFFFF00u;
+    uint32_t addr24 = addr & 0xFFFFFF00u;
     if (addr24 == 0xC0000000u)
         return IETF; // 192.0.0.0/24
     if ((addr24 == 0xC0000200u) || (addr24 == 0xC6336400u) || (addr24 == 0xCB007100u))
@@ -222,15 +211,15 @@ bool Ipv4Address::prefixMatches(const Ipv4Address& other, int length) const
     if (length > 31)
         return addr == other.addr;
 
-    uint32 mask = _makeNetmask(length);
+    uint32_t mask = _makeNetmask(length);
     return (addr & mask) == (other.addr & mask);
 }
 
 int Ipv4Address::getNumMatchingPrefixBits(const Ipv4Address& to_cmp) const
 {
-    uint32 addr2 = to_cmp.getInt();
+    uint32_t addr2 = to_cmp.getInt();
 
-    uint32 res = addr ^ addr2;
+    uint32_t res = addr ^ addr2;
     // If the bits are equal, there is a 0, so counting
     // the zeros from the left
     for (int i = 31; i >= 0; i--) {
@@ -261,7 +250,7 @@ bool Ipv4Address::maskedAddrAreEqual(const Ipv4Address& addr1,
         const Ipv4Address& addr2,
         const Ipv4Address& netmask)
 {
-    // return addr1.doAnd(netmask).equals(addr2.doAnd(netmask));
+//    return addr1.doAnd(netmask).equals(addr2.doAnd(netmask));
     // Looks weird, but is the same and is faster
     return ((addr1.addr ^ addr2.addr) & netmask.addr) == 0;
 }
@@ -276,6 +265,21 @@ Ipv4Address Ipv4Address::makeBroadcastAddress(Ipv4Address netmask) const
 {
     Ipv4Address br(getInt() | ~(netmask.getInt()));
     return br;
+}
+
+// see  RFC 1112, section 6.4
+MacAddress Ipv4Address::mapToMulticastMacAddress() const
+{
+    ASSERT(isMulticast());
+
+    MacAddress macAddr;
+    macAddr.setAddressByte(0, 0x01);
+    macAddr.setAddressByte(1, 0x00);
+    macAddr.setAddressByte(2, 0x5e);
+    macAddr.setAddressByte(3, (addr >> 16) & 0x7F);
+    macAddr.setAddressByte(4, (addr >> 8) & 0xFF);
+    macAddr.setAddressByte(5, (addr & 0xFF));
+    return macAddr;
 }
 
 } // namespace inet

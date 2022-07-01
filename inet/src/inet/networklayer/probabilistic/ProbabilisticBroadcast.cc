@@ -5,15 +5,17 @@
  *      Author: Damien Piguet
  */
 
+#include "inet/networklayer/probabilistic/ProbabilisticBroadcast.h"
+
 #include <cassert>
 
 #include "inet/common/ProtocolGroup.h"
 #include "inet/common/ProtocolTag_m.h"
+#include "inet/common/stlutils.h"
 #include "inet/linklayer/common/MacAddress.h"
 #include "inet/linklayer/common/MacAddressTag_m.h"
 #include "inet/networklayer/common/L3AddressTag_m.h"
 #include "inet/networklayer/contract/IL3AddressType.h"
-#include "inet/networklayer/probabilistic/ProbabilisticBroadcast.h"
 
 namespace inet {
 
@@ -43,9 +45,12 @@ void ProbabilisticBroadcast::initialize(int stage)
         nbDataPacketsForwarded = 0;
         nbHops = 0;
     }
+    else if (stage == INITSTAGE_NETWORK_INTERFACE_CONFIGURATION) {
+        for (int i = 0; i < interfaceTable->getNumInterfaces(); i++)
+            interfaceTable->getInterface(i)->setHasModulePathAddress(true);
+    }
     else if (stage == INITSTAGE_NETWORK_LAYER) {
-        auto ie = interfaceTable->findFirstNonLoopbackInterface();
-        if (ie != nullptr)
+        if (auto ie = interfaceTable->findFirstNonLoopbackInterface())
             myNetwAddr = ie->getNetworkAddress();
         else
             throw cRuntimeError("No non-loopback interface found!");
@@ -78,8 +83,8 @@ void ProbabilisticBroadcast::handleLowerPacket(Packet *packet)
     // oneHopLatency gives us an estimate of how long the message spent in the MAC queue of
     // its sender (compared to that, transmission delay is negligible). Use this value
     // to update the TTL of the message. Dump it if it is dead.
-    //m->setAppTtl(m->getAppTtl().dbl() - oneHopLatency);
-    if (    /*(m->getAppTtl() <= 0) || */ (messageKnown(macHeader->getId()))) {
+//    m->setAppTtl(m->getAppTtl().dbl() - oneHopLatency);
+    if (/*(m->getAppTtl() <= 0) || */ (messageKnown(macHeader->getId()))) {
         // we got this message already, ignore it.
         EV << "PBr: " << simTime() << " n" << myNetwAddr << " handleLowerMsg(): Dead or Known message ID=" << macHeader->getId() << " from node "
            << macSrcAddr << " TTL = " << macHeader->getAppTtl() << endl;
@@ -103,7 +108,7 @@ void ProbabilisticBroadcast::handleLowerPacket(Packet *packet)
 
         // until a subscription mechanism is implemented, duplicate and pass all received packets
         // to the application layer who will be able to compute statistics.
-        // TODO: implement an application subscription mechanism.
+        // TODO implement an application subscription mechanism.
         if (true) {
             auto mCopy = packet->dup();
             decapsulate(mCopy);
@@ -137,7 +142,7 @@ void ProbabilisticBroadcast::handleSelfMessage(cMessage *msg)
                 // => insert it with delay = TTL. So when the copy will be popped out of the
                 // queue, it will be considered as dead and discarded.
                 auto packetCopy = packet->dup();
-                auto macHeaderCopy = packetCopy->peekAtFront<ProbabilisticBroadcastHeader>();;
+                auto macHeaderCopy = packetCopy->peekAtFront<ProbabilisticBroadcastHeader>();
                 // control info is not duplicated with the message, so we have to re-create one here.
                 setDownControlInfo(packetCopy, MacAddress::BROADCAST_ADDRESS);
                 // it the copy that is re-inserted into the queue so update the container accordingly
@@ -223,14 +228,12 @@ void ProbabilisticBroadcast::finish()
 
 bool ProbabilisticBroadcast::messageKnown(unsigned int msgId)
 {
-    auto pos = knownMsgIds.find(msgId);
-    return pos != knownMsgIds.end();
+    return contains(knownMsgIds, msgId);
 }
 
 bool ProbabilisticBroadcast::debugMessageKnown(unsigned int msgId)
 {
-    auto pos = debugMsgIdSet.find(msgId);
-    return pos != debugMsgIdSet.end();
+    return contains(debugMsgIdSet, msgId);
 }
 
 void ProbabilisticBroadcast::insertMessage(simtime_t_cref bcastDelay, tMsgDesc *msgDesc)
@@ -252,8 +255,7 @@ void ProbabilisticBroadcast::insertMessage(simtime_t_cref bcastDelay, tMsgDesc *
     // the broadcast timer to the message's broadcast instant.
     if (pos == msgQueue.begin()) {
         EV << "PBr: " << simTime() << " n" << myNetwAddr << "         message inserted in the front, reschedule it." << endl;
-        cancelEvent(broadcastTimer);
-        scheduleAt(bcastTime, broadcastTimer);
+        rescheduleAt(bcastTime, broadcastTimer);
     }
 }
 
@@ -280,7 +282,7 @@ ProbabilisticBroadcast::tMsgDesc *ProbabilisticBroadcast::popFirstMessageUpdateQ
 
 void ProbabilisticBroadcast::encapsulate(Packet *packet)
 {
-    auto pkt = makeShared<ProbabilisticBroadcastHeader>(); // TODO: msg->getName());
+    auto pkt = makeShared<ProbabilisticBroadcastHeader>(); // TODO msg->getName());
     cObject *controlInfo = packet->removeControlInfo();
     L3Address broadcastAddress = myNetwAddr.getAddressType()->getBroadcastAddress();
 
@@ -296,7 +298,7 @@ void ProbabilisticBroadcast::encapsulate(Packet *packet)
     // clean-up
     delete controlInfo;
 
-    //encapsulate the application packet
+    // encapsulate the application packet
     packet->insertAtFront(pkt);
 
     setDownControlInfo(packet, MacAddress::BROADCAST_ADDRESS);
@@ -327,7 +329,7 @@ void ProbabilisticBroadcast::insertNewMessage(Packet *packet, bool iAmInitialSen
         // create container for message and initialize container's values.
         msgDesc = new tMsgDesc;
         msgDesc->pkt = packet;
-        msgDesc->nbBcast = 0;    // so far, pkt has been forwarded zero times.
+        msgDesc->nbBcast = 0; // so far, pkt has been forwarded zero times.
         msgDesc->initialSend = iAmInitialSender;
         debugMsgIdSet.insert(macHeader->getId());
         insertMessage(uniform(0, bcastDelay), msgDesc);
@@ -343,7 +345,7 @@ void ProbabilisticBroadcast::decapsulate(Packet *packet)
     auto networkHeader = packet->popAtFront<ProbabilisticBroadcastHeader>();
     auto payloadLength = networkHeader->getPayloadLengthField();
     if (packet->getDataLength() < payloadLength) {
-        throw cRuntimeError("Data error: illegal payload length");     //FIXME packet drop
+        throw cRuntimeError("Data error: illegal payload length"); // FIXME packet drop
     }
     if (packet->getDataLength() > payloadLength)
         packet->setBackOffset(packet->getFrontOffset() + payloadLength);

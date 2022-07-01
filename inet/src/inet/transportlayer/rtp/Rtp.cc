@@ -1,28 +1,19 @@
-/***************************************************************************
-                          Rtp.cc  -  description
-                             -------------------
-    (C) 2007 Ahmed Ayadi  <ahmed.ayadi@sophia.inria.fr>
-    (C) 2001 Matthias Oppitz <Matthias.Oppitz@gmx.de>
+//
+// Copyright (C) 2001 Matthias Oppitz <Matthias.Oppitz@gmx.de>
+// Copyright (C) 2007 Ahmed Ayadi <ahmed.ayadi@sophia.inria.fr>
+//
+// SPDX-License-Identifier: LGPL-3.0-or-later
+//
 
-***************************************************************************/
-
-/***************************************************************************
-*                                                                         *
-*   This program is free software; you can redistribute it and/or modify  *
-*   it under the terms of the GNU General Public License as published by  *
-*   the Free Software Foundation; either version 2 of the License, or     *
-*   (at your option) any later version.                                   *
-*                                                                         *
-***************************************************************************/
+#include "inet/transportlayer/rtp/Rtp.h"
 
 #include "inet/common/ModuleAccess.h"
 #include "inet/common/lifecycle/NodeStatus.h"
-#include "inet/networklayer/common/InterfaceEntry.h"
+#include "inet/networklayer/common/NetworkInterface.h"
 #include "inet/networklayer/contract/ipv4/Ipv4Address.h"
 #include "inet/networklayer/ipv4/IIpv4RoutingTable.h"
 #include "inet/transportlayer/contract/udp/UdpControlInfo_m.h"
 #include "inet/transportlayer/contract/udp/UdpSocket.h"
-#include "inet/transportlayer/rtp/Rtp.h"
 #include "inet/transportlayer/rtp/RtpInnerPacket_m.h"
 #include "inet/transportlayer/rtp/RtpInterfacePacket_m.h"
 #include "inet/transportlayer/rtp/RtpProfile.h"
@@ -297,7 +288,7 @@ void Rtp::senderModuleStatus(RtpInnerPacket *rinp)
 void Rtp::dataOut(RtpInnerPacket *rinp)
 {
     Packet *packet = check_and_cast<Packet *>(rinp->getEncapsulatedPacket()->dup());
-    // RtpPacket *msg = check_and_cast<RtpPacket *>(rinp->getEncapsulatedPacket()->dup());      //FIXME kell itt az RtpPacket?
+//    RtpPacket *msg = check_and_cast<RtpPacket *>(rinp->getEncapsulatedPacket()->dup());      //FIXME kell itt az RtpPacket?
 
     _udpSocket.sendTo(packet, _destinationAddress, _port);
 
@@ -358,9 +349,9 @@ int Rtp::resolveMTU()
 {
     // it returns MTU bytelength (ethernet) minus ip
     // and udp headers
-    // TODO: How to do get the valid length of IP and ETHERNET header?
+    // TODO How to do get the valid length of IP and ETHERNET header?
     IIpv4RoutingTable *rt = getModuleFromPar<IIpv4RoutingTable>(par("routingTableModule"), this);
-    const InterfaceEntry *rtie = rt->getInterfaceForDestAddr(_destinationAddress);
+    const NetworkInterface *rtie = rt->getInterfaceForDestAddr(_destinationAddress);
 
     if (rtie == nullptr)
         throw cRuntimeError("No interface for remote address %s found!", _destinationAddress.str().c_str());
@@ -392,7 +383,7 @@ void Rtp::createSocket()
 {
     _udpSocket.bind(_port);
     MulticastGroupList mgl = getModuleFromPar<IInterfaceTable>(par("interfaceTableModule"), this)->collectMulticastGroups();
-    _udpSocket.joinLocalMulticastGroups(mgl);    //TODO make it parameter-dependent
+    _udpSocket.joinLocalMulticastGroups(mgl); // TODO make it parameter-dependent
     connectRet();
 }
 

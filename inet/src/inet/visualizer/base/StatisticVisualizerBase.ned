@@ -1,19 +1,9 @@
 //
-// Copyright (C) OpenSim Ltd.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 package inet.visualizer.base;
 
@@ -46,9 +36,9 @@ simple StatisticVisualizerBase extends VisualizerBase
         string statisticName = default(signalName); // statistic name to get the value, signal name by default
         string statisticUnit = default(""); // statistic unit, undefined by default
         string statisticExpression = default(""); // statistic expression, received value by default
-        string sourceFilter = default("**"); // pattern that must match the signal source, no source filter by default
+        string sourceFilter @mutable = default("**"); // pattern that must match the signal source, no source filter by default
 
-        string format = default("%n: %v %u"); // determines what is displayed, info by default
+        string format @mutable = default("%n: %v %u"); // determines what is displayed, info by default
         string unit = default(""); // display the value in one of the specified units, statistic unit by default
 
         string font = default("<default>"); // statistic value font, automatic by default

@@ -1,25 +1,16 @@
 //
-// Copyright (C) 2005 Andras Varga
+// Copyright (C) 2005 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
+
+#include "inet/common/scenario/ScenarioManager.h"
 
 #include "inet/common/INETUtils.h"
 #include "inet/common/XMLUtils.h"
 #include "inet/common/lifecycle/LifecycleOperation.h"
 #include "inet/common/lifecycle/ModuleOperations.h"
-#include "inet/common/scenario/ScenarioManager.h"
 #include "inet/common/scenario/ScenarioTimer_m.h"
 
 namespace inet {
@@ -59,7 +50,6 @@ static const char *OP_SHUTDOWN = "shutdown";
 static const char *OP_CRASH = "crash";
 static const char *OP_SUSPEND = "suspend";
 static const char *OP_RESUME = "resume";
-
 
 void ScenarioManager::initialize()
 {
@@ -117,7 +107,7 @@ void ScenarioManager::processCommand(const cXMLElement *node)
         else if (tag == CMD_DISCONNECT)
             processDisconnectCommand(node);
         else if (tag == CMD_INITIATE || tag == OP_START || tag == OP_STARTUP || tag == OP_STOP
-                || tag == OP_SHUTDOWN || tag == OP_CRASH || tag == OP_SUSPEND || tag == OP_RESUME)
+                 || tag == OP_SHUTDOWN || tag == OP_CRASH || tag == OP_SUSPEND || tag == OP_RESUME)
             processLifecycleCommand(node);
         else
             processModuleSpecificCommand(node);
@@ -209,12 +199,12 @@ ScenarioManager::GatePair ScenarioManager::getConnection(const cXMLElement *node
         if (srcModule->getParentModule() != destModule->getParentModule())
             throw cRuntimeError("Source and destination modules must be under the same parent");
         cGate *srcGate = findMandatorySingleGateTowards(srcModule, destModule);
-        bool bidir = strlen(srcGate->getNameSuffix()) > 0; //TODO use =srcGate->isGateHalf();
+        bool bidir = strlen(srcGate->getNameSuffix()) > 0; // TODO use =srcGate->isGateHalf();
         if (!bidir) {
             return GatePair(srcGate, nullptr);
         }
         else {
-            cGate *otherHalf = srcModule->gateHalf(srcGate->getBaseName(), cGate::INPUT, srcGate->isVector() ? srcGate->getIndex() : -1); //TODO use =srcGate->getOtherHalf();
+            cGate *otherHalf = srcModule->gateHalf(srcGate->getBaseName(), cGate::INPUT, srcGate->isVector() ? srcGate->getIndex() : -1); // TODO use =srcGate->getOtherHalf();
             cGate *otherSrcGate = otherHalf->getPreviousGate();
             if (otherSrcGate == nullptr)
                 throw cRuntimeError("Broken bidirectional connection: the corresponding input gate is not connected");
@@ -226,7 +216,6 @@ ScenarioManager::GatePair ScenarioManager::getConnection(const cXMLElement *node
     else {
         throw cRuntimeError("Missing attribute: Either 'src-gate' or 'dest-module' must be present");
     }
-
 }
 
 void ScenarioManager::processAtCommand(const cXMLElement *node)
@@ -308,13 +297,26 @@ void ScenarioManager::processCreateModuleCommand(const cXMLElement *node)
     cModule *parentModule = getSimulation()->getSystemModule()->getModuleByPath(parentModulePath);
     if (parentModule == nullptr)
         throw cRuntimeError("Parent module '%s' is not found", parentModulePath);
-    cModule *submodule = parentModule->getSubmodule(submoduleName, 0);
-    bool vector = xmlutils::getAttributeBoolValue(node, ATTR_VECTOR, submodule != nullptr);
+
+    // TODO solution for inconsistent out-of-date vectorSize values in OMNeT++
+    int submoduleVectorSize = 0;
+    for (SubmoduleIterator it(parentModule); !it.end(); ++it) {
+        cModule *submodule = *it;
+        if (submodule->isVector() && submodule->isName(submoduleName)) {
+            if (submoduleVectorSize < submodule->getVectorSize())
+                submoduleVectorSize = submodule->getVectorSize();
+        }
+    }
+
+    bool vector = xmlutils::getAttributeBoolValue(node, ATTR_VECTOR, submoduleVectorSize > 0);
     cModule *module = nullptr;
     if (vector) {
-        cModule *submodule = parentModule->getSubmodule(submoduleName, 0);
-        int submoduleIndex = submodule == nullptr ? 0 : submodule->getVectorSize();
-        module = moduleType->create(submoduleName, parentModule, submoduleIndex + 1, submoduleIndex);
+        if (!parentModule->hasSubmoduleVector(submoduleName)) {
+            parentModule->addSubmoduleVector(submoduleName, submoduleVectorSize + 1);
+        }
+        else
+            parentModule->setSubmoduleVectorSize(submoduleName, submoduleVectorSize + 1);
+        module = moduleType->create(submoduleName, parentModule, submoduleVectorSize);
     }
     else {
         module = moduleType->create(submoduleName, parentModule);
@@ -349,7 +351,6 @@ void ScenarioManager::createConnection(const cXMLElementList& paramList, cChanne
 
         // set parameters:
         for (auto child : paramList) {
-
             const char *name = xmlutils::getMandatoryFilledAttribute(*child, ATTR_NAME);
             const char *value = xmlutils::getMandatoryAttribute(*child, ATTR_VALUE);
             channel->par(name).parse(value);
@@ -454,7 +455,7 @@ void ScenarioManager::processLifecycleCommand(const cXMLElement *node)
         throw cRuntimeError("Unknown parameter '%s' for operation %s", paramsCopy.begin()->first.c_str(), operationName.c_str());
 
     // do the operation
-    lifecycleController.initiateOperation(operation);
+    initiateOperation(operation);
 }
 
 void ScenarioManager::refreshDisplay() const

@@ -1,26 +1,17 @@
 //
-// Copyright (C) OpenSim Ltd.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program.  If not, see http://www.gnu.org/licenses/.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-#include "inet/applications/common/SocketTag_m.h"
+
+#include "inet/emulation/networklayer/ipv4/Ipv4Encap.h"
+
 #include "inet/common/IProtocolRegistrationListener.h"
 #include "inet/common/checksum/TcpIpChecksum.h"
 #include "inet/common/packet/Message.h"
-#include "inet/common/packet/Packet.h"
-#include "inet/emulation/networklayer/ipv4/Ipv4Encap.h"
+#include "inet/common/socket/SocketTag_m.h"
+#include "inet/common/stlutils.h"
 #include "inet/networklayer/common/DscpTag_m.h"
 #include "inet/networklayer/common/EcnTag_m.h"
 #include "inet/networklayer/common/FragmentationTag_m.h"
@@ -41,8 +32,9 @@ void Ipv4Encap::initialize(int stage)
         defaultTimeToLive = 16; // par("timeToLive");
         defaultMCTimeToLive = 16; // par("multicastTimeToLive");
         crcMode = CRC_COMPUTED;
-        registerService(Protocol::ipv4, gate("upperLayerIn"), nullptr);
-        registerProtocol(Protocol::ipv4, nullptr, gate("upperLayerOut"));
+    }
+    else if (stage == INITSTAGE_NETWORK_LAYER) {
+        registerService(Protocol::ipv4, gate("upperLayerIn"), gate("upperLayerOut"));
     }
 }
 
@@ -67,7 +59,7 @@ void Ipv4Encap::handleMessage(cMessage *msg)
         EV << "Receiving\n";
         decapsulate(packet);
         bool hasSocket = false;
-        for (const auto &elem: socketIdToSocketDescriptor) {
+        for (const auto& elem : socketIdToSocketDescriptor) {
             if (elem.second->protocolId == protocol->getId() &&
                 (elem.second->localAddress.isUnspecified() || elem.second->localAddress == localAddress) &&
                 (elem.second->remoteAddress.isUnspecified() || elem.second->remoteAddress == remoteAddress))
@@ -80,7 +72,7 @@ void Ipv4Encap::handleMessage(cMessage *msg)
                 hasSocket = true;
             }
         }
-        if (upperProtocols.find(protocol) != upperProtocols.end()) {
+        if (contains(upperProtocols, protocol)) {
             EV_INFO << "Passing up to protocol " << protocol << "\n";
 //            emit(packetSentToUpperSignal, packet);
             send(packet, "upperLayerOut");
@@ -91,7 +83,7 @@ void Ipv4Encap::handleMessage(cMessage *msg)
         else {
             EV_ERROR << "Transport protocol '" << protocol->getName() << "' not connected, discarding packet\n";
             packet->setFrontOffset(ipv4HeaderPosition);
-//            const InterfaceEntry* fromIE = getSourceInterface(packet);
+//            const NetworkInterface* fromIE = getSourceInterface(packet);
 //            sendIcmpError(packet, fromIE ? fromIE->getInterfaceId() : -1, ICMP_DESTINATION_UNREACHABLE, ICMP_DU_PROTOCOL_UNREACHABLE);
         }
         send(packet, "upperLayerOut");
@@ -111,13 +103,14 @@ void Ipv4Encap::handleRequest(Request *request)
     }
     else if (Ipv4SocketConnectCommand *command = dynamic_cast<Ipv4SocketConnectCommand *>(ctrl)) {
         int socketId = request->getTag<SocketReq>()->getSocketId();
-        if (socketIdToSocketDescriptor.find(socketId) == socketIdToSocketDescriptor.end())
+        if (!containsKey(socketIdToSocketDescriptor, socketId))
             throw cRuntimeError("Ipv4Socket: should use bind() before connect()");
         socketIdToSocketDescriptor[socketId]->remoteAddress = command->getRemoteAddress();
         delete request;
     }
     else if (dynamic_cast<Ipv4SocketCloseCommand *>(ctrl) != nullptr) {
-        int socketId = 0; request->getTag<SocketReq>()->getSocketId();
+        int socketId = 0;
+        request->getTag<SocketReq>()->getSocketId();
         auto it = socketIdToSocketDescriptor.find(socketId);
         if (it != socketIdToSocketDescriptor.end()) {
             delete it->second;
@@ -136,18 +129,14 @@ void Ipv4Encap::encapsulate(Packet *transportPacket)
     auto l3AddressReq = transportPacket->removeTag<L3AddressReq>();
     Ipv4Address src = l3AddressReq->getSrcAddress().toIpv4();
     Ipv4Address dest = l3AddressReq->getDestAddress().toIpv4();
-    delete l3AddressReq;
 
     ipv4Header->setProtocolId((IpProtocolId)ProtocolGroup::ipprotocol.getProtocolNumber(transportPacket->getTag<PacketProtocolTag>()->getProtocol()));
 
     auto hopLimitReq = transportPacket->removeTagIfPresent<HopLimitReq>();
     short ttl = (hopLimitReq != nullptr) ? hopLimitReq->getHopLimit() : -1;
-    delete hopLimitReq;
     bool dontFragment = false;
-    if (auto dontFragmentReq = transportPacket->removeTagIfPresent<FragmentationReq>()) {
+    if (auto dontFragmentReq = transportPacket->removeTagIfPresent<FragmentationReq>())
         dontFragment = dontFragmentReq->getDontFragment();
-        delete dontFragmentReq;
-    }
 
     // set source and destination address
     ipv4Header->setDestAddress(dest);
@@ -158,22 +147,17 @@ void Ipv4Encap::encapsulate(Packet *transportPacket)
         ipv4Header->setSrcAddress(src);
 
     // set other fields
-    if (TosReq *tosReq = transportPacket->removeTagIfPresent<TosReq>()) {
+    if (auto& tosReq = transportPacket->removeTagIfPresent<TosReq>()) {
         ipv4Header->setTypeOfService(tosReq->getTos());
-        delete tosReq;
         if (transportPacket->findTag<DscpReq>())
             throw cRuntimeError("TosReq and DscpReq found together");
         if (transportPacket->findTag<EcnReq>())
             throw cRuntimeError("TosReq and EcnReq found together");
     }
-    if (DscpReq *dscpReq = transportPacket->removeTagIfPresent<DscpReq>()) {
+    if (auto& dscpReq = transportPacket->removeTagIfPresent<DscpReq>())
         ipv4Header->setDscp(dscpReq->getDifferentiatedServicesCodePoint());
-        delete dscpReq;
-    }
-    if (EcnReq *ecnReq = transportPacket->removeTagIfPresent<EcnReq>()) {
+    if (auto& ecnReq = transportPacket->removeTagIfPresent<EcnReq>())
         ipv4Header->setEcn(ecnReq->getExplicitCongestionNotification());
-        delete ecnReq;
-    }
 
     ipv4Header->setMoreFragments(false);
     ipv4Header->setDontFragment(dontFragment);

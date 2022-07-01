@@ -1,29 +1,18 @@
 //
-// Copyright (C) 2012 Opensim Ltd.
+// Copyright (C) 2012 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-//
+
 
 package inet.examples.inet.ipv4largenet;
 
-import inet.linklayer.ethernet.EtherBus;
-import inet.linklayer.ethernet.EtherHub;
+import inet.node.ethernet.EthernetHub;
 import inet.networklayer.configurator.ipv4.Ipv4NetworkConfigurator;
-import inet.node.ethernet.EtherSwitch;
+import inet.node.ethernet.EthernetSwitch;
 import inet.node.inet.Router;
 import inet.node.inet.StandardHost;
+import inet.physicallayer.wired.common.WireJunction;
 import ned.DatarateChannel;
 
 
@@ -72,9 +61,9 @@ module IPv4MediumLAN
         inout ethg;
     submodules:
         router: Router;
-        switch: EtherSwitch;
+        switch: EthernetSwitch;
         host[n]: StandardHost;
-        hub: EtherHub;
+        hub: EthernetHub;
         hhost[h]: StandardHost;
     connections:
         for i=0..n-1 {
@@ -115,15 +104,13 @@ module IPv4LargeLAN
         }
     submodules:
         router: Router;
-        switch: EtherSwitch;
+        switch: EthernetSwitch;
         host[n]: StandardHost;
-        hub: EtherHub;
+        hub: EthernetHub;
         hhost[h]: StandardHost;
-        bus: EtherBus {
+        tap[b+1]: WireJunction {
             parameters:
-                positions = "5 10 15"; // every 5 meters
-                propagationSpeed = 2e8 mps;  // 1us = 200m
-                @display("b=424,6;o=#408060");
+                @display("p=424,6,r,50");
         }
         bhost[b]: StandardHost;
     connections:
@@ -141,10 +128,13 @@ module IPv4LargeLAN
         router.ethg++ <--> cabletobus <--> hub.ethg++;
 
         for i=0..b-1 {
-            bus.ethg++ <--> cabletobus <--> bhost[i].ethg++;
+            tap[i].port++ <--> cabletobus <--> bhost[i].ethg++;
         }
 
-        bus.ethg++ <--> cabletobus <--> hub.ethg++;
+        tap[b].port++ <--> cabletobus <--> hub.ethg++;
+        for i=0..b-1 {
+            tap[i].port++ <--> cabletobus <--> tap[i+1].port++;
+        }
 }
 
 //

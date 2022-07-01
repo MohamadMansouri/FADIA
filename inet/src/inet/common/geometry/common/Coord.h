@@ -1,26 +1,13 @@
-/***************************************************************************
- * file:        Coord.h
- *
- * author:      Christian Frank
- *
- * copyright:   (C) 2004 Telecommunication Networks Group (TKN) at
- *              Technische Universitaet Berlin, Germany.
- *
- *              This program is free software; you can redistribute it
- *              and/or modify it under the terms of the GNU General Public
- *              License as published by the Free Software Foundation; either
- *              version 2 of the License, or (at your option) any later
- *              version.
- *              For further information see file COPYING
- *              in the top level directory
- ***************************************************************************
- * part of:     framework implementation developed by tkn
- **************************************************************************/
+//
+// Copyright (C) 2020 OpenSim Ltd.
+//
+// SPDX-License-Identifier: LGPL-3.0-or-later
+//
+
 
 #ifndef __INET_COORD_H
 #define __INET_COORD_H
 
-#include "inet/common/INETDefs.h"
 #include "inet/common/INETMath.h"
 
 namespace inet {
@@ -31,7 +18,6 @@ namespace inet {
  * Some comparison and basic arithmetic operators are implemented.
  *
  * @ingroup utils
- * @author Christian Frank
  */
 class INET_API Coord
 {
@@ -57,10 +43,10 @@ class INET_API Coord
 
   public:
     /** @brief Default constructor. */
-    Coord() : x(0.0), y(0.0), z(0.0) { }
+    Coord() : x(0.0), y(0.0), z(0.0) {}
 
     /** @brief Initializes a coordinate. */
-    Coord(double x, double y, double z = 0.0) : x(x), y(y), z(z) { }
+    Coord(double x, double y, double z = 0.0) : x(x), y(y), z(z) {}
 
     /** @brief Initializes coordinate from other coordinate. */
     Coord(const Coord& other) { copy(other); }
@@ -84,7 +70,7 @@ class INET_API Coord
     void setZ(double z) { this->z = z; }
 
     /** @brief Returns a string with the value of the coordinate. */
-    std::string str() const;
+    inline std::string str() const;
 
     /** @brief Returns the negated vector. */
     Coord operator-() const { return Coord(-x, -y, -z); }
@@ -142,7 +128,7 @@ class INET_API Coord
     /**
      * @brief Dot product
      */
-    float operator*(const Coord& v) const {
+    double operator*(const Coord& v) const {
         return x * v.x + y * v.y + z * v.z;
     }
 
@@ -182,7 +168,7 @@ class INET_API Coord
      * math::close function.
      */
     friend bool operator==(const Coord& a, const Coord& b) {
-        // FIXME: this implementation is not transitive
+        // FIXME this implementation is not transitive
         return math::close(a.x, b.x) && math::close(a.y, b.y) && math::close(a.z, b.z);
     }
 
@@ -321,14 +307,14 @@ class INET_API Coord
     /**
      * @brief Returns the minimal coordinates.
      */
-    Coord min(const Coord& a) {
+    Coord min(const Coord& a) const {
         return Coord(x < a.x ? x : a.x, y < a.y ? y : a.y, z < a.z ? z : a.z);
     }
 
     /**
      * @brief Returns the maximal coordinates.
      */
-    Coord max(const Coord& a) {
+    Coord max(const Coord& a) const {
         return Coord(x > a.x ? x : a.x, y > a.y ? y : a.y, z > a.z ? z : a.z);
     }
 
@@ -376,5 +362,5 @@ inline std::string Coord::str() const
 
 } // namespace inet
 
-#endif // ifndef __INET_COORD_H
+#endif
 

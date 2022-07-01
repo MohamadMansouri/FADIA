@@ -1,26 +1,18 @@
 //
-// Copyright (C) OpenSim Ltd.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
+
+#include "inet/visualizer/base/RoutingTableVisualizerBase.h"
 
 #include "inet/common/ModuleAccess.h"
 #include "inet/common/Simsignals.h"
 #include "inet/mobility/contract/IMobility.h"
 #include "inet/networklayer/common/L3AddressResolver.h"
+#include "inet/networklayer/contract/IInterfaceTable.h"
 #include "inet/networklayer/ipv4/Ipv4InterfaceData.h"
-#include "inet/visualizer/base/RoutingTableVisualizerBase.h"
 
 namespace inet {
 
@@ -63,10 +55,12 @@ const char *RoutingTableVisualizerBase::DirectiveResolver::resolveDirective(char
     return result.c_str();
 }
 
-RoutingTableVisualizerBase::~RoutingTableVisualizerBase()
+void RoutingTableVisualizerBase::preDelete(cComponent *root)
 {
-    if (displayRoutingTables)
+    if (displayRoutingTables) {
         unsubscribe();
+        removeAllRouteVisualizations();
+    }
 }
 
 void RoutingTableVisualizerBase::initialize(int stage)
@@ -119,7 +113,7 @@ void RoutingTableVisualizerBase::subscribe()
 void RoutingTableVisualizerBase::unsubscribe()
 {
     // NOTE: lookup the module again because it may have been deleted first
-    auto visualizationSubjectModule = getModuleFromPar<cModule>(par("visualizationSubjectModule"), this, false);
+    auto visualizationSubjectModule = findModuleFromPar<cModule>(par("visualizationSubjectModule"), this);
     if (visualizationSubjectModule != nullptr) {
         visualizationSubjectModule->unsubscribe(routeAddedSignal, this);
         visualizationSubjectModule->unsubscribe(routeDeletedSignal, this);
@@ -130,7 +124,8 @@ void RoutingTableVisualizerBase::unsubscribe()
 
 void RoutingTableVisualizerBase::receiveSignal(cComponent *source, simsignal_t signal, cObject *object, cObject *details)
 {
-    Enter_Method_Silent();
+    Enter_Method("%s", cComponent::getSignalName(signal));
+
     if (signal == routeAddedSignal || signal == routeDeletedSignal || signal == routeChangedSignal) {
         auto routingTable = check_and_cast<IIpv4RoutingTable *>(source);
         auto networkNode = getContainingNode(check_and_cast<cModule *>(source));
@@ -145,20 +140,29 @@ void RoutingTableVisualizerBase::receiveSignal(cComponent *source, simsignal_t s
 
 const RoutingTableVisualizerBase::RouteVisualization *RoutingTableVisualizerBase::getRouteVisualization(Ipv4Route *route, int nodeModuleId, int nextHopModuleId)
 {
-    auto key = std::make_tuple(route, nodeModuleId, nextHopModuleId);
+    Ipv4Address routerId;
+    if (route != nullptr)
+        routerId = route->getRoutingTable()->getRouterId();
+    auto key = std::make_tuple(routerId, nodeModuleId, nextHopModuleId);
     auto it = routeVisualizations.find(key);
     return it == routeVisualizations.end() ? nullptr : it->second;
 }
 
 void RoutingTableVisualizerBase::addRouteVisualization(const RouteVisualization *routeVisualization)
 {
-    auto key = std::make_tuple(routeVisualization->route, routeVisualization->sourceModuleId, routeVisualization->destinationModuleId);
+    Ipv4Address routerId;
+    if (routeVisualization->route != nullptr)
+        routerId = routeVisualization->route->getRoutingTable()->getRouterId();
+    auto key = std::make_tuple(routerId, routeVisualization->sourceModuleId, routeVisualization->destinationModuleId);
     routeVisualizations[key] = routeVisualization;
 }
 
 void RoutingTableVisualizerBase::removeRouteVisualization(const RouteVisualization *routeVisualization)
 {
-    auto key = std::make_tuple(routeVisualization->route, routeVisualization->sourceModuleId, routeVisualization->destinationModuleId);
+    Ipv4Address routerId;
+    if (routeVisualization->route != nullptr)
+        routerId = routeVisualization->route->getRoutingTable()->getRouterId();
+    auto key = std::make_tuple(routerId, routeVisualization->sourceModuleId, routeVisualization->destinationModuleId);
     routeVisualizations.erase(routeVisualizations.find(key));
 }
 
@@ -172,13 +176,9 @@ std::vector<Ipv4Address> RoutingTableVisualizerBase::getDestinations()
             auto interfaceTable = addressResolver.findInterfaceTableOf(networkNode);
             for (int i = 0; i < interfaceTable->getNumInterfaces(); i++) {
                 auto interface = interfaceTable->getInterface(i);
-#ifdef WITH_IPv4
-                if (auto ipv4Data = interface->findProtocolData<Ipv4InterfaceData>()) {
-                    auto address = ipv4Data->getIPAddress();
-                    if (!address.isUnspecified())
-                        destinations.push_back(address);
-                }
-#endif // WITH_IPv4
+                auto address = interface->getIpv4Address();
+                if (!address.isUnspecified())
+                    destinations.push_back(address);
             }
         }
     }

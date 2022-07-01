@@ -1,5 +1,73 @@
 ====== inet-4.x ======
 
+2022-05-13  ------ inet-4.4.0 released ------
+
+2021-01-15  Zoltan Bojthe
+
+	Moved code from updateDisplayString() to resolveDirective().
+
+2022-01-13  Levente Mészáros
+
+	Removed parameter assignments referencing other modules in the environment.
+	Replaced MacAddressTable with MacForwardingTable.
+	Replaced IMacAddressTable with IMacForwardingTable in all usages.
+
+2022-01-05  Zoltan Bojthe
+
+	MacProtocolBase: Refactored for external queue module in network interfaces.
+
+2021-11-15  Zoltan Bojthe
+
+	MacProtocolBase: use opp_component_ptr<> for hostModule (illegal pointer protection).
+
+2021-04-26  Zoltan Bojthe
+
+	Added/updated Enter_Method() info to the signalname in receiveSignal().
+
+2021-04-19  Zoltan Bojthe
+
+	Switched to using ModuleRef, ModuleRefByPar, opp_component_ptr for pointers to other modules.
+
+2021-03-22  Levente Mészáros
+
+	MacRelay: Renamed ifIn/ifOut gates to lowerLayerIn/lowerLayerOut gates.
+
+2021-03-19  Zoltan Bojthe
+
+	Changed if-else-if ladders in initialize() to separate if statements because
+	different stages may have the same number.
+
+2020-12-18  Zoltan Bojthe
+
+	MacProtocolBase, EthernetMacBase: initialization moved to base class.
+
+2021-01-11  ------ inet-4.3.0 released ------
+
+2020-10-19  Levente Mészáros
+
+	Switched to the new any protocol registration mechanism in MacRelayUnitBase.
+
+2020-10-13  Levente Mészáros
+
+	Added DispatchProtocolReq in MacRelayUnitBase if the outgoing interface
+	requires a specific protocol.
+
+2020-10-08  Levente Mészáros
+
+	Added DirectionTag ti MacRelayUnitBase for outgoing packets.
+
+2020-09-15  Levente Mészáros
+
+	Added MacRelayUnitBase module for different relay unit implementations.
+
+2020-09-11  Levente Mészáros
+
+	Set arrival gate in MacProtocolBase for packets pulled from the queue.
+
+2020-07-22  Levente Mészáros
+
+	Renamed InterfaceEntry -> NetworkInterface and interfaceEntry -> networkInterface.
+
 2020-01-08  ------ inet-4.2.0 released ------
 
 2019-11-14  Zoltan Bojthe
@@ -49,7 +117,8 @@
 
 2018-09-27  Levente Mészáros
 
-	Renamed INITSTAGE_LINK_LAYER to INITSTAGE_NETWORK_INTERFACE_CONFIGURATION.	Renamed INITSTAGE_LINK_LAYER_2 to INITSTAGE_LINK_LAYER.
+	Renamed INITSTAGE_LINK_LAYER to INITSTAGE_NETWORK_INTERFACE_CONFIGURATION.
+	Renamed INITSTAGE_LINK_LAYER_2 to INITSTAGE_LINK_LAYER.
 
 2018-08-28  Zoltan Bojthe
 

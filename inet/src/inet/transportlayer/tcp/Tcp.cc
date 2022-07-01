@@ -1,21 +1,10 @@
 //
-// Copyright (C) 2004 Andras Varga
+// Copyright (C) 2004 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-#include "inet/applications/common/SocketTag_m.h"
+
 #include "inet/common/IProtocolRegistrationListener.h"
 #include "inet/common/ModuleAccess.h"
 #include "inet/common/ProtocolTag_m.h"
@@ -24,17 +13,18 @@
 #include "inet/common/lifecycle/ModuleOperations.h"
 #include "inet/common/lifecycle/NodeStatus.h"
 #include "inet/common/packet/Message.h"
+#include "inet/common/socket/SocketTag_m.h"
 #include "inet/networklayer/common/EcnTag_m.h"
 #include "inet/networklayer/common/IpProtocolId_m.h"
 #include "inet/networklayer/common/L3AddressTag_m.h"
 
-#ifdef WITH_IPv4
+#ifdef INET_WITH_IPv4
 #include "inet/networklayer/ipv4/IcmpHeader_m.h"
-#endif // ifdef WITH_IPv4
+#endif // ifdef INET_WITH_IPv4
 
-#ifdef WITH_IPv6
+#ifdef INET_WITH_IPv6
 #include "inet/networklayer/icmpv6/Icmpv6Header_m.h"
-#endif // ifdef WITH_IPv6
+#endif // ifdef INET_WITH_IPv6
 
 #include "inet/transportlayer/common/TransportPseudoHeader_m.h"
 #include "inet/transportlayer/contract/tcp/TcpCommand_m.h"
@@ -74,18 +64,23 @@ void Tcp::initialize(int stage)
         WATCH_PTRMAP(tcpAppConnMap);
     }
     else if (stage == INITSTAGE_TRANSPORT_LAYER) {
-        registerService(Protocol::tcp, gate("appIn"), gate("ipIn"));
-        registerProtocol(Protocol::tcp, gate("ipOut"), gate("appOut"));
+        registerService(Protocol::tcp, gate("appIn"), gate("appOut"));
+        registerProtocol(Protocol::tcp, gate("ipOut"), gate("ipIn"));
         if (crcMode == CRC_COMPUTED) {
-#ifdef WITH_IPv4
-            auto ipv4 = dynamic_cast<INetfilter *>(getModuleByPath("^.ipv4.ip"));
+            cModuleType *moduleType = cModuleType::get("inet.transportlayer.tcp_common.TcpCrcInsertionHook");
+            auto crcInsertion = check_and_cast<TcpCrcInsertionHook *>(moduleType->create("crcInsertion", this));
+            crcInsertion->finalizeParameters();
+            crcInsertion->callInitialize();
+
+#ifdef INET_WITH_IPv4
+            auto ipv4 = dynamic_cast<INetfilter *>(findModuleByPath("^.ipv4.ip"));
             if (ipv4 != nullptr)
-                ipv4->registerHook(0, &crcInsertion);
+                ipv4->registerHook(0, crcInsertion);
 #endif
-#ifdef WITH_IPv6
-            auto ipv6 = dynamic_cast<INetfilter *>(getModuleByPath("^.ipv6.ipv6"));
+#ifdef INET_WITH_IPv6
+            auto ipv6 = dynamic_cast<INetfilter *>(findModuleByPath("^.ipv6.ipv6"));
             if (ipv6 != nullptr)
-                ipv6->registerHook(0, &crcInsertion);
+                ipv6->registerHook(0, crcInsertion);
 #endif
         }
     }
@@ -103,7 +98,7 @@ void Tcp::handleSelfMessage(cMessage *msg)
 
 void Tcp::handleUpperCommand(cMessage *msg)
 {
-    int socketId = getTags(msg).getTag<SocketReq>()->getSocketId();
+    int socketId = check_and_cast<ITaggedObject *>(msg)->getTags().getTag<SocketReq>()->getSocketId();
     TcpConnection *conn = findConnForApp(socketId);
 
     if (!conn) {
@@ -122,7 +117,7 @@ void Tcp::handleUpperCommand(cMessage *msg)
 
 void Tcp::sendFromConn(cMessage *msg, const char *gatename, int gateindex)
 {
-    Enter_Method_Silent();
+    Enter_Method("sendFromConn");
     take(msg);
     send(msg, gatename, gateindex);
 }
@@ -166,13 +161,12 @@ void Tcp::handleLowerPacket(Packet *packet)
         // process segment
         TcpConnection *conn = findConnForSegment(tcpHeader, srcAddr, destAddr);
         if (conn) {
-            TcpStateVariables* state = conn->getState();
+            TcpStateVariables *state = conn->getState();
             if (state && state->ect) {
                 // This may be true only in receiver side. According to RFC 3168, page 20:
                 // pure acknowledgement packets (e.g., packets that do not contain
                 // any accompanying data) MUST be sent with the not-ECT codepoint.
-                if (ecn == 3)
-                    state->gotCeIndication = true;
+                state->gotCeIndication = (ecn == 3);
             }
 
             bool ret = conn->processTCPSegment(packet, tcpHeader, srcAddr, destAddr);
@@ -183,8 +177,8 @@ void Tcp::handleLowerPacket(Packet *packet)
             segmentArrivalWhileClosed(packet, tcpHeader, srcAddr, destAddr);
         }
     }
-    else if (protocol == &Protocol::icmpv4 || protocol == &Protocol::icmpv6)  {
-        EV_DETAIL << "ICMP error received -- discarding\n";    // FIXME can ICMP packets really make it up to Tcp???
+    else if (protocol == &Protocol::icmpv4 || protocol == &Protocol::icmpv6) {
+        EV_DETAIL << "ICMP error received -- discarding\n"; // FIXME can ICMP packets really make it up to Tcp???
         delete packet;
     }
     else
@@ -225,13 +219,13 @@ void Tcp::removeConnection(TcpConnection *conn)
     conn->deleteModule();
 }
 
-TcpConnection *Tcp::findConnForSegment(const Ptr<const TcpHeader>& tcpseg, L3Address srcAddr, L3Address destAddr)
+TcpConnection *Tcp::findConnForSegment(const Ptr<const TcpHeader>& tcpHeader, L3Address srcAddr, L3Address destAddr)
 {
     SockPair key;
     key.localAddr = destAddr;
     key.remoteAddr = srcAddr;
-    key.localPort = tcpseg->getDestPort();
-    key.remotePort = tcpseg->getSrcPort();
+    key.localPort = tcpHeader->getDestPort();
+    key.remotePort = tcpHeader->getSrcPort();
     SockPair save = key;
 
     // try with fully qualified SockPair
@@ -266,15 +260,15 @@ TcpConnection *Tcp::findConnForSegment(const Ptr<const TcpHeader>& tcpseg, L3Add
     return nullptr;
 }
 
-void Tcp::segmentArrivalWhileClosed(Packet *packet, const Ptr<const TcpHeader>& tcpseg, L3Address srcAddr, L3Address destAddr)
+void Tcp::segmentArrivalWhileClosed(Packet *tcpSegment, const Ptr<const TcpHeader>& tcpHeader, L3Address srcAddr, L3Address destAddr)
 {
     auto moduleType = cModuleType::get("inet.transportlayer.tcp.TcpConnection");
     const char *submoduleName = "conn-temp";
     auto module = check_and_cast<TcpConnection *>(moduleType->createScheduleInit(submoduleName, this));
     module->initConnection(this, -1);
-    module->segmentArrivalWhileClosed(packet, tcpseg, srcAddr, destAddr);
+    module->segmentArrivalWhileClosed(tcpSegment, tcpHeader, srcAddr, destAddr);
     module->deleteModule();
-    delete packet;
+    delete tcpSegment;
 }
 
 ushort Tcp::getEphemeralPort()
@@ -373,12 +367,12 @@ TcpReceiveQueue *Tcp::createReceiveQueue()
 
 void Tcp::handleStartOperation(LifecycleOperation *operation)
 {
-    //FIXME implementation
+    // FIXME implementation
 }
 
 void Tcp::handleStopOperation(LifecycleOperation *operation)
 {
-    //FIXME close connections??? yes, because the applications may not close them!!!
+    // FIXME close connections??? yes, because the applications may not close them!!!
     reset();
     delayActiveOperationFinish(par("stopOperationTimeout"));
     startActiveOperationExtraTimeOrFinish(par("stopOperationExtraTime"));
@@ -391,7 +385,7 @@ void Tcp::handleCrashOperation(LifecycleOperation *operation)
 
 void Tcp::reset()
 {
-    for (auto & elem : tcpAppConnMap)
+    for (auto& elem : tcpAppConnMap)
         elem.second->deleteModule();
     tcpAppConnMap.clear();
     tcpConnMap.clear();
@@ -400,18 +394,18 @@ void Tcp::reset()
 }
 
 // packet contains the tcpHeader
-bool Tcp::checkCrc(Packet *packet)
+bool Tcp::checkCrc(Packet *tcpSegment)
 {
-    auto tcpHeader = packet->peekAtFront<TcpHeader>();
+    auto tcpHeader = tcpSegment->peekAtFront<TcpHeader>();
 
     switch (tcpHeader->getCrcMode()) {
         case CRC_COMPUTED: {
-            //check CRC:
-            auto networkProtocol = packet->getTag<NetworkProtocolInd>()->getProtocol();
-            const std::vector<uint8_t> tcpBytes = packet->peekDataAsBytes()->getBytes();
+            // check CRC:
+            auto networkProtocol = tcpSegment->getTag<NetworkProtocolInd>()->getProtocol();
+            const std::vector<uint8_t> tcpBytes = tcpSegment->peekDataAsBytes()->getBytes();
             auto pseudoHeader = makeShared<TransportPseudoHeader>();
-            L3Address srcAddr = packet->getTag<L3AddressInd>()->getSrcAddress();
-            L3Address destAddr = packet->getTag<L3AddressInd>()->getDestAddress();
+            L3Address srcAddr = tcpSegment->getTag<L3AddressInd>()->getSrcAddress();
+            L3Address destAddr = tcpSegment->getTag<L3AddressInd>()->getDestAddress();
             pseudoHeader->setSrcAddress(srcAddr);
             pseudoHeader->setDestAddress(destAddr);
             ASSERT(networkProtocol);
@@ -427,9 +421,9 @@ bool Tcp::checkCrc(Packet *packet)
                 throw cRuntimeError("Unknown network protocol: %s", networkProtocol->getName());
             MemoryOutputStream stream;
             Chunk::serialize(stream, pseudoHeader);
-            Chunk::serialize(stream, packet->peekData());
+            Chunk::serialize(stream, tcpSegment->peekData());
             uint16_t crc = TcpIpChecksum::checksum(stream.getData());
-            return (crc == 0);
+            return crc == 0;
         }
         case CRC_DECLARED_CORRECT:
             return true;
@@ -456,7 +450,7 @@ void Tcp::refreshDisplay() const
         numESTABLISHED = 0, numCLOSE_WAIT = 0, numLAST_ACK = 0, numFIN_WAIT_1 = 0,
         numFIN_WAIT_2 = 0, numCLOSING = 0, numTIME_WAIT = 0;
 
-    for (auto & elem : tcpAppConnMap) {
+    for (auto& elem : tcpAppConnMap) {
         int state = (elem).second->getFsmState();
 
         switch (state) {
@@ -543,7 +537,7 @@ void Tcp::refreshDisplay() const
 
 std::ostream& operator<<(std::ostream& os, const Tcp::SockPair& sp)
 {
-    os << "locSocket=" << sp.localAddr << ":"<< sp.localPort << " "
+    os << "locSocket=" << sp.localAddr << ":" << sp.localPort << " "
        << "remSocket=" << sp.remoteAddr << ":" << sp.remotePort;
     return os;
 }
@@ -559,5 +553,4 @@ std::ostream& operator<<(std::ostream& os, const TcpConnection& conn)
 
 } // namespace tcp
 } // namespace inet
-
 

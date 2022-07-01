@@ -1,25 +1,16 @@
 //
-// Copyright (C) 2004 Andras Varga
+// Copyright (C) 2004 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
+
+#include "inet/networklayer/ipv4/Ipv4FragBuf.h"
 
 #include <stdlib.h>
 #include <string.h>
 
 #include "inet/networklayer/ipv4/Icmp.h"
-#include "inet/networklayer/ipv4/Ipv4FragBuf.h"
 #include "inet/networklayer/ipv4/Ipv4Header_m.h"
 
 namespace inet {
@@ -112,7 +103,7 @@ void Ipv4FragBuf::purgeStaleFragments(Icmp *icmpModule, simtime_t lastupdate)
 
     ASSERT(icmpModule);
 
-    for (auto i = bufs.begin(); i != bufs.end(); ) {
+    for (auto i = bufs.begin(); i != bufs.end();) {
         // if too old, remove it
         DatagramBuffer& buf = i->second;
         if (buf.lastupdate < lastupdate) {
@@ -121,8 +112,10 @@ void Ipv4FragBuf::purgeStaleFragments(Icmp *icmpModule, simtime_t lastupdate)
             // because its length (being a fragment) is smaller than the encapsulated
             // packet, resulting in "length became negative" error. Use getEncapsulatedPacket().
             EV_WARN << "datagram fragment timed out in reassembly buffer, sending ICMP_TIME_EXCEEDED\n";
-            if (buf.packet != nullptr)
-                icmpModule->sendErrorMessage(buf.packet, -1    /*TODO*/, ICMP_TIME_EXCEEDED, 0);
+            if (buf.packet != nullptr) {
+                icmpModule->sendErrorMessage(buf.packet, -1 /*TODO*/, ICMP_TIME_EXCEEDED, 0);
+                delete buf.packet;
+            }
 
             // delete
             auto oldi = i++;

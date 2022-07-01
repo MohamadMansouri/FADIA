@@ -1,21 +1,14 @@
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program.  If not, see http://www.gnu.org/licenses/.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-#include "inet/applications/common/SocketTag_m.h"
+
 #include "inet/applications/udpapp/UdpSocketIo.h"
+
 #include "inet/common/ModuleAccess.h"
+#include "inet/common/socket/SocketTag_m.h"
 #include "inet/networklayer/common/FragmentationTag_m.h"
 #include "inet/networklayer/common/L3AddressResolver.h"
 
@@ -78,14 +71,19 @@ void UdpSocketIo::setSocketOptions()
     if (tos != -1)
         socket.setTos(tos);
 
-    const char *multicastInterface = par("multicastInterface");
-    if (multicastInterface[0]) {
+    NetworkInterface *multicastInterface = nullptr;
+    const char *multicastInterfaceName = par("multicastInterface");
+    if (multicastInterfaceName[0]) {
         IInterfaceTable *ift = getModuleFromPar<IInterfaceTable>(par("interfaceTableModule"), this);
-        InterfaceEntry *ie = ift->findInterfaceByName(multicastInterface);
-        if (!ie)
-            throw cRuntimeError("Wrong multicastInterface setting: no interface named \"%s\"", multicastInterface);
-        socket.setMulticastOutputInterface(ie->getInterfaceId());
+        multicastInterface = ift->findInterfaceByName(multicastInterfaceName);
+        if (!multicastInterface)
+            throw cRuntimeError("Wrong multicastInterface setting: no interface named \"%s\"", multicastInterfaceName);
+        socket.setMulticastOutputInterface(multicastInterface->getInterfaceId());
     }
+
+    auto multicastAddresses = check_and_cast<cValueArray *>(par("multicastAddresses").objectValue());
+    for (int i = 0; i < multicastAddresses->size(); i++)
+        socket.joinMulticastGroup(Ipv4Address(multicastAddresses->get(0).stringValue()), multicastInterface != nullptr ? multicastInterface->getInterfaceId() : -1);
 
     bool receiveBroadcast = par("receiveBroadcast");
     if (receiveBroadcast)
@@ -104,7 +102,7 @@ void UdpSocketIo::socketDataArrived(UdpSocket *socket, Packet *packet)
     emit(packetReceivedSignal, packet);
     EV_INFO << "Received packet: " << UdpSocket::getReceivedPacketInfo(packet) << endl;
     numReceived++;
-    delete packet->removeTag<SocketInd>();
+    packet->removeTag<SocketInd>();
     send(packet, "trafficOut");
 }
 
@@ -122,12 +120,13 @@ void UdpSocketIo::socketClosed(UdpSocket *socket)
 
 void UdpSocketIo::handleStartOperation(LifecycleOperation *operation)
 {
-    setSocketOptions();
     socket.setOutputGate(gate("socketOut"));
+    setSocketOptions();
     const char *localAddress = par("localAddress");
     socket.bind(*localAddress ? L3AddressResolver().resolve(localAddress) : L3Address(), par("localPort"));
     const char *destAddrs = par("destAddress");
-    socket.connect(*destAddrs ? L3AddressResolver().resolve(destAddrs) : L3Address(), par("destPort"));
+    if (*destAddrs)
+        socket.connect(L3AddressResolver().resolve(destAddrs), par("destPort"));
 }
 
 void UdpSocketIo::handleStopOperation(LifecycleOperation *operation)

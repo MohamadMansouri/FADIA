@@ -2,29 +2,18 @@
 // Copyright (C) 2013 OpenSim Ltd.
 // Copyright (C) ANSA Team
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program.  If not, see http://www.gnu.org/licenses/.
-//
-// Authors: ANSA Team, Benjamin Martin Seregi
+
+// Authors: ANSA Team
 //
 
 #ifndef __INET_STP_H
 #define __INET_STP_H
 
-#include "inet/common/INETDefs.h"
-#include "inet/common/packet/Packet.h"
 #include "inet/common/lifecycle/ModuleOperations.h"
 #include "inet/common/lifecycle/NodeStatus.h"
+#include "inet/common/packet/Packet.h"
 #include "inet/linklayer/common/MacAddress.h"
 #include "inet/linklayer/configurator/Ieee8021dInterfaceData.h"
 #include "inet/linklayer/ieee8021d/common/Ieee8021dBpdu_m.h"
@@ -42,10 +31,10 @@ class INET_API Stp : public StpBase
     typedef Ieee8021dInterfaceData::PortInfo PortInfo;
 
   protected:
-    static const double tickInterval;    // interval between two ticks
+    static const double tickInterval; // interval between two ticks
     bool isRoot = false;
     unsigned int rootInterfaceId = 0;
-    std::vector<unsigned int> desPorts;    // set of designated ports
+    std::vector<unsigned int> desPorts; // set of designated ports
 
     // Discovered values
     unsigned int rootPathCost = 0;
@@ -104,7 +93,7 @@ class INET_API Stp : public StpBase
      * Comparison of all IDs in Ieee8021dInterfaceData::PortInfo structure
      * Invokes: superiorID(), superiorPort()
      */
-    int comparePorts(Ieee8021dInterfaceData *portA, Ieee8021dInterfaceData *portB);
+    int comparePorts(const Ieee8021dInterfaceData *portA, const Ieee8021dInterfaceData *portB);
     int compareBridgeIDs(unsigned int aPriority, MacAddress aAddress, unsigned int bPriority, MacAddress bAddress);
     int comparePortIDs(unsigned int aPriority, unsigned int aNum, unsigned int bPriority, unsigned int bNum);
 
@@ -259,5 +248,5 @@ inline std::ostream& operator<<(std::ostream& os, Stp i)
 
 } // namespace inet
 
-#endif // ifndef __INET_STP_H
+#endif
 

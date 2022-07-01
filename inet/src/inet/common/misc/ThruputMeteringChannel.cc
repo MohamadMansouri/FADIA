@@ -1,19 +1,9 @@
 //
-// Copyright (C) 2005 Andras Varga
+// Copyright (C) 2005 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 #include "inet/common/misc/ThruputMeteringChannel.h"
 
@@ -25,8 +15,8 @@ ThruputMeteringChannel::ThruputMeteringChannel(const char *name) : cDatarateChan
 {
     displayAsTooltip = false;
     fmt = nullptr;
-    batchSize = 10;    // packets
-    maxInterval = 0.1;    // seconds
+    batchSize = 10; // packets
+    maxInterval = 0.1; // seconds
 
     numPackets = 0;
     numBits = 0;
@@ -58,14 +48,14 @@ void ThruputMeteringChannel::initialize()
     fmt = par("thruputDisplayFormat");
 }
 
-void ThruputMeteringChannel::processMessage(cMessage *msg, simtime_t t, result_t& result)
+cChannel::Result ThruputMeteringChannel::processMessage(cMessage *msg, const SendOptions& options, simtime_t t)
 {
-    cDatarateChannel::processMessage(msg, t, result);
+    cChannel::Result result = cDatarateChannel::processMessage(msg, options, t);
 
     cPacket *pkt = dynamic_cast<cPacket *>(msg);
     // TODO handle disabled state (show with different style?/color? or print "disabled"?)
     if (!pkt || !fmt || *fmt == 0 || result.discard)
-        return;
+        return result;
 
     // count packets and bits
     numPackets++;
@@ -78,6 +68,7 @@ void ThruputMeteringChannel::processMessage(cMessage *msg, simtime_t t, result_t
     intvlNumPackets++;
     intvlNumBits += pkt->getBitLength();
     intvlLastPkTime = t;
+    return result;
 }
 
 void ThruputMeteringChannel::beginNewInterval(simtime_t now)
@@ -105,11 +96,11 @@ void ThruputMeteringChannel::refreshDisplay() const
     double bytes;
     for (const char *fp = fmt; *fp && buf + 200 - p > 20; fp++) {
         switch (*fp) {
-            case 'N':    // number of packets
+            case 'N': // number of packets
                 p += sprintf(p, "%ld", numPackets);
                 break;
 
-            case 'V':    // volume (in bytes)
+            case 'V': // volume (in bytes)
                 bytes = floor(numBits / 8);
                 if (bytes < 1024)
                     p += sprintf(p, "%gB", bytes);
@@ -119,36 +110,36 @@ void ThruputMeteringChannel::refreshDisplay() const
                     p += sprintf(p, "%.3gMiB", bytes / 1024 / 1024);
                 break;
 
-            case 'p':    // current packet/sec
+            case 'p': // current packet/sec
                 p += sprintf(p, "%.3gpps", currentPkPerSec);
                 break;
 
-            case 'b':    // current bandwidth
+            case 'b': // current bandwidth
                 if (currentBitPerSec < 1000000)
                     p += sprintf(p, "%.3gk", currentBitPerSec / 1000);
                 else
                     p += sprintf(p, "%.3gM", currentBitPerSec / 1000000);
                 break;
 
-            case 'u':    // current channel utilization (%)
+            case 'u': // current channel utilization (%)
                 if (getDatarate() == 0)
                     p += sprintf(p, "n/a");
                 else
                     p += sprintf(p, "%.3g%%", currentBitPerSec / getDatarate() * 100.0);
                 break;
 
-            case 'P':    // average packet/sec on [0,now)
+            case 'P': // average packet/sec on [0,now)
                 p += sprintf(p, "%.3gpps", tt == 0 ? 0 : numPackets / tt);
                 break;
 
-            case 'B':    // average bandwidth on [0,now)
+            case 'B': // average bandwidth on [0,now)
                 if (bps < 1000000)
                     p += sprintf(p, "%.3gk", bps / 1000);
                 else
                     p += sprintf(p, "%.3gM", bps / 1000000);
                 break;
 
-            case 'U':    // average channel utilization (%) on [0,now)
+            case 'U': // average channel utilization (%) on [0,now)
                 if (getDatarate() == 0)
                     p += sprintf(p, "n/a");
                 else

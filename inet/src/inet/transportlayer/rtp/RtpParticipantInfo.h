@@ -1,24 +1,12 @@
-/***************************************************************************
-                          RtpParticipantInfo.h  -  description
-                             -------------------
-    begin                : Wed Oct 24 2001
-    copyright            : (C) 2001 by Matthias Oppitz
-    email                : Matthias.Oppitz@gmx.de
-***************************************************************************/
-
-/***************************************************************************
-*                                                                         *
-*   This program is free software; you can redistribute it and/or modify  *
-*   it under the terms of the GNU General Public License as published by  *
-*   the Free Software Foundation; either version 2 of the License, or     *
-*   (at your option) any later version.                                   *
-*                                                                         *
-***************************************************************************/
+//
+// Copyright (C) 2001 Matthias Oppitz <Matthias.Oppitz@gmx.de>
+//
+// SPDX-License-Identifier: LGPL-3.0-or-later
+//
 
 #ifndef __INET_RTPPARTICIPANTINFO_H
 #define __INET_RTPPARTICIPANTINFO_H
 
-#include "inet/common/INETDefs.h"
 #include "inet/common/packet/Packet.h"
 #include "inet/networklayer/contract/ipv4/Ipv4Address.h"
 #include "inet/transportlayer/rtp/RtpPacket_m.h"
@@ -28,7 +16,7 @@
 namespace inet {
 namespace rtp {
 
-//Forward declarations:
+// Forward declarations:
 class ReceptionReport;
 class SenderReport;
 
@@ -48,7 +36,7 @@ class INET_API RtpParticipantInfo : public RtpParticipantInfo_Base
     /**
      * Default constructor.
      */
-    RtpParticipantInfo(uint32 ssrc = 0);
+    RtpParticipantInfo(uint32_t ssrc = 0);
 
     /**
      * Copy constructor.
@@ -153,12 +141,12 @@ class INET_API RtpParticipantInfo : public RtpParticipantInfo_Base
     /**
      * Returns the ssrc identifier of the RTP endsystem.
      */
-    virtual uint32 getSsrc() const override;
+    virtual uint32_t getSsrc() const override;
 
     /**
      * Sets the ssrc identifier.
      */
-    virtual void setSsrc(uint32 ssrc) override;
+    virtual void setSsrc(uint32_t ssrc) override;
 
     /**
      * Creates a new SdesItem and adds it to the SdesChunk stored in
@@ -174,7 +162,7 @@ class INET_API RtpParticipantInfo : public RtpParticipantInfo_Base
      * an 8 character hexadecimal number which is used as name
      * of an RtpParticipantInfo object.
      */
-    static std::string ssrcToName(uint32 ssrc);
+    static std::string ssrcToName(uint32_t ssrc);
 
   private:
     void copy(const RtpParticipantInfo& other);
@@ -197,5 +185,5 @@ class INET_API RtpParticipantInfo : public RtpParticipantInfo_Base
 } // namespace rtp
 } // namespace inet
 
-#endif // ifndef __INET_RTPPARTICIPANTINFO_H
+#endif
 

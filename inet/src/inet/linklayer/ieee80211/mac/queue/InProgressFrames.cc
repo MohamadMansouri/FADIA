@@ -1,23 +1,13 @@
 //
 // Copyright (C) 2016 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see http://www.gnu.org/licenses/.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-#include <algorithm>
 
 #include "inet/linklayer/ieee80211/mac/queue/InProgressFrames.h"
+
+#include <algorithm>
 
 namespace inet {
 namespace ieee80211 {
@@ -37,7 +27,7 @@ void InProgressFrames::initialize(int stage)
     }
 }
 
-void InProgressFrames::updateDisplayString()
+void InProgressFrames::updateDisplayString() const
 {
     std::string text = std::to_string(inProgressFrames.size()) + " packets";
     getDisplayString().setTagArg("t", 0, text.c_str());
@@ -70,7 +60,7 @@ bool InProgressFrames::hasEligibleFrameToTransmit()
 
 void InProgressFrames::ensureHasFrameToTransmit()
 {
-//    TODO: delete old frames from inProgressFrames
+//    TODO delete old frames from inProgressFrames
 //    if (auto dataFrame = dynamic_cast<Ieee80211DataHeader*>(frame)) {
 //        if (transmitLifetimeHandler->isLifetimeExpired(dataFrame))
 //            return frame;
@@ -80,6 +70,7 @@ void InProgressFrames::ensureHasFrameToTransmit()
         if (frames) {
             for (auto frame : *frames) {
                 EV_DEBUG << "Inserting frame " << frame->getName() << " extracted from MAC data service.\n";
+                take(frame);
                 ackHandler->frameGotInProgress(frame->peekAtFront<Ieee80211DataOrMgmtHeader>());
                 inProgressFrames.push_back(frame);
                 frame->setArrivalTime(simTime());
@@ -115,6 +106,7 @@ Packet *InProgressFrames::getPendingFrameFor(Packet *frame)
         if (frames) {
             auto firstFrame = (*frames)[0];
             for (auto frame : *frames) {
+                take(frame);
                 ackHandler->frameGotInProgress(frame->peekAtFront<Ieee80211DataOrMgmtHeader>());
                 inProgressFrames.push_back(frame);
                 frame->setArrivalTime(simTime());
@@ -122,7 +114,7 @@ Packet *InProgressFrames::getPendingFrameFor(Packet *frame)
                 emit(packetEnqueuedSignal, frame);
             }
             delete frames;
-            // FIXME: If the next Txop sequence were a BlockAckReqBlockAckFs then this would return
+            // FIXME If the next Txop sequence were a BlockAckReqBlockAckFs then this would return
             // a wrong pending frame.
             return firstFrame;
         }
@@ -147,7 +139,7 @@ void InProgressFrames::dropFrames(std::set<std::pair<MacAddress, std::pair<Tid, 
         auto header = frame->peekAtFront<Ieee80211MacHeader>();
         if (header->getType() == ST_DATA_WITH_QOS) {
             auto dataheader = CHK(dynamicPtrCast<const Ieee80211DataHeader>(header));
-            if (seqAndFragNums.count(std::make_pair(dataheader->getReceiverAddress(), std::make_pair(dataheader->getTid(), SequenceControlField(dataheader->getSequenceNumber(), dataheader->getFragmentNumber())))) != 0) {
+            if (seqAndFragNums.count(std::make_pair(dataheader->getReceiverAddress(), std::make_pair(dataheader->getTid(), SequenceControlField(dataheader->getSequenceNumber().get(), dataheader->getFragmentNumber())))) != 0) {
                 EV_DEBUG << "Dropping frame " << frame->getName() << ".\n";
                 it = inProgressFrames.erase(it);
                 droppedFrames.push_back(frame);
@@ -174,6 +166,7 @@ std::vector<Packet *> InProgressFrames::getOutstandingFrames()
 
 void InProgressFrames::clearDroppedFrames()
 {
+    Enter_Method("clearDroppedFrames");
     for (auto frame : droppedFrames)
         delete frame;
     droppedFrames.clear();
@@ -189,3 +182,4 @@ InProgressFrames::~InProgressFrames()
 
 } /* namespace ieee80211 */
 } /* namespace inet */
+

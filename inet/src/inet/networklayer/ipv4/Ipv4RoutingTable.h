@@ -1,19 +1,8 @@
 //
 // Copyright (C) 2000 Institut fuer Telematik, Universitaet Karlsruhe
-// Copyright (C) 2004-2006 Andras Varga
+// Copyright (C) 2004-2006 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
 //
@@ -30,7 +19,7 @@
 
 #include <vector>
 
-#include "inet/common/INETDefs.h"
+#include "inet/common/ModuleRefByPar.h"
 #include "inet/common/lifecycle/ILifecycle.h"
 #include "inet/networklayer/contract/ipv4/Ipv4Address.h"
 #include "inet/networklayer/ipv4/IIpv4RoutingTable.h"
@@ -69,19 +58,19 @@ class IRoutingTable;
  * Uses RoutingTableParser to read routing files (.irt, .mrt).
  *
  *
- * @see InterfaceEntry, Ipv4InterfaceData, Ipv4Route
+ * @see NetworkInterface, Ipv4InterfaceData, Ipv4Route
  */
 class INET_API Ipv4RoutingTable : public cSimpleModule, public IIpv4RoutingTable, protected cListener, public ILifecycle
 {
   protected:
-    IInterfaceTable *ift = nullptr;    // cached pointer
+    ModuleRefByPar<IInterfaceTable> ift;
 
     Ipv4Address routerId;
     const char *netmaskRoutes = nullptr;
     bool forwarding = false;
     bool multicastForward = false;
     bool isNodeUp = false;
-    bool useAdminDist = false;     // Use Cisco like administrative distances
+    bool useAdminDist = false; // Use Cisco like administrative distances
 
     // for convenience
     typedef Ipv4MulticastRoute::OutInterface OutInterface;
@@ -102,10 +91,10 @@ class INET_API Ipv4RoutingTable : public cSimpleModule, public IIpv4RoutingTable
     // to modify them, but they can not access them directly.
 
     typedef std::vector<Ipv4Route *> RouteVector;
-    RouteVector routes;    // Unicast route array, sorted by netmask desc, dest asc, metric asc
+    RouteVector routes; // Unicast route array, sorted by netmask desc, dest asc, metric asc
 
     typedef std::vector<Ipv4MulticastRoute *> MulticastRouteVector;
-    MulticastRouteVector multicastRoutes;    // Multicast route array, sorted by netmask desc, origin asc, metric asc
+    MulticastRouteVector multicastRoutes; // Multicast route array, sorted by netmask desc, origin asc, metric asc
 
   protected:
     // set router Id
@@ -121,18 +110,18 @@ class INET_API Ipv4RoutingTable : public cSimpleModule, public IIpv4RoutingTable
     virtual void refreshDisplay() const override;
 
     // delete routes for the given interface
-    virtual void deleteInterfaceRoutes(const InterfaceEntry *entry);
+    virtual void deleteInterfaceRoutes(const NetworkInterface *entry);
 
     // invalidates routing cache and local addresses cache
     virtual void invalidateCache();
 
     // helper for sorting routing table, used by addRoute()
-    class RouteLessThan
-    {
-        const Ipv4RoutingTable &c;
+    class RouteLessThan {
+        const Ipv4RoutingTable& c;
+
       public:
         RouteLessThan(const Ipv4RoutingTable& c) : c(c) {}
-        bool operator () (const Ipv4Route *a, const Ipv4Route *b) { return c.routeLessThan(a, b); }
+        bool operator()(const Ipv4Route *a, const Ipv4Route *b) { return c.routeLessThan(a, b); }
     };
     bool routeLessThan(const Ipv4Route *a, const Ipv4Route *b) const;
 
@@ -185,7 +174,7 @@ class INET_API Ipv4RoutingTable : public cSimpleModule, public IIpv4RoutingTable
     /**
      * Returns an interface given by its address. Returns nullptr if not found.
      */
-    virtual InterfaceEntry *getInterfaceByAddress(const Ipv4Address& address) const override;
+    virtual NetworkInterface *getInterfaceByAddress(const Ipv4Address& address) const override;
     //@}
 
     /**
@@ -232,7 +221,7 @@ class INET_API Ipv4RoutingTable : public cSimpleModule, public IIpv4RoutingTable
      * Returns the interface entry having the specified address
      * as its local broadcast address.
      */
-    virtual InterfaceEntry *findInterfaceByLocalBroadcastAddress(const Ipv4Address& dest) const override;
+    virtual NetworkInterface *findInterfaceByLocalBroadcastAddress(const Ipv4Address& dest) const override;
 
     /**
      * The routing function. Performs longest prefix match for the given
@@ -247,7 +236,7 @@ class INET_API Ipv4RoutingTable : public cSimpleModule, public IIpv4RoutingTable
      * Returns the output interface for the packets with dest as destination
      * address, or nullptr if the destination is not in routing table.
      */
-    virtual InterfaceEntry *getInterfaceForDestAddr(const Ipv4Address& dest) const override;
+    virtual NetworkInterface *getInterfaceForDestAddr(const Ipv4Address& dest) const override;
 
     /**
      * Convenience function based on findBestMatchingRoute().
@@ -376,12 +365,12 @@ class INET_API Ipv4RoutingTable : public cSimpleModule, public IIpv4RoutingTable
 
     virtual L3Address getRouterIdAsGeneric() const override { return getRouterId(); }
     virtual bool isLocalAddress(const L3Address& dest) const override { return isLocalAddress(dest.toIpv4()); }
-    virtual InterfaceEntry *getInterfaceByAddress(const L3Address& address) const override { return getInterfaceByAddress(address.toIpv4()); }
+    virtual NetworkInterface *getInterfaceByAddress(const L3Address& address) const override { return getInterfaceByAddress(address.toIpv4()); }
     virtual IRoute *findBestMatchingRoute(const L3Address& dest) const override { return findBestMatchingRoute(dest.toIpv4()); }
-    virtual InterfaceEntry *getOutputInterfaceForDestination(const L3Address& dest) const override { return getInterfaceForDestAddr(dest.toIpv4()); }    //XXX inconsistent names
-    virtual L3Address getNextHopForDestination(const L3Address& dest) const override { return getGatewayForDestAddr(dest.toIpv4()); }    //XXX inconsistent names
+    virtual NetworkInterface *getOutputInterfaceForDestination(const L3Address& dest) const override { return getInterfaceForDestAddr(dest.toIpv4()); } // TODO inconsistent names
+    virtual L3Address getNextHopForDestination(const L3Address& dest) const override { return getGatewayForDestAddr(dest.toIpv4()); } // TODO inconsistent names
     virtual bool isLocalMulticastAddress(const L3Address& dest) const override { return isLocalMulticastAddress(dest.toIpv4()); }
-    virtual IMulticastRoute *findBestMatchingMulticastRoute(const L3Address& origin, const L3Address& group) const override { return const_cast<Ipv4MulticastRoute *>(findBestMatchingMulticastRoute(origin.toIpv4(), group.toIpv4())); }    //XXX remove 'const' from Ipv4 method?
+    virtual IMulticastRoute *findBestMatchingMulticastRoute(const L3Address& origin, const L3Address& group) const override { return const_cast<Ipv4MulticastRoute *>(findBestMatchingMulticastRoute(origin.toIpv4(), group.toIpv4())); } // TODO remove 'const' from Ipv4 method?
     virtual IRoute *createRoute() override { return new Ipv4Route(); }
 
   private:
@@ -396,5 +385,5 @@ class INET_API Ipv4RoutingTable : public cSimpleModule, public IIpv4RoutingTable
 
 } // namespace inet
 
-#endif // ifndef __INET_IPV4ROUTINGTABLE_H
+#endif
 

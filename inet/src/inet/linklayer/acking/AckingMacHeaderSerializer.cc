@@ -1,27 +1,18 @@
 //
-// Copyright (C) OpenSim Ltd.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-#include "inet/common/packet/serializer/ChunkSerializerRegistry.h"
-#include "inet/common/ProtocolTag_m.h"
-#include "inet/linklayer/acking/AckingMacHeader_m.h"
+
 #include "inet/linklayer/acking/AckingMacHeaderSerializer.h"
 
-#ifdef WITH_ETHERNET
-#include "inet/linklayer/ethernet/EtherFrame_m.h"
+#include "inet/common/ProtocolTag_m.h"
+#include "inet/common/packet/serializer/ChunkSerializerRegistry.h"
+#include "inet/linklayer/acking/AckingMacHeader_m.h"
+
+#ifdef INET_WITH_ETHERNET
+#include "inet/linklayer/ethernet/common/EthernetMacHeader_m.h"
 #endif
 
 namespace inet {
@@ -68,16 +59,16 @@ bool AckingMacToEthernetPcapRecorderHelper::matchesLinkType(PcapLinkType pcapLin
 
 PcapLinkType AckingMacToEthernetPcapRecorderHelper::protocolToLinkType(const Protocol *protocol) const
 {
-#if defined(WITH_ETHERNET)
+#if defined(INET_WITH_ETHERNET)
     if (*protocol == Protocol::ackingMac)
         return LINKTYPE_ETHERNET;
-#endif // defined(WITH_ETHERNET)
+#endif // defined(INET_WITH_ETHERNET)
     return LINKTYPE_INVALID;
 }
 
-Packet *AckingMacToEthernetPcapRecorderHelper::tryConvertToLinkType(const Packet* packet, PcapLinkType pcapLinkType, const Protocol *protocol) const
+Packet *AckingMacToEthernetPcapRecorderHelper::tryConvertToLinkType(const Packet *packet, PcapLinkType pcapLinkType, const Protocol *protocol) const
 {
-#if defined(WITH_ETHERNET)
+#if defined(INET_WITH_ETHERNET)
     if (*protocol == Protocol::ackingMac && pcapLinkType == LINKTYPE_ETHERNET) {
         auto newPacket = packet->dup();
         auto ackingHdr = newPacket->popAtFront<AckingMacHeader>();
@@ -87,10 +78,10 @@ Packet *AckingMacToEthernetPcapRecorderHelper::tryConvertToLinkType(const Packet
         ethHeader->setSrc(ackingHdr->getSrc());
         ethHeader->setTypeOrLength(ackingHdr->getNetworkProtocol());
         newPacket->insertAtFront(ethHeader);
-        newPacket->getTag<PacketProtocolTag>()->setProtocol(&Protocol::ethernetMac);
+        newPacket->getTagForUpdate<PacketProtocolTag>()->setProtocol(&Protocol::ethernetMac);
         return newPacket;
     }
-#endif // defined(WITH_ETHERNET)
+#endif // defined(INET_WITH_ETHERNET)
 
     return nullptr;
 }

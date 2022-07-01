@@ -1,22 +1,15 @@
 //
-// (C) 2005 Vojtech Janota
-// (C) 2003 Xuan Thang Nguyen
+// Copyright (C) 2005 Vojtech Janota
+// Copyright (C) 2003 Xuan Thang Nguyen
 //
-// This library is free software, you can redistribute it
-// and/or modify
-// it under  the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation;
-// either version 2 of the License, or any later version.
-// The library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-// See the GNU Lesser General Public License for more details.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
+
+#include "inet/networklayer/mpls/LibTable.h"
 
 #include <iostream>
 
 #include "inet/common/XMLUtils.h"
-#include "inet/networklayer/mpls/LibTable.h"
 
 namespace inet {
 
@@ -46,7 +39,7 @@ bool LibTable::resolveLabel(std::string inInterface, int inLabel,
 {
     bool any = (inInterface.length() == 0);
 
-    for (auto & elem : lib) {
+    for (auto& elem : lib) {
         if (!any && elem.inInterface != inInterface)
             continue;
 
@@ -76,7 +69,7 @@ int LibTable::installLibEntry(int inLabel, std::string inInterface, const LabelO
         return newItem.inLabel;
     }
     else {
-        for (auto & elem : lib) {
+        for (auto& elem : lib) {
             if (elem.inLabel != inLabel)
                 continue;
 
@@ -87,7 +80,7 @@ int LibTable::installLibEntry(int inLabel, std::string inInterface, const LabelO
             return inLabel;
         }
         ASSERT(false);
-        return 0;    // prevent warning
+        return 0; // prevent warning
     }
 }
 
@@ -111,7 +104,7 @@ void LibTable::readTableFromXML(const cXMLElement *libtable)
     ASSERT(!strcmp(libtable->getTagName(), "libtable"));
     checkTags(libtable, "libentry");
     cXMLElementList list = libtable->getChildrenByTagName("libentry");
-    for (auto & elem : list) {
+    for (auto& elem : list) {
         const cXMLElement& entry = *elem;
 
         checkTags(&entry, "inLabel inInterface outLabel outInterface color");
@@ -123,7 +116,7 @@ void LibTable::readTableFromXML(const cXMLElement *libtable)
         newItem.color = getParameterIntValue(&entry, "color", 0);
 
         cXMLElementList ops = getUniqueChild(&entry, "outLabel")->getChildrenByTagName("op");
-        for (auto & ops_oit : ops) {
+        for (auto& ops_oit : ops) {
             const cXMLElement& op = *ops_oit;
             const char *val = op.getAttribute("value");
             const char *code = op.getAttribute("code");

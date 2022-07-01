@@ -1,18 +1,7 @@
 //
 // Copyright (C) 2006 Andras Babos and Andras Varga
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
 #ifndef __INET_OSPFV2ROUTINGTABLEENTRY_H
@@ -20,7 +9,6 @@
 
 #include <memory.h>
 
-#include "inet/common/INETDefs.h"
 #include "inet/networklayer/contract/IInterfaceTable.h"
 #include "inet/networklayer/ipv4/IIpv4RoutingTable.h"
 #include "inet/routing/ospfv2/Ospfv2Packet_m.h"
@@ -35,8 +23,8 @@ class INET_API Ospfv2RoutingTableEntry : public Ipv4Route
 {
   public:
     enum RoutingPathType {
-        INTRAAREA = 0,
-        INTERAREA = 1,
+        INTRAAREA      = 0,
+        INTERAREA      = 1,
         TYPE1_EXTERNAL = 2,
         TYPE2_EXTERNAL = 3
     };
@@ -99,5 +87,5 @@ std::ostream& operator<<(std::ostream& out, const Ospfv2RoutingTableEntry& entry
 
 } // namespace inet
 
-#endif // ifndef __INET_OSPFV2ROUTINGTABLEENTRY_H
+#endif
 

@@ -1,21 +1,9 @@
-/* -*- mode:c++ -*- ********************************************************
- * file:        INETMath.h
- *
- * author:      Christian Frank
- *
- * copyright:   (C) 2004 Telecommunication Networks Group (TKN) at
- *              Technische Universitaet Berlin, Germany.
- *
- *              This program is free software; you can redistribute it
- *              and/or modify it under the terms of the GNU General Public
- *              License as published by the Free Software Foundation; either
- *              version 2 of the License, or (at your option) any later
- *              version.
- *              For further information see file COPYING
- *              in the top level directory
- ***************************************************************************
- * part of:     framework implementation developed by tkn
- **************************************************************************/
+//
+// Copyright (C) 2020 OpenSim Ltd.
+//
+// SPDX-License-Identifier: LGPL-3.0-or-later
+//
+
 
 #ifndef __INET_INETMATH_H
 #define __INET_INETMATH_H
@@ -23,7 +11,6 @@
 //
 // Support functions for mathematical operations
 //
-// * @author Christian Frank
 
 #include <cmath>
 #include <limits>
@@ -39,7 +26,7 @@ namespace inet {
  */
 namespace math {
 
-//file: INETMath.h , namespace math a class helyett
+// file: INETMath.h , namespace math a class helyett
 /* Windows math.h doesn't define the the following variables: */
 #ifndef M_E
 #define M_E           2.7182818284590452354
@@ -96,12 +83,12 @@ namespace math {
 /* Constant for comparing doubles. Two doubles at most epsilon apart
    are declared equal.*/
 #ifndef EPSILON
-#define EPSILON     0.001
+#define EPSILON    0.001
 #endif // ifndef EPSILON
 
-#define qNaN        std::numeric_limits<double>::quiet_NaN()
-#define sNaN        std::numeric_limits<double>::signaling_NaN()
-#define NaN         qNaN
+#define qNaN       std::numeric_limits<double>::quiet_NaN()
+#define sNaN       std::numeric_limits<double>::signaling_NaN()
+#define NaN        qNaN
 
 /**
  * Returns the rest of a whole-numbered division.
@@ -208,21 +195,57 @@ inline double n_choose_k(int n, int k) {
     if (n < k)
         return 0.0;
 
-    const int       iK     = (k<<1) > n ? n-k : k;
-    const double    dNSubK = (n-iK);
-    int    i      = 1;
-    double dRes   = i > iK ? 1.0 : (dNSubK+i);
+    const int iK = (k << 1) > n ? n - k : k;
+    const double dNSubK = (n - iK);
+    int i = 1;
+    double dRes = i > iK ? 1.0 : (dNSubK + i);
 
     for (++i; i <= iK; ++i) {
-        dRes *= dNSubK+i;
+        dRes *= dNSubK + i;
         dRes /= i;
     }
     return dRes;
+}
+
+/**
+ * This function properly and symmetrically handles NaNs in contrast with std::min and std::fmin.
+ * For example, the minimum of NaN and 1 must be NaN independently of the argument order.
+ * See 'Not a number' section at https://2pi.dk/2016/05/ieee-min-max
+ */
+template<typename T>
+inline const T minnan(const T& a, const T& b) {
+static_assert(!std::is_integral<T>::value, "minnan() is only meant for doubles and double based units, use std::min() for integers");
+    if (a < b)
+        return a;
+    else if (b < a)
+        return b;
+    else if (a == b)
+        return a;
+    else
+        return T(NaN);
+}
+
+/**
+ * This function properly and symmetrically handles NaNs in contrast with std::max and std::fmax.
+ * For example, the maximum of NaN and 1 must be NaN independently of the argument order.
+ * See 'Not a number' section at https://2pi.dk/2016/05/ieee-min-max
+ */
+template<typename T>
+inline const T maxnan(const T& a, const T& b) {
+static_assert(!std::is_integral<T>::value, "maxnan() is only meant for doubles and double based units, use std::max() for integers");
+    if (a > b)
+        return a;
+    else if (b > a)
+        return b;
+    else if (a == b)
+        return a;
+    else
+        return T(NaN);
 }
 
 } // namespace math
 
 } // namespace inet
 
-#endif // ifndef __INET_INETMATH_H
+#endif
 

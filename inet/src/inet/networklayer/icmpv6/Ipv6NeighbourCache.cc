@@ -1,22 +1,13 @@
-/**
- * Copyright (C) 2005 Andras Varga
- * Copyright (C) 2005 Wei Yang, Ng
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program; if not, see <http://www.gnu.org/licenses/>.
- */
+//
+// Copyright (C) 2005 OpenSim Ltd.
+// Copyright (C) 2005 Wei Yang, Ng
+//
+// SPDX-License-Identifier: LGPL-3.0-or-later
+//
 
 #include "inet/networklayer/icmpv6/Ipv6NeighbourCache.h"
+
+#include "inet/common/stlutils.h"
 
 namespace inet {
 
@@ -55,7 +46,7 @@ void Ipv6NeighbourCache::DefaultRouterList::remove(Neighbour& router)
 
 std::ostream& operator<<(std::ostream& os, const Ipv6NeighbourCache::Key& e)
 {
-    return os << "if=" << e.interfaceID << " " << e.address;    //FIXME try printing interface name
+    return os << "if=" << e.interfaceID << " " << e.address; // FIXME try printing interface name
 }
 
 std::ostream& operator<<(std::ostream& os, const Ipv6NeighbourCache::Neighbour& e)
@@ -98,7 +89,7 @@ const Ipv6NeighbourCache::Key *Ipv6NeighbourCache::lookupKeyAddr(Key& key)
 Ipv6NeighbourCache::Neighbour *Ipv6NeighbourCache::addNeighbour(const Ipv6Address& addr, int interfaceID)
 {
     Key key(addr, interfaceID);
-    ASSERT(neighbourMap.find(key) == neighbourMap.end());    // entry must not exist yet
+    ASSERT(!containsKey(neighbourMap, key)); // entry must not exist yet
     Neighbour& nbor = neighbourMap[key];
 
     nbor.nceKey = lookupKeyAddr(key);
@@ -111,7 +102,7 @@ Ipv6NeighbourCache::Neighbour *Ipv6NeighbourCache::addNeighbour(const Ipv6Addres
 Ipv6NeighbourCache::Neighbour *Ipv6NeighbourCache::addNeighbour(const Ipv6Address& addr, int interfaceID, MacAddress macAddress)
 {
     Key key(addr, interfaceID);
-    ASSERT(neighbourMap.find(key) == neighbourMap.end());    // entry must not exist yet
+    ASSERT(!containsKey(neighbourMap, key)); // entry must not exist yet
     Neighbour& nbor = neighbourMap[key];
 
     nbor.nceKey = lookupKeyAddr(key);
@@ -131,7 +122,7 @@ Ipv6NeighbourCache::Neighbour *Ipv6NeighbourCache::addRouter(const Ipv6Address& 
         int interfaceID, MacAddress macAddress, simtime_t expiryTime, bool isHomeAgent)
 {
     Key key(addr, interfaceID);
-    ASSERT(neighbourMap.find(key) == neighbourMap.end());    // entry must not exist yet
+    ASSERT(!containsKey(neighbourMap, key)); // entry must not exist yet
     Neighbour& nbor = neighbourMap[key];
 
     nbor.nceKey = lookupKeyAddr(key);
@@ -150,13 +141,13 @@ void Ipv6NeighbourCache::remove(const Ipv6Address& addr, int interfaceID)
 {
     Key key(addr, interfaceID);
     auto it = neighbourMap.find(key);
-    ASSERT(it != neighbourMap.end());    // entry must exist
+    ASSERT(it != neighbourMap.end()); // entry must exist
     remove(it);
 }
 
 void Ipv6NeighbourCache::remove(NeighbourMap::iterator it)
 {
-    neighbourDiscovery.cancelAndDelete(it->second.nudTimeoutEvent);    // 20.9.07 - CB
+    neighbourDiscovery.cancelAndDelete(it->second.nudTimeoutEvent); // 20.9.07 - CB
     it->second.nudTimeoutEvent = nullptr;
     if (it->second.isDefaultRouter())
         defaultRouterList.remove(it->second);
@@ -166,10 +157,10 @@ void Ipv6NeighbourCache::remove(NeighbourMap::iterator it)
 // Added by CB
 void Ipv6NeighbourCache::invalidateEntriesForInterfaceID(int interfaceID)
 {
-    for (auto & elem : neighbourMap) {
+    for (auto& elem : neighbourMap) {
         if (elem.first.interfaceID == interfaceID) {
-            elem.second.reachabilityState = PROBE;    // we make sure this neighbour is not used anymore in the future, unless reachability can be confirmed
-            neighbourDiscovery.cancelAndDelete(elem.second.nudTimeoutEvent);    // 20.9.07 - CB
+            elem.second.reachabilityState = PROBE; // we make sure this neighbour is not used anymore in the future, unless reachability can be confirmed
+            neighbourDiscovery.cancelAndDelete(elem.second.nudTimeoutEvent); // 20.9.07 - CB
             elem.second.nudTimeoutEvent = nullptr;
         }
     }

@@ -1,19 +1,9 @@
 //
 // Copyright (C) 2016 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see http://www.gnu.org/licenses/.
-// 
+
 
 package inet.linklayer.ieee80211.mac.coordinationfunction;
 
@@ -47,7 +37,7 @@ module Hcf like IHcf
         string txModule;
 
         *.rateSelectionModule = "^.rateSelection";
-        *.rxModule = "^." + rxModule;
+        *.rxModule = "^." + this.rxModule;
         *.*.originatorMacDataServiceModule = "^.^.originatorMacDataService";
 
         @class(Hcf);
@@ -84,11 +74,11 @@ module Hcf like IHcf
         @statistic[frameSequenceFinished](title="finished frame sequences"; record=count,vector?);
         @statistic[frameSequenceDuration](title="frame sequence durations"; source=frameSequenceDuration(frameSequenceFinished); record=histogram,vector?);
         @statistic[frameSequenceNumPackets](title="frame sequences: number of packets"; source=frameSequenceNumPackets(frameSequenceFinished); record=histogram,vector?);
-        @statistic[frameSequenceActive](title="frame sequence active"; source=count(frameSequenceStarted)-count(frameSequenceFinished); record=vector; interpolationmode=sample-hold);
+        @statistic[frameSequenceActive](title="frame sequence active"; source=warmup(count(frameSequenceStarted)-count(frameSequenceFinished)); record=vector; interpolationmode=sample-hold; autoWarmupFilter=false);
         @statistic[datarateSelected](title="datarates selected"; record=vector; interpolationmode=none);
         @statistic[blockAckAgreementAdded](title="added block ack agreements"; record=count);
         @statistic[blockAckAgreementDeleted](title="deleted block ack agreements"; record=count);
-        @statistic[blockAckAgreementActive](title="active block ack agreements"; source=count(blockAckAgreementAdded)-count(blockAckAgreementDeleted); record=vector; interpolationmode=sample-hold);
+        @statistic[blockAckAgreementActive](title="active block ack agreements"; source=warmup(count(blockAckAgreementAdded)-count(blockAckAgreementDeleted)); record=vector; interpolationmode=sample-hold; autoWarmupFilter=false);
 
     submodules:
         edca: Edca {

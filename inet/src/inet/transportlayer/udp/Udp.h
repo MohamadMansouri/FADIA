@@ -1,19 +1,8 @@
 //
 // Copyright (C) 2000 Institut fuer Telematik, Universitaet Karlsruhe
-// Copyright (C) 2004-2011 Andras Varga
+// Copyright (C) 2004-2011 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
 #ifndef __INET_UDP_H
@@ -27,22 +16,36 @@
 #include "inet/common/packet/Message.h"
 #include "inet/common/packet/Packet.h"
 #include "inet/common/packet/chunk/BytesChunk.h"
+#include "inet/networklayer/common/NetworkInterface.h"
+#include "inet/networklayer/contract/IInterfaceTable.h"
 #include "inet/networklayer/contract/INetfilter.h"
 #include "inet/transportlayer/base/TransportProtocolBase.h"
 #include "inet/transportlayer/common/CrcMode_m.h"
 #include "inet/transportlayer/common/TransportPseudoHeader_m.h"
 #include "inet/transportlayer/contract/udp/UdpControlInfo.h"
+#include "inet/transportlayer/udp/UdpHeader_m.h"
+
+#ifdef INET_WITH_IPv4
+#include "inet/networklayer/ipv4/Icmp.h"
+#endif
+
+#ifdef INET_WITH_IPv6
+#include "inet/networklayer/icmpv6/Icmpv6.h"
+#endif
 
 namespace inet {
 
-class IInterfaceTable;
-class Icmp;
-class Icmpv6;
-class UdpHeader;
-class InterfaceEntry;
-
-const bool DEFAULT_MULTICAST_LOOP = true;
 const uint16_t UDP_MAX_MESSAGE_SIZE = 65535; // bytes
+
+class UdpCrcInsertionHook : public cSimpleModule, public NetfilterBase::HookBase
+{
+  public:
+    virtual Result datagramPreRoutingHook(Packet *packet) override { return ACCEPT; }
+    virtual Result datagramForwardHook(Packet *packet) override { return ACCEPT; }
+    virtual Result datagramPostRoutingHook(Packet *packet) override;
+    virtual Result datagramLocalInHook(Packet *packet) override { return ACCEPT; }
+    virtual Result datagramLocalOutHook(Packet *packet) override { return ACCEPT; }
+};
 
 /**
  * Implements the Udp protocol: encapsulates/decapsulates user data into/from Udp.
@@ -52,24 +55,15 @@ const uint16_t UDP_MAX_MESSAGE_SIZE = 65535; // bytes
 class INET_API Udp : public TransportProtocolBase
 {
   public:
-    class CrcInsertion : public NetfilterBase::HookBase {
-      public:
-        virtual Result datagramPreRoutingHook(Packet *packet) override { return ACCEPT; }
-        virtual Result datagramForwardHook(Packet *packet) override { return ACCEPT; }
-        virtual Result datagramPostRoutingHook(Packet *packet) override;
-        virtual Result datagramLocalInHook(Packet *packet) override { return ACCEPT; }
-        virtual Result datagramLocalOutHook(Packet *packet) override { return ACCEPT; }
-    };
 
     enum PortRange {
         EPHEMERAL_PORTRANGE_START = 1024,
         EPHEMERAL_PORTRANGE_END   = 5000
     };
 
-    struct MulticastMembership
-    {
+    struct MulticastMembership {
         L3Address multicastAddress;
-        int interfaceId = -1;    // -1 = all
+        int interfaceId = -1; // -1 = all
         UdpSourceFilterMode filterMode = static_cast<UdpSourceFilterMode>(0);
         std::vector<L3Address> sourceList;
 
@@ -80,8 +74,7 @@ class INET_API Udp : public TransportProtocolBase
     // Records are ordered first by multicastAddress, then by interfaceId (-1 interfaceId is the last)
     typedef std::vector<MulticastMembership *> MulticastMembershipTable;
 
-    struct SockDesc
-    {
+    struct SockDesc {
         SockDesc(int sockId);
         ~SockDesc();
         int sockId = -1;
@@ -94,7 +87,7 @@ class INET_API Udp : public TransportProtocolBase
         int remotePort = -1;
         bool isBroadcast = false;
         int multicastOutputInterfaceId = -1;
-        bool multicastLoop = DEFAULT_MULTICAST_LOOP;
+        bool multicastLoop = true;
         int ttl = -1;
         short dscp = -1;
         short tos = -1;
@@ -108,13 +101,12 @@ class INET_API Udp : public TransportProtocolBase
 
     friend std::ostream& operator<<(std::ostream& os, const Udp::SockDesc& sd);
 
-    typedef std::list<SockDesc *> SockDescList;    // might contain duplicated local addresses if their reuseAddr flag is set
+    typedef std::list<SockDesc *> SockDescList; // might contain duplicated local addresses if their reuseAddr flag is set
     typedef std::map<int, SockDesc *> SocketsByIdMap;
     typedef std::map<int, SockDescList> SocketsByPortMap;
 
   protected:
     CrcMode crcMode = CRC_MODE_UNDEFINED;
-    CrcInsertion crcInsertion;
 
     // sockets
     SocketsByIdMap socketsByIdMap;
@@ -122,9 +114,13 @@ class INET_API Udp : public TransportProtocolBase
 
     // other state vars
     ushort lastEphemeralPort = EPHEMERAL_PORTRANGE_START;
-    IInterfaceTable *ift = nullptr;
-    Icmp *icmp = nullptr;
-    Icmpv6 *icmpv6 = nullptr;
+    ModuleRefByPar<IInterfaceTable> ift;
+#ifdef INET_WITH_IPv4
+    opp_component_ptr<Icmp> icmp;
+#endif
+#ifdef INET_WITH_IPv6
+    opp_component_ptr<Icmpv6> icmpv6;
+#endif
 
     // statistics
     int numSent = 0;
@@ -140,8 +136,8 @@ class INET_API Udp : public TransportProtocolBase
     virtual SockDesc *getSocketById(int sockId);
     virtual SockDesc *getOrCreateSocket(int sockId);
     virtual SockDesc *createSocket(int sockId, const L3Address& localAddr, int localPort);
-    virtual void bind(int sockId, int gateIndex, const L3Address& localAddr, int localPort);
-    virtual void connect(int sockId, int gateIndex, const L3Address& remoteAddr, int remotePort);
+    virtual void bind(int sockId, const L3Address& localAddr, int localPort);
+    virtual void connect(int sockId, const L3Address& remoteAddr, int remotePort);
     virtual void close(int sockId);
     virtual void destroySocket(int sockId);
     void destroySocket(SocketsByIdMap::iterator it);
@@ -155,13 +151,13 @@ class INET_API Udp : public TransportProtocolBase
     virtual void setReuseAddress(SockDesc *sd, bool reuseAddr);
     virtual void joinMulticastGroups(SockDesc *sd, const std::vector<L3Address>& multicastAddresses, const std::vector<int> interfaceIds);
     virtual void leaveMulticastGroups(SockDesc *sd, const std::vector<L3Address>& multicastAddresses);
-    virtual void blockMulticastSources(SockDesc *sd, InterfaceEntry *ie, L3Address multicastAddress, const std::vector<L3Address>& sourceList);
-    virtual void unblockMulticastSources(SockDesc *sd, InterfaceEntry *ie, L3Address multicastAddress, const std::vector<L3Address>& sourceList);
-    virtual void joinMulticastSources(SockDesc *sd, InterfaceEntry *ie, L3Address multicastAddress, const std::vector<L3Address>& sourceList);
-    virtual void leaveMulticastSources(SockDesc *sd, InterfaceEntry *ie, L3Address multicastAddress, const std::vector<L3Address>& sourceList);
-    virtual void setMulticastSourceFilter(SockDesc *sd, InterfaceEntry *ie, L3Address multicastAddress, UdpSourceFilterMode filterMode, const std::vector<L3Address>& sourceList);
+    virtual void blockMulticastSources(SockDesc *sd, NetworkInterface *ie, L3Address multicastAddress, const std::vector<L3Address>& sourceList);
+    virtual void unblockMulticastSources(SockDesc *sd, NetworkInterface *ie, L3Address multicastAddress, const std::vector<L3Address>& sourceList);
+    virtual void joinMulticastSources(SockDesc *sd, NetworkInterface *ie, L3Address multicastAddress, const std::vector<L3Address>& sourceList);
+    virtual void leaveMulticastSources(SockDesc *sd, NetworkInterface *ie, L3Address multicastAddress, const std::vector<L3Address>& sourceList);
+    virtual void setMulticastSourceFilter(SockDesc *sd, NetworkInterface *ie, L3Address multicastAddress, UdpSourceFilterMode filterMode, const std::vector<L3Address>& sourceList);
 
-    virtual void addMulticastAddressToInterface(InterfaceEntry *ie, const L3Address& multicastAddr);
+    virtual void addMulticastAddressToInterface(NetworkInterface *ie, const L3Address& multicastAddr);
 
     // ephemeral port
     virtual ushort getEphemeralPort();
@@ -216,5 +212,5 @@ class INET_API Udp : public TransportProtocolBase
 
 } // namespace inet
 
-#endif // ifndef __INET_UDP_H
+#endif
 

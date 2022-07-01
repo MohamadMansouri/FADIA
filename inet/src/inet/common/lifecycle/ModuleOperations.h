@@ -1,24 +1,12 @@
 //
-// Copyright (C) 2013 Opensim Ltd.
+// Copyright (C) 2013 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
-// Author: Levente Meszaros <levy@omnetpp.org>, Andras Varga (andras@omnetpp.org)
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-#ifndef __INET_NODEOPERATIONS_H
-#define __INET_NODEOPERATIONS_H
+
+#ifndef __INET_MODULEOPERATIONS_H
+#define __INET_MODULEOPERATIONS_H
 
 #include "inet/common/lifecycle/LifecycleOperation.h"
 
@@ -35,7 +23,7 @@ class INET_API ModuleStartOperation : public LifecycleOperation
 {
   public:
     enum Stage {
-        STAGE_LOCAL,    // for changes that don't depend on other modules
+        STAGE_LOCAL, // for changes that don't depend on other modules
         STAGE_PHYSICAL_LAYER,
         STAGE_LINK_LAYER,
         STAGE_NETWORK_LAYER,
@@ -58,14 +46,14 @@ class INET_API ModuleStopOperation : public LifecycleOperation
 {
   public:
     enum Stage {
-        STAGE_LOCAL,    // for changes that don't depend on other modules
+        STAGE_LOCAL, // for changes that don't depend on other modules
         STAGE_APPLICATION_LAYER,
         STAGE_ROUTING_PROTOCOLS,
         STAGE_TRANSPORT_LAYER,
         STAGE_NETWORK_LAYER,
         STAGE_LINK_LAYER,
         STAGE_PHYSICAL_LAYER,
-        STAGE_LAST    // for changes that others shouldn't depend on
+        STAGE_LAST // for changes that others shouldn't depend on
     };
 
   public:
@@ -85,7 +73,7 @@ class INET_API ModuleCrashOperation : public LifecycleOperation
 {
   public:
     enum Stage {
-        STAGE_CRASH,    // the only stage, must execute within zero simulation time
+        STAGE_CRASH, // the only stage, must execute within zero simulation time
         STAGE_LAST
     };
 
@@ -95,5 +83,5 @@ class INET_API ModuleCrashOperation : public LifecycleOperation
 
 } // namespace inet
 
-#endif // ifndef __INET_NODEOPERATIONS_H
+#endif
 

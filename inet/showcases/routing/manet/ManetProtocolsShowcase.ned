@@ -3,8 +3,8 @@ package inet.showcases.routing.manet;
 import inet.networklayer.configurator.ipv4.Ipv4NetworkConfigurator;
 import inet.node.inet.ManetRouter;
 import inet.node.gpsr.GpsrRouter;
-import inet.physicallayer.ieee80211.packetlevel.Ieee80211ScalarRadioMedium;
-import inet.visualizer.integrated.IntegratedMultiVisualizer;
+import inet.physicallayer.wireless.ieee80211.packetlevel.Ieee80211ScalarRadioMedium;
+import inet.visualizer.common.IntegratedMultiVisualizer;
 
 
 network ManetprotocolsShowcaseA
@@ -85,7 +85,7 @@ network ManetprotocolsShowcaseB
         @figure[numRcvdPkCounter](type=counter; transform=scale(0.5); pos=50,300; label="Received ping replies"; decimalPlaces=4);
         @statistic[numLost](source=count(source.app[0].numLost); record=figure; targetFigure=numLostPkCounter; checkSignals=false);
         @figure[numLostPkCounter](type=counter; transform=scale(0.5); pos=50,400; label="Pings lost"; decimalPlaces=4);
-        
+
     submodules:
         source: ManetRouter {
             @display("p=104,335");

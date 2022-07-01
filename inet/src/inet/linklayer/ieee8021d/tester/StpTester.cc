@@ -1,25 +1,14 @@
 //
 // Copyright (C) 2013 OpenSim Ltd.
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program.  If not, see http://www.gnu.org/licenses/.
-//
-// Author: Benjamin Martin Seregi
-//
+
+
+#include "inet/linklayer/ieee8021d/tester/StpTester.h"
 
 #include "inet/common/lifecycle/NodeStatus.h"
 #include "inet/linklayer/configurator/Ieee8021dInterfaceData.h"
-#include "inet/linklayer/ieee8021d/tester/StpTester.h"
 
 namespace inet {
 
@@ -38,7 +27,7 @@ void StpTester::initialize()
 {
     checkTimer = new cMessage("checktime");
     checkTime = par("checkTime");
-    scheduleAt(simTime() + checkTime, checkTimer);
+    scheduleAfter(checkTime, checkTimer);
 }
 
 void StpTester::handleMessage(cMessage *msg)
@@ -55,7 +44,7 @@ void StpTester::handleMessage(cMessage *msg)
             EV_DEBUG << "Not all nodes are connected with each other" << endl;
         if (isTreeGraph())
             EV_DEBUG << "The network topology is a tree topology" << endl;
-        scheduleAt(simTime() + checkTime, msg);
+        scheduleAfter(checkTime, msg);
     }
     else {
         throw cRuntimeError("This module only handle selfmessages");
@@ -93,8 +82,8 @@ void StpTester::dfsVisit(Topology::Node *node)
     color[node] = GRAY;
 
     for (int i = 0; i < node->getNumOutLinks(); i++) {
-        Topology::LinkOut *linkOut = node->getLinkOut(i);
-        Topology::Node *neighbor = linkOut->getRemoteNode();
+        Topology::Link *linkOut = node->getLinkOut(i);
+        Topology::Node *neighbor = linkOut->getLinkOutRemoteNode();
 
         // If we found a port which is in state discarding,
         // then we do not expand this link
@@ -106,7 +95,7 @@ void StpTester::dfsVisit(Topology::Node *node)
         // If we found a port that points to a remote port which is in state
         // discarding, then we also do not expand this link
 
-        auto remoteGate = linkOut->getRemoteGate();
+        auto remoteGate = linkOut->getLinkOutRemoteGate();
         int remotePort = remoteGate->isVector() ? remoteGate->getIndex() : -1;
         if (!isForwarding(neighbor, remotePort))
             continue;
@@ -153,13 +142,13 @@ bool StpTester::isForwarding(Topology::Node *node, unsigned int portNum)
     cModule *tmpIfTable = node->getModule()->getSubmodule("interfaceTable");
     IInterfaceTable *ifTable = dynamic_cast<IInterfaceTable *>(tmpIfTable);
 
-    // EtherHost has no InterfaceTable
+    // EthernetHost has no InterfaceTable
     if (ifTable == nullptr)
         return true;
 
     cGate *gate = node->getModule()->gate("ethg$o", portNum);
-    InterfaceEntry *gateIfEntry = CHK(ifTable->findInterfaceByNodeOutputGateId(gate->getId()));
-    Ieee8021dInterfaceData *portData = gateIfEntry->findProtocolData<Ieee8021dInterfaceData>();
+    NetworkInterface *gateIfEntry = CHK(ifTable->findInterfaceByNodeOutputGateId(gate->getId()));
+    auto portData = gateIfEntry->findProtocolData<Ieee8021dInterfaceData>();
 
     // If portData does not exist, then it implies that
     // the node is not a switch

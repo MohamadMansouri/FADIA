@@ -1,20 +1,12 @@
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program.  If not, see http://www.gnu.org/licenses/.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-#ifndef __INET_EMPTYCHUNK_H_
-#define __INET_EMPTYCHUNK_H_
+
+#ifndef __INET_EMPTYCHUNK_H
+#define __INET_EMPTYCHUNK_H
 
 #include "inet/common/packet/chunk/Chunk.h"
 
@@ -25,7 +17,7 @@ namespace inet {
  */
 class INET_API EmptyChunk : public Chunk
 {
-  friend class Chunk;
+    friend class Chunk;
 
   public:
     static const Ptr<EmptyChunk> singleton;
@@ -50,7 +42,7 @@ class INET_API EmptyChunk : public Chunk
     virtual ChunkType getChunkType() const override { return CT_EMPTY; }
     virtual b getChunkLength() const override { return b(0); }
 
-    virtual std::string str() const override;
+    virtual std::ostream& printFieldsToStream(std::ostream& stream, int level, int evFlags = 0) const override { return stream; }
     //@}
 
     static const Ptr<Chunk> getEmptyChunk(int flags) {
@@ -65,5 +57,5 @@ class INET_API EmptyChunk : public Chunk
 
 } // namespace
 
-#endif // #ifndef __INET_EMPTYCHUNK_H_
+#endif
 

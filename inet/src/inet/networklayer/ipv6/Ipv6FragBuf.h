@@ -1,19 +1,9 @@
 //
-// Copyright (C) 2005 Andras Varga
+// Copyright (C) 2005 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 #ifndef __INET_IPV6FRAGBUF_H
 #define __INET_IPV6FRAGBUF_H
@@ -21,7 +11,6 @@
 #include <map>
 #include <vector>
 
-#include "inet/common/INETDefs.h"
 #include "inet/common/packet/Packet.h"
 #include "inet/common/packet/ReassemblyBuffer.h"
 #include "inet/networklayer/contract/ipv6/Ipv6Address.h"
@@ -41,9 +30,8 @@ class INET_API Ipv6FragBuf
     //
     // Key for finding the reassembly buffer for a datagram.
     //
-    struct Key
-    {
-        uint32 id;
+    struct Key {
+        uint32_t id;
         Ipv6Address src;
         Ipv6Address dest;
 
@@ -56,11 +44,10 @@ class INET_API Ipv6FragBuf
     //
     // Reassembly buffer for the datagram
     //
-    struct DatagramBuffer
-    {
-        ReassemblyBuffer buf;    // reassembly buffer
-        Packet *packet = nullptr;    // the actual datagram
-        simtime_t createdAt;    // time of the buffer creation (i.e. reception time of first-arriving fragment)
+    struct DatagramBuffer {
+        ReassemblyBuffer buf; // reassembly buffer
+        Packet *packet = nullptr; // the actual datagram
+        simtime_t createdAt; // time of the buffer creation (i.e. reception time of first-arriving fragment)
     };
 
     // we use std::map for fast lookup by datagram Id
@@ -110,5 +97,5 @@ class INET_API Ipv6FragBuf
 
 } // namespace inet
 
-#endif // ifndef __INET_IPV6FRAGBUF_H
+#endif
 

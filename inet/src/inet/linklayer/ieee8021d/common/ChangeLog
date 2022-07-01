@@ -1,5 +1,21 @@
 ====== inet-4.x ======
 
+2022-05-13  ------ inet-4.4.0 released ------
+
+2022-01-13  Levente Mészáros
+
+	StpBase: Replaced IMacAddessTable with IMacForwardingTable.
+
+2021-04-19  Zoltan Bojthe
+
+	Switch to using ModuleRef, ModuleRefByPar, opp_component_ptr for pointers to other modules.
+
+2021-01-11  ------ inet-4.3.0 released ------
+
+2020-07-22  Levente Mészáros
+
+	Renamed InterfaceEntry -> NetworkInterface and interfaceEntry -> networkInterface.
+
 2020-01-08  ------ inet-4.2.0 released ------
 
 2019-11-25  Zoltan Bojthe

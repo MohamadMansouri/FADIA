@@ -1,24 +1,15 @@
 //
 // Copyright (C) 2014 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-#include <limits>
-#include <algorithm>
 
 #include "inet/common/geometry/container/BvhTree.h"
+
+#include <algorithm>
+#include <limits>
+
 #include "inet/common/geometry/shape/Cuboid.h"
 
 namespace inet {
@@ -30,7 +21,7 @@ bool BvhTree::isLeaf() const
     return objects.size() != 0;
 }
 
-BvhTree::BvhTree(const Coord& boundingMin, const Coord& boundingMax, std::vector<const IPhysicalObject*>& objects, unsigned int start, unsigned int end, Axis axis, unsigned int leafCapacity)
+BvhTree::BvhTree(const Coord& boundingMin, const Coord& boundingMax, std::vector<const IPhysicalObject *>& objects, unsigned int start, unsigned int end, Axis axis, unsigned int leafCapacity)
 {
     this->left = nullptr;
     this->right = nullptr;
@@ -41,15 +32,13 @@ BvhTree::BvhTree(const Coord& boundingMin, const Coord& boundingMax, std::vector
     buildHierarchy(objects, start, end, axis);
 }
 
-void BvhTree::buildHierarchy(std::vector<const IPhysicalObject*>& objects, unsigned int start, unsigned int end, Axis axis)
+void BvhTree::buildHierarchy(std::vector<const IPhysicalObject *>& objects, unsigned int start, unsigned int end, Axis axis)
 {
-    if (end - start + 1 <= leafCapacity)
-    {
+    if (end - start + 1 <= leafCapacity) {
         for (unsigned int i = start; i <= end; i++)
-           this->objects.push_back(objects[i]);
+            this->objects.push_back(objects[i]);
     }
-    else
-    {
+    else {
         auto s = objects.begin();
         auto e = s;
         std::advance(s, start);
@@ -64,7 +53,7 @@ void BvhTree::buildHierarchy(std::vector<const IPhysicalObject*>& objects, unsig
     }
 }
 
-void BvhTree::computeBoundingBox(Coord& boundingMin, Coord& boundingMax, std::vector<const IPhysicalObject*>& objects, unsigned int start, unsigned int end) const
+void BvhTree::computeBoundingBox(Coord& boundingMin, Coord& boundingMax, std::vector<const IPhysicalObject *>& objects, unsigned int start, unsigned int end) const
 {
     double xMin = std::numeric_limits<double>::max();
     double yMin = xMin;
@@ -72,8 +61,7 @@ void BvhTree::computeBoundingBox(Coord& boundingMin, Coord& boundingMax, std::ve
     double xMax = -std::numeric_limits<double>::max();
     double yMax = xMax;
     double zMax = xMax;
-    for (unsigned int i = start; i <= end; i++)
-    {
+    for (unsigned int i = start; i <= end; i++) {
         const IPhysicalObject *phyObj = objects[i];
         Coord pos = phyObj->getPosition();
         Coord size = phyObj->getShape()->computeBoundingBoxSize();
@@ -104,20 +92,18 @@ bool BvhTree::intersectWithLineSegment(const LineSegment& lineSegment) const
     Coord p1 = lineSegment.getPoint2() - center;
     Cuboid cuboid(size);
     LineSegment translatedLineSegment(p0, p1);
-    Coord intersection1, intersection2, normal1, normal2; // TODO: implement a bool computeIntersection(lineSegment) function
+    Coord intersection1, intersection2, normal1, normal2; // TODO implement a bool computeIntersection(lineSegment) function
     return cuboid.computeIntersection(translatedLineSegment, intersection1, intersection2, normal1, normal2);
 }
 
 void BvhTree::lineSegmentQuery(const LineSegment& lineSegment, const IVisitor *visitor) const
 {
-    if (isLeaf())
-    {
-        for (auto & elem : objects)
-            // TODO: avoid dynamic_cast
+    if (isLeaf()) {
+        for (auto& elem : objects)
+            // TODO avoid dynamic_cast
             visitor->visit(dynamic_cast<const cObject *>(elem));
     }
-    else if (intersectWithLineSegment(lineSegment))
-    {
+    else if (intersectWithLineSegment(lineSegment)) {
         left->lineSegmentQuery(lineSegment, visitor);
         right->lineSegmentQuery(lineSegment, visitor);
     }
@@ -130,3 +116,4 @@ BvhTree::~BvhTree()
 }
 
 } /* namespace inet */
+

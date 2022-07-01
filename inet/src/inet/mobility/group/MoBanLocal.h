@@ -1,3 +1,7 @@
+//
+// SPDX-License-Identifier: LGPL-3.0-or-later
+//
+//
 /* -*- mode:c++ -*- ********************************************************
  * file:        MoBanLocal.h
  *
@@ -9,13 +13,6 @@
  *              Eindhoven University of Technology (TU/e), the Netherlands.
  *
  *
- *              This program is free software; you can redistribute it
- *              and/or modify it under the terms of the GNU General Public
- *              License as published by the Free Software Foundation; either
- *              version 2 of the License, or (at your option) any later
- *              version.
- *              For further information see file COPYING
- *              in the top level directory
  ***************************************************************************
  * part of:    MoBAN (Mobility Model for wireless Body Area Networks)
  * description:     Implementation of the local module of the MoBAN mobility model
@@ -42,7 +39,6 @@
 #ifndef __INET_MOBANLOCAL_H
 #define __INET_MOBANLOCAL_H
 
-#include "inet/common/INETDefs.h"
 #include "inet/mobility/base/LineSegmentsMobilityBase.h"
 #include "inet/mobility/group/MoBanCoordinator.h"
 
@@ -77,6 +73,9 @@ class INET_API MoBanLocal : public LineSegmentsMobilityBase
     /** @brief The possible maximum speed at any future time */
     double maxSpeed;
 
+    Coord lastCompositePosition;
+    Coord lastCompositeVelocity;
+
   protected:
     virtual int numInitStages() const override { return NUM_INIT_STAGES; }
 
@@ -89,12 +88,13 @@ class INET_API MoBanLocal : public LineSegmentsMobilityBase
     virtual void setTargetPosition() override;
 
     virtual void computeMaxSpeed();
+
   public:
     MoBanLocal();
 
-    virtual Coord getCurrentPosition() override;
+    virtual const Coord& getCurrentPosition() override;
 
-    virtual Coord getCurrentVelocity() override;
+    virtual const Coord& getCurrentVelocity() override;
 
     void setCoordinator(MoBanCoordinator *coordinator) { this->coordinator = coordinator; }
 
@@ -105,5 +105,5 @@ class INET_API MoBanLocal : public LineSegmentsMobilityBase
 
 } // namespace inet
 
-#endif // ifndef __INET_MOBANLOCAL_H
+#endif
 

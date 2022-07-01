@@ -1,19 +1,9 @@
-/***************************************************************************
-                          sdes.h  -  description
-                             -------------------
-    begin                : Tue Oct 23 2001
-    copyright            : (C) 2001 by Matthias Oppitz
-    email                : Matthias.Oppitz@gmx.de
-***************************************************************************/
-
-/***************************************************************************
-*                                                                         *
-*   This program is free software; you can redistribute it and/or modify  *
-*   it under the terms of the GNU General Public License as published by  *
-*   the Free Software Foundation; either version 2 of the License, or     *
-*   (at your option) any later version.                                   *
-*                                                                         *
-***************************************************************************/
+//
+// Copyright (C) 2001 Matthias Oppitz <Matthias.Oppitz@gmx.de>
+// Copyright (C) 2010 OpenSim Ltd.
+//
+// SPDX-License-Identifier: LGPL-3.0-or-later
+//
 
 #ifndef __INET_SDES_H
 #define __INET_SDES_H
@@ -39,13 +29,13 @@ class INET_API SdesItem : public cObject
     enum SdesItemType {
         SDES_UNDEF = 0,
         SDES_CNAME = 1,
-        SDES_NAME = 2,
+        SDES_NAME  = 2,
         SDES_EMAIL = 3,
         SDES_PHONE = 4,
-        SDES_LOC = 5,
-        SDES_TOOL = 6,
-        SDES_NOTE = 7,
-        SDES_PRIV = 8
+        SDES_LOC   = 5,
+        SDES_TOOL  = 6,
+        SDES_NOTE  = 7,
+        SDES_PRIV  = 8
     };
 
     /**
@@ -111,7 +101,7 @@ class INET_API SdesItem : public cObject
 
   private:
     void copy(const SdesItem& other);
-    void clean() {}    //FIXME The `_content' sometimes allocated, sometimes not allocated pointer.
+    void clean() {} // FIXME The `_content' sometimes allocated, sometimes not allocated pointer.
 
   protected:
     /**
@@ -140,7 +130,7 @@ class INET_API SdesChunk : public cArray
     /**
      * Default constructor.
      */
-    SdesChunk(const char *name = nullptr, uint32 ssrc = 0);
+    SdesChunk(const char *name = nullptr, uint32_t ssrc = 0);
 
     /**
      * Copy constructor.
@@ -181,12 +171,12 @@ class INET_API SdesChunk : public cArray
     /**
      * Returns the ssrc identifier this SdesChunk is for.
      */
-    virtual uint32 getSsrc() const;
+    virtual uint32_t getSsrc() const;
 
     /**
      * Sets the ssrc identifier this SdesChunk is for.
      */
-    virtual void setSsrc(uint32 ssrc);
+    virtual void setSsrc(uint32_t ssrc);
 
     /**
      * Returns the length in bytes of this SdesChunk.
@@ -200,7 +190,7 @@ class INET_API SdesChunk : public cArray
     /**
      * The ssrc identifier this SdesChunk is for.
      */
-    uint32 _ssrc;
+    uint32_t _ssrc;
 
     /**
      * The length in bytes of this SdesChunk.
@@ -212,5 +202,5 @@ class INET_API SdesChunk : public cArray
 
 } // namespace inet
 
-#endif // ifndef __INET_SDES_H
+#endif
 

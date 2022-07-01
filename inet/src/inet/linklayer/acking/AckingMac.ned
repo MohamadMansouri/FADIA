@@ -1,25 +1,12 @@
 //
 // Copyright (C) 2013 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
-// author: Zoltan Bojthe
-//
+
 
 package inet.linklayer.acking;
 
-import inet.queueing.contract.IPacketQueue;
 import inet.linklayer.base.MacProtocolBase;
 import inet.linklayer.contract.ILinkLayer;
 import inet.linklayer.contract.IMacProtocol;
@@ -38,9 +25,9 @@ import inet.linklayer.contract.IMacProtocol;
 module AckingMac extends MacProtocolBase like ILinkLayer, IMacProtocol
 {
     parameters:
-        string address = default("auto");   // MAC address as hex string (12 hex digits), or
-                                            // "auto". "auto" values will be replaced by
-                                            // a generated MAC address in init stage 0.
+        string address @mutable = default("auto");   // MAC address as hex string (12 hex digits), or
+                                                     // "auto". "auto" values will be replaced by
+                                                     // a generated MAC address in init stage 0.
         double bitrate @unit(bps);
         int mtu @unit(B) = default(4470B);
         int headerLength @unit(B) = default(16B); // AckingMacHeader length
@@ -59,10 +46,5 @@ module AckingMac extends MacProtocolBase like ILinkLayer, IMacProtocol
         @statistic[packetDropIncorrectlyReceived](title="packet drop: incorrectly received"; source=packetDropReasonIsIncorrectlyReceived(packetDropped); record=count,sum(packetBytes),vector(packetBytes); interpolationmode=none);
         @statistic[packetDropInterfaceDown](title="packet drop: interface down"; source=packetDropReasonIsInterfaceDown(packetDropped); record=count,sum(packetBytes),vector(packetBytes); interpolationmode=none);
         @statistic[packetDropNotAddressedToUs](title="packet drop: not addressed to us"; source=packetDropReasonIsNotAddressedToUs(packetDropped); record=count,sum(packetBytes),vector(packetBytes); interpolationmode=none);
-    submodules:
-        queue: <default("DropTailQueue")> like IPacketQueue {
-            parameters:
-                @display("p=100,100;q=l2queue");
-        }
 }
 

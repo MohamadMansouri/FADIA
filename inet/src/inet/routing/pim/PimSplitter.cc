@@ -1,21 +1,13 @@
 //
 // Copyright (C) 2013 Brno University of Technology (http://nes.fit.vutbr.cz/ansa)
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 3
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 // Authors: Veronika Rybova, Vladimir Vesely (ivesely@fit.vutbr.cz),
 //          Tamas Borbely (tomi@omnetpp.org)
+
+#include "inet/routing/pim/PimSplitter.h"
 
 #include "inet/common/ModuleAccess.h"
 #include "inet/common/Protocol.h"
@@ -23,7 +15,6 @@
 #include "inet/linklayer/common/InterfaceTag_m.h"
 #include "inet/networklayer/common/IpProtocolId_m.h"
 #include "inet/networklayer/ipv4/IcmpHeader_m.h"
-#include "inet/routing/pim/PimSplitter.h"
 
 namespace inet {
 
@@ -34,8 +25,8 @@ void PimSplitter::initialize(int stage)
     cSimpleModule::initialize(stage);
 
     if (stage == INITSTAGE_LOCAL) {
-        ift = getModuleFromPar<IInterfaceTable>(par("interfaceTableModule"), this);
-        pimIft = getModuleFromPar<PimInterfaceTable>(par("pimInterfaceTableModule"), this);
+        ift.reference(this, "interfaceTableModule", true);
+        pimIft.reference(this, "pimInterfaceTableModule", true);
 
         ipIn = gate("ipIn");
         ipOut = gate("ipOut");
@@ -54,7 +45,7 @@ void PimSplitter::handleMessage(cMessage *msg)
         Packet *packet = check_and_cast<Packet *>(msg);
         auto protocol = packet->getTag<PacketProtocolTag>()->getProtocol();
         if (protocol == &Protocol::icmpv4) {
-            EV_WARN << "Received ICMP error " << msg->getName() <<  ", ignored\n";
+            EV_WARN << "Received ICMP error " << msg->getName() << ", ignored\n";
             delete msg;
         }
         else if (protocol == &Protocol::pim) {
@@ -76,8 +67,8 @@ void PimSplitter::handleMessage(cMessage *msg)
 void PimSplitter::processPIMPacket(Packet *pkt)
 {
     const auto& pimPkt = pkt->peekAtFront<PimPacket>();
-    (void)pimPkt;       // unused variable
-    InterfaceEntry *ie = ift->getInterfaceById(pkt->getTag<InterfaceInd>()->getInterfaceId());
+    (void)pimPkt; // unused variable
+    NetworkInterface *ie = ift->getInterfaceById(pkt->getTag<InterfaceInd>()->getInterfaceId());
     ASSERT(ie);
 
     EV_INFO << "Received packet on interface '" << ie->getInterfaceName() << "'" << endl;
@@ -104,5 +95,6 @@ void PimSplitter::processPIMPacket(Packet *pkt)
             throw cRuntimeError("PimSplitter: PIM mode of interface '%s' is invalid.", ie->getInterfaceName());
     }
 }
-}    // namespace inet
+
+} // namespace inet
 

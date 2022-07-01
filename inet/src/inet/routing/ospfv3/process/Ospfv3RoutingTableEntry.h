@@ -1,13 +1,12 @@
-#ifndef __INET_OSPFV3ROUTINGTABLEENTRY_H_
-#define __INET_OSPFV3ROUTINGTABLEENTRY_H_
+#ifndef __INET_OSPFV3ROUTINGTABLEENTRY_H
+#define __INET_OSPFV3ROUTINGTABLEENTRY_H
 
-#include "inet/common/INETDefs.h"
 #include "inet/networklayer/contract/IInterfaceTable.h"
 #include "inet/networklayer/contract/IRoute.h"
 #include "inet/networklayer/ipv4/Ipv4Route.h"
 #include "inet/networklayer/ipv4/Ipv4RoutingTable.h"
-#include "inet/networklayer/ipv6/Ipv6RoutingTable.h"
 #include "inet/networklayer/ipv6/Ipv6Route.h"
+#include "inet/networklayer/ipv6/Ipv6RoutingTable.h"
 #include "inet/routing/ospfv3/Ospfv3Common.h"
 #include "inet/routing/ospfv3/Ospfv3Packet_m.h"
 
@@ -16,10 +15,10 @@ namespace ospfv3 {
 
 class INET_API Ospfv3RoutingTableEntry : public Ipv6Route
 {
-public:
+  public:
     enum RoutingPathType {
-        INTRAAREA = 0,
-        INTERAREA = 1,
+        INTRAAREA      = 0,
+        INTERAREA      = 1,
         TYPE1_EXTERNAL = 2,
         TYPE2_EXTERNAL = 3
     };
@@ -31,12 +30,12 @@ public:
     static const unsigned char AREA_BORDER_ROUTER_DESTINATION = 1;
     static const unsigned char AS_BOUNDARY_ROUTER_DESTINATION = 2;
 
-private:
+  private:
     IInterfaceTable *ift = nullptr;
     RoutingDestinationType destinationType = 0;
     Ospfv3Options optionalCapabilities;
     AreaID area;
-    RoutingPathType pathType = (RoutingPathType)-1;
+    RoutingPathType pathType = (RoutingPathType) - 1;
     Metric cost = 0;
     Metric type2Cost = 0;
     const Ospfv3Lsa *linkStateOrigin = nullptr;
@@ -44,7 +43,7 @@ private:
     // IPv4Route::interfacePtr comes from nextHops[0].ifIndex
     // IPv4Route::gateway is nextHops[0].hopAddress
 
-public:
+  public:
     Ospfv3RoutingTableEntry(const Ospfv3RoutingTableEntry& entry, Ipv6Address destPrefix, int prefixLength, SourceType sourceType);
     Ospfv3RoutingTableEntry(IInterfaceTable *ift, Ipv6Address destPrefix, int prefixLength, SourceType sourceType);
     virtual ~Ospfv3RoutingTableEntry() {}
@@ -79,8 +78,8 @@ class INET_API Ospfv3Ipv4RoutingTableEntry : public Ipv4Route
 {
   public:
     enum RoutingPathType {
-        INTRAAREA = 0,
-        INTERAREA = 1,
+        INTRAAREA      = 0,
+        INTERAREA      = 1,
         TYPE1_EXTERNAL = 2,
         TYPE2_EXTERNAL = 3
     };
@@ -93,12 +92,12 @@ class INET_API Ospfv3Ipv4RoutingTableEntry : public Ipv4Route
     static const unsigned char AS_BOUNDARY_ROUTER_DESTINATION = 2;
     static const unsigned char ROUTER_DESTINATION = 3;
 
-private:
+  private:
     IInterfaceTable *ift = nullptr;
     RoutingDestinationType destinationType = 0;
     Ospfv3Options optionalCapabilities;
     AreaID area;
-    RoutingPathType pathType = (RoutingPathType)-1;
+    RoutingPathType pathType = (RoutingPathType) - 1;
     Metric cost = 0;
     Metric type2Cost = 0;
     const Ospfv3Lsa *linkStateOrigin = nullptr;
@@ -106,7 +105,7 @@ private:
     // IPv4Route::interfacePtr comes from nextHops[0].ifIndex
     // IPv4Route::gateway is nextHops[0].hopAddress
 
-public:
+  public:
     Ospfv3Ipv4RoutingTableEntry(const Ospfv3Ipv4RoutingTableEntry& entry, Ipv4Address destPrefix, int prefixLength, SourceType sourceType);
     Ospfv3Ipv4RoutingTableEntry(IInterfaceTable *ift, Ipv4Address destPrefix, int prefixLength, SourceType sourceType);
     virtual ~Ospfv3Ipv4RoutingTableEntry() {}
@@ -137,7 +136,7 @@ public:
 std::ostream& operator<<(std::ostream& out, const Ospfv3Ipv4RoutingTableEntry& entry);
 
 } // namespace ospfv3
-}//namespace inet
+} // namespace inet
 
-#endif // __INET_OSPFV3ROUTINGTABLEENTRY_H_
+#endif
 

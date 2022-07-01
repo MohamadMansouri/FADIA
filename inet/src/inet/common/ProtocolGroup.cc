@@ -1,22 +1,14 @@
 //
 // Copyright (C) 2013 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
+
 #include "inet/common/ProtocolGroup.h"
+
 #include "inet/networklayer/common/IpProtocolId_m.h"
+#include "inet/linklayer/common/EtherType_m.h"
 
 namespace inet {
 
@@ -24,8 +16,10 @@ ProtocolGroup::ProtocolGroup(const char *name, std::map<int, const Protocol *> p
     name(name),
     protocolNumberToProtocol(protocolNumberToProtocol)
 {
-    for (auto it : protocolNumberToProtocol)
+    for (auto it : protocolNumberToProtocol) {
+        protocols.push_back(it.second);
         protocolToProtocolNumber[it.second] = it.first;
+    }
 }
 
 const Protocol *ProtocolGroup::findProtocol(int protocolNumber) const
@@ -60,69 +54,79 @@ int ProtocolGroup::getProtocolNumber(const Protocol *protocol) const
 
 void ProtocolGroup::addProtocol(int protocolId, const Protocol *protocol)
 {
+    protocols.push_back(protocol);
     protocolNumberToProtocol[protocolId] = protocol;
     protocolToProtocolNumber[protocol] = protocolId;
 }
 
-
-//FIXME use constants instead of numbers
+// FIXME use constants instead of numbers
 
 // excerpt from http://www.iana.org/assignments/ieee-802-numbers/ieee-802-numbers.xhtml
 ProtocolGroup ProtocolGroup::ethertype("ethertype", {
-    { 0x0800, &Protocol::ipv4 },
-    { 0x0806, &Protocol::arp },
-    { 0x2000, &Protocol::cdp },              // TODO remove it, it's a CISCO code for LLC, ANSAINET project use it currently
-    { 0x22EA, &Protocol::srp},
-    { 0x22F0, &Protocol::tsn},
-    { 0x22F3, &Protocol::trill},
-    { 0x22F4, &Protocol::l2isis},
-    { 0x86DD, &Protocol::ipv6 },
-    { 0x36FC, &Protocol::flooding },         // ETHERTYPE_INET_FLOODING, not in any standards
-    { 0x86FD, &Protocol::probabilistic },         // ETHERTYPE_INET_PROBABILISTIC, not in any standards
-    { 0x86FE, &Protocol::wiseRoute },         // ETHERTYPE_INET_WISE, not in any standards
-    { 0x86FF, &Protocol::nextHopForwarding },         // ETHERTYPE_INET_NEXTHOP
-    { 0x8847, &Protocol::mpls },
-    { 0x88CC, &Protocol::lldp },
-    { 0x891d, &Protocol::tteth },
+    { ETHERTYPE_IPv4, &Protocol::ipv4 },
+    { ETHERTYPE_ARP, &Protocol::arp },
+    { ETHERTYPE_INET_CDP, &Protocol::cdp },               // TODO remove it, it's a CISCO code for LLC, ANSAINET project use it currently
+    { ETHERTYPE_SRP, &Protocol::srp },
+    { ETHERTYPE_TSN, &Protocol::tsn },
+    { ETHERTYPE_TRILL, &Protocol::trill },
+    { ETHERTYPE_L2_ISIS, &Protocol::l2isis },
+    { ETHERTYPE_INET_FLOODING, &Protocol::flooding },          // INET specific non-standard protocol
+    { ETHERTYPE_8021Q_TAG, &Protocol::ieee8021qCTag },
+    { ETHERTYPE_IPv6, &Protocol::ipv6 },
+    { ETHERTYPE_INET_PROBABILISTIC, &Protocol::probabilistic },     // INET specific non-standard protocol
+    { ETHERTYPE_UNKNOWN, &Protocol::unknown }, // INET specific non-standard protocol
+    { ETHERTYPE_INET_WISEROUTE, &Protocol::wiseRoute },         // INET specific non-standard protocol
+    { ETHERTYPE_NEXT_HOP_FORWARDING, &Protocol::nextHopForwarding }, // INET specific non-standard protocol
+    { ETHERTYPE_FLOW_CONTROL, &Protocol::ethernetFlowCtrl },
+    { ETHERTYPE_MPLS_UNICAST, &Protocol::mpls },
+    { ETHERTYPE_8021ad_S_TAG, &Protocol::ieee8021qSTag },
+    { ETHERTYPE_LLDP, &Protocol::lldp },
+    { ETHERTYPE_GPTP, &Protocol::gptp },
+    { ETHERTYPE_IEEE8021AE, &Protocol::ieee8021ae },
+    { ETHERTYPE_TTETH, &Protocol::tteth },
+    { ETHERTYPE_IEEE8021_R_TAG, &Protocol::ieee8021rTag },
 });
 
-// excerpt from http://www.iana.org/assignments/ppp-numbers/ppp-numbers.xhtml#ppp-numbers-2
+// excerpt from http://www.iana.org/assignments/ppp-numbers/ppp-numbers.xhtml
 ProtocolGroup ProtocolGroup::pppprotocol("pppprotocol", {
     { 0x0021, &Protocol::ipv4 },
     { 0x0057, &Protocol::ipv6 },
-    { 0x0281, &Protocol::mpls },        // MPLS unicast
-    { 0x39FC, &Protocol::flooding },         // INET_FLOODING, not in any standards
-    { 0x39FD, &Protocol::probabilistic },         // INET_PROBABILISTIC, not in any standards
-    { 0x39FE, &Protocol::wiseRoute },         // INET_WISE, not in any standards
-    { 0x39FF, &Protocol::nextHopForwarding },         // INET_NEXT_HOP_FORWARDING, not in any standards
+    { 0x0281, &Protocol::mpls },
+    { 0x39FB, &Protocol::unknown },           // INET specific non-standard protocol
+    { 0x39FC, &Protocol::flooding },          // INET specific non-standard protocol
+    { 0x39FD, &Protocol::probabilistic },     // INET specific non-standard protocol
+    { 0x39FE, &Protocol::wiseRoute },         // INET specific non-standard protocol
+    { 0x39FF, &Protocol::nextHopForwarding }, // INET specific non-standard protocol
 });
 
 // excerpt from http://www.iana.org/assignments/protocol-numbers/protocol-numbers.xhtml
 ProtocolGroup ProtocolGroup::ipprotocol("ipprotocol", {
-    { 1, &Protocol::icmpv4 },
-    { 2, &Protocol::igmp },
-    { 4, &Protocol::ipv4 },
-    { 6, &Protocol::tcp },
-    { 8, &Protocol::egp },
-    { 9, &Protocol::igp },
-    { 17, &Protocol::udp },
-    { 36, &Protocol::xtp },
-    { 41, &Protocol::ipv6 },
-    { 46, &Protocol::rsvpTe },
-    { 48, &Protocol::dsr },
-    { 58, &Protocol::icmpv6 },
-    { 89, &Protocol::ospf },
-    { 103, &Protocol::pim },
-    { 132, &Protocol::sctp },
-    { 135, &Protocol::mobileipv6 },
-    { 138, &Protocol::manet },
+    { IP_PROT_ICMP, &Protocol::icmpv4 },
+    { IP_PROT_IGMP, &Protocol::igmp },
+    { IP_PROT_IP, &Protocol::ipv4 },
+    { IP_PROT_TCP, &Protocol::tcp },
+    { IP_PROT_EGP, &Protocol::egp },
+    { IP_PROT_IGP, &Protocol::igp },
+    { IP_PROT_UDP, &Protocol::udp },
+    { IP_PROT_XTP, &Protocol::xtp },
+    { IP_PROT_IPv6, &Protocol::ipv6 },
+    { IP_PROT_RSVP, &Protocol::rsvpTe },
+    { IP_PROT_DSR, &Protocol::dsr },
+    { IP_PROT_IPv6_ICMP, &Protocol::icmpv6 },
+    { IP_PROT_EIGRP, &Protocol::eigrp },
+    { IP_PROT_OSPF, &Protocol::ospf },
+    { IP_PROT_PIM, &Protocol::pim },
+    { IP_PROT_SCTP, &Protocol::sctp },
+    { IP_PROT_IPv6EXT_MOB, &Protocol::mobileipv6 },
+    { IP_PROT_MANET, &Protocol::manet },
 
-    { 249, &Protocol::linkStateRouting },    // INET specific: Link State Routing Protocol
-    { 250, &Protocol::flooding },    // INET specific: Probabilistic Network Protocol
-    { 251, &Protocol::probabilistic },    // INET specific: Probabilistic Network Protocol
-    { 252, &Protocol::wiseRoute },    // INET specific: Probabilistic Network Protocol
-    { 253, &Protocol::nextHopForwarding },    // INET specific: Next Hop Forwarding
-    { 254, &Protocol::echo },    // INET specific: Echo Protocol
+    { IP_PROT_LINK_STATE_ROUTING, &Protocol::linkStateRouting },
+    { IP_PROT_FLOODING, &Protocol::flooding },          // INET specific non-standard protocol
+    { IP_PROT_PROBABILISTIC, &Protocol::probabilistic },     // INET specific non-standard protocol
+    { IP_PROT_WISE, &Protocol::wiseRoute },         // INET specific non-standard protocol
+    { IP_PROT_NEXT_HOP_FORWARDING, &Protocol::nextHopForwarding }, // INET specific non-standard protocol
+    { IP_PROT_ECHO, &Protocol::echo },              // INET specific non-standard protocol
+    { IP_PROT_UNKNOWN, &Protocol::unknown }, // INET specific non-standard protocol
 });
 
 ProtocolGroup ProtocolGroup::snapOui("snapOui", {
@@ -132,12 +136,15 @@ ProtocolGroup ProtocolGroup::snapOui("snapOui", {
 
 ProtocolGroup ProtocolGroup::ieee8022protocol("ieee8022protocol", {
     { 0x4242, &Protocol::stp },
+    { 0xAAAA, &Protocol::ieee8022snap },
     { 0xFE00, &Protocol::isis },
+    { 0xFFFF, &Protocol::unknown }, // INET specific non-standard protocol
 });
 
 ProtocolGroup ProtocolGroup::udpprotocol("udpprotocol", {
     { 554, &Protocol::rtsp },
     { 6696, &Protocol::babel },
+    { 11111, &Protocol::unknown }, // INET specific non-standard protocol
 });
 
 ProtocolGroup ProtocolGroup::tcpprotocol("tcpprotocol", {
@@ -146,6 +153,7 @@ ProtocolGroup ProtocolGroup::tcpprotocol("tcpprotocol", {
     { 23, &Protocol::telnet },
     { 80, &Protocol::http },
     { 554, &Protocol::rtsp },
+    { 11111, &Protocol::unknown }, // INET specific non-standard protocol
 });
 
 } // namespace inet

@@ -41,8 +41,8 @@ snapshot-file = "${resultdir}/${configname}-${runnumber}.sna"
 **.router.ppp[*].queue.packetCapacity = 300
 
 # NIC configuration
-**.ppp[*].ppp.queue.typename = "DropTailQueue" # in routers
-**.ppp[*].ppp.queue.packetCapacity = 10  # in routers
+**.ppp[*].queue.typename = "DropTailQueue" # in routers
+**.ppp[*].queue.packetCapacity = 10  # in routers
 
 %#--------------------------------------------------------------------------------------------------------------
 %file: test.ned
@@ -219,8 +219,7 @@ attr
 scalar Test.recip.trafGen packetReceived:count 21
 attr
 %#--------------------------------------------------------------------------------------------------------------
-%not-contains: stdout
-undisposed object:
-%not-contains: stdout
--- check module destructor
+%postrun-command: grep "undisposed object:" test.out > test_undisposed.out || true
+%not-contains: test_undisposed.out
+undisposed object: (
 %#--------------------------------------------------------------------------------------------------------------

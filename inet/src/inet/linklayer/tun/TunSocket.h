@@ -1,24 +1,13 @@
 //
 // Copyright (C) 2013 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 #ifndef __INET_TUNSOCKET_H
 #define __INET_TUNSOCKET_H
 
-#include "inet/common/INETDefs.h"
 #include "inet/common/packet/Packet.h"
 #include "inet/common/socket/ISocket.h"
 
@@ -27,13 +16,13 @@ namespace inet {
 class INET_API TunSocket : public ISocket
 {
   public:
-    class INET_API ICallback
-    {
+    class INET_API ICallback {
       public:
         virtual ~ICallback() {}
         virtual void socketDataArrived(TunSocket *socket, Packet *packet) = 0;
         virtual void socketClosed(TunSocket *socket) = 0;
     };
+
   protected:
     int socketId = -1;
     int interfaceId = -1;
@@ -80,8 +69,8 @@ class INET_API TunSocket : public ISocket
     virtual int getSocketId() const override { return socketId; }
 
     void open(int interfaceId);
-    void send(Packet *packet);
-    void close() override;
+    virtual void send(Packet *packet) override;
+    virtual void close() override;
     virtual void destroy() override;
     virtual bool isOpen() const override { return isOpen_; }
 
@@ -91,5 +80,5 @@ class INET_API TunSocket : public ISocket
 
 } // namespace inet
 
-#endif // ifndef __INET_TUNSOCKET_H
+#endif
 

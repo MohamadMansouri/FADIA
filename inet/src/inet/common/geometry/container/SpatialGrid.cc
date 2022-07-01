@@ -1,21 +1,13 @@
 //
 // Copyright (C) 2014 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
+
 #include "inet/common/geometry/container/SpatialGrid.h"
+
+#include "inet/common/stlutils.h"
 
 namespace inet {
 
@@ -26,9 +18,9 @@ bool SpatialGrid::insertObject(const cObject *object, const Coord& pos, const Co
     for (int i = start[0]; i <= end[0]; i++) {
         for (int j = start[1]; j <= end[1]; j++) {
             for (int k = start[2]; k <= end[2]; k++) {
-                int voxelIndex = rowMajorIndex(Triplet<int>(i,j,k));
+                int voxelIndex = rowMajorIndex(Triplet<int>(i, j, k));
                 Voxel& neighborVoxel = grid[voxelIndex];
-                neighborVoxel.push_back(check_and_cast<const cObject*>(object));
+                neighborVoxel.push_back(check_and_cast<const cObject *>(object));
             }
         }
     }
@@ -42,8 +34,7 @@ void SpatialGrid::computeBoundingVoxels(const Coord& pos, const Triplet<double>&
     int zVoxel = constraintAreaSideLengths.z == 0 ? 0 : ceil((boundings.z * numVoxels[2]) / constraintAreaSideLengths.z);
     Triplet<int> voxels(xVoxel, yVoxel, zVoxel);
     Triplet<int> matrixIndices = coordToMatrixIndices(pos);
-    for (unsigned int i = 0; i < 3; i++)
-    {
+    for (unsigned int i = 0; i < 3; i++) {
         start[i] = matrixIndices[i] - voxels[i] < 0 ? 0 : matrixIndices[i] - voxels[i];
         int endCell = matrixIndices[i] + voxels[i] >= numVoxels[i] ? numVoxels[i] - 1 : matrixIndices[i] + voxels[i];
         if (endCell < 0)
@@ -69,8 +60,7 @@ SpatialGrid::SpatialGrid(const Coord& voxelSizes, const Coord& constraintAreaMin
 bool SpatialGrid::insertPoint(const cObject *point, const Coord& pos)
 {
     unsigned int ind = coordToRowMajorIndex(pos);
-    if (ind >= gridVectorLength)
-    {
+    if (ind >= gridVectorLength) {
         throw cRuntimeError("Out of range with index: %d", ind);
         return false;
     }
@@ -95,31 +85,29 @@ void SpatialGrid::rangeQuery(const Coord& pos, double range, const IVisitor *vis
     for (int i = start[0]; i <= end[0]; i++) {
         for (int j = start[1]; j <= end[1]; j++) {
             for (int k = start[2]; k <= end[2]; k++) {
-                int voxelIndex = rowMajorIndex(Triplet<int>(i,j,k));
+                int voxelIndex = rowMajorIndex(Triplet<int>(i, j, k));
                 const Voxel& neighborVoxel = grid[voxelIndex];
-                for (const auto & elem : neighborVoxel)
+                for (const auto& elem : neighborVoxel)
                     visitor->visit(elem);
             }
         }
     }
 }
 
-void SpatialGrid::lineSegmentQuery(const LineSegment &lineSegment, const IVisitor *visitor) const
+void SpatialGrid::lineSegmentQuery(const LineSegment& lineSegment, const IVisitor *visitor) const
 {
-    std::map<const cObject *,bool> visited;
-    for (LineSegmentIterator it(this, lineSegment, voxelSizes, numVoxels); !it.end(); ++it)
-    {
+    std::set<const cObject *> visited;
+    for (LineSegmentIterator it(this, lineSegment, voxelSizes, numVoxels); !it.end(); ++it) {
         Triplet<int> ind = it.getMatrixIndices();
         unsigned int voxelIndex = rowMajorIndex(ind);
         if (voxelIndex >= gridVectorLength)
             throw cRuntimeError("Out of index, gridVectorLength = %d, voxelIndex = %d", gridVectorLength, voxelIndex);
         const Voxel& intersectedVoxel = grid[voxelIndex];
-        for (const auto & elem : intersectedVoxel)
-        {
-            std::map<const cObject *, bool>::const_iterator objIter = visited.find(elem);
-            if (objIter == visited.end() || !objIter->second)
+        for (const auto& elem : intersectedVoxel) {
+            if (!contains(visited, elem)) {
                 visitor->visit(elem);
-            visited.insert(std::pair<const cObject*,bool>(elem, true));
+                visited.insert(elem);
+            }
         }
     }
 }
@@ -150,8 +138,7 @@ unsigned int SpatialGrid::computeGridVectorLength() const
 SpatialGrid::Triplet<int> SpatialGrid::decodeRowMajorIndex(unsigned int ind) const
 {
     Triplet<int> indices;
-    for (unsigned int k = 0; k < 3; k++)
-    {
+    for (unsigned int k = 0; k < 3; k++) {
         unsigned int prodDim = 1;
         for (unsigned int l = k + 1; l < 3; l++)
             if (numVoxels[l] > 0)
@@ -165,8 +152,7 @@ SpatialGrid::Triplet<int> SpatialGrid::decodeRowMajorIndex(unsigned int ind) con
 unsigned int SpatialGrid::rowMajorIndex(const Triplet<int>& indices) const
 {
     int ind = 0;
-    for (unsigned int k = 0; k < 3; k++)
-    {
+    for (unsigned int k = 0; k < 3; k++) {
         unsigned int prodDim = 1;
         for (unsigned int l = k + 1; l < 3; l++)
             if (numVoxels[l] > 0)
@@ -195,7 +181,7 @@ SpatialGrid::Triplet<int> SpatialGrid::coordToMatrixIndices(const Coord& pos) co
     return Triplet<int>(xCoord, yCoord, zCoord);
 }
 
-SpatialGrid::LineSegmentIterator::LineSegmentIterator(const SpatialGrid *spatialGrid, const LineSegment &lineSegment, const Triplet<double> &voxelSizes, const Triplet<int>& numVoxels)
+SpatialGrid::LineSegmentIterator::LineSegmentIterator(const SpatialGrid *spatialGrid, const LineSegment& lineSegment, const Triplet<double>& voxelSizes, const Triplet<int>& numVoxels)
 {
     reachedEnd = false;
     Coord p0 = lineSegment.getPoint1();
@@ -205,8 +191,7 @@ SpatialGrid::LineSegmentIterator::LineSegmentIterator(const SpatialGrid *spatial
     Triplet<double> direction = Triplet<double>(segmentDirection.x, segmentDirection.y, segmentDirection.z);
     index = spatialGrid->coordToMatrixIndices(p0);
     endPoint = spatialGrid->coordToMatrixIndices(p1);
-    for (int i = 0; i < 3; i++)
-    {
+    for (int i = 0; i < 3; i++) {
         tDelta[i] = voxelSizes[i] / std::abs(direction[i]);
         double ithdirection = direction[i];
         if (ithdirection > 0)
@@ -229,11 +214,9 @@ SpatialGrid::LineSegmentIterator::LineSegmentIterator(const SpatialGrid *spatial
 
 SpatialGrid::LineSegmentIterator& SpatialGrid::LineSegmentIterator::operator++()
 {
-    if (index.x != endPoint.x || index.y != endPoint.y || index.z != endPoint.z)
-    {
+    if (index.x != endPoint.x || index.y != endPoint.y || index.z != endPoint.z) {
         int axis = 0;
-        if (tExit.x < tExit.y)
-        {
+        if (tExit.x < tExit.y) {
             if (tExit.x < tExit.z)
                 axis = 0;
             else
@@ -252,3 +235,4 @@ SpatialGrid::LineSegmentIterator& SpatialGrid::LineSegmentIterator::operator++()
 }
 
 } /* namespace inet */
+

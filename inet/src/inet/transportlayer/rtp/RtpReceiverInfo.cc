@@ -1,30 +1,21 @@
-/***************************************************************************
-                          RtpReceiverInfo.cc  -  description
-                             -------------------
-    (C) 2007 Ahmed Ayadi  <ahmed.ayadi@sophia.inria.fr>
-    (C) 2001 Matthias Oppitz <Matthias.Oppitz@gmx.de>
+//
+// Copyright (C) 2001 Matthias Oppitz <Matthias.Oppitz@gmx.de>
+// Copyright (C) 2007 Ahmed Ayadi <ahmed.ayadi@sophia.inria.fr>
+//
+// SPDX-License-Identifier: LGPL-3.0-or-later
+//
 
-***************************************************************************/
-
-/***************************************************************************
-*                                                                         *
-*   This program is free software; you can redistribute it and/or modify  *
-*   it under the terms of the GNU General Public License as published by  *
-*   the Free Software Foundation; either version 2 of the License, or     *
-*   (at your option) any later version.                                   *
-*                                                                         *
-***************************************************************************/
+#include "inet/transportlayer/rtp/RtpReceiverInfo.h"
 
 #include "inet/transportlayer/rtp/Reports_m.h"
 #include "inet/transportlayer/rtp/RtpPacket_m.h"
-#include "inet/transportlayer/rtp/RtpReceiverInfo.h"
 
 namespace inet {
 namespace rtp {
 
 Register_Class(RtpReceiverInfo);
 
-RtpReceiverInfo::RtpReceiverInfo(uint32 ssrc) : RtpParticipantInfo(ssrc)
+RtpReceiverInfo::RtpReceiverInfo(uint32_t ssrc) : RtpParticipantInfo(ssrc)
 {
 }
 
@@ -93,11 +84,11 @@ void RtpReceiverInfo::processRTPPacket(Packet *packet, int id, simtime_t arrival
             _packetLostOutVector.record(packet->getSequenceNumber() - _highestSequenceNumber -1);
             for (int i = _highestSequenceNumber+1; i< packet->getSequenceNumber(); i++ )
             {
-                //std::cout << "id = "<< id <<" SequeceNumber loss = "<<i<<endl;
+//                std::cout << "id = "<< id <<" SequeceNumber loss = "<<i<<endl;
                 packetSequenceLostLogFile = fopen ("PacketLossLog.log","+w");
                 if (packetSequenceLostLogFile != nullptr)
                 {
-                    //sprintf (line, "id = %d SequeceNumber loss = %f ", id,i);
+//                    sprintf (line, "id = %d SequeceNumber loss = %f ", id,i);
                     fputs (i, packetSequenceLostLogFile);
                     fclose (packetSequenceLostLogFile);
                 }
@@ -141,8 +132,8 @@ void RtpReceiverInfo::processSenderReport(SenderReport *report, simtime_t arriva
         _lastSenderReportNTPTimeStamp = report->getNTPTimeStamp();
     }
     else if (_clockRate == 0) {
-        uint32 rtpTicks = report->getRTPTimeStamp() - _lastSenderReportRTPTimeStamp;
-        uint64 ntpDifference = report->getNTPTimeStamp() - _lastSenderReportNTPTimeStamp;
+        uint32_t rtpTicks = report->getRTPTimeStamp() - _lastSenderReportRTPTimeStamp;
+        uint64_t ntpDifference = report->getNTPTimeStamp() - _lastSenderReportNTPTimeStamp;
         long double ntpSeconds = (long double)ntpDifference / (long double)(0xFFFFFFFF);
         _clockRate = (int)((long double)rtpTicks / ntpSeconds);
     }
@@ -166,15 +157,15 @@ ReceptionReport *RtpReceiverInfo::receptionReport(simtime_t now)
         ReceptionReport *receptionReport = new ReceptionReport();
         receptionReport->setSsrc(getSsrc());
 
-        uint64 packetsExpected = _sequenceNumberCycles + (uint64)_highestSequenceNumber
-            - (uint64)_sequenceNumberBase + (uint64)1;
-        uint64 packetsLost = packetsExpected - _packetsReceived;
+        uint64_t packetsExpected = _sequenceNumberCycles + (uint64_t)_highestSequenceNumber
+            - (uint64_t)_sequenceNumberBase + (uint64_t)1;
+        uint64_t packetsLost = packetsExpected - _packetsReceived;
 
-        int32 packetsExpectedInInterval =
+        int32_t packetsExpectedInInterval =
             _sequenceNumberCycles + _highestSequenceNumber - _highestSequenceNumberPrior;
-        int32 packetsReceivedInInterval = _packetsReceived - _packetsReceivedPrior;
-        int32 packetsLostInInterval = packetsExpectedInInterval - packetsReceivedInInterval;
-        uint8 fractionLost = 0;
+        int32_t packetsReceivedInInterval = _packetsReceived - _packetsReceivedPrior;
+        int32_t packetsLostInInterval = packetsExpectedInInterval - packetsReceivedInInterval;
+        uint8_t fractionLost = 0;
         if (packetsLostInInterval > 0) {
             fractionLost = (packetsLostInInterval << 8) / packetsExpectedInInterval;
         }
@@ -183,7 +174,7 @@ ReceptionReport *RtpReceiverInfo::receptionReport(simtime_t now)
         receptionReport->setPacketsLostCumulative(packetsLost);
         receptionReport->setSequenceNumber(_sequenceNumberCycles + _highestSequenceNumber);
 
-        receptionReport->setJitter((uint32)SIMTIME_DBL(_jitter));    //FIXME //XXX ??? store it in secs? --Andras
+        receptionReport->setJitter((uint32_t)SIMTIME_DBL(_jitter)); // FIXME store it in secs? --Andras
 
         // the middle 32 bit of the ntp time stamp of the last sender report
         receptionReport->setLastSR((_lastSenderReportNTPTimeStamp >> 16) & 0xFFFFFFFF);
@@ -192,7 +183,7 @@ ReceptionReport *RtpReceiverInfo::receptionReport(simtime_t now)
         // of 1 / 65536 seconds
         // 0 if no sender report has ben received
         receptionReport->setDelaySinceLastSR(_lastSenderReportArrivalTime == 0.0 ? 0
-                : (uint32)(SIMTIME_DBL(now - _lastSenderReportArrivalTime) * 65536.0));
+                : (uint32_t)(SIMTIME_DBL(now - _lastSenderReportArrivalTime) * 65536.0));
 
         return receptionReport;
     }

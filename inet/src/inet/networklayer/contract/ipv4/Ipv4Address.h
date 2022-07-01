@@ -2,20 +2,9 @@
 // Copyright (C) 2001  Vincent Oberle (vincent@oberle.com)
 // Institute of Telematics, University of Karlsruhe, Germany.
 // University Comillas, Madrid, Spain.
-// Copyright (C) 2004 Andras Varga
+// Copyright (C) 2004 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public
-// License along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
 //
@@ -29,7 +18,7 @@
 #include <iostream>
 #include <string>
 
-#include "inet/common/INETDefs.h"
+#include "inet/linklayer/common/MacAddress.h"
 
 namespace inet {
 
@@ -45,8 +34,8 @@ const short PORT_MAX = 0x7fff;
 class INET_API Ipv4Address
 {
   protected:
-    // Address is encoded in a single uint32 in host byte order (e.g. "10.0.0.1" is 0x0A000001)
-    uint32 addr;
+    // Address is encoded in a single uint32_t in host byte order (e.g. "10.0.0.1" is 0x0A000001)
+    uint32_t addr;
 
   protected:
     // Parses Ipv4 address into the given bytes, and returns true if syntax was OK.
@@ -54,7 +43,7 @@ class INET_API Ipv4Address
     // Throws error if length is outside 0..32
     static void _checkNetmaskLength(int length);
     // Returns a netmask with the given length (Implementation note: MSVC refuses to shift by 32 bits!)
-    static uint32 _makeNetmask(int length) { return length >= 32 ? 0xffffffffu : ~(0xffffffffu >> length); }
+    static uint32_t _makeNetmask(int length) { return length >= 32 ? 0xffffffffu : ~(0xffffffffu >> length); }
 
   public:
     /**
@@ -82,35 +71,35 @@ class INET_API Ipv4Address
      * 255.255.255.255/32  Limited Broadcast          RFC 919, Section 7; RFC 922, Section 7
      */
     enum AddressCategory {
-        UNSPECIFIED,    // 0.0.0.0
-        THIS_NETWORK,    // 0.0.0.0/8
-        LOOPBACK,    // 127.0.0.0/8
-        MULTICAST,    // 224.0.0.0/4
-        BROADCAST,    // 255.255.255.255/32
-        IETF,    // 192.0.0.0/24
-        TEST_NET,    // 192.0.2.0/24, 198.51.100.0/24, 203.0.113.0/24
-        IPv6_TO_IPv4_RELAY,    // 192.88.99.0/24
-        BENCHMARK,    // 198.18.0.0/15
-        RESERVED,    // 240.0.0.0/4
-        LINKLOCAL,    // 169.254.0.0/16
-        PRIVATE_NETWORK,    // 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16
+        UNSPECIFIED, // 0.0.0.0
+        THIS_NETWORK, // 0.0.0.0/8
+        LOOPBACK, // 127.0.0.0/8
+        MULTICAST, // 224.0.0.0/4
+        BROADCAST, // 255.255.255.255/32
+        IETF, // 192.0.0.0/24
+        TEST_NET, // 192.0.2.0/24, 198.51.100.0/24, 203.0.113.0/24
+        IPv6_TO_IPv4_RELAY, // 192.88.99.0/24
+        BENCHMARK, // 198.18.0.0/15
+        RESERVED, // 240.0.0.0/4
+        LINKLOCAL, // 169.254.0.0/16
+        PRIVATE_NETWORK, // 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16
         GLOBAL
     };
 
     /** @name Predefined addresses */
     //@{
-    static const Ipv4Address UNSPECIFIED_ADDRESS;    ///< 0.0.0.0
-    static const Ipv4Address LOOPBACK_ADDRESS;    ///< 127.0.0.1
-    static const Ipv4Address LOOPBACK_NETMASK;    ///< 255.0.0.0
-    static const Ipv4Address ALLONES_ADDRESS;    ///< 255.255.255.255
+    static const Ipv4Address UNSPECIFIED_ADDRESS; ///< 0.0.0.0
+    static const Ipv4Address LOOPBACK_ADDRESS; ///< 127.0.0.1
+    static const Ipv4Address LOOPBACK_NETMASK; ///< 255.0.0.0
+    static const Ipv4Address ALLONES_ADDRESS; ///< 255.255.255.255
 
-    static const Ipv4Address ALL_HOSTS_MCAST;    ///< 224.0.0.1 All hosts on a subnet
-    static const Ipv4Address ALL_ROUTERS_MCAST;    ///< 224.0.0.2 All routers on a subnet
-    static const Ipv4Address ALL_DVMRP_ROUTERS_MCAST;    ///< 224.0.0.4 All DVMRP routers
-    static const Ipv4Address ALL_OSPF_ROUTERS_MCAST;    ///< 224.0.0.5 All OSPF routers (DR Others)
-    static const Ipv4Address ALL_OSPF_DESIGNATED_ROUTERS_MCAST;    ///< 224.0.0.6 All OSPF Designated Routers
-    static const Ipv4Address ALL_IGMPV3_ROUTERS_MCAST;    ///< 224.0.0.22 All IGMPv3 routers
-    static const Ipv4Address LL_MANET_ROUTERS;    ///< 224.0.0.109 Manet all designated routers
+    static const Ipv4Address ALL_HOSTS_MCAST; ///< 224.0.0.1 All hosts on a subnet
+    static const Ipv4Address ALL_ROUTERS_MCAST; ///< 224.0.0.2 All routers on a subnet
+    static const Ipv4Address ALL_DVMRP_ROUTERS_MCAST; ///< 224.0.0.4 All DVMRP routers
+    static const Ipv4Address ALL_OSPF_ROUTERS_MCAST; ///< 224.0.0.5 All OSPF routers (DR Others)
+    static const Ipv4Address ALL_OSPF_DESIGNATED_ROUTERS_MCAST; ///< 224.0.0.6 All OSPF Designated Routers
+    static const Ipv4Address ALL_IGMPV3_ROUTERS_MCAST; ///< 224.0.0.22 All IGMPv3 routers
+    static const Ipv4Address LL_MANET_ROUTERS; ///< 224.0.0.109 Manet all designated routers
     static const Ipv4Address ALL_RIP_ROUTERS_MCAST;
     //@}
 
@@ -125,7 +114,7 @@ class INET_API Ipv4Address
     /**
      * Ipv4 address as int
      */
-    explicit Ipv4Address(uint32 ip) { addr = ip; }
+    explicit Ipv4Address(uint32_t ip) { addr = ip; }
 
     /**
      * Ipv4 address bytes: "i0.i1.i2.i3" format
@@ -148,9 +137,9 @@ class INET_API Ipv4Address
     /** name Setting the address */
     //@{
     /**
-     * Ipv4 address as uint32 in host byte order (e.g. "10.0.0.1" is 0x0A000001)
+     * Ipv4 address as uint32_t in host byte order (e.g. "10.0.0.1" is 0x0A000001)
      */
-    void set(uint32 ip) { addr = ip; }
+    void set(uint32_t ip) { addr = ip; }
 
     /**
      * Ipv4 address bytes: "i0.i1.i2.i3" format
@@ -192,9 +181,9 @@ class INET_API Ipv4Address
     std::string str(bool printUnspec = true) const;
 
     /**
-     * Returns the address as an uint32 in host byte order (e.g. "10.0.0.1" is 0x0A000001).
+     * Returns the address as an uint32_t in host byte order (e.g. "10.0.0.1" is 0x0A000001).
      */
-    uint32 getInt() const { return addr; }
+    uint32_t getInt() const { return addr; }
 
     /**
      * Returns the corresponding part of the address specified by the index
@@ -319,6 +308,11 @@ class INET_API Ipv4Address
     bool operator>=(const Ipv4Address& addr1) const { return getInt() >= addr1.getInt(); }
 
     /**
+     * Form a MAC address for a multicast IPv4 address, see  RFC 1112, section 6.4
+     */
+    MacAddress mapToMulticastMacAddress() const;
+
+    /**
      * Returns true if the format of the string corresponds to an Ipv4 address
      * with the dotted notation ("192.66.86.1"), and false otherwise.
      *
@@ -340,19 +334,19 @@ inline std::ostream& operator<<(std::ostream& os, const Ipv4Address& ip)
     return os << ip.str();
 }
 
-inline void doPacking(cCommBuffer *buf, const Ipv4Address& addr)
+inline void doParsimPacking(cCommBuffer *buf, const Ipv4Address& addr)
 {
     buf->pack(addr.getInt());
 }
 
-inline void doUnpacking(cCommBuffer *buf, Ipv4Address& addr)
+inline void doParsimUnpacking(cCommBuffer *buf, Ipv4Address& addr)
 {
-    int32 d;
+    int32_t d;
     buf->unpack(d);
     addr.set(d);
 }
 
 } // namespace inet
 
-#endif // ifndef __INET_IPV4ADDRESS_H
+#endif
 

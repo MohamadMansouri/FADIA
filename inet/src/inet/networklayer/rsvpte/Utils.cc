@@ -1,19 +1,12 @@
 //
-// (C) 2005 Vojtech Janota
+// Copyright (C) 2005 Vojtech Janota
 //
-// This library is free software, you can redistribute it
-// and/or modify
-// it under  the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation;
-// either version 2 of the License, or any later version.
-// The library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-// See the GNU Lesser General Public License for more details.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-#include "inet/networklayer/rsvpte/IntServ_m.h"
 #include "inet/networklayer/rsvpte/Utils.h"
+
+#include "inet/networklayer/rsvpte/IntServ_m.h"
 
 namespace inet {
 
@@ -58,7 +51,7 @@ EroVector routeToEro(const Ipv4AddressVector& rro)
 {
     EroVector ero;
 
-    for (auto & elem : rro) {
+    for (auto& elem : rro) {
         EroObj hop;
         hop.L = false;
         hop.node = elem;
@@ -83,37 +76,9 @@ void removeDuplicates(std::vector<int>& vec)
     }
 }
 
-int find(const EroVector& ERO, Ipv4Address node)
-{
-    for (unsigned int i = 0; i < ERO.size(); i++)
-        if (ERO[i].node == node)
-            return i;
-
-    ASSERT(false);
-    return -1;    // to prevent warning
-}
-
-bool find(std::vector<int>& vec, int value)
-{
-    for (auto & elem : vec)
-        if (elem == value)
-            return true;
-
-    return false;
-}
-
-bool find(const Ipv4AddressVector& vec, Ipv4Address addr)
-{
-    for (auto & elem : vec)
-        if (elem == addr)
-            return true;
-
-    return false;
-}
-
 void append(std::vector<int>& dest, const std::vector<int>& src)
 {
-    for (auto & elem : src)
+    for (auto& elem : src)
         dest.push_back(elem);
 }
 

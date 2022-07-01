@@ -1,22 +1,13 @@
 //
 // Copyright (C) 2016 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see http://www.gnu.org/licenses/.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-#include "inet/common/ModuleAccess.h"
+
 #include "inet/linklayer/ieee80211/mac/recipient/RecipientQosAckPolicy.h"
+
+#include "inet/common/ModuleAccess.h"
 
 namespace inet {
 namespace ieee80211 {
@@ -27,7 +18,7 @@ void RecipientQosAckPolicy::initialize(int stage)
 {
     ModeSetListener::initialize(stage);
     if (stage == INITSTAGE_LOCAL) {
-        rateSelection = check_and_cast<IQosRateSelection*>(getModuleByPath(par("rateSelectionModule")));
+        rateSelection = check_and_cast<IQosRateSelection *>(getModuleByPath(par("rateSelectionModule")));
     }
 }
 
@@ -48,7 +39,7 @@ simtime_t RecipientQosAckPolicy::computeAckDuration(Packet *packet, const Ptr<co
 //
 bool RecipientQosAckPolicy::isAckNeeded(const Ptr<const Ieee80211DataOrMgmtHeader>& header) const
 {
-    // TODO: add mgmt frame NoAck check
+    // TODO add mgmt frame NoAck check
     if (auto dataHeader = dynamicPtrCast<const Ieee80211DataHeader>(header))
         if (dataHeader->getAckPolicy() != NORMAL_ACK)
             return false;
@@ -58,7 +49,7 @@ bool RecipientQosAckPolicy::isAckNeeded(const Ptr<const Ieee80211DataOrMgmtHeade
 //
 // If the immediate Block Ack policy is used, the recipient shall respond to a
 // Basic BlockAckReq frame with a Basic BlockAck frame.
-// TODO:
+// TODO
 // If the delayed Block Ack policy is used, the recipient shall respond to a Basic BlockAckReq frame with an
 // ACK frame. The recipient shall then send its Basic BlockAck response in a subsequently obtained TXOP.
 // Once the contents of the Basic BlockAck frame have been prepared, the recipient shall send this frame in the
@@ -72,7 +63,7 @@ bool RecipientQosAckPolicy::isBlockAckNeeded(const Ptr<const Ieee80211BlockAckRe
 {
     if (dynamicPtrCast<const Ieee80211BasicBlockAckReq>(blockAckReq)) {
         return agreement != nullptr;
-        // TODO: The Basic BlockAckReq frame shall be discarded if all MSDUs referenced by this
+        // TODO The Basic BlockAckReq frame shall be discarded if all MSDUs referenced by this
         // frame have been discarded from the transmit buffer due to expiry of their lifetime limit.
     }
     else
@@ -105,3 +96,4 @@ simtime_t RecipientQosAckPolicy::computeBasicBlockAckDurationField(Packet *packe
 
 } /* namespace ieee80211 */
 } /* namespace inet */
+

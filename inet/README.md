@@ -1,7 +1,4 @@
-| CI Status | master |
-|-----------|:------:|
-| Build and fingerprint tests | [![Travis CI][travis-master]][1] |
-| Feature enablement tests    | [![CircleCI][circle-master]][3]  |
+[![badge 1][badge-1]][1] [![badge 2][badge-2]][2]
 
 INET Framework for OMNEST/OMNeT++
 =================================
@@ -55,12 +52,8 @@ either in the IDE or using the inet_featuretool then regenerate the INET makefil
 using 'make makefiles'.
 
 
-[travis-master]: https://travis-ci.org/inet-framework/inet.svg?branch=master
-[travis-integration]: https://travis-ci.org/inet-framework/inet.svg?branch=integration
-[circle-master]: https://circleci.com/gh/inet-framework/inet/tree/master.svg?style=svg
-[circle-integration]: https://circleci.com/gh/inet-framework/inet/tree/integration.svg?style=svg
+[badge-1]: https://github.com/inet-framework/inet/workflows/Build%20and%20tests/badge.svg?branch=master
+[badge-2]: https://github.com/inet-framework/inet/workflows/Feature%20tests/badge.svg?branch=master
 
-[1]: https://travis-ci.org/inet-framework/inet/branches
-[2]: https://travis-ci.org/inet-framework/inet/branches
-[3]: https://circleci.com/gh/inet-framework/workflows/inet/tree/master
-[4]: https://circleci.com/gh/inet-framework/workflows/inet/tree/integration
+[1]: https://github.com/inet-framework/inet/actions?query=workflow%3A%22Build+and+tests%22
+[2]: https://github.com/inet-framework/inet/actions?query=workflow%3A%22Feature+tests%22

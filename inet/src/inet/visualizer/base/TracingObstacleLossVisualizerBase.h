@@ -1,24 +1,14 @@
 //
-// Copyright (C) OpenSim Ltd.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 #ifndef __INET_TRACINGOBSTACLELOSSVISUALIZERBASE_H
 #define __INET_TRACINGOBSTACLELOSSVISUALIZERBASE_H
 
-#include "inet/physicallayer/contract/packetlevel/ITracingObstacleLoss.h"
+#include "inet/physicallayer/wireless/common/contract/packetlevel/ITracingObstacleLoss.h"
 #include "inet/visualizer/base/VisualizerBase.h"
 #include "inet/visualizer/util/AnimationPosition.h"
 
@@ -34,8 +24,8 @@ class INET_API TracingObstacleLossVisualizerBase : public VisualizerBase, public
         mutable AnimationPosition obstacleLossAnimationPosition;
 
       public:
-        ObstacleLossVisualization() { }
-        virtual ~ObstacleLossVisualization() { }
+        ObstacleLossVisualization() {}
+        virtual ~ObstacleLossVisualization() {}
     };
 
   protected:
@@ -59,11 +49,12 @@ class INET_API TracingObstacleLossVisualizerBase : public VisualizerBase, public
   protected:
     virtual void initialize(int stage) override;
     virtual void refreshDisplay() const override;
+    virtual void preDelete(cComponent *root) override;
 
     virtual void subscribe();
     virtual void unsubscribe();
 
-    // TODO: use ITransmission for identification?
+    // TODO use ITransmission for identification?
     virtual const ObstacleLossVisualization *createObstacleLossVisualization(const physicallayer::ITracingObstacleLoss::ObstaclePenetratedEvent *obstaclePenetratedEvent) const = 0;
     virtual void addObstacleLossVisualization(const ObstacleLossVisualization *obstacleLossVisualization);
     virtual void removeObstacleLossVisualization(const ObstacleLossVisualization *obstacleLossVisualization);
@@ -71,8 +62,6 @@ class INET_API TracingObstacleLossVisualizerBase : public VisualizerBase, public
     virtual void setAlpha(const ObstacleLossVisualization *obstacleLossVisualization, double alpha) const = 0;
 
   public:
-    virtual ~TracingObstacleLossVisualizerBase();
-
     virtual void receiveSignal(cComponent *source, simsignal_t signal, cObject *object, cObject *details) override;
 };
 
@@ -80,5 +69,5 @@ class INET_API TracingObstacleLossVisualizerBase : public VisualizerBase, public
 
 } // namespace inet
 
-#endif // ifndef __INET_TRACINGOBSTACLELOSSVISUALIZERBASE_H
+#endif
 

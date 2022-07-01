@@ -1,19 +1,8 @@
 //
 // Copyright (C) 2011 Adriano (University of Pisa)
-// Copyright (C) 2012 Opensim Ltd.
+// Copyright (C) 2012 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
 package inet.applications.voip;
@@ -21,9 +10,9 @@ package inet.applications.voip;
 import inet.applications.contract.IApp;
 
 //
-// Implements a simple VoIP source. It is a constant bitrate source, with 
+// Implements a simple VoIP source. It is a constant bitrate source, with
 // talkspurt support added. Packets do not contain actual voice data.
-// Connection setup/teardown is not modelled. The peer must be a 
+// Connection setup/teardown is not modelled. The peer must be a
 // ~SimpleVoipReceiver.
 //
 // The source alternates between two states: talk and silence. The length
@@ -31,18 +20,18 @@ import inet.applications.contract.IApp;
 // silenceDuration parameters. In talk state, the module acts as a CBR source,
 // and sends packets of size talkPacketSize every packetizationInterval seconds
 // to the destination over UDP. Silence is implicit: in silence state, no packets
-// are sent, and there is no explicit signalling of silence either. 
+// are sent, and there is no explicit signalling of silence either.
 //
 // Packets are of type SimpleVoipPacket. In addition to packet ID and timestamp,
-// packets also contain a talkspurt ID and the total number of packets in the 
+// packets also contain a talkspurt ID and the total number of packets in the
 // talkspurt to facilitate statistics at the receiver side. (It allows the receiver
 // to detect loss of packets at the end of a talkspurt; a full talkspurt can still
 // be lost unnoticed.)
-// 
+//
 // The destination address/port, the local port, start and stop times can be
 // set via parameters.
 //
-// @author: Adriano, Zoltan Bojthe
+// @author: Adriano
 //
 simple SimpleVoipSender like IApp
 {

@@ -1,3 +1,7 @@
+//
+// SPDX-License-Identifier: LGPL-3.0-or-later
+//
+
 /***************************************************************************
                           RtpAvProfilePayload32Sender.h  -  description
                              -------------------
@@ -6,19 +10,8 @@
     email                : Matthias.Oppitz@gmx.de
 ***************************************************************************/
 
-/***************************************************************************
-*                                                                         *
-*   This program is free software; you can redistribute it and/or modify  *
-*   it under the terms of the GNU General Public License as published by  *
-*   the Free Software Foundation; either version 2 of the License, or     *
-*   (at your option) any later version.                                   *
-*                                                                         *
-***************************************************************************/
-
 #ifndef __INET_RTPAVPROFILEPAYLOAD32SENDER_H
 #define __INET_RTPAVPROFILEPAYLOAD32SENDER_H
-
-#include "inet/common/INETDefs.h"
 
 #include "inet/transportlayer/rtp/RtpPayloadSender.h"
 
@@ -45,7 +38,7 @@ class INET_API RtpAvProfilePayload32Sender : public RtpPayloadSender
     /**
      * The main method.
      */
-    //virtual void activity();
+//    virtual void activity();
 
   protected:
     /**
@@ -80,5 +73,5 @@ class INET_API RtpAvProfilePayload32Sender : public RtpPayloadSender
 
 } // namespace inet
 
-#endif    // __INET_RTPAVPROFILEPAYLOAD32SENDER_H
+#endif
 

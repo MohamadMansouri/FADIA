@@ -1,37 +1,25 @@
 //
 // Copyright (C) 2005 Wei Yang, Ng
-// Copyright (C) 2005 Andras Varga
+// Copyright (C) 2005 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public
-// License along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
+#include "inet/networklayer/contract/ipv6/Ipv6Address.h"
 
 #include <iostream>
 #include <sstream>
 
-#include "inet/networklayer/common/InterfaceToken.h"
-#include "inet/networklayer/contract/ipv6/Ipv6Address.h"
-
 namespace inet {
 
-const uint32 LINK_LOCAL_PREFIX = 0xFE800000;
-const uint32 SITE_LOCAL_PREFIX = 0xFEC00000;
-const uint32 MULTICAST_PREFIX = 0xFF000000;
+const uint32_t LINK_LOCAL_PREFIX = 0xFE800000;
+const uint32_t SITE_LOCAL_PREFIX = 0xFEC00000;
+const uint32_t MULTICAST_PREFIX = 0xFF000000;
 
 // Link and Site local masks should only preserve 10 bits as prefix length is 10.
-const uint32 LINK_LOCAL_MASK = 0xFFC00000;
-const uint32 SITE_LOCAL_MASK = 0xFFC00000;
-const uint32 MULTICAST_MASK = 0xFF000000;
+const uint32_t LINK_LOCAL_MASK = 0xFFC00000;
+const uint32_t SITE_LOCAL_MASK = 0xFFC00000;
+const uint32_t MULTICAST_MASK = 0xFF000000;
 
 // RFC 3513: Ipv6 Addressing Architecture
 // Section 2.7.1: Pre-defined Multicast Addresses
@@ -56,7 +44,7 @@ static int parseGroups(const char *& s, uint16_t *groups)
     while (1) {
         char *e;
         unsigned long grp = strtoul(s, &e, 16);
-        if (s == e) {    // no hex digit converted
+        if (s == e) { // no hex digit converted
             if (k != 0)
                 s--; // "unskip" preceding ':'
             break;
@@ -64,11 +52,11 @@ static int parseGroups(const char *& s, uint16_t *groups)
         // if negative or too big, return (s will point to beginning of large number)
         if (grp > 0xffff)
             break;
-        groups[k++] = grp;    // group[k] successfully stored
-        s = e;    // skip converted hex number
+        groups[k++] = grp; // group[k] successfully stored
+        s = e; // skip converted hex number
         if (*s != ':' || k == 8)
             break;
-        s++;    // skip ':'
+        s++; // skip ':'
     }
     return k;
 }
@@ -208,9 +196,9 @@ std::string Ipv6Address::str() const
 
 Ipv6Address::Scope Ipv6Address::getScope() const
 {
-    //Mask the given Ipv6 address with the different mask types
-    //to get only the Ipv6 address scope. Compare the masked
-    //address with the different prefixes.
+    // Mask the given Ipv6 address with the different mask types
+    // to get only the Ipv6 address scope. Compare the masked
+    // address with the different prefixes.
 
     if ((d[0] & LINK_LOCAL_MASK) == LINK_LOCAL_PREFIX) {
         return LINK;
@@ -229,7 +217,7 @@ Ipv6Address::Scope Ipv6Address::getScope() const
             return LOOPBACK;
         }
         else {
-            return GLOBAL;    // actually an "Ipv4-compatible Ipv6 address"
+            return GLOBAL; // actually an "Ipv4-compatible Ipv6 address"
         }
     }
     else {
@@ -263,7 +251,7 @@ const char *Ipv6Address::scopeName(Scope scope)
     }
 }
 
-void Ipv6Address::constructMask(int prefixLength, uint32 *mask)
+void Ipv6Address::constructMask(int prefixLength, uint32_t *mask)
 {
     ASSERT(prefixLength >= 0 && prefixLength <= 128 && mask != nullptr);
 
@@ -311,7 +299,7 @@ Ipv6Address Ipv6Address::constructMask(int prefixLength)
 Ipv6Address Ipv6Address::getPrefix(int prefixLength) const
 {
     // First we construct a mask.
-    uint32 mask[4];
+    uint32_t mask[4];
     constructMask(prefixLength, mask);
 
     // Now we mask each Ipv6 address segment and create a new Ipv6 Address!
@@ -321,7 +309,7 @@ Ipv6Address Ipv6Address::getPrefix(int prefixLength) const
 Ipv6Address Ipv6Address::getSuffix(int prefixLength) const
 {
     // First we construct a mask.
-    uint32 mask[4];
+    uint32_t mask[4];
     constructMask(prefixLength, mask);
 
     // Now we mask each Ipv6 address segment, inverse it
@@ -332,7 +320,7 @@ Ipv6Address Ipv6Address::getSuffix(int prefixLength) const
 const Ipv6Address& Ipv6Address::setPrefix(const Ipv6Address& fromAddr, int prefixLength)
 {
     // first we construct a mask.
-    uint32 mask[4];
+    uint32_t mask[4];
     constructMask(prefixLength, mask);
 
     // combine the addresses
@@ -346,7 +334,7 @@ const Ipv6Address& Ipv6Address::setPrefix(const Ipv6Address& fromAddr, int prefi
 const Ipv6Address& Ipv6Address::setSuffix(const Ipv6Address& fromAddr, int prefixLength)
 {
     // first we construct a mask.
-    uint32 mask[4];
+    uint32_t mask[4];
     constructMask(prefixLength, mask);
 
     // combine the addresses
@@ -368,7 +356,7 @@ Ipv6Address Ipv6Address::formLinkLocalAddress(const InterfaceToken& ident)
 bool Ipv6Address::matches(const Ipv6Address& prefix, int prefixLength) const
 {
     // first we construct a mask.
-    uint32 mask[4];
+    uint32_t mask[4];
     constructMask(prefixLength, mask);
 
     // xor the bits of the 2 addresses, and the result should be zero wherever
@@ -382,6 +370,20 @@ int Ipv6Address::getMulticastScope() const
     if ((d[0] & MULTICAST_MASK) != MULTICAST_PREFIX)
         throw cRuntimeError("Ipv6Address::getMulticastScope(): %s is not a multicast address", str().c_str());
     return (d[0] >> 16) & 0x0F;
+}
+
+MacAddress Ipv6Address::mapToMulticastMacAddress() const
+{
+    ASSERT(isMulticast());
+
+    MacAddress macAddress;
+    macAddress.setAddressByte(0, 0x33);
+    macAddress.setAddressByte(1, 0x33);
+    macAddress.setAddressByte(2, (d[3] >> 24) & 0xFF);
+    macAddress.setAddressByte(3, (d[3] >> 16) & 0xFF);
+    macAddress.setAddressByte(4, (d[3] >> 8)  & 0xFF);
+    macAddress.setAddressByte(5, (d[3] >> 0)  & 0xFF);
+    return macAddress;
 }
 
 } // namespace inet

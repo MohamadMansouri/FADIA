@@ -1,23 +1,13 @@
 //
-// Copyright (C) OpenSim Ltd.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see http://www.gnu.org/licenses/.
-//
+
 
 package inet.queueing.common;
 
-import inet.queueing.base.PacketProcessorBase;
+import inet.queueing.base.PacketDuplicatorBase;
 import inet.queueing.contract.IActivePacketSource;
 import inet.queueing.contract.IPassivePacketSink;
 
@@ -26,7 +16,7 @@ import inet.queueing.contract.IPassivePacketSink;
 // pushed with packets from the connected packet producer. When this happens,
 // one or more copy of the packet is pushed to the output gate.
 //
-simple PacketDuplicator extends PacketProcessorBase like IPassivePacketSink, IActivePacketSource
+simple PacketDuplicator extends PacketDuplicatorBase like IPassivePacketSink, IActivePacketSource
 {
     parameters:
         volatile int numDuplicates = default(1); // number of duplicates, 0 means only the original packet is forwarded

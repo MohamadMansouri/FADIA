@@ -1,22 +1,13 @@
 //
 // Copyright (C) 2016 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see http://www.gnu.org/licenses/.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-#include "inet/common/ModuleAccess.h"
+
 #include "inet/linklayer/ieee80211/mac/protectionmechanism/SingleProtectionMechanism.h"
+
+#include "inet/common/ModuleAccess.h"
 #include "inet/linklayer/ieee80211/mac/rateselection/RateSelection.h"
 #include "inet/linklayer/ieee80211/mac/recipient/RecipientAckProcedure.h"
 
@@ -29,10 +20,9 @@ void SingleProtectionMechanism::initialize(int stage)
 {
     ModeSetListener::initialize(stage);
     if (stage == INITSTAGE_LOCAL) {
-        rateSelection = check_and_cast<IQosRateSelection*>(getModuleByPath(par("rateSelectionModule")));
+        rateSelection = check_and_cast<IQosRateSelection *>(getModuleByPath(par("rateSelectionModule")));
     }
 }
-
 
 //
 // For an RTS that is not part of a dual clear-to-send (CTS) exchange, the Duration/ID field is set
@@ -42,14 +32,14 @@ void SingleProtectionMechanism::initialize(int stage)
 //
 simtime_t SingleProtectionMechanism::computeRtsDurationField(Packet *rtsPacket, const Ptr<const Ieee80211RtsFrame>& rtsFrame, Packet *pendingPacket, const Ptr<const Ieee80211DataOrMgmtHeader>& pendingHeader, TxopProcedure *txop, IRecipientQosAckPolicy *ackPolicy)
 {
-    // TODO: We assume that the RTS frame is not part of a dual clear-to-send
+    // TODO We assume that the RTS frame is not part of a dual clear-to-send
     auto pendingFrameMode = rateSelection->computeMode(pendingPacket, pendingHeader, txop);
     simtime_t pendingFrameDuration = pendingFrameMode->getDuration(pendingPacket->getDataLength());
     simtime_t ctsFrameDuration = rateSelection->computeResponseCtsFrameMode(rtsPacket, rtsFrame)->getDuration(LENGTH_CTS);
     simtime_t durationId = ctsFrameDuration + modeSet->getSifsTime() + pendingFrameDuration + modeSet->getSifsTime();
     if (auto dataOrMgmtHeader = dynamicPtrCast<const Ieee80211DataOrMgmtHeader>(pendingHeader)) {
         if (ackPolicy->isAckNeeded(dataOrMgmtHeader)) {
-            RateSelection::setFrameMode(pendingPacket, dataOrMgmtHeader, pendingFrameMode); // FIXME: KLUDGE
+            RateSelection::setFrameMode(pendingPacket, dataOrMgmtHeader, pendingFrameMode); // KLUDGE
             simtime_t ackFrameDuration = rateSelection->computeResponseAckFrameMode(pendingPacket, dataOrMgmtHeader)->getDuration(LENGTH_ACK);
             durationId += ackFrameDuration + modeSet->getSifsTime();
         }
@@ -78,7 +68,7 @@ simtime_t SingleProtectionMechanism::computeCtsDurationField(const Ptr<const Iee
 //
 simtime_t SingleProtectionMechanism::computeBlockAckReqDurationField(Packet *packet, const Ptr<const Ieee80211BlockAckReq>& blockAckReq)
 {
-    //  TODO: ACK or BlockAck frame, as applicable
+    // TODO ACK or BlockAck frame, as applicable
     if (dynamicPtrCast<const Ieee80211BasicBlockAckReq>(blockAckReq)) {
         simtime_t blockAckFrameDuration = rateSelection->computeResponseBlockAckFrameMode(packet, blockAckReq)->getDuration(LENGTH_BASIC_BLOCKACK);
         simtime_t blockAckReqDurationPerId = blockAckFrameDuration + modeSet->getSifsTime();
@@ -124,7 +114,7 @@ simtime_t SingleProtectionMechanism::computeDataOrMgmtFrameDurationField(Packet 
     bool groupAddressed = dataOrMgmtHeader->getReceiverAddress().isMulticast();
     if (dynamicPtrCast<const Ieee80211MgmtHeader>(dataOrMgmtHeader)) {
         mgmtFrame = true;
-        mgmtFrameWithNoAck = false; // FIXME: ack policy?
+        mgmtFrameWithNoAck = false; // FIXME ack policy?
     }
     bool nonQoSData = dataOrMgmtHeader->getType() == ST_DATA;
     bool individuallyAddressedDataWithNormalAck = false;
@@ -146,7 +136,7 @@ simtime_t SingleProtectionMechanism::computeDataOrMgmtFrameDurationField(Packet 
                 simtime_t pendingFrameDuration = pendingFrameMode->getDuration(pendingPacket->getDataLength());
                 duration += pendingFrameDuration + modeSet->getSifsTime();
                 if (ackPolicy->isAckNeeded(pendingHeader)) {
-                    RateSelection::setFrameMode(pendingPacket, pendingHeader, pendingFrameMode); // KLUDGE:
+                    RateSelection::setFrameMode(pendingPacket, pendingHeader, pendingFrameMode); // KLUDGE
                     simtime_t ackToPendingFrameDuration = rateSelection->computeResponseAckFrameMode(pendingPacket, pendingHeader)->getDuration(LENGTH_ACK);
                     duration += ackToPendingFrameDuration + modeSet->getSifsTime();
                 }
@@ -164,7 +154,7 @@ simtime_t SingleProtectionMechanism::computeDataOrMgmtFrameDurationField(Packet 
                 simtime_t pendingFrameDuration = pendingFrameMode->getDuration(pendingPacket->getDataLength());
                 duration = pendingFrameDuration + modeSet->getSifsTime();
                 if (ackPolicy->isAckNeeded(pendingHeader)) {
-                    RateSelection::setFrameMode(pendingPacket, pendingHeader, pendingFrameMode); // KLUDGE:
+                    RateSelection::setFrameMode(pendingPacket, pendingHeader, pendingFrameMode); // KLUDGE
                     simtime_t ackToPendingFrameDuration = rateSelection->computeResponseAckFrameMode(pendingPacket, pendingHeader)->getDuration(LENGTH_ACK);
                     duration += ackToPendingFrameDuration + modeSet->getSifsTime();
                 }
@@ -193,3 +183,4 @@ simtime_t SingleProtectionMechanism::computeDurationField(Packet *packet, const 
 
 } /* namespace ieee80211 */
 } /* namespace inet */
+

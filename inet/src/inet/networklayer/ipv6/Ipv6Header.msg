@@ -1,21 +1,10 @@
 //
 // Copyright (C) 2018 OpenSim Ltd.
 // Copyright (C) 2005 Wei Yang, Ng
-// Copyright (C) 2005 Andras Varga
+// Copyright (C) 2005 OpenSim Ltd.
 // Copyright (C) 2001-2004 CTIE, Monash University
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public
-// License along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
 import inet.common.INETDefs;
@@ -28,7 +17,6 @@ cplusplus {{
 #include "inet/common/ProtocolGroup.h"
 #include "inet/networklayer/contract/ipv6/Ipv6Consts.h"
 }}
-
 
 namespace inet;
 
@@ -43,7 +31,7 @@ std::ostream& operator<<(std::ostream& os, Ipv6ExtensionHeader eh);
 class Ipv6ExtensionHeader extends cObject
 {
     @packetData;
-    short extensionType;
+    uint8_t extensionType;
     B byteLength = B(0);   // byteLength = n * 8;
 }
 
@@ -55,13 +43,13 @@ cplusplus(Ipv6ExtensionHeader) {{
 // Ipv6 datagram. RFC 2460 Section 3.
 //
 // Header fields not explicitly modelled:
-//    - version (=6): represented by the class name itself
 //    - payload length: will be calculated from encapsulated message length
 //      and extension headers' length
 //
 class Ipv6Header extends NetworkHeaderBase
 {
     chunkLength = IPv6_HEADER_BYTES;
+    uint8_t version = 6;
     Ipv6Address srcAddress;
     Ipv6Address destAddress;
     B payloadLength = B(-1);    // The size of the payload in octets, including any extension headers. The length is set to zero when a Hop-by-Hop extension header carries a Jumbo Payload option.
@@ -122,7 +110,6 @@ cplusplus(Ipv6Header) {{
      */
     virtual Ipv6ExtensionHeader *removeFirstExtensionHeader();
 
-
     /**
      * Removes and returns the first extension header with the given type.
      */
@@ -137,4 +124,3 @@ cplusplus(Ipv6Header) {{
     virtual void setProtocol(const Protocol *protocol) override { setProtocolId(static_cast<IpProtocolId>(ProtocolGroup::ipprotocol.getProtocolNumber(protocol))); }
     virtual bool isFragment() const override { return findExtensionHeaderByType(IP_PROT_IPv6EXT_FRAGMENT) != nullptr; }
 }}
-

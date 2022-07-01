@@ -1,17 +1,9 @@
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program.  If not, see http://www.gnu.org/licenses/.
-//
+
 
 package inet.applications.tcpapp;
 
@@ -28,9 +20,9 @@ module TcpRequestResponseApp extends TcpServerConnection
     parameters:
         int numKind = default(2);
         sink.typename = default("RequestConsumer");
-        sink.numKind = numKind;
+        sink.numKind = this.numKind;
         sink.responseProducerModule = default("^.source");
         sink.classifier.classifierClass = default("inet::queueing::PacketDataClassifier");
         source.typename = default("ResponseProducer");
-        source.numKind = numKind;
+        source.numKind = this.numKind;
 }

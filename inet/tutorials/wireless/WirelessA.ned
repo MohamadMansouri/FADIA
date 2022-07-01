@@ -1,23 +1,13 @@
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program.  If not, see http://www.gnu.org/licenses/.
-//
+
 
 package inet.tutorials.wireless;
 
 import inet.networklayer.configurator.ipv4.Ipv4NetworkConfigurator;
-import inet.node.inet.INetworkNode;
-import inet.physicallayer.contract.packetlevel.IRadioMedium;
+import inet.node.contract.INetworkNode;
+import inet.physicallayer.wireless.common.contract.packetlevel.IRadioMedium;
 import inet.visualizer.contract.IIntegratedVisualizer;
 
 network WirelessA
@@ -30,7 +20,7 @@ network WirelessA
         @statistic[packetReceived](source=hostB.app[0].packetReceived; record=figure(count); targetFigure=rcvdPkText);
 
     submodules:
-        visualizer: <default("IntegratedCanvasVisualizer")> like IIntegratedVisualizer if hasVisualizer() {
+        visualizer: <default(firstAvailableOrEmpty("IntegratedCanvasVisualizer"))> like IIntegratedVisualizer if typename != "" {
             @display("p=580,125");
         }
         configurator: Ipv4NetworkConfigurator {

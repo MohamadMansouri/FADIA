@@ -1,53 +1,52 @@
 //
-// Copyright (C) 2006 Andras Varga
+// Copyright (C) 2006 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 package inet.linklayer.ieee802154;
 
 import inet.queueing.contract.IPacketQueue;
 import inet.linklayer.acking.AckingMac;
 import inet.linklayer.contract.IWirelessInterface;
-import inet.networklayer.common.InterfaceEntry;
-import inet.physicallayer.contract.packetlevel.IRadio;
+import inet.networklayer.common.NetworkInterface;
+import inet.physicallayer.wireless.common.contract.packetlevel.IRadio;
 
-module Ieee802154UwbIrInterface extends InterfaceEntry like IWirelessInterface
+//
+// This module implements an IEEE 802.15.4 UWB-IR network interface.
+//
+module Ieee802154UwbIrInterface extends NetworkInterface like IWirelessInterface
 {
     parameters:
-        @class(InterfaceEntry);
+        @class(NetworkInterface);
         string interfaceTableModule;
-        *.interfaceTableModule = default(absPath(interfaceTableModule));
-        @display("i=block/ifcard");
+        *.interfaceTableModule = default(absPath(this.interfaceTableModule));
     gates:
         input upperLayerIn;
         output upperLayerOut;
-        input radioIn @labels(ISignal);
+        input radioIn @labels(IWirelessSignal);
     submodules:
+        queue: <default("DropTailQueue")> like IPacketQueue {
+            parameters:
+                packetCapacity = default(100);
+                @display("p=200,100;q=l2queue");
+        }
         mac: AckingMac {
             parameters:
-                @display("p=250,200");
+                @display("p=300,100");
         }
         radio: <default("Ieee802154UwbIrRadio")> like IRadio {
             parameters:
-                @display("p=250,350");
+                @display("p=300,200");
         }
     connections:
-        upperLayerIn --> { @display("m=n"); } --> mac.upperLayerIn;
+        upperLayerIn --> { @display("m=n"); } --> queue.in;
+        queue.out --> mac.upperLayerIn;
         mac.lowerLayerOut --> radio.upperLayerIn;
-        mac.upperLayerOut --> { @display("m=n"); } --> upperLayerOut;
+
         radioIn --> { @display("m=s"); } --> radio.radioIn;
         radio.upperLayerOut --> mac.lowerLayerIn;
+        mac.upperLayerOut --> { @display("m=n"); } --> upperLayerOut;
 }
 

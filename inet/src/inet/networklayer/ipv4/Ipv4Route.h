@@ -1,30 +1,19 @@
 //
-// Copyright (C) 2008 Andras Varga
+// Copyright (C) 2008 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 #ifndef __INET_IPV4ROUTE_H
 #define __INET_IPV4ROUTE_H
 
-#include "inet/common/INETDefs.h"
 #include "inet/networklayer/contract/IRoute.h"
 #include "inet/networklayer/contract/ipv4/Ipv4Address.h"
 
 namespace inet {
 
-class InterfaceEntry;
+class NetworkInterface;
 class IIpv4RoutingTable;
 
 /**
@@ -35,16 +24,16 @@ class IIpv4RoutingTable;
 class INET_API Ipv4Route : public cObject, public IRoute
 {
   private:
-    IIpv4RoutingTable *rt;    ///< the routing table in which this route is inserted, or nullptr
-    Ipv4Address dest;    ///< Destination
-    Ipv4Address netmask;    ///< Route mask
-    Ipv4Address gateway;    ///< Next hop
-    InterfaceEntry *interfacePtr;    ///< interface
-    SourceType sourceType;    ///< manual, routing prot, etc.
-    unsigned int adminDist;    ///< Cisco like administrative distance
-    int metric;    ///< Metric ("cost" to reach the destination)
-    cObject *source;    ///< Object identifying the source
-    cObject *protocolData;    ///< Routing Protocol specific data
+    IIpv4RoutingTable *rt; ///< the routing table in which this route is inserted, or nullptr
+    Ipv4Address dest; ///< Destination
+    Ipv4Address netmask; ///< Route mask
+    Ipv4Address gateway; ///< Next hop
+    NetworkInterface *interfacePtr; ///< interface
+    SourceType sourceType; ///< manual, routing prot, etc.
+    unsigned int adminDist; ///< Cisco like administrative distance
+    int metric; ///< Metric ("cost" to reach the destination)
+    cObject *source; ///< Object identifying the source
+    cObject *protocolData; ///< Routing Protocol specific data
 
   private:
     // copying not supported: following are private and also left undefined
@@ -59,7 +48,7 @@ class INET_API Ipv4Route : public cObject, public IRoute
         metric(0), source(nullptr), protocolData(nullptr) {}
     virtual ~Ipv4Route();
     virtual std::string str() const override;
-    virtual std::string detailedInfo() const OMNETPP5_CODE(override);
+    virtual std::string detailedInfo() const;
 
     bool operator==(const Ipv4Route& route) const { return equals(route); }
     bool operator!=(const Ipv4Route& route) const { return !equals(route); }
@@ -75,23 +64,23 @@ class INET_API Ipv4Route : public cObject, public IRoute
     virtual void setDestination(Ipv4Address _dest) { if (dest != _dest) { dest = _dest; changed(F_DESTINATION); } }
     virtual void setNetmask(Ipv4Address _netmask) { if (netmask != _netmask) { netmask = _netmask; changed(F_PREFIX_LENGTH); } }
     virtual void setGateway(Ipv4Address _gateway) { if (gateway != _gateway) { gateway = _gateway; changed(F_NEXTHOP); } }
-    virtual void setInterface(InterfaceEntry *_interfacePtr) override { if (interfacePtr != _interfacePtr) { interfacePtr = _interfacePtr; changed(F_IFACE); } }
+    virtual void setInterface(NetworkInterface *_interfacePtr) override { if (interfacePtr != _interfacePtr) { interfacePtr = _interfacePtr; changed(F_IFACE); } }
     virtual void setSourceType(SourceType _source) override { if (sourceType != _source) { sourceType = _source; changed(F_SOURCE); } }
-    const char* getSourceTypeAbbreviation() const;
+    const char *getSourceTypeAbbreviation() const;
     virtual void setAdminDist(unsigned int _adminDist) override { if (adminDist != _adminDist) { adminDist = _adminDist; changed(F_ADMINDIST); } }
     virtual void setMetric(int _metric) override { if (metric != _metric) { metric = _metric; changed(F_METRIC); } }
 
     /** Destination address prefix to match */
-    Ipv4Address getDestination() const { return dest; }
+    const Ipv4Address& getDestination() const { return dest; }
 
     /** Represents length of prefix to match */
-    Ipv4Address getNetmask() const { return netmask; }
+    const Ipv4Address& getNetmask() const { return netmask; }
 
     /** Next hop address */
-    Ipv4Address getGateway() const { return gateway; }
+    const Ipv4Address& getGateway() const { return gateway; }
 
     /** Next hop interface */
-    InterfaceEntry *getInterface() const override { return interfacePtr; }
+    NetworkInterface *getInterface() const override { return interfacePtr; }
 
     /** Convenience method */
     const char *getInterfaceName() const;
@@ -114,11 +103,11 @@ class INET_API Ipv4Route : public cObject, public IRoute
     virtual IRoutingTable *getRoutingTableAsGeneric() const override;
     virtual void setDestination(const L3Address& dest) override { setDestination(dest.toIpv4()); }
     virtual void setPrefixLength(int len) override { setNetmask(Ipv4Address::makeNetmask(len)); }
-    virtual void setNextHop(const L3Address& nextHop) override { setGateway(nextHop.toIpv4()); }    //TODO rename Ipv4 method
+    virtual void setNextHop(const L3Address& nextHop) override { setGateway(nextHop.toIpv4()); } // TODO rename Ipv4 method
 
     virtual L3Address getDestinationAsGeneric() const override { return getDestination(); }
     virtual int getPrefixLength() const override { return getNetmask().getNetmaskLength(); }
-    virtual L3Address getNextHopAsGeneric() const override { return getGateway(); }    //TODO rename Ipv4 method
+    virtual L3Address getNextHopAsGeneric() const override { return getGateway(); } // TODO rename Ipv4 method
 };
 
 /**
@@ -146,15 +135,15 @@ class INET_API Ipv4Route : public cObject, public IRoute
 class INET_API Ipv4MulticastRoute : public cObject, public IMulticastRoute
 {
   private:
-    IIpv4RoutingTable *rt;    ///< the routing table in which this route is inserted, or nullptr
-    Ipv4Address origin;    ///< Source network
-    Ipv4Address originNetmask;    ///< Source network mask
-    Ipv4Address group;    ///< Multicast group, if unspecified then matches any
-    InInterface *inInterface;    ///< In interface (upstream)
-    OutInterfaceVector outInterfaces;    ///< Out interfaces (downstream)
-    SourceType sourceType;    ///< manual, routing prot, etc.
-    cObject *source;    ///< Object identifying the source
-    int metric;    ///< Metric ("cost" to reach the source)
+    IIpv4RoutingTable *rt; ///< the routing table in which this route is inserted, or nullptr
+    Ipv4Address origin; ///< Source network
+    Ipv4Address originNetmask; ///< Source network mask
+    Ipv4Address group; ///< Multicast group, if unspecified then matches any
+    InInterface *inInterface; ///< In interface (upstream)
+    OutInterfaceVector outInterfaces; ///< Out interfaces (downstream)
+    SourceType sourceType; ///< manual, routing prot, etc.
+    cObject *source; ///< Object identifying the source
+    int metric; ///< Metric ("cost" to reach the source)
 
   public:
     // field codes for changed()
@@ -172,7 +161,7 @@ class INET_API Ipv4MulticastRoute : public cObject, public IMulticastRoute
     Ipv4MulticastRoute() : rt(nullptr), inInterface(nullptr), sourceType(MANUAL), source(nullptr), metric(0) {}
     virtual ~Ipv4MulticastRoute();
     virtual std::string str() const override;
-    virtual std::string detailedInfo() const OMNETPP5_CODE(override);
+    virtual std::string detailedInfo() const;
 
     /** To be called by the routing table when this route is added or removed from it */
     virtual void setRoutingTable(IIpv4RoutingTable *rt) { this->rt = rt; }
@@ -193,7 +182,7 @@ class INET_API Ipv4MulticastRoute : public cObject, public IMulticastRoute
     virtual void setInInterface(InInterface *_inInterface) override;
     virtual void clearOutInterfaces() override;
     virtual void addOutInterface(OutInterface *outInterface) override;
-    virtual bool removeOutInterface(const InterfaceEntry *ie) override;
+    virtual bool removeOutInterface(const NetworkInterface *ie) override;
     virtual void removeOutInterface(unsigned int i) override;
     virtual void setSourceType(SourceType _source) override { if (sourceType != _source) { sourceType = _source; changed(F_SOURCE); } }
     virtual void setMetric(int _metric) override { if (metric != _metric) { metric = _metric; changed(F_METRIC); } }
@@ -226,19 +215,19 @@ class INET_API Ipv4MulticastRoute : public cObject, public IMulticastRoute
     cObject *getSource() const override { return source; }
 
     virtual IRoutingTable *getRoutingTableAsGeneric() const override;
-    virtual void setEnabled(bool enabled) override {    /*TODO: setEnabled(enabled);*/ }
+    virtual void setEnabled(bool enabled) override { /*TODO setEnabled(enabled);*/ }
     virtual void setOrigin(const L3Address& origin) override { setOrigin(origin.toIpv4()); }
-    virtual void setPrefixLength(int len) override { setOriginNetmask(Ipv4Address::makeNetmask(len)); }    //TODO inconsistent naming
+    virtual void setPrefixLength(int len) override { setOriginNetmask(Ipv4Address::makeNetmask(len)); } // TODO inconsistent naming
     virtual void setMulticastGroup(const L3Address& group) override { setMulticastGroup(group.toIpv4()); }
 
-    virtual bool isEnabled() const override { return true;    /*TODO: isEnabled();*/ }
-    virtual bool isExpired() const override { return !isValid(); }    //TODO rename Ipv4 method
+    virtual bool isEnabled() const override { return true; /*TODO isEnabled();*/ }
+    virtual bool isExpired() const override { return !isValid(); } // TODO rename Ipv4 method
     virtual L3Address getOriginAsGeneric() const override { return getOrigin(); }
-    virtual int getPrefixLength() const override { return getOriginNetmask().getNetmaskLength(); }    //TODO inconsistent naming
+    virtual int getPrefixLength() const override { return getOriginNetmask().getNetmaskLength(); } // TODO inconsistent naming
     virtual L3Address getMulticastGroupAsGeneric() const override { return getMulticastGroup(); }
 };
 
 } // namespace inet
 
-#endif    // __INET_IPv4ROUTE_H
+#endif
 

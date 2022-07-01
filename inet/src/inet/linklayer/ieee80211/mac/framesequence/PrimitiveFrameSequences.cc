@@ -1,26 +1,16 @@
 //
 // Copyright (C) 2016 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see http://www.gnu.org/licenses/.
-//
+
 
 #include "inet/linklayer/ieee80211/mac/framesequence/PrimitiveFrameSequences.h"
 
 namespace inet {
 namespace ieee80211 {
 
-// TODO: remove isForUs checks it's already done in framesequencehandler
+// TODO remove isForUs checks it's already done in framesequencehandler
 
 void SelfCtsFs::startSequence(FrameSequenceContext *context, int firstStep)
 {
@@ -30,23 +20,23 @@ void SelfCtsFs::startSequence(FrameSequenceContext *context, int firstStep)
 
 IFrameSequenceStep *SelfCtsFs::prepareStep(FrameSequenceContext *context)
 {
-    // TODO: Implement
+    // TODO Implement
     return nullptr;
 }
 
 bool SelfCtsFs::completeStep(FrameSequenceContext *context)
 {
-    // TODO: Implement
+    // TODO Implement
     return false;
 }
 
-void RtsFs::startSequence(FrameSequenceContext* context, int firstStep)
+void RtsFs::startSequence(FrameSequenceContext *context, int firstStep)
 {
     this->firstStep = firstStep;
     step = 0;
 }
 
-IFrameSequenceStep* RtsFs::prepareStep(FrameSequenceContext* context)
+IFrameSequenceStep *RtsFs::prepareStep(FrameSequenceContext *context)
 {
     switch (step) {
         case 0: {
@@ -64,7 +54,7 @@ IFrameSequenceStep* RtsFs::prepareStep(FrameSequenceContext* context)
     }
 }
 
-bool RtsFs::completeStep(FrameSequenceContext* context)
+bool RtsFs::completeStep(FrameSequenceContext *context)
 {
     switch (step) {
         case 0:
@@ -75,13 +65,13 @@ bool RtsFs::completeStep(FrameSequenceContext* context)
     }
 }
 
-void CtsFs::startSequence(FrameSequenceContext* context, int firstStep)
+void CtsFs::startSequence(FrameSequenceContext *context, int firstStep)
 {
     this->firstStep = firstStep;
     step = 0;
 }
 
-IFrameSequenceStep* CtsFs::prepareStep(FrameSequenceContext* context)
+IFrameSequenceStep *CtsFs::prepareStep(FrameSequenceContext *context)
 {
     switch (step) {
         case 0: {
@@ -96,7 +86,7 @@ IFrameSequenceStep* CtsFs::prepareStep(FrameSequenceContext* context)
     }
 }
 
-bool CtsFs::completeStep(FrameSequenceContext* context)
+bool CtsFs::completeStep(FrameSequenceContext *context)
 {
     switch (step) {
         case 0: {
@@ -156,7 +146,7 @@ IFrameSequenceStep *ManagementAckFs::prepareStep(FrameSequenceContext *context)
             return new TransmitStep(packet, context->getIfs());
         }
         case 1: {
-            auto txStep = check_and_cast<TransmitStep*>(context->getLastStep());
+            auto txStep = check_and_cast<TransmitStep *>(context->getLastStep());
             auto packet = txStep->getFrameToTransmit();
             auto mgmtHeader = packet->peekAtFront<Ieee80211MgmtHeader>();
             return new ReceiveStep(context->getAckTimeout(packet, mgmtHeader));
@@ -176,7 +166,7 @@ bool ManagementAckFs::completeStep(FrameSequenceContext *context)
             step++;
             return true;
         case 1: {
-            auto receiveStep = check_and_cast<IReceiveStep*>(context->getStep(firstStep + step));
+            auto receiveStep = check_and_cast<IReceiveStep *>(context->getStep(firstStep + step));
             step++;
             auto receivedPacket = receiveStep->getReceivedFrame();
             const auto& receivedHeader = receivedPacket->peekAtFront<Ieee80211MacHeader>();
@@ -228,7 +218,7 @@ IFrameSequenceStep *AckFs::prepareStep(FrameSequenceContext *context)
 {
     switch (step) {
         case 0: {
-            auto txStep = check_and_cast<TransmitStep*>(context->getLastStep());
+            auto txStep = check_and_cast<TransmitStep *>(context->getLastStep());
             auto packet = txStep->getFrameToTransmit();
             auto dataOrMgmtHeader = packet->peekAtFront<Ieee80211DataOrMgmtHeader>();
             return new ReceiveStep(context->getAckTimeout(packet, dataOrMgmtHeader));
@@ -244,7 +234,7 @@ bool AckFs::completeStep(FrameSequenceContext *context)
 {
     switch (step) {
         case 0: {
-            auto receiveStep = check_and_cast<IReceiveStep*>(context->getStep(firstStep + step));
+            auto receiveStep = check_and_cast<IReceiveStep *>(context->getStep(firstStep + step));
             step++;
             auto receivedPacket = receiveStep->getReceivedFrame();
             const auto& receivedHeader = receivedPacket->peekAtFront<Ieee80211MacHeader>();
@@ -409,7 +399,7 @@ IFrameSequenceStep *BlockAckReqBlockAckFs::prepareStep(FrameSequenceContext *con
             auto blockAckReq = context->getQoSContext()->blockAckProcedure->buildBasicBlockAckReqFrame(receiverAddr, tid, startingSequenceNumber);
             auto blockAckPacket = new Packet("BasicBlockAckReq", blockAckReq);
             blockAckPacket->insertAtBack(makeShared<Ieee80211MacTrailer>());
-            return new TransmitStep(blockAckPacket, context->getIfs());
+            return new TransmitStep(blockAckPacket, context->getIfs(), true);
         }
         case 1: {
             auto txStep = check_and_cast<ITransmitStep *>(context->getLastStep());
@@ -431,7 +421,7 @@ bool BlockAckReqBlockAckFs::completeStep(FrameSequenceContext *context)
             step++;
             return true;
         case 1: {
-            auto receiveStep = check_and_cast<IReceiveStep*>(context->getStep(firstStep + step));
+            auto receiveStep = check_and_cast<IReceiveStep *>(context->getStep(firstStep + step));
             step++;
             auto receivedPacket = receiveStep->getReceivedFrame();
             const auto& receivedHeader = receivedPacket->peekAtFront<Ieee80211MacHeader>();
@@ -444,3 +434,4 @@ bool BlockAckReqBlockAckFs::completeStep(FrameSequenceContext *context)
 
 } // namespace ieee80211
 } // namespace inet
+

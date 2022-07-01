@@ -1,5 +1,63 @@
 ====== inet-4.x ======
 
+2022-05-13  ------ inet-4.4.0 released ------
+
+2022-04-19  Levente Mészáros
+
+	Fixed double delete caused by using shared pointer for explicitly deleted object.
+
+2022-04-13  Levente Mészáros
+
+	Fixed various memory leaks found by sanitizer tests.
+
+2022-04-11  Levente Mészáros
+
+	SctpAssociation: Fixed bug found by sanitizer tests.
+	The value of 1 << 31 can be negative when converted to double, thanks C++.
+	SctpPathVariables: Fixed negative upper limit due to C++ stupidity.
+
+2022-02-21  Zoltan Bojthe
+
+	Pointers are initialized to nullptr automatically in MSG.
+	Added more missing @packetData annotations in MSG files.
+
+2022-01-28  Rudolf Hornig
+
+	SCTP code is re-licensed now under LGPL v3 with the written permission of the
+	original authors (Irene Ruengeler, Thomaz Dreibholz).
+
+2022-01-26  Rudolf Hornig
+
+	SCTP code is re-licensed now under LGPL v3
+	(allowed by the written permission of the original author, Irene Ruengeler, Thomaz Dreibholz).
+
+2021-04-19  Zoltan Bojthe
+
+	Switch to using ModuleRef, ModuleRefByPar, opp_component_ptr for pointers to other modules.
+
+2021-03-19  Zoltan Bojthe
+
+	Changed if-else-if ladders in initialize() to separate if statements because
+	different stages may have the same number.
+
+2021-01-11  ------ inet-4.3.0 released ------
+
+2020-11-25  Zoltan Bojthe
+
+	Removed unused field from SctpParameter.
+
+2020-09-16  Levente Mészáros
+
+	Replaced (u)int8..64 with the standard (u)int8..64_t types.
+
+2020-08-03  Levente Mészáros
+
+	Updated all registerService, registerProtocol methods and calls.
+
+2020-07-22  Levente Mészáros
+
+	Renamed InterfaceEntry -> NetworkInterface and interfaceEntry -> networkInterface.
+
 2020-01-08  ------ inet-4.2.0 released ------
 
 2019-12-18  Levente Mészáros

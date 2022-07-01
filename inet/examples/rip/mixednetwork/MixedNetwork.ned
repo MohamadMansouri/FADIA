@@ -1,6 +1,7 @@
 //
-// This program is property of its copyright holder. All rights reserved.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
+
 
 package inet.examples.rip.mixednetwork;
 

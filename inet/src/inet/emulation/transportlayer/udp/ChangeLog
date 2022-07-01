@@ -1,5 +1,30 @@
 ====== inet-4.x ======
 
+2022-05-13  ------ inet-4.4.0 released ------
+
+2022-04-22  Zoltan Bojthe
+
+	Show the correct errno in throw.
+
+2021-05-04  Zoltan Bojthe
+
+	Added missing Enter_Method calls.
+
+2021-03-19  Zoltan Bojthe
+
+	Changed if-else-if ladders in initialize() to separate if statements because
+	different stages may have the same number.
+
+2021-01-11  ------ inet-4.3.0 released ------
+
+2020-08-03  Levente Mészáros
+
+	Updated all registerService, registerProtocol methods and calls.
+
+2020-07-22  Levente Mészáros
+
+	Renamed InterfaceEntry -> NetworkInterface and interfaceEntry -> networkInterface.
+
 2020-01-08  ------ inet-4.2.0 released ------
 
 2019-11-12  Levente Mészáros
@@ -37,5 +62,3 @@
 
 	Created a separate folder structure under src for emulation related modules and components.
 	Added ExtLowerUdp module that provides emulation support at the UDP protocol level.
-
-====== inet-4.x ======

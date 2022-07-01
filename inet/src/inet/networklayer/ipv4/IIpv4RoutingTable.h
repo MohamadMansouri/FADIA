@@ -1,29 +1,18 @@
 //
-// Copyright (C) 2008 Andras Varga
+// Copyright (C) 2008 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 #ifndef __INET_IIPV4ROUTINGTABLE_H
 #define __INET_IIPV4ROUTINGTABLE_H
 
 #include <vector>
 
-#include "inet/common/INETDefs.h"
 #include "inet/networklayer/contract/IRoutingTable.h"
 #include "inet/networklayer/contract/ipv4/Ipv4Address.h"
-#include "inet/networklayer/ipv4/Ipv4Route.h"    // not strictly required, but most clients will need it anyway
+#include "inet/networklayer/ipv4/Ipv4Route.h" // not strictly required, but most clients will need it anyway
 
 namespace inet {
 
@@ -38,7 +27,7 @@ namespace inet {
 class INET_API IIpv4RoutingTable : public IRoutingTable
 {
   public:
-    virtual ~IIpv4RoutingTable() {};
+    virtual ~IIpv4RoutingTable() {}
 
     /**
      * For debugging
@@ -55,7 +44,7 @@ class INET_API IIpv4RoutingTable : public IRoutingTable
     /**
      * Returns an interface given by its address. Returns nullptr if not found.
      */
-    virtual InterfaceEntry *getInterfaceByAddress(const Ipv4Address& address) const = 0;
+    virtual NetworkInterface *getInterfaceByAddress(const Ipv4Address& address) const = 0;
     using IRoutingTable::getInterfaceByAddress;
     //@}
 
@@ -89,7 +78,7 @@ class INET_API IIpv4RoutingTable : public IRoutingTable
      * Returns the interface entry having the specified address
      * as its local broadcast address.
      */
-    virtual InterfaceEntry *findInterfaceByLocalBroadcastAddress(const Ipv4Address& dest) const = 0;
+    virtual NetworkInterface *findInterfaceByLocalBroadcastAddress(const Ipv4Address& dest) const = 0;
 
     /**
      * The routing function. Performs longest prefix match for the given
@@ -105,7 +94,7 @@ class INET_API IIpv4RoutingTable : public IRoutingTable
      * Returns the output interface for the packets with dest as destination
      * address, or nullptr if the destination is not in routing table.
      */
-    virtual InterfaceEntry *getInterfaceForDestAddr(const Ipv4Address& dest) const = 0;
+    virtual NetworkInterface *getInterfaceForDestAddr(const Ipv4Address& dest) const = 0;
 
     /**
      * Convenience function based on findBestMatchingRoute().
@@ -227,5 +216,5 @@ class INET_API IIpv4RoutingTable : public IRoutingTable
 
 } // namespace inet
 
-#endif // ifndef __INET_IIPV4ROUTINGTABLE_H
+#endif
 

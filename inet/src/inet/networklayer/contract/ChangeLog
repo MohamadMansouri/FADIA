@@ -1,5 +1,56 @@
 ====== inet-4.x ======
 
+2022-05-13  ------ inet-4.4.0 released ------
+
+2022-05-02  Rudolf Hornig
+
+	Switched ipv6tunneling license from gpl to lgpl with the written permission of DLR.
+
+2022-03-10  Rudolf Hornig
+
+	GPL -> LGPL relicensed xMIPv6 code with the author's permission.
+
+2022-02-08  Zoltan Bojthe
+
+	NetworkHeaderBase: Fixed type in @fromValue().
+
+2022-01-19  Zoltan Bojthe
+
+	Fixed missing @toValue, @fromValue, or remove @byValue.
+
+2021-10-20  Levente Mészáros
+
+	MSG: Reverted toValue/fromValue from L3Address/Ipv4Address.
+
+	These are needed as structures during the evaluation so that we can get
+	the raw integers for & operations, for example.
+
+2021-07-25  Andras Varga
+
+	Added @toValue(), @fromValue() to MSG files.
+
+2021-01-11  ------ inet-4.3.0 released ------
+
+2020-10-29  Levente Mészáros
+
+	Added virtual and override qualifieres to socket send method.
+
+2020-10-20  Levente Mészáros
+
+	Removed include for NetworkInterface from IInterfaceTable.
+
+2020-09-16  Levente Mészáros
+
+	Replaced (u)int8..64 with the standard (u)int8..64_t types.
+
+2020-07-22  Levente Mészáros
+
+	Renamed InterfaceEntry -> NetworkInterface and interfaceEntry -> networkInterface.
+
+2020-06-10  Levente Mészáros
+
+	Fixed doParsimPacking/doParsimUnpacking function names in Ipv4Address.
+
 2020-01-08  ------ inet-4.2.0 released ------
 
 2019-11-12  Zoltan Bojthe

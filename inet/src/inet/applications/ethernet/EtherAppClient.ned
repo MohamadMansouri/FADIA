@@ -1,18 +1,7 @@
 //
 // Copyright (C) 2003 Andras Varga; CTIE, Monash University, Australia
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
 package inet.applications.ethernet;
@@ -21,12 +10,14 @@ package inet.applications.ethernet;
 // A simple traffic generator for the Ethernet model and the 802.11 model,
 // and generally for any L2 model that accepts ~Ieee802SapReq tags on the
 // packets. It generates packets containing ~EtherAppReq chunks. It should
-// be connected directly to ~EtherEncap/~Ieee8022Llc.
+// be connected directly to ~Ieee8022Llc.
 //
 simple EtherAppClient
 {
     parameters:
+        string interfaceTableModule;
         string destAddress = default("");  // destination MAC address, or module path name of destination station; empty means off
+        string interface = default("");  // outgoing interface name; empty accepted only when the destAddress is empty
         double startTime @unit(s) = default(this.sendInterval);  // time of sending the first request
         double stopTime @unit(s) = default(-1s);  // time of finishing sending, negative values mean forever
         int localSAP = default(0xf0);  // local service access point
@@ -44,7 +35,7 @@ simple EtherAppClient
         @statistic[packetSent](title="packets sent"; source=packetSent; record=count,"sum(packetBytes)","vector(packetBytes)"; interpolationmode=none);
         @statistic[endToEndDelay](title="end-to-end delay"; source="dataAge(packetReceived)"; unit=s; record=histogram,vector; interpolationmode=none);
     gates:
-        input in @labels(Ieee802Ctrl/up);
-        output out @labels(Ieee802Ctrl/down);
+        input in @labels(Ieee802Ctrl/up) @messageKinds(inet::SocketStatusInd);
+        output out @labels(Ieee802Ctrl/down) @messageKinds(inet::SocketCommandCode);
 }
 

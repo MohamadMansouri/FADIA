@@ -1,25 +1,14 @@
-/*
- * Copyright (C) 2003 Andras Varga; CTIE, Monash University, Australia
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program; if not, see <http://www.gnu.org/licenses/>.
- */
-
-#include <stdio.h>
-#include <string.h>
-#include <math.h>
+//
+// Copyright (C) 2003 Andras Varga; CTIE, Monash University, Australia
+//
+// SPDX-License-Identifier: LGPL-3.0-or-later
+//
 
 #include "inet/applications/ethernet/EtherAppClient.h"
+
+#include <math.h>
+#include <stdio.h>
+#include <string.h>
 
 #include "inet/applications/ethernet/EtherApp_m.h"
 #include "inet/common/ModuleAccess.h"
@@ -27,6 +16,7 @@
 #include "inet/common/packet/Packet.h"
 #include "inet/linklayer/common/Ieee802Ctrl.h"
 #include "inet/linklayer/common/Ieee802SapTag_m.h"
+#include "inet/linklayer/common/InterfaceTag_m.h"
 #include "inet/linklayer/common/MacAddressTag_m.h"
 #include "inet/networklayer/common/L3AddressResolver.h"
 
@@ -50,6 +40,7 @@ void EtherAppClient::initialize(int stage)
         reqLength = &par("reqLength");
         respLength = &par("respLength");
         sendInterval = &par("sendInterval");
+        interfaceTable.reference(this, "interfaceTableModule", true);
 
         localSap = par("localSAP");
         remoteSap = par("remoteSAP");
@@ -76,7 +67,8 @@ void EtherAppClient::handleMessageWhenUp(cMessage *msg)
     if (msg->isSelfMessage()) {
         if (msg->getKind() == START) {
             EV_DEBUG << getFullPath() << " registering DSAP " << localSap << "\n";
-            llcSocket.open(-1, localSap);
+            int interfaceId = CHK(interfaceTable->findInterfaceByName(par("interface")))->getInterfaceId();
+            llcSocket.open(interfaceId, localSap, -1);
 
             destMacAddress = resolveDestMacAddress();
             // if no dest address given, nothing to do
@@ -162,7 +154,7 @@ void EtherAppClient::sendPacket()
     sprintf(msgname, "req-%d-%ld", getId(), seqNum);
     EV_INFO << "Generating packet `" << msgname << "'\n";
 
-    Packet *datapacket = new Packet(msgname, IEEE802CTRL_DATA);
+    Packet *datapacket = new Packet(msgname);
     const auto& data = makeShared<EtherAppReq>();
 
     long len = *reqLength;
@@ -186,7 +178,7 @@ void EtherAppClient::sendPacket()
     packetsSent++;
 }
 
-void EtherAppClient::socketDataArrived(Ieee8022LlcSocket*, Packet *msg)
+void EtherAppClient::socketDataArrived(Ieee8022LlcSocket *, Packet *msg)
 {
     EV_INFO << "Received packet `" << msg->getName() << "'\n";
 

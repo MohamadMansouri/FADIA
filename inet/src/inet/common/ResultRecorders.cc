@@ -1,23 +1,12 @@
 //
 // Copyright (C) 2014 Florian Meier <florian.meier@koalo.de>
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
-
-#include <sstream>
 
 #include "inet/common/ResultRecorders.h"
+
+#include <sstream>
 
 namespace inet {
 
@@ -65,7 +54,7 @@ void GroupCountRecorder::receiveSignal(cResultFilter *prev, simtime_t_cref t, cO
 void GroupCountRecorder::finish(cResultFilter *prev) {
     opp_string_map attributes = getStatisticAttributes();
 
-    for(auto & elem : groupcounts) {
+    for (auto& elem : groupcounts) {
         std::stringstream name;
         name << getResultName().c_str() << ":" << elem.first;
         getEnvir()->recordScalar(getComponent(), name.str().c_str(), elem.second, &attributes); // note: this is NaN if count==0
@@ -79,7 +68,7 @@ ElapsedTimeRecorder::ElapsedTimeRecorder()
     startTime = clock();
 }
 
-void ElapsedTimeRecorder::finish(cResultFilter* prev)
+void ElapsedTimeRecorder::finish(cResultFilter *prev)
 {
     clock_t t = clock();
     double elapsedTime = (t - startTime) / (double)CLOCKS_PER_SEC;
@@ -120,9 +109,9 @@ void WeightedHistogramRecorder::finish(cResultFilter *prev)
     getEnvir()->recordStatistic(getComponent(), getResultName().c_str(), statistic, &attributes);
 }
 
-void WeightedHistogramRecorder::init(cComponent *component, const char *statsName, const char *recordingMode, cProperty *attrsProperty, opp_string_map *manualAttrs)
+void WeightedHistogramRecorder::init(Context *ctx)
 {
-    cNumericResultRecorder::init(component, statsName, recordingMode, attrsProperty, manualAttrs);
+    cNumericResultRecorder::init(ctx);
     setStatistic(new cHistogram("histogram", true));
 }
 

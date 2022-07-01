@@ -8,8 +8,8 @@ Testing OSPF routing
 %file: test.ned
 
 import inet.common.misc.ThruputMeteringChannel;
-import inet.linklayer.ethernet.EtherHub;
 import inet.networklayer.configurator.ipv4.Ipv4NetworkConfigurator;
+import inet.node.ethernet.EtherSwitch;
 import inet.node.inet.StandardHost;
 import inet.node.ospfv2.OspfRouter;
 
@@ -23,12 +23,12 @@ channel C extends ThruputMeteringChannel
 module OspfLan
 {
     parameters:
-        int h; // number of hosts on the hub
+        int h; // number of hosts on the switch
         @display("i=misc/cloud");
     gates:
         inout ethg[];
     submodules:
-        hub: EtherHub {
+        switch: EtherSwitch {
             @display("is=s");
         }
         host[h]: StandardHost {
@@ -36,10 +36,10 @@ module OspfLan
         }
     connections:
         for i=0..sizeof(ethg)-1 {
-            hub.ethg++ <--> ethg[i];
+            switch.ethg++ <--> ethg[i];
         }
         for i=0..h-1 {
-            hub.ethg++ <--> C <--> host[i].ethg++;
+            switch.ethg++ <--> C <--> host[i].ethg++;
         }
 }
 
@@ -327,6 +327,9 @@ tkenv-plugin-path = ../../../etc/plugins
 
 sim-time-limit = 300s
 
+**.vector-recording = false
+**.cmdenv-log-level = "info"
+
 #omnetpp 5.0 - 5.1 compatibility:
 eventlog-file = "${resultdir}/${configname}-${runnumber}.elog"
 output-scalar-file = "${resultdir}/${configname}-${runnumber}.sca"
@@ -517,8 +520,7 @@ scalar OSPF_RFC2328_Fig6.Area3.H1.app[1] packetSent:count 100
 %contains: results/General-0.sca
 scalar OSPF_RFC2328_Fig6.Area3.H1.app[1] packetReceived:count 100
 %#--------------------------------------------------------------------------------------------------------------
-%not-contains: stdout
-undisposed object:
-%not-contains: stdout
--- check module destructor
+%postrun-command: grep "undisposed object:" test.out > test_undisposed.out || true
+%not-contains: test_undisposed.out
+undisposed object: (
 %#--------------------------------------------------------------------------------------------------------------

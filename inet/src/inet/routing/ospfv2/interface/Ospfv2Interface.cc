@@ -2,21 +2,13 @@
 // Copyright (C) 2006 Andras Babos and Andras Varga
 // Copyright (C) 2019 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
+#include "inet/routing/ospfv2/interface/Ospfv2Interface.h"
+
 #include <memory.h>
+
 #include <vector>
 
 #include "inet/common/checksum/TcpIpChecksum.h"
@@ -24,7 +16,6 @@
 #include "inet/networklayer/ipv4/Ipv4InterfaceData.h"
 #include "inet/routing/ospfv2/Ospfv2Crc.h"
 #include "inet/routing/ospfv2/Ospfv2PacketSerializer.h"
-#include "inet/routing/ospfv2/interface/Ospfv2Interface.h"
 #include "inet/routing/ospfv2/interface/Ospfv2InterfaceStateDown.h"
 #include "inet/routing/ospfv2/messagehandler/MessageHandler.h"
 #include "inet/routing/ospfv2/router/Ospfv2Area.h"
@@ -67,12 +58,12 @@ Ospfv2Interface::Ospfv2Interface(Ospfv2Interface::Ospfv2InterfaceType ifType) :
     waitTimer->setContextPointer(this);
     acknowledgementTimer = new cMessage("Interface::InterfaceAcknowledgementTimer", INTERFACE_ACKNOWLEDGEMENT_TIMER);
     acknowledgementTimer->setContextPointer(this);
-    memset(authenticationKey.bytes, 0, 8 * sizeof(char));
+    memset(authenticationKey.bytes, 0, sizeof(authenticationKey.bytes));
 }
 
 Ospfv2Interface::~Ospfv2Interface()
 {
-    if(parentArea) {
+    if (parentArea) {
         MessageHandler *messageHandler = parentArea->getRouter()->getMessageHandler();
         messageHandler->clearTimer(helloTimer);
         messageHandler->clearTimer(waitTimer);
@@ -139,7 +130,7 @@ void Ospfv2Interface::setIfIndex(IInterfaceTable *ift, int index)
 {
     ifIndex = index;
     if (interfaceType == Ospfv2Interface::UNKNOWN_TYPE) {
-        InterfaceEntry *routingInterface = ift->getInterfaceById(ifIndex);
+        NetworkInterface *routingInterface = ift->getInterfaceById(ifIndex);
         interfaceAddressRange.address = routingInterface->getProtocolData<Ipv4InterfaceData>()->getIPAddress();
         interfaceAddressRange.mask = routingInterface->getProtocolData<Ipv4InterfaceData>()->getNetmask();
         mtu = routingInterface->getMtu();
@@ -148,9 +139,9 @@ void Ospfv2Interface::setIfIndex(IInterfaceTable *ift, int index)
 
 void Ospfv2Interface::changeState(Ospfv2InterfaceState *newState, Ospfv2InterfaceState *currentState)
 {
-    EV_INFO << "Changing the state of interface " << this->getIfIndex() <<
-            " from '" << getStateString(currentState->getState()) <<
-            "' to '" << getStateString(newState->getState()) << "'" << std::endl;
+    EV_INFO << "Changing the state of interface " << this->getIfIndex()
+            << " from '" << getStateString(currentState->getState())
+            << "' to '" << getStateString(newState->getState()) << "'" << std::endl;
 
     if (previousState != nullptr) {
         delete previousState;
@@ -180,7 +171,6 @@ void Ospfv2Interface::reset()
 
 void Ospfv2Interface::sendHelloPacket(Ipv4Address destination, short ttl)
 {
-    Ospfv2Options options;
     const auto& helloPacket = makeShared<Ospfv2HelloPacket>();
     std::vector<Ipv4Address> neighbors;
 
@@ -197,7 +187,8 @@ void Ospfv2Interface::sendHelloPacket(Ipv4Address destination, short ttl)
     else {
         helloPacket->setNetworkMask(interfaceAddressRange.mask);
     }
-    memset(&options, 0, sizeof(Ospfv2Options));
+
+    Ospfv2Options options;
     options.E_ExternalRoutingCapability = parentArea->getExternalRoutingCapability();
     helloPacket->setOptions(options);
     helloPacket->setHelloInterval(helloInterval);
@@ -264,19 +255,13 @@ void Ospfv2Interface::sendLsAcknowledgement(const Ospfv2LsaHeader *lsaHeader, Ip
 Neighbor *Ospfv2Interface::getNeighborById(RouterId neighborID)
 {
     auto neighborIt = neighboringRoutersByID.find(neighborID);
-    if (neighborIt != neighboringRoutersByID.end())
-        return neighborIt->second;
-    else
-        return nullptr;
+    return (neighborIt != neighboringRoutersByID.end()) ? neighborIt->second : nullptr;
 }
 
 Neighbor *Ospfv2Interface::getNeighborByAddress(Ipv4Address address)
 {
     auto neighborIt = neighboringRoutersByAddress.find(address);
-    if (neighborIt != neighboringRoutersByAddress.end())
-        return neighborIt->second;
-    else
-        return nullptr;
+    return (neighborIt != neighboringRoutersByAddress.end()) ? neighborIt->second : nullptr;
 }
 
 void Ospfv2Interface::addNeighbor(Neighbor *neighbor)
@@ -381,11 +366,11 @@ bool Ospfv2Interface::floodLsa(const Ospfv2Lsa *lsa, Ospfv2Interface *intf, Neig
         lsaKey.linkStateID = linkStateID;
         lsaKey.advertisingRouter = lsa->getHeader().getAdvertisingRouter();
 
-        for (long i = 0; i < neighborCount; i++) {    // (1)
-            if (neighboringRouters[i]->getState() < Neighbor::EXCHANGE_STATE) {    // (1) (a)
+        for (long i = 0; i < neighborCount; i++) { // (1)
+            if (neighboringRouters[i]->getState() < Neighbor::EXCHANGE_STATE) { // (1) (a)
                 continue;
             }
-            if (neighboringRouters[i]->getState() < Neighbor::FULL_STATE) {    // (1) (b)
+            if (neighboringRouters[i]->getState() < Neighbor::FULL_STATE) { // (1) (b)
                 Ospfv2LsaHeader *requestLSAHeader = neighboringRouters[i]->findOnRequestList(lsaKey);
                 if (requestLSAHeader != nullptr) {
                     // operator< and operator== on OSPFLSAHeaders determines which one is newer(less means older)
@@ -399,20 +384,20 @@ bool Ospfv2Interface::floodLsa(const Ospfv2Lsa *lsa, Ospfv2Interface *intf, Neig
                     neighboringRouters[i]->removeFromRequestList(lsaKey);
                 }
             }
-            if (neighbor == neighboringRouters[i]) {    // (1) (c)
+            if (neighbor == neighboringRouters[i]) { // (1) (c)
                 continue;
             }
-            neighboringRouters[i]->addToRetransmissionList(lsa);    // (1) (d)
+            neighboringRouters[i]->addToRetransmissionList(lsa); // (1) (d)
             lsaAddedToRetransmissionList = true;
         }
-        if (lsaAddedToRetransmissionList) {    // (2)
+        if (lsaAddedToRetransmissionList) { // (2)
             if ((intf != this) ||
                 ((neighbor != nullptr) &&
                  (neighbor->getNeighborID() != designatedRouter.routerID) &&
-                 (neighbor->getNeighborID() != backupDesignatedRouter.routerID)))    // (3)
+                 (neighbor->getNeighborID() != backupDesignatedRouter.routerID))) // (3)
             {
-                if ((intf != this) || (getState() != Ospfv2Interface::BACKUP_STATE)) {    // (4)
-                    Packet *updatePacket = createUpdatePacket(lsa);    // (5)
+                if ((intf != this) || (getState() != Ospfv2Interface::BACKUP_STATE)) { // (4)
+                    Packet *updatePacket = createUpdatePacket(lsa); // (5)
 
                     if (updatePacket != nullptr) {
                         int ttl = (interfaceType == Ospfv2Interface::VIRTUAL) ? VIRTUAL_LINK_TTL : 1;
@@ -488,7 +473,7 @@ Packet *Ospfv2Interface::createUpdatePacket(const Ospfv2Lsa *lsa)
 {
     Ospfv2LsaType lsaType = lsa->getHeader().getLsType();
     const auto& updatePacket = makeShared<Ospfv2LinkStateUpdatePacket>();
-    B packetLength = OSPFv2_HEADER_LENGTH + B(sizeof(uint32_t));    // OSPF header + place for number of advertisements
+    B packetLength = OSPFv2_HEADER_LENGTH + B(sizeof(uint32_t)); // OSPF header + place for number of advertisements
 
     updatePacket->setType(LINKSTATE_UPDATE_PACKET);
     updatePacket->setRouterID(Ipv4Address(parentArea->getRouter()->getRouterID()));
@@ -567,8 +552,7 @@ void Ospfv2Interface::sendDelayedAcknowledgements()
     MessageHandler *messageHandler = parentArea->getRouter()->getMessageHandler();
     B maxPacketSize = ((IPv4_MAX_HEADER_LENGTH + OSPFv2_HEADER_LENGTH + OSPFv2_LSA_HEADER_LENGTH) > B(mtu)) ? IPV4_DATAGRAM_LENGTH : B(mtu);
 
-    for (auto & elem : delayedAcknowledgements)
-    {
+    for (auto& elem : delayedAcknowledgements) {
         int ackCount = elem.second.size();
         if (ackCount > 0) {
             while (!(elem.second.empty())) {
@@ -638,37 +622,37 @@ void Ospfv2Interface::ageTransmittedLsaLists()
 std::ostream& operator<<(std::ostream& stream, const Ospfv2Interface& intf)
 {
     std::string neighbors = "";
-    for(auto &neighbor : intf.neighboringRoutersByID) {
+    for (auto& neighbor : intf.neighboringRoutersByID) {
         std::string neighborState = Neighbor::getStateString((neighbor.second)->getState());
         neighbors = neighbors + (neighbor.first).str() + "(" + neighborState + ") ";
     }
 
     return stream << "name: " << intf.getInterfaceName() << " "
-            << "index: " << intf.ifIndex << " "
-            << "type: '" << intf.getTypeString(intf.interfaceType) << "' "
-            << "MTU: " << intf.mtu << " "
-            << "state: '" << intf.getStateString(intf.state->getState()) << "' "
-            << "mode: '" << intf.getModeString(intf.interfaceMode) << "' "
-            << "cost: " << intf.interfaceOutputCost << " "
+                  << "index: " << intf.ifIndex << " "
+                  << "type: '" << intf.getTypeString(intf.interfaceType) << "' "
+                  << "MTU: " << intf.mtu << " "
+                  << "state: '" << intf.getStateString(intf.state->getState()) << "' "
+                  << "mode: '" << intf.getModeString(intf.interfaceMode) << "' "
+                  << "cost: " << intf.interfaceOutputCost << " "
 
-            << "area: " << intf.areaID.str(false) << " "
-            << "transitArea: " << intf.transitAreaID.str(false) << " "
+                  << "area: " << intf.areaID.str(false) << " "
+                  << "transitArea: " << intf.transitAreaID.str(false) << " "
 
-            << "helloInterval: " << intf.helloInterval << " "
-            << "pollInterval: " << intf.pollInterval << " "
-            << "routerDeadInterval: " << intf.routerDeadInterval << " "
-            << "retransmissionInterval: " << intf.retransmissionInterval << " "
+                  << "helloInterval: " << intf.helloInterval << " "
+                  << "pollInterval: " << intf.pollInterval << " "
+                  << "routerDeadInterval: " << intf.routerDeadInterval << " "
+                  << "retransmissionInterval: " << intf.retransmissionInterval << " "
 
-            << "acknowledgementDelay: " << intf.acknowledgementDelay << " "
-            << "interfaceTransmissionDelay: " << intf.interfaceTransmissionDelay << " "
+                  << "acknowledgementDelay: " << intf.acknowledgementDelay << " "
+                  << "interfaceTransmissionDelay: " << intf.interfaceTransmissionDelay << " "
 
-            << "neighboringRouters: " << ((neighbors == "") ? "<none>(down)" : neighbors) << " "
+                  << "neighboringRouters: " << ((neighbors == "") ? "<none>(down)" : neighbors) << " "
 
-            << "routerPriority: " << (int)(intf.routerPriority) << " "
-            << "designatedRouterID: " << intf.designatedRouter.routerID << " "
-            << "designatedRouterInterface: " << intf.designatedRouter.ipInterfaceAddress << " "
-            << "backupDesignatedRouterID: " << intf.backupDesignatedRouter.routerID << " "
-            << "backupDesignatedRouterInterface: " << intf.backupDesignatedRouter.ipInterfaceAddress;
+                  << "routerPriority: " << (int)(intf.routerPriority) << " "
+                  << "designatedRouterID: " << intf.designatedRouter.routerID << " "
+                  << "designatedRouterInterface: " << intf.designatedRouter.ipInterfaceAddress << " "
+                  << "backupDesignatedRouterID: " << intf.backupDesignatedRouter.routerID << " "
+                  << "backupDesignatedRouterInterface: " << intf.backupDesignatedRouter.ipInterfaceAddress;
 }
 
 } // namespace ospfv2

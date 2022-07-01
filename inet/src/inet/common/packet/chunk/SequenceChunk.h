@@ -1,20 +1,12 @@
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program.  If not, see http://www.gnu.org/licenses/.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-#ifndef __INET_SEQUENCECHUNK_H_
-#define __INET_SEQUENCECHUNK_H_
+
+#ifndef __INET_SEQUENCECHUNK_H
+#define __INET_SEQUENCECHUNK_H
 
 #include <deque>
 
@@ -29,8 +21,8 @@ namespace inet {
  */
 class INET_API SequenceChunk : public Chunk
 {
-  friend class Chunk;
-  friend class SequenceChunkDescriptor;
+    friend class Chunk;
+    friend class SequenceChunkDescriptor;
 
   protected:
     /**
@@ -74,9 +66,14 @@ class INET_API SequenceChunk : public Chunk
 
     virtual SequenceChunk *dup() const override { return new SequenceChunk(*this); }
     virtual const Ptr<Chunk> dupShared() const override { return makeShared<SequenceChunk>(*this); }
+
+    virtual void parsimPack(cCommBuffer *buffer) const override;
+    virtual void parsimUnpack(cCommBuffer *buffer) override;
     //@}
 
     virtual void forEachChild(cVisitor *v) override;
+
+    virtual bool containsSameData(const Chunk& other) const override;
 
     /** @name Field accessor functions */
     const std::deque<Ptr<const Chunk>>& getChunks() const { return chunks; }
@@ -120,10 +117,10 @@ class INET_API SequenceChunk : public Chunk
     virtual bool isEmpty() const override { return chunks.size() != 0; }
     //@}
 
-    virtual std::string str() const override;
+    virtual std::ostream& printToStream(std::ostream& stream, int level, int evFlags = 0) const override;
 };
 
 } // namespace
 
-#endif // #ifndef __INET_SEQUENCECHUNK_H_
+#endif
 

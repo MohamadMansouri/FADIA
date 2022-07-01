@@ -1,23 +1,14 @@
 //
-// Copyright (C) OpenSim Ltd.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
+
+#include "inet/visualizer/base/NetworkNodeVisualizerBase.h"
 
 #include "inet/common/ModuleAccess.h"
 #include "inet/common/scenario/ScenarioManager.h"
-#include "inet/visualizer/base/NetworkNodeVisualizerBase.h"
 
 namespace inet {
 
@@ -42,12 +33,23 @@ void NetworkNodeVisualizerBase::handleParameterChange(const char *name)
     if (name != nullptr) {
         if (!strcmp(name, "nodeFilter"))
             nodeFilter.setPattern(par("nodeFilter"));
-        // TODO:
+        // TODO
     }
+}
+
+NetworkNodeVisualizerBase::NetworkNodeVisualization *NetworkNodeVisualizerBase::getNetworkNodeVisualization(const cModule *networkNode) const
+{
+    auto visualization = findNetworkNodeVisualization(networkNode);
+    if (visualization == nullptr)
+        throw cRuntimeError("Network node visualization is not found for '%s'", networkNode->getFullPath().c_str());
+    else
+        return visualization;
 }
 
 void NetworkNodeVisualizerBase::receiveSignal(cComponent *source, simsignal_t signal, cObject *object, cObject *details)
 {
+    Enter_Method("%s", cComponent::getSignalName(signal));
+
     if (signal == POST_MODEL_CHANGE) {
         if (auto moduleInit = dynamic_cast<cPreModuleInitNotification *>(object)) {
             auto module = moduleInit->module;
@@ -63,7 +65,7 @@ void NetworkNodeVisualizerBase::receiveSignal(cComponent *source, simsignal_t si
             if (isNetworkNode(module) && nodeFilter.matches(module)) {
                 auto visualization = getNetworkNodeVisualization(module);
                 removeNetworkNodeVisualization(visualization);
-                delete visualization;
+                destroyNetworkNodeVisualization(visualization);
             }
         }
     }

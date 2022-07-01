@@ -1,3 +1,6 @@
+//
+// SPDX-License-Identifier: LGPL-3.0-or-later
+//
 //***************************************************************************
 //* file:        Ieee802154Mac.ned
 //*
@@ -7,13 +10,6 @@
 //*                  (C) 2004 Telecommunication Networks Group (TKN) at
 //*              Technische Universitaet Berlin, Germany.
 //*
-//*              This program is free software; you can redistribute it
-//*              and/or modify it under the terms of the GNU General Public
-//*              License as published by the Free Software Foundation; either
-//*              version 2 of the License, or (at your option) any later
-//*              version.
-//*              For further information see file COPYING
-//*              in the top level directory
 //*
 //* Funding: This work was partially financed by the European Commission under the
 //* Framework 6 IST Project "Wirelessly Accessible Sensor Populations"
@@ -36,9 +32,9 @@ import inet.linklayer.contract.IMacProtocol;
 module Ieee802154Mac extends MacProtocolBase like IMacProtocol
 {
     parameters:
-        string address = default("auto"); // MAC address as hex string (12 hex digits), or
-                                          // "auto". "auto" values will be replaced by
-                                          // a generated MAC address in init stage 0.
+        string address @mutable = default("auto"); // MAC address as hex string (12 hex digits), or
+                                                   // "auto". "auto" values will be replaced by
+                                                   // a generated MAC address in init stage 0.
 
         // length of MAC header
         int headerLength @unit(b) = default(72 b);
@@ -100,12 +96,5 @@ module Ieee802154Mac extends MacProtocolBase like IMacProtocol
         @statistic[packetDropQueueOverflow](title="packet drop: queue overflow"; source=packetDropReasonIsQueueOverflow(packetDropped); record=count,sum(packetBytes),vector(packetBytes); interpolationmode=none);
         @statistic[packetDropRetryLimitReached](title="packet drop: retry limit reached"; source=packetDropReasonIsRetryLimitReached(packetDropped); record=count,sum(packetBytes),vector(packetBytes); interpolationmode=none);
         @statistic[packetDropBackoffLimitReached](title="packet drop: backoff limit reached"; source=packetDropReasonIsCongestion(packetDropped); record=count,sum(packetBytes),vector(packetBytes); interpolationmode=none);
-    submodules:
-        queue: <default("DropTailQueue")> like IPacketQueue {
-            parameters:
-                packetCapacity = default(100);
-                @display("p=100,100;q=l2queue");
-        }
-    connections allowunconnected:
 }
 

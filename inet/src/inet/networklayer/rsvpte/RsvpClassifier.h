@@ -1,24 +1,16 @@
 //
-// (C) 2005 Vojtech Janota
+// Copyright (C) 2005 Vojtech Janota
 //
-// This library is free software, you can redistribute it
-// and/or modify
-// it under  the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation;
-// either version 2 of the License, or any later version.
-// The library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-// See the GNU Lesser General Public License for more details.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-#ifndef __INET_SIMPLECLASSIFIER_H
-#define __INET_SIMPLECLASSIFIER_H
+#ifndef __INET_RSVPCLASSIFIER_H
+#define __INET_RSVPCLASSIFIER_H
 
 #include <string>
 #include <vector>
 
-#include "inet/common/INETDefs.h"
+#include "inet/common/ModuleRefByPar.h"
 #include "inet/common/scenario/IScriptable.h"
 #include "inet/networklayer/contract/ipv4/Ipv4Address.h"
 #include "inet/networklayer/ipv4/Ipv4Header_m.h"
@@ -37,8 +29,7 @@ class RsvpTe;
 class INET_API RsvpClassifier : public cSimpleModule, public IScriptable, public IRsvpClassifier
 {
   public:
-    struct FecEntry
-    {
+    struct FecEntry {
         int id;
 
         Ipv4Address src;
@@ -55,8 +46,8 @@ class INET_API RsvpClassifier : public cSimpleModule, public IScriptable, public
     int maxLabel = 0;
 
     std::vector<FecEntry> bindings;
-    LibTable *lt = nullptr;
-    RsvpTe *rsvp = nullptr;
+    ModuleRefByPar<LibTable> lt;
+    ModuleRefByPar<RsvpTe> rsvp;
 
   public:
     RsvpClassifier() {}
@@ -81,5 +72,5 @@ class INET_API RsvpClassifier : public cSimpleModule, public IScriptable, public
 
 } // namespace inet
 
-#endif // ifndef __INET_SIMPLECLASSIFIER_H
+#endif
 

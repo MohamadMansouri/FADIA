@@ -1,24 +1,11 @@
 //
 // Copyright (C) 2003 Andras Varga; CTIE, Monash University, Australia
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
 #ifndef __INET_ETHERAPPSERVER_H
 #define __INET_ETHERAPPSERVER_H
-
-#include "inet/common/INETDefs.h"
 
 #include "inet/applications/base/ApplicationBase.h"
 #include "inet/common/packet/Packet.h"
@@ -55,12 +42,12 @@ class INET_API EtherAppServer : public ApplicationBase, public Ieee8022LlcSocket
     virtual void handleCrashOperation(LifecycleOperation *operation) override;
 
     void registerDsap(int dsap);
-    void sendPacket(Packet *datapacket, const MacAddress& destAddr, int destSap);
-    virtual void socketDataArrived(Ieee8022LlcSocket*, Packet *msg) override;
-    virtual void socketClosed(Ieee8022LlcSocket* socket) override;
+    void sendPacket(Packet *datapacket, int interfaceId, const MacAddress& destAddr, int destSap);
+    virtual void socketDataArrived(Ieee8022LlcSocket *, Packet *msg) override;
+    virtual void socketClosed(Ieee8022LlcSocket *socket) override;
 };
 
 } // namespace inet
 
-#endif // ifndef __INET_ETHERAPPSERVER_H
+#endif
 

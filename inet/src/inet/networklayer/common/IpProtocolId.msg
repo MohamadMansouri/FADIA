@@ -1,21 +1,9 @@
 //
 // Copyright (C) 2000 Institut fuer Telematik, Universitaet Karlsruhe
-// Copyright (C) 2004 Andras Varga
+// Copyright (C) 2004 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public
-// License along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
-
 
 import inet.common.INETDefs;
 
@@ -31,7 +19,7 @@ enum IpProtocolId
     //  IP_PROT_HOPOPT    = 0;
     IP_PROT_ICMP = 1;
     IP_PROT_IGMP = 2;
-    IP_PROT_IP = 4; // used for IP tunneling. FIXME: RFC1700 specifies =3 (old IPSuite) ???
+    IP_PROT_IP = 4; // used for IP tunneling. FIXME RFC1700 specifies =3 (old IPSuite) ???
     IP_PROT_TCP = 6;
     IP_PROT_EGP = 8;
     IP_PROT_IGP = 9;
@@ -58,10 +46,11 @@ enum IpProtocolId
     IP_PROT_IPv6EXT_ESP = 50;      // Encapsulating security payload.
     IP_PROT_IPv6EXT_MOB = 135;      // Mobility Header for MIPv6 support.
 
+    IP_PROT_LINK_STATE_ROUTING = 249;
     IP_PROT_FLOODING = 250;    // INET specific: Probabilistic Network Protocol
     IP_PROT_PROBABILISTIC = 251;    // INET specific: Probabilistic Network Protocol
     IP_PROT_WISE = 252;    // INET specific: Probabilistic Network Protocol
     IP_PROT_NEXT_HOP_FORWARDING = 253; // INET specific: Next Hop Forwarding
     IP_PROT_ECHO = 254; // INET specific: Echo Protocol
+    IP_PROT_UNKNOWN = 255; // INET specific: Unknown Protocol
 }
-

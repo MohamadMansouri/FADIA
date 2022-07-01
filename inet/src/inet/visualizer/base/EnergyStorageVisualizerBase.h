@@ -1,19 +1,9 @@
 //
-// Copyright (C) OpenSim Ltd.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 #ifndef __INET_ENERGYSTORAGEVISUALIZERBASE_H
 #define __INET_ENERGYSTORAGEVISUALIZERBASE_H
@@ -29,8 +19,7 @@ namespace visualizer {
 class INET_API EnergyStorageVisualizerBase : public VisualizerBase
 {
   protected:
-    class INET_API EnergyStorageVisualization
-    {
+    class INET_API EnergyStorageVisualization {
       public:
         const power::IEnergyStorage *energyStorage;
 
@@ -58,6 +47,7 @@ class INET_API EnergyStorageVisualizerBase : public VisualizerBase
     virtual void initialize(int stage) override;
     virtual void handleParameterChange(const char *name) override;
     virtual void refreshDisplay() const override;
+    virtual void preDelete(cComponent *root) override;
 
     virtual double getNominalCapacity(const power::IEnergyStorage *energyStorage) const;
     virtual double getResidualCapacity(const power::IEnergyStorage *energyStorage) const;
@@ -73,5 +63,5 @@ class INET_API EnergyStorageVisualizerBase : public VisualizerBase
 } // namespace visualizer
 } // namespace inet
 
-#endif // ifndef __INET_ENERGYSTORAGEVISUALIZERBASE_H
+#endif
 

@@ -1,18 +1,7 @@
 //
-// Copyright (C) OpenSim Ltd.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program.  If not, see http://www.gnu.org/licenses/.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
 
@@ -42,7 +31,7 @@ Define_Module(ExtInterface);
 
 void ExtInterface::initialize(int stage)
 {
-    InterfaceEntry::initialize(stage);
+    NetworkInterface::initialize(stage);
     if (stage == INITSTAGE_NETWORK_INTERFACE_CONFIGURATION) {
         const char *copyConfiguration = par("copyConfiguration");
         if (strcmp("copyFromExt", copyConfiguration))
@@ -74,7 +63,7 @@ void ExtInterface::copyNetworkInterfaceConfigurationFromExt()
     int fd = socket(AF_INET, SOCK_DGRAM, 0);
     struct ifreq ifr;
     ifr.ifr_addr.sa_family = AF_INET;
-    strncpy(ifr.ifr_name , device.c_str() , IFNAMSIZ-1);
+    strncpy(ifr.ifr_name, device.c_str(), IFNAMSIZ - 1);
 
     ioctl(fd, SIOCGIFHWADDR, &ifr);
     MacAddress macAddress;
@@ -97,24 +86,24 @@ void ExtInterface::copyNetworkAddressFromExt()
     int fd = socket(AF_INET, SOCK_DGRAM, 0);
     struct ifreq ifr;
     ifr.ifr_addr.sa_family = AF_INET;
-    strncpy(ifr.ifr_name , device.c_str() , IFNAMSIZ-1);
+    strncpy(ifr.ifr_name, device.c_str(), IFNAMSIZ - 1);
 
-    //get the IPv4 address
+    // get the IPv4 address
     ioctl(fd, SIOCGIFADDR, &ifr);
     Ipv4Address ipv4Address(ntohl(((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr.s_addr));
 
-    //get the IPv4 netmask
+    // get the IPv4 netmask
     ioctl(fd, SIOCGIFNETMASK, &ifr);
     Ipv4Address ipv4Netmask(ntohl(((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr.s_addr));
 
-    //TODO get IPv4 multicast addresses
+    // TODO get IPv4 multicast addresses
 
-    //TODO get IPv6 addresses
+    // TODO get IPv6 addresses
 
     close(fd);
 
     if (ipv4Address.isUnspecified() && ipv4Netmask.isUnspecified()) {
-        auto interfaceData = findProtocolData<Ipv4InterfaceData>();
+        auto interfaceData = findProtocolDataForUpdate<Ipv4InterfaceData>();
         if (interfaceData != nullptr) {
             interfaceData->setIPAddress(Ipv4Address());
             interfaceData->setNetmask(Ipv4Address());
@@ -135,7 +124,7 @@ void ExtInterface::copyNetworkInterfaceConfigurationToExt()
     int fd = socket(AF_INET, SOCK_DGRAM, 0);
     struct ifreq ifr;
     ifr.ifr_addr.sa_family = AF_INET;
-    strncpy(ifr.ifr_name , device.c_str() , IFNAMSIZ-1);
+    strncpy(ifr.ifr_name, device.c_str(), IFNAMSIZ - 1);
 
     getMacAddress().getAddressBytes((unsigned char *)ifr.ifr_hwaddr.sa_data);
     ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
@@ -157,25 +146,25 @@ void ExtInterface::copyNetworkAddressToExt()
     int fd = socket(AF_INET, SOCK_DGRAM, 0);
     struct ifreq ifr;
     ifr.ifr_addr.sa_family = AF_INET;
-    strncpy(ifr.ifr_name , device.c_str() , IFNAMSIZ-1);
+    strncpy(ifr.ifr_name, device.c_str(), IFNAMSIZ - 1);
 
-    Ipv4InterfaceData *interfaceData = findProtocolData<Ipv4InterfaceData>();
+    const auto& interfaceData = findProtocolData<Ipv4InterfaceData>();
     if (interfaceData != nullptr) {
-        //set the IPv4 address
+        // set the IPv4 address
         ((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr.s_addr = htonl(interfaceData->getIPAddress().getInt());
         ifr.ifr_addr.sa_family = AF_INET;
         if (ioctl(fd, SIOCSIFADDR, &ifr) == -1)
             throw cRuntimeError("error at ipv4 address setting: %s", strerror(errno));
 
-        //set the IPv4 netmask
+        // set the IPv4 netmask
         ((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr.s_addr = htonl(interfaceData->getNetmask().getInt());
         ifr.ifr_addr.sa_family = AF_INET;
         if (ioctl(fd, SIOCSIFNETMASK, &ifr) == -1)
             throw cRuntimeError("error at ipv4 netmask setting: %s", strerror(errno));
 
-        //TODO set IPv4 multicast addresses
+        // TODO set IPv4 multicast addresses
 
-        //TODO set IPv6 addresses
+        // TODO set IPv6 addresses
     }
 
     close(fd);

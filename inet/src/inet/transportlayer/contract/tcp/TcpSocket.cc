@@ -1,24 +1,15 @@
 //
-// Copyright (C) 2004 Andras Varga
+// Copyright (C) 2004 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-#include "inet/applications/common/SocketTag_m.h"
+
+#include "inet/transportlayer/contract/tcp/TcpSocket.h"
+
 #include "inet/common/ProtocolTag_m.h"
 #include "inet/common/packet/Message.h"
-#include "inet/transportlayer/contract/tcp/TcpSocket.h"
+#include "inet/common/socket/SocketTag_m.h"
 
 namespace inet {
 
@@ -249,7 +240,7 @@ void TcpSocket::sendToTcp(cMessage *msg, int connId)
     if (!gateToTcp)
         throw cRuntimeError("TcpSocket: setOutputGate() must be invoked before socket can be used");
 
-    auto& tags = getTags(msg);
+    auto& tags = check_and_cast<ITaggedObject *>(msg)->getTags();
     tags.addTagIfAbsent<DispatchProtocolReq>()->setProtocol(&Protocol::tcp);
     tags.addTagIfAbsent<SocketReq>()->setSocketId(connId == -1 ? this->connId : connId);
     check_and_cast<cSimpleModule *>(gateToTcp->getOwnerModule())->send(msg, gateToTcp);
@@ -266,19 +257,19 @@ void TcpSocket::renewSocket()
 bool TcpSocket::isOpen() const
 {
     switch (sockstate) {
-    case BOUND:
-    case LISTENING:
-    case CONNECTING:
-    case CONNECTED:
-    case PEER_CLOSED:
-    case LOCALLY_CLOSED:
-    case SOCKERROR: //TODO check SOCKERROR is opened or is closed socket
-        return true;
-    case NOT_BOUND:
-    case CLOSED:
-        return false;
-    default:
-        throw cRuntimeError("invalid TcpSocket state: %d", sockstate);
+        case BOUND:
+        case LISTENING:
+        case CONNECTING:
+        case CONNECTED:
+        case PEER_CLOSED:
+        case LOCALLY_CLOSED:
+        case SOCKERROR: // TODO check SOCKERROR is opened or is closed socket
+            return true;
+        case NOT_BOUND:
+        case CLOSED:
+            return false;
+        default:
+            throw cRuntimeError("invalid TcpSocket state: %d", sockstate);
     }
 }
 
@@ -298,14 +289,14 @@ void TcpSocket::processMessage(cMessage *msg)
     switch (msg->getKind()) {
         case TCP_I_DATA:
             if (cb)
-                cb->socketDataArrived(this, check_and_cast<Packet*>(msg), false);
+                cb->socketDataArrived(this, check_and_cast<Packet *>(msg), false);
             else
                 delete msg;
             break;
 
         case TCP_I_URGENT_DATA:
             if (cb)
-                cb->socketDataArrived(this, check_and_cast<Packet*>(msg), true);
+                cb->socketDataArrived(this, check_and_cast<Packet *>(msg), true);
             else
                 delete msg;
             break;
@@ -367,15 +358,14 @@ void TcpSocket::processMessage(cMessage *msg)
             break;
 
         default:
-            throw cRuntimeError("TcpSocket: invalid msg kind %d, one of the TCP_I_xxx constants expected",
-                msg->getKind());
+            throw cRuntimeError("TcpSocket: invalid msg kind %d, one of the TCP_I_xxx constants expected", msg->getKind());
     }
 }
 
 bool TcpSocket::belongsToSocket(cMessage *msg) const
 {
-    auto& tags = getTags(msg);
-    auto socketInd = tags.findTag<SocketInd>();
+    auto& tags = check_and_cast<ITaggedObject *>(msg)->getTags();
+    const auto& socketInd = tags.findTag<SocketInd>();
     return socketInd != nullptr && socketInd->getSocketId() == connId;
 }
 

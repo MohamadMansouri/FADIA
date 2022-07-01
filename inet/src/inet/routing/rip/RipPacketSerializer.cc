@@ -1,25 +1,18 @@
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program.  If not, see http://www.gnu.org/licenses/.
-//
+
+
+#include "inet/routing/rip/RipPacketSerializer.h"
 
 #include "inet/common/packet/serializer/ChunkSerializerRegistry.h"
 #include "inet/routing/rip/RipPacket_m.h"
-#include "inet/routing/rip/RipPacketSerializer.h"
 
 namespace inet {
 
-//TODO
+// TODO
 // The inet::Rip uses RipPacket and RipEntry for IPv4 (RIPv2, see RFC 1058)
 // and for IPv6 (RIPng, see RFC 2080).
 // The serializer accepts only RFC1058 packets with IPv4 addresses.
@@ -55,7 +48,7 @@ const Ptr<Chunk> RipPacketSerializer::deserialize(MemoryInputStream& stream) con
     ripPacket->setCommand((inet::RipCommand)stream.readUint8());
     int ripVer = stream.readUint8();
     if (ripVer != 2) {
-        //TODO add RIP v1 support
+        // TODO add RIP v1 support
         ripPacket->markIncorrect();
     }
 
@@ -67,14 +60,14 @@ const Ptr<Chunk> RipPacketSerializer::deserialize(MemoryInputStream& stream) con
         RipEntry entry = {};
 
         entry.addressFamilyId = (inet::RipAf)stream.readUint16Be();
-        //TODO Valid addressFamilyId values: 0, 2, 0xFFFF
+        // TODO Valid addressFamilyId values: 0, 2, 0xFFFF
         // 0 and 2 means IPv4, 0xFFFF means Authentication packet
         entry.routeTag = stream.readUint16Be();
         entry.address = stream.readIpv4Address();
         Ipv4Address netmask = stream.readIpv4Address();
         entry.prefixLength = netmask.getNetmaskLength();
         if (netmask != Ipv4Address::makeNetmask(entry.prefixLength))
-            ripPacket->markIncorrect();         // netmask can not be converted into prefixLength       //TODO should replace prefixLength to netmask
+            ripPacket->markIncorrect(); // netmask can not be converted into prefixLength       //TODO should replace prefixLength to netmask
         entry.nextHop = stream.readIpv4Address();
         entry.metric = stream.readUint32Be();
 

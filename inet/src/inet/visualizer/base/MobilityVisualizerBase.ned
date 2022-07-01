@@ -1,19 +1,9 @@
 //
-// Copyright (C) OpenSim Ltd.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 package inet.visualizer.base;
 
@@ -33,7 +23,7 @@ simple MobilityVisualizerBase extends VisualizerBase
         bool displayMobility = default(true); // display mobility, enabled by default
         double animationSpeed = default(0); // animation speed while objects are moving around, value must be in the range (0, +inf)
 
-        string moduleFilter = default("**.mobility"); // which mobilities are considered, matches all mobilities by default
+        string moduleFilter @mutable = default("**.mobility"); // which mobilities are considered, matches all mobilities by default
 
         bool displayPositions = default(false); // display a circle indicating the current position, disabled by default
         double positionCircleRadius = default(4); // radius of the circle
@@ -43,7 +33,7 @@ simple MobilityVisualizerBase extends VisualizerBase
 
         bool displayOrientations = default(false); // display a pie indicating the current orientation, disabled by default
         double orientationPieRadius = default(32); // radius of the pie
-        double orientationPieSize = default(0.2); // relative size of the pie compared to the full circle 
+        double orientationPieSize = default(0.2); // relative size of the pie compared to the full circle
         double orientationPieOpacity = default(0.25); // opacity of the pie
         string orientationLineColor = default("black"); // orientation line color, black by default
         string orientationLineStyle = default("solid"); // orientation line style (solid, dashed, dotted)

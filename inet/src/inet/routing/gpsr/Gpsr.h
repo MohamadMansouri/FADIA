@@ -1,26 +1,14 @@
 //
-// Copyright (C) 2013 Opensim Ltd
-// Author: Levente Meszaros
+// Copyright (C) 2013 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-//
+
 
 #ifndef __INET_GPSR_H
 #define __INET_GPSR_H
 
-#include "inet/common/INETDefs.h"
+#include "inet/common/ModuleRefByPar.h"
 #include "inet/common/geometry/common/Coord.h"
 #include "inet/common/packet/Packet.h"
 #include "inet/mobility/contract/IMobility.h"
@@ -41,10 +29,10 @@ namespace inet {
  * For more information on the routing algorithm, see the GPSR paper
  * http://www.eecs.harvard.edu/~htk/publication/2000-mobi-karp-kung.pdf
  */
-// TODO: optimize internal data structures for performance to use less lookups and be more prepared for routing a packet
-// TODO: implement position piggybacking that is all packets should carry the position of the sender, all packets act as a beacon and reset beacon timer
-// TODO: implement promiscuous mode, all receivers should process all packets with respect to neighbor positions
-// KLUDGE: implement position registry protocol instead of using a global variable
+// TODO optimize internal data structures for performance to use less lookups and be more prepared for routing a packet
+// TODO implement position piggybacking that is all packets should carry the position of the sender, all packets act as a beacon and reset beacon timer
+// TODO implement promiscuous mode, all receivers should process all packets with respect to neighbor positions
+// KLUDGE implement position registry protocol instead of using a global variable
 class INET_API Gpsr : public RoutingProtocolBase, public cListener, public NetfilterBase::HookBase
 {
   private:
@@ -58,13 +46,13 @@ class INET_API Gpsr : public RoutingProtocolBase, public cListener, public Netfi
 
     // context
     cModule *host = nullptr;
-    IMobility *mobility = nullptr;
+    opp_component_ptr<IMobility> mobility;
     IL3AddressType *addressType = nullptr;
-    IInterfaceTable *interfaceTable = nullptr;
+    ModuleRefByPar<IInterfaceTable> interfaceTable;
     const char *outputInterface = nullptr;
-    IRoutingTable *routingTable = nullptr;    // TODO: delete when necessary functions are moved to interface table
-    INetfilter *networkProtocol = nullptr;
-    static PositionTable globalPositionTable;    // KLUDGE: implement position registry protocol
+    ModuleRefByPar<IRoutingTable> routingTable; // TODO delete when necessary functions are moved to interface table
+    ModuleRefByPar<INetfilter> networkProtocol;
+    static PositionTable globalPositionTable; // KLUDGE implement position registry protocol
 
     // packet size
     int positionByteLength = -1;
@@ -170,5 +158,5 @@ class INET_API Gpsr : public RoutingProtocolBase, public cListener, public Netfi
 
 } // namespace inet
 
-#endif // ifndef __INET_GPSR_H
+#endif
 

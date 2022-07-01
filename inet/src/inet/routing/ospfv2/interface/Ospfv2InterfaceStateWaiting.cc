@@ -1,23 +1,13 @@
 //
 // Copyright (C) 2006 Andras Babos and Andras Varga
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
+#include "inet/routing/ospfv2/interface/Ospfv2InterfaceStateWaiting.h"
 
 #include "inet/routing/ospfv2/interface/Ospfv2InterfaceStateDown.h"
 #include "inet/routing/ospfv2/interface/Ospfv2InterfaceStateLoopback.h"
-#include "inet/routing/ospfv2/interface/Ospfv2InterfaceStateWaiting.h"
 #include "inet/routing/ospfv2/messagehandler/MessageHandler.h"
 #include "inet/routing/ospfv2/router/Ospfv2Area.h"
 #include "inet/routing/ospfv2/router/Ospfv2Router.h"
@@ -44,7 +34,7 @@ void InterfaceStateWaiting::processEvent(Ospfv2Interface *intf, Ospfv2Interface:
         if (intf->getType() == Ospfv2Interface::BROADCAST) {
             intf->sendHelloPacket(Ipv4Address::ALL_OSPF_ROUTERS_MCAST);
         }
-        else {    // Ospfv2Interface::NBMA
+        else { // Ospfv2Interface::NBMA
             unsigned long neighborCount = intf->getNeighborCount();
             int ttl = (intf->getType() == Ospfv2Interface::VIRTUAL) ? VIRTUAL_LINK_TTL : 1;
             for (unsigned long i = 0; i < neighborCount; i++) {

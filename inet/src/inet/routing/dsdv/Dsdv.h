@@ -1,5 +1,6 @@
 //
 // Copyright (C) 2008
+//
 // DSDV simple example for INET (add-on)
 // Version 2.0
 // Diogo Antio & Pedro Menezes
@@ -16,13 +17,13 @@
 #ifndef __INET_DSDV_H
 #define __INET_DSDV_H
 
-#include <list>
-#include <map>
 #include <stdio.h>
 #include <string.h>
+
+#include <list>
+#include <map>
 #include <vector>
 
-#include "inet/common/INETDefs.h"
 #include "inet/common/packet/Packet.h"
 #include "inet/networklayer/contract/IInterfaceTable.h"
 #include "inet/networklayer/contract/ipv4/Ipv4Address.h"
@@ -41,8 +42,7 @@ namespace inet {
 class INET_API Dsdv : public RoutingProtocolBase
 {
   private:
-    struct ForwardEntry
-    {
+    struct ForwardEntry {
         cMessage *event = nullptr;
         Packet *hello = nullptr;
 
@@ -53,8 +53,8 @@ class INET_API Dsdv : public RoutingProtocolBase
     bool isForwardHello = false;
     cMessage *event = nullptr;
     cPar *broadcastDelay = nullptr;
-    std::list<ForwardEntry *> *forwardList  = nullptr;
-    InterfaceEntry *interface80211ptr = nullptr;
+    std::list<ForwardEntry *> *forwardList = nullptr;
+    NetworkInterface *interface80211ptr = nullptr;
     int interfaceId = -1;
     unsigned int sequencenumber = 0;
     simtime_t routeLifetime;
@@ -62,8 +62,8 @@ class INET_API Dsdv : public RoutingProtocolBase
 
   protected:
     simtime_t helloInterval;
-    IInterfaceTable *ift = nullptr;
-    IIpv4RoutingTable *rt = nullptr;
+    ModuleRefByPar<IInterfaceTable> ift;
+    ModuleRefByPar<IIpv4RoutingTable> rt;
 
   public:
     Dsdv();
@@ -79,7 +79,7 @@ class INET_API Dsdv : public RoutingProtocolBase
     // lifecycle
     virtual void handleStartOperation(LifecycleOperation *operation) override { start(); }
     virtual void handleStopOperation(LifecycleOperation *operation) override { stop(); }
-    virtual void handleCrashOperation(LifecycleOperation *operation) override  { stop(); }
+    virtual void handleCrashOperation(LifecycleOperation *operation) override { stop(); }
     void start();
     void stop();
 };
@@ -89,20 +89,20 @@ class INET_API Dsdv : public RoutingProtocolBase
  */
 class INET_API DsdvIpv4Route : public Ipv4Route
 {
-    protected:
-        unsigned int sequencenumber; // originated from destination. Ensures loop freeness.
-        simtime_t expiryTime;  // time the routing entry is valid until
+  protected:
+    unsigned int sequencenumber; // originated from destination. Ensures loop freeness.
+    simtime_t expiryTime; // time the routing entry is valid until
 
-    public:
-        virtual bool isValid() const override { return expiryTime == 0 || expiryTime > simTime(); }
+  public:
+    virtual bool isValid() const override { return expiryTime == 0 || expiryTime > simTime(); }
 
-        simtime_t getExpiryTime() const {return expiryTime;}
-        void setExpiryTime(simtime_t time) {expiryTime = time;}
-        void setSequencenumber(int i) {sequencenumber = i;}
-        unsigned int getSequencenumber() const {return sequencenumber;}
+    simtime_t getExpiryTime() const { return expiryTime; }
+    void setExpiryTime(simtime_t time) { expiryTime = time; }
+    void setSequencenumber(int i) { sequencenumber = i; }
+    unsigned int getSequencenumber() const { return sequencenumber; }
 };
 
 } // namespace inet
 
-#endif // ifndef __INET_DSDV_H
+#endif
 

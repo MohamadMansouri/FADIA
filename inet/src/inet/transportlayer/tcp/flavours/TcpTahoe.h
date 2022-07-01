@@ -1,24 +1,13 @@
 //
-// Copyright (C) 2004 Andras Varga
+// Copyright (C) 2004 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 #ifndef __INET_TCPTAHOE_H
 #define __INET_TCPTAHOE_H
 
-#include "inet/common/INETDefs.h"
 #include "inet/transportlayer/tcp/flavours/TcpTahoeRenoFamily.h"
 
 namespace inet {
@@ -35,7 +24,7 @@ typedef TcpTahoeRenoFamilyStateVariables TcpTahoeStateVariables;
 class INET_API TcpTahoe : public TcpTahoeRenoFamily
 {
   protected:
-    TcpTahoeStateVariables *& state;    // alias to TCLAlgorithm's 'state'
+    TcpTahoeStateVariables *& state; // alias to TCLAlgorithm's 'state'
 
   protected:
     /** Create and return a TcpTahoeStateVariables object. */
@@ -55,7 +44,7 @@ class INET_API TcpTahoe : public TcpTahoeRenoFamily
     TcpTahoe();
 
     /** Redefine what should happen when data got acked, to add congestion window management */
-    virtual void receivedDataAck(uint32 firstSeqAcked) override;
+    virtual void receivedDataAck(uint32_t firstSeqAcked) override;
 
     /** Redefine what should happen when dupAck was received, to add congestion window management */
     virtual void receivedDuplicateAck() override;
@@ -64,5 +53,5 @@ class INET_API TcpTahoe : public TcpTahoeRenoFamily
 } // namespace tcp
 } // namespace inet
 
-#endif // ifndef __INET_TCPTAHOE_H
+#endif
 

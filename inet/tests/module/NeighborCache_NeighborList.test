@@ -23,7 +23,7 @@ import inet.common.scenario.ScenarioManager;
 import inet.networklayer.configurator.ipv4.Ipv4NetworkConfigurator;
 import inet.networklayer.ipv4.RoutingTableRecorder;
 import inet.node.aodv.AodvRouter;
-import inet.physicallayer.unitdisk.UnitDiskRadioMedium;
+import inet.physicallayer.wireless.unitdisk.UnitDiskRadioMedium;
 
 
 network NeighborCacheTest
@@ -193,6 +193,7 @@ NeighborCacheTest.host[0].app[0]: reply of 56 bytes from 145.236.0.2 icmp_seq=53
 NeighborCacheTest.host[0].app[0]: reply of 56 bytes from 145.236.0.2 icmp_seq=55 ttl=29 time=342.497844927 msec (ping55-reply)
 ** Event
 %#--------------------------------------------------------------------------------------------------------------
-%not-contains: stdout
--- check module destructor
+%postrun-command: grep "undisposed object:" test.out > test_undisposed.out || true
+%not-contains: test_undisposed.out
+undisposed object: (
 %#--------------------------------------------------------------------------------------------------------------

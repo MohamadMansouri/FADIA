@@ -2,19 +2,9 @@
 // Copyright (C) 2005 Andras Varga,
 //                    Christian Dankbar, Irene Ruengeler, Michael Tuexen
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 #ifndef __INET_REALTIMESCHEDULER_H
 #define __INET_REALTIMESCHEDULER_H
@@ -25,11 +15,16 @@
 
 namespace inet {
 
+/**
+ * This class implements the event scheduler interface of OMNeT++ to provide a
+ * real time scheduling mechanism. The events are scheduled so that the events
+ * are executed according to the time of the underlying operating system. All
+ * time values are measured in nanoseconds.
+ */
 class INET_API RealTimeScheduler : public cScheduler
 {
   public:
-    class INET_API ICallback
-    {
+    class INET_API ICallback {
       public:
         virtual ~ICallback() {}
         virtual bool notify(int fd) = 0;
@@ -39,6 +34,7 @@ class INET_API RealTimeScheduler : public cScheduler
       public:
         int fd = -1;
         ICallback *callback = nullptr;
+
       public:
         Entry(int fd, ICallback *callback) : fd(fd), callback(callback) {}
     };
@@ -46,10 +42,9 @@ class INET_API RealTimeScheduler : public cScheduler
     int64_t baseTime = 0; // in nanoseconds, as returned by opp_get_monotonic_clock_nsecs()
 
   protected:
-    class BeginSimulationEvent : public cEvent
-    {
+    class BeginSimulationEvent : public cEvent {
       public:
-        BeginSimulationEvent(const char* name) : cEvent(name) {}
+        BeginSimulationEvent(const char *name) : cEvent(name) {}
         virtual cEvent *dup() const override { return new BeginSimulationEvent(getName()); }
         virtual cObject *getTargetObject() const override { return nullptr; }
         virtual void execute() override { delete this; }
@@ -60,7 +55,7 @@ class INET_API RealTimeScheduler : public cScheduler
 
   protected:
     virtual void advanceSimTime();
-    virtual bool receiveWithTimeout(long usec);
+    virtual bool receiveWithTimeout(int64_t timeout);
     virtual int receiveUntil(int64_t targetTime); // in nanoseconds, as returned by opp_get_monotonic_clock_nsecs()
 
   public:
@@ -107,5 +102,5 @@ class INET_API RealTimeScheduler : public cScheduler
 
 } // namespace inet
 
-#endif // ifndef __INET_REALTIMESCHEDULER_H
+#endif
 

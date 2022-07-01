@@ -1,27 +1,16 @@
 //
 // Copyright (C) 2018 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
-// @author: Zoltan Bojthe
-//
+
+
+#include "inet/networklayer/ipv6/Ipv6ProtocolPrinter.h"
 
 #include "inet/common/packet/printer/PacketPrinter.h"
 #include "inet/common/packet/printer/ProtocolPrinterRegistry.h"
 #include "inet/networklayer/ipv6/Ipv6ExtensionHeaders_m.h"
 #include "inet/networklayer/ipv6/Ipv6Header_m.h"
-#include "inet/networklayer/ipv6/Ipv6ProtocolPrinter.h"
 
 namespace inet {
 
@@ -35,10 +24,10 @@ void Ipv6ProtocolPrinter::print(const Ptr<const Chunk>& chunk, const Protocol *p
         context.sourceColumn << header->getSrcAddress();
         context.destinationColumn << header->getDestAddress();
         context.infoColumn << "IPv6"
-                << " ttl:" << header->getHopLimit();
+                           << " ttl:" << header->getHopLimit();
         if (fh && (fh->getMoreFragments() || fh->getFragmentOffset() > 0)) {
             context.infoColumn << " id:" << fh->getIdentification()
-                    << " frag:[" << fh->getFragmentOffset() << ".." << fh->getFragmentOffset() + payloadLength.get();
+                               << " frag:[" << fh->getFragmentOffset() << ".." << fh->getFragmentOffset() + payloadLength.get();
             if (!fh->getMoreFragments())
                 context.infoColumn << " End";
             context.infoColumn << ")";
@@ -48,7 +37,7 @@ void Ipv6ProtocolPrinter::print(const Ptr<const Chunk>& chunk, const Protocol *p
             context.infoColumn << " payload:" << payloadProtocol->getName() << " " << payloadLength;
         else
             context.infoColumn << " payload: protocol(" << header->getProtocolId() << ") " << payloadLength;
-        //TODO options
+        // TODO options
     }
     else
         context.infoColumn << "(IPv6) " << chunk;

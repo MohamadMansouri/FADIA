@@ -1,60 +1,25 @@
 //
-// Copyright (C) 2012 OpenSim Ltd
+// Copyright (C) 2012 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
-// @author Zoltan Bojthe
-//
+
+
+#include "inet/networklayer/internetcloud/MatrixCloudDelayer.h"
 
 #include "inet/common/ModuleAccess.h"
 #include "inet/common/PatternMatcher.h"
 #include "inet/common/XMLUtils.h"
 #include "inet/networklayer/contract/IInterfaceTable.h"
-#include "inet/networklayer/internetcloud/MatrixCloudDelayer.h"
 
 namespace inet {
 
 Define_Module(MatrixCloudDelayer);
 
-namespace {
-inline bool isEmpty(const char *s)
-{
-    return !s || !s[0];
-}
-
-//TODO suggestion: add to XMLUtils
-bool getBoolAttribute(const cXMLElement& element, const char *name, const bool *defaultValue = nullptr)
-{
-    const char *s = element.getAttribute(name);
-    if (isEmpty(s)) {
-        if (defaultValue)
-            return *defaultValue;
-        throw cRuntimeError("Required attribute %s of <%s> missing at %s", name, element.getTagName(),
-                element.getSourceLocation());
-    }
-    if (strcasecmp(s, "true") == 0 || strcmp(s, "1") == 0)
-        return true;
-    if (strcasecmp(s, "false") == 0 || strcmp(s, "0") == 0)
-        return false;
-    throw cRuntimeError("Invalid boolean attribute %s = '%s' at %s", name, s, element.getSourceLocation());
-}
-} // namespace {
-
-//FIXME modified copy of 'Matcher' class from Ipv4NetworkConfigurator
+// FIXME modified copy of 'Matcher' class from Ipv4NetworkConfigurator
 MatrixCloudDelayer::Matcher::Matcher(const char *pattern)
 {
-    matchesany = isEmpty(pattern);
+    matchesany = opp_isempty(pattern);
     if (matchesany)
         return;
     cStringTokenizer tokenizer(pattern);
@@ -72,7 +37,7 @@ MatrixCloudDelayer::Matcher::Matcher(const char *pattern)
 
 MatrixCloudDelayer::Matcher::~Matcher()
 {
-    for (auto & elem : matchers)
+    for (auto& elem : matchers)
         delete elem;
 }
 
@@ -80,7 +45,7 @@ bool MatrixCloudDelayer::Matcher::matches(const char *s)
 {
     if (matchesany)
         return true;
-    for (auto & elem : matchers)
+    for (auto& elem : matchers)
         if (elem->matches(s))
             return true;
 
@@ -93,7 +58,7 @@ MatrixCloudDelayer::MatrixEntry::MatrixEntry(cXMLElement *trafficEntity, bool de
     const char *delayAttr = trafficEntity->getAttribute("delay");
     const char *datarateAttr = trafficEntity->getAttribute("datarate");
     const char *dropAttr = trafficEntity->getAttribute("drop");
-    symmetric = getBoolAttribute(*trafficEntity, "symmetric", &defaultSymmetric);
+    symmetric = xmlutils::getAttributeBoolValue(trafficEntity, "symmetric", defaultSymmetric);
     try {
         delayPar.parse(delayAttr);
     }
@@ -125,7 +90,7 @@ bool MatrixCloudDelayer::MatrixEntry::matches(const char *src, const char *dest)
 
 MatrixCloudDelayer::~MatrixCloudDelayer()
 {
-    for (auto & elem : matrixEntries)
+    for (auto& elem : matrixEntries)
         delete elem;
     matrixEntries.clear();
 }
@@ -138,16 +103,16 @@ void MatrixCloudDelayer::initialize(int stage)
 
     if (stage == INITSTAGE_LOCAL) {
         host = getContainingNode(this);
-        ift = getModuleFromPar<IInterfaceTable>(par("interfaceTableModule"), this);
+        ift.reference(this, "interfaceTableModule", true);
         cXMLElement *configEntity = par("config");
         // parse XML config
         if (strcmp(configEntity->getTagName(), "internetCloud"))
             throw cRuntimeError("Cannot read internetCloud configuration, unaccepted '%s' entity at %s", configEntity->getTagName(),
                     configEntity->getSourceLocation());
-        bool defaultSymmetric = getBoolAttribute(*configEntity, "symmetric");
+        bool defaultSymmetric = getAttributeBoolValue(configEntity, "symmetric");
         const cXMLElement *parameterEntity = getUniqueChild(configEntity, "parameters");
         cXMLElementList trafficEntities = parameterEntity->getChildrenByTagName("traffic");
-        for (auto & trafficEntitie : trafficEntities) {
+        for (auto& trafficEntitie : trafficEntities) {
             cXMLElement *trafficEntity = trafficEntitie;
             MatrixEntry *matrixEntry = new MatrixEntry(trafficEntity, defaultSymmetric);
             matrixEntries.push_back(matrixEntry);
@@ -190,7 +155,7 @@ MatrixCloudDelayer::Descriptor *MatrixCloudDelayer::getOrCreateDescriptor(int sr
 
     // find first matching node in XML
     MatrixEntry *reverseMatrixEntry = nullptr;
-    for (auto & elem : matrixEntries) {
+    for (auto& elem : matrixEntries) {
         MatrixEntry *matrixEntry = elem;
         if (matrixEntry->matches(src.c_str(), dest.c_str())) {
             MatrixCloudDelayer::Descriptor& descriptor = idPairToDescriptorMap[idPair];
@@ -220,7 +185,7 @@ MatrixCloudDelayer::Descriptor *MatrixCloudDelayer::getOrCreateDescriptor(int sr
 
 std::string MatrixCloudDelayer::getPathOfConnectedNodeOnIfaceID(int id)
 {
-    InterfaceEntry *ie = ift->getInterfaceById(id);
+    NetworkInterface *ie = ift->getInterfaceById(id);
     if (!ie)
         throw cRuntimeError("The interface id=%i not found in interfacetable", id);
 

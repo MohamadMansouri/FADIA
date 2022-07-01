@@ -1,28 +1,20 @@
 //
 // Copyright (C) 2013 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
+
+#include "inet/environment/common/PhysicalEnvironment.h"
 
 #include "inet/common/ModuleAccess.h"
 #include "inet/common/geometry/common/RotationMatrix.h"
 #include "inet/common/geometry/object/Box.h"
 #include "inet/common/geometry/shape/Cuboid.h"
-#include "inet/common/geometry/shape/polyhedron/Polyhedron.h"
 #include "inet/common/geometry/shape/Prism.h"
 #include "inet/common/geometry/shape/Sphere.h"
-#include "inet/environment/common/PhysicalEnvironment.h"
+#include "inet/common/geometry/shape/polyhedron/Polyhedron.h"
+#include "inet/common/stlutils.h"
 
 namespace inet {
 
@@ -40,19 +32,18 @@ PhysicalEnvironment::PhysicalEnvironment() :
 
 PhysicalEnvironment::~PhysicalEnvironment()
 {
-    for (auto & elem : shapes)
+    for (auto& elem : shapes)
         delete elem;
-    for (auto & elem : materials)
+    for (auto& elem : materials)
         delete elem;
-    for (auto & elem : objects)
+    for (auto& elem : objects)
         delete elem;
 }
 
 void PhysicalEnvironment::initialize(int stage)
 {
-    if (stage == INITSTAGE_LOCAL)
-    {
-        coordinateSystem = getModuleFromPar<IGeographicCoordinateSystem>(par("coordinateSystemModule"), this, false);
+    if (stage == INITSTAGE_LOCAL) {
+        coordinateSystem = findModuleFromPar<IGeographicCoordinateSystem>(par("coordinateSystemModule"), this);
         objectCache = dynamic_cast<IObjectCache *>(getSubmodule("objectCache"));
         ground = dynamic_cast<IGround *>(getSubmodule("ground"));
         temperature = K(par("temperature"));
@@ -63,8 +54,7 @@ void PhysicalEnvironment::initialize(int stage)
         spaceMax.y = par("spaceMaxY");
         spaceMax.z = par("spaceMaxZ");
     }
-    else if (stage == INITSTAGE_PHYSICAL_ENVIRONMENT)
-    {
+    else if (stage == INITSTAGE_PHYSICAL_ENVIRONMENT) {
         cXMLElement *environment = par("config");
         parseShapes(environment);
         parseMaterials(environment);
@@ -77,7 +67,7 @@ void PhysicalEnvironment::convertPoints(std::vector<Coord>& points)
     auto originPosition = coordinateSystem == nullptr ? GeoCoord(deg(0), deg(0), m(0)) : coordinateSystem->computeGeographicCoordinate(Coord::ZERO);
     Box boundingBox = Box::computeBoundingBox(points);
     Coord center = boundingBox.getCenter();
-    for (auto & point : points) {
+    for (auto& point : points) {
         point -= center;
         if (coordinateSystem != nullptr)
             point = coordinateSystem->computeSceneCoordinate(GeoCoord(deg(point.x) + originPosition.latitude, deg(point.y) + originPosition.longitude, m(0)));
@@ -87,8 +77,7 @@ void PhysicalEnvironment::convertPoints(std::vector<Coord>& points)
 void PhysicalEnvironment::parseShapes(cXMLElement *xml)
 {
     cXMLElementList children = xml->getChildrenByTagName("shape");
-    for (cXMLElementList::const_iterator it = children.begin(); it != children.end(); ++it)
-    {
+    for (cXMLElementList::const_iterator it = children.begin(); it != children.end(); ++it) {
         cXMLElement *element = *it;
         ShapeBase *shape = nullptr;
         const char *tok;
@@ -97,14 +86,13 @@ void PhysicalEnvironment::parseShapes(cXMLElement *xml)
         int id = -1;
         if (idAttribute)
             id = atoi(idAttribute);
-        if (idToShapeMap.find(id) != idToShapeMap.end())
+        if (containsKey(idToShapeMap, id))
             throw cRuntimeError("Shape already exists with the same id: '%d'", id);
         // type
         const char *typeAttribute = element->getAttribute("type");
         if (!typeAttribute)
             throw cRuntimeError("Missing type attribute of shape");
-        else if (!strcmp(typeAttribute, "cuboid"))
-        {
+        else if (!strcmp(typeAttribute, "cuboid")) {
             Coord size;
             const char *sizeAttribute = element->getAttribute("size");
             if (!sizeAttribute)
@@ -121,8 +109,7 @@ void PhysicalEnvironment::parseShapes(cXMLElement *xml)
             size.z = atof(tok);
             shape = new Cuboid(size);
         }
-        else if (!strcmp(typeAttribute, "sphere"))
-        {
+        else if (!strcmp(typeAttribute, "sphere")) {
             double radius;
             const char *radiusAttribute = element->getAttribute("radius");
             if (!radiusAttribute)
@@ -130,8 +117,7 @@ void PhysicalEnvironment::parseShapes(cXMLElement *xml)
             radius = atof(radiusAttribute);
             shape = new Sphere(radius);
         }
-        else if (!strcmp(typeAttribute, "prism"))
-        {
+        else if (!strcmp(typeAttribute, "prism")) {
             double height;
             const char *heightAttribute = element->getAttribute("height");
             if (!heightAttribute)
@@ -142,8 +128,7 @@ void PhysicalEnvironment::parseShapes(cXMLElement *xml)
             if (!pointsAttribute)
                 throw cRuntimeError("Missing points attribute of prism");
             cStringTokenizer tokenizer(pointsAttribute);
-            while (tokenizer.hasMoreTokens())
-            {
+            while (tokenizer.hasMoreTokens()) {
                 Coord point;
                 point.x = atof(tokenizer.nextToken());
                 if ((tok = tokenizer.nextToken()) == nullptr)
@@ -157,15 +142,13 @@ void PhysicalEnvironment::parseShapes(cXMLElement *xml)
             convertPoints(points);
             shape = new Prism(height, Polygon(points));
         }
-        else if (!strcmp(typeAttribute, "polyhedron"))
-        {
+        else if (!strcmp(typeAttribute, "polyhedron")) {
             std::vector<Coord> points;
             const char *pointsAttribute = element->getAttribute("points");
             if (!pointsAttribute)
                 throw cRuntimeError("Missing points attribute of polyhedron");
             cStringTokenizer tokenizer(pointsAttribute);
-            while (tokenizer.hasMoreTokens())
-            {
+            while (tokenizer.hasMoreTokens()) {
                 Coord point;
                 point.x = atof(tokenizer.nextToken());
                 if ((tok = tokenizer.nextToken()) == nullptr)
@@ -191,8 +174,7 @@ void PhysicalEnvironment::parseShapes(cXMLElement *xml)
 void PhysicalEnvironment::parseMaterials(cXMLElement *xml)
 {
     cXMLElementList children = xml->getChildrenByTagName("material");
-    for (cXMLElementList::const_iterator it = children.begin(); it != children.end(); ++it)
-    {
+    for (cXMLElementList::const_iterator it = children.begin(); it != children.end(); ++it) {
         cXMLElement *element = *it;
         // id
         const char *idAttribute = element->getAttribute("id");
@@ -217,7 +199,7 @@ void PhysicalEnvironment::parseMaterials(cXMLElement *xml)
             throw cRuntimeError("Missing mandatory relativePermeability attribute of material");
         double relativePermeability = atof(relativePermeabilityAttribute);
         // insert
-        if (idToMaterialMap.find(id) != idToMaterialMap.end())
+        if (containsKey(idToMaterialMap, id))
             throw cRuntimeError("Material already exists with the same id: '%d'", id);
         Material *material = new Material(name, resistivity, relativePermittivity, relativePermeability);
         materials.push_back(material);
@@ -229,10 +211,9 @@ void PhysicalEnvironment::parseMaterials(cXMLElement *xml)
 void PhysicalEnvironment::parseObjects(cXMLElement *xml)
 {
     Coord computedSpaceMin = Coord::NIL;
-    Coord computedSpaceMax = Coord::NIL;;
+    Coord computedSpaceMax = Coord::NIL;
     cXMLElementList children = xml->getChildren();
-    for (cXMLElementList::const_iterator it = children.begin(); it != children.end(); ++it)
-    {
+    for (cXMLElementList::const_iterator it = children.begin(); it != children.end(); ++it) {
         const char *tok;
         cXMLElement *element = *it;
         const char *tag = element->getTagName();
@@ -246,11 +227,10 @@ void PhysicalEnvironment::parseObjects(cXMLElement *xml)
         // name
         const char *name = element->getAttribute("name");
         // orientation
-        // TODO: what about geographic orientation? what about taking GeographicCoordinateSystem into account?
+        // TODO what about geographic orientation? what about taking GeographicCoordinateSystem into account?
         Quaternion orientation;
         const char *orientationAttribute = element->getAttribute("orientation");
-        if (orientationAttribute)
-        {
+        if (orientationAttribute) {
             cStringTokenizer tokenizer(orientationAttribute);
             if ((tok = tokenizer.nextToken()) == nullptr)
                 throw cRuntimeError("Missing orientation alpha at %s", element->getSourceLocation());
@@ -271,8 +251,7 @@ void PhysicalEnvironment::parseObjects(cXMLElement *xml)
             throw cRuntimeError("Missing shape attribute of object");
         cStringTokenizer shapeTokenizer(shapeAttribute);
         const char *shapeType = shapeTokenizer.nextToken();
-        if (!strcmp(shapeType, "cuboid"))
-        {
+        if (!strcmp(shapeType, "cuboid")) {
             if ((tok = shapeTokenizer.nextToken()) == nullptr)
                 throw cRuntimeError("Missing cuboid x at %s", element->getSourceLocation());
             size.x = atof(tok);
@@ -285,8 +264,7 @@ void PhysicalEnvironment::parseObjects(cXMLElement *xml)
             shape = new Cuboid(size);
             shapes.push_back(shape);
         }
-        else if (!strcmp(shapeType, "sphere"))
-        {
+        else if (!strcmp(shapeType, "sphere")) {
             if ((tok = shapeTokenizer.nextToken()) == nullptr)
                 throw cRuntimeError("Missing sphere radius at %s", element->getSourceLocation());
             double radius = atof(tok);
@@ -294,15 +272,13 @@ void PhysicalEnvironment::parseObjects(cXMLElement *xml)
             size = Coord(radius, radius, radius) * 2;
             shapes.push_back(shape);
         }
-        else if (!strcmp(shapeType, "prism"))
-        {
+        else if (!strcmp(shapeType, "prism")) {
             double height;
             if ((tok = shapeTokenizer.nextToken()) == nullptr)
                 throw cRuntimeError("Missing prism height at %s", element->getSourceLocation());
             height = atof(tok);
             std::vector<Coord> points;
-            while (shapeTokenizer.hasMoreTokens())
-            {
+            while (shapeTokenizer.hasMoreTokens()) {
                 Coord point;
                 point.x = atof(shapeTokenizer.nextToken());
                 if ((tok = shapeTokenizer.nextToken()) == nullptr)
@@ -318,11 +294,9 @@ void PhysicalEnvironment::parseObjects(cXMLElement *xml)
             shape = new Prism(height, Polygon(points));
             shapes.push_back(shape);
         }
-        else if (!strcmp(shapeType, "polyhedron"))
-        {
+        else if (!strcmp(shapeType, "polyhedron")) {
             std::vector<Coord> points;
-            while (shapeTokenizer.hasMoreTokens())
-            {
+            while (shapeTokenizer.hasMoreTokens()) {
                 Coord point;
                 point.x = atof(shapeTokenizer.nextToken());
                 if ((tok = shapeTokenizer.nextToken()) == nullptr)
@@ -349,8 +323,7 @@ void PhysicalEnvironment::parseObjects(cXMLElement *xml)
         // position
         Coord position = Coord::NIL;
         const char *positionAttribute = element->getAttribute("position");
-        if (positionAttribute)
-        {
+        if (positionAttribute) {
             cStringTokenizer tokenizer(positionAttribute);
             const char *kind = tokenizer.nextToken();
             if (!kind)
@@ -383,7 +356,7 @@ void PhysicalEnvironment::parseObjects(cXMLElement *xml)
         const char *materialAttribute = element->getAttribute("material");
         if (!materialAttribute)
             throw cRuntimeError("Missing material attribute of object");
-        else if (nameToMaterialMap.find(materialAttribute) != nameToMaterialMap.end())
+        else if (containsKey(nameToMaterialMap, materialAttribute))
             material = nameToMaterialMap[materialAttribute];
         else if (MaterialRegistry::singleton.getMaterial(materialAttribute))
             material = MaterialRegistry::singleton.getMaterial(materialAttribute);
@@ -399,10 +372,8 @@ void PhysicalEnvironment::parseObjects(cXMLElement *xml)
         // line color
         cFigure::Color lineColor = cFigure::BLACK;
         const char *lineColorAttribute = element->getAttribute("line-color");
-        if (lineColorAttribute)
-        {
-            if (strchr(lineColorAttribute, ' '))
-            {
+        if (lineColorAttribute) {
+            if (strchr(lineColorAttribute, ' ')) {
                 cStringTokenizer tokenizer(lineColorAttribute);
                 if ((tok = tokenizer.nextToken()) == nullptr)
                     throw cRuntimeError("Missing line-color red at %s", element->getSourceLocation());
@@ -420,10 +391,8 @@ void PhysicalEnvironment::parseObjects(cXMLElement *xml)
         // fill color
         cFigure::Color fillColor = cFigure::WHITE;
         const char *fillColorAttribute = element->getAttribute("fill-color");
-        if (fillColorAttribute)
-        {
-            if (strchr(fillColorAttribute, ' '))
-            {
+        if (fillColorAttribute) {
+            if (strchr(fillColorAttribute, ' ')) {
                 cStringTokenizer tokenizer(fillColorAttribute);
                 if ((tok = tokenizer.nextToken()) == nullptr)
                     throw cRuntimeError("Missing fill-color red at %s", element->getSourceLocation());
@@ -475,11 +444,8 @@ void PhysicalEnvironment::parseObjects(cXMLElement *xml)
 
 const PhysicalObject *PhysicalEnvironment::getObjectById(int id) const
 {
-    std::map<int, const PhysicalObject *>::const_iterator it = idToObjectMap.find(id);
-    if (it == idToObjectMap.end())
-        return nullptr;
-    else
-        return it->second;
+    auto it = idToObjectMap.find(id);
+    return (it != idToObjectMap.end()) ? it->second : nullptr;
 }
 
 void PhysicalEnvironment::visitObjects(const IVisitor *visitor, const LineSegment& lineSegment) const
@@ -487,7 +453,7 @@ void PhysicalEnvironment::visitObjects(const IVisitor *visitor, const LineSegmen
     if (objectCache)
         objectCache->visitObjects(visitor, lineSegment);
     else
-        for (const auto & elem : objects)
+        for (const auto& elem : objects)
             visitor->visit(elem);
 }
 

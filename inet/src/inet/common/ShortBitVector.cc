@@ -1,23 +1,13 @@
 //
 // Copyright (C) 2014 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-#include <algorithm>
 
 #include "inet/common/ShortBitVector.h"
+
+#include <algorithm>
 
 namespace inet {
 
@@ -27,7 +17,7 @@ ShortBitVector::ShortBitVector()
     bits = 0;
 }
 
-ShortBitVector::ShortBitVector(const char* bitString)
+ShortBitVector::ShortBitVector(const char *bitString)
 {
     size = 0;
     bits = 0;
@@ -54,7 +44,7 @@ ShortBitVector::ShortBitVector(unsigned int num)
 ShortBitVector::ShortBitVector(unsigned int bits, unsigned int size)
 {
     if (size > sizeof(unsigned int) * 8)
-        throw cRuntimeError("size = %d must be less than %d", size, sizeof(unsigned int) * 8);
+        throw cRuntimeError("size = %u must be less than %zu", size, (size_t)(sizeof(unsigned int) * 8));
     this->size = size;
     this->bits = bits;
 }

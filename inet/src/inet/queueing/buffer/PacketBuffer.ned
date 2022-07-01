@@ -1,19 +1,9 @@
 //
-// Copyright (C) OpenSim Ltd.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see http://www.gnu.org/licenses/.
-//
+
 
 package inet.queueing.buffer;
 
@@ -39,7 +29,20 @@ simple PacketBuffer extends PacketBufferBase like IPacketBuffer
         @signal[packetAdded](type=inet::Packet);
         @signal[packetRemoved](type=inet::Packet);
         @signal[packetDropped](type=inet::Packet);
-        @statistic[packetAdded](title="packets added"; record=count,sum(packetBytes),vector(packetBytes); interpolationmode=none);
-        @statistic[packetRemoved](title="packets removed"; record=count,sum(packetBytes),vector(packetBytes); interpolationmode=none);
-        @statistic[packetDropQueueOverflow](title="packet drops: queue overflow"; source=packetDropReasonIsQueueOverflow(packetDropped); record=count,sum(packetBytes),vector(packetBytes); interpolationmode=none);
+        // the statistical value is the added packet
+        @statistic[addedPackets](title="added packets"; source=packetAdded; record=count; unit=pk);
+        // the statistical value is the length of the added packet
+        @statistic[addedPacketLengths](title="added packet lengths"; source=packetLength(packetAdded); record=sum,vector; unit=b; interpolationmode=none);
+        // the statistical value is the removed packet
+        @statistic[removedPackets](title="removed packets"; source=packetRemoved; record=count; unit=pk);
+        // the statistical value is the length of the removed packet
+        @statistic[removedPacketLengths](title="removed packet lengths"; source=packetLength(packetRemoved); record=sum,vector; unit=pk; interpolationmode=none);
+        // the statistical value is the number of packets in the buffer
+        @statistic[bufferLength](title="buffer length"; source=warmup(count(packetAdded) - count(packetRemoved) - count(packetDropped)); record=last,max,timeavg,vector; unit=pk; interpolationmode=sample-hold);
+        // the statistical value is the total bit length of all packets in the buffer
+        @statistic[bufferBitLength](title="buffer bit length"; source=warmup(sum(packetLength(packetAdded)) - sum(packetLength(packetRemoved)) - sum(packetLength(packetDropped))); record=last,max,timeavg,vector; unit=b; interpolationmode=sample-hold; autoWarmupFilter=false);
+        // the statistical value is the packet that is dropped due to queue overflow
+        @statistic[droppedPacketsQueueOverflow](title="dropped packets: queue overflow"; source=packetDropReasonIsQueueOverflow(packetDropped); record=count; unit=pk; interpolationmode=none);
+        // the statistical value is the length of the packet that is dropped due to queue overflow
+        @statistic[droppedPacketLengthsQueueOverflow](title="dropped packet lengths: queue overflow"; source=packetLength(packetDropReasonIsQueueOverflow(packetDropped)); record=sum,vector; unit=b; interpolationmode=none);
 }

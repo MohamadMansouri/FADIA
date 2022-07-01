@@ -15,8 +15,8 @@ namespace inet::ieee80211;
 cplusplus {{
 
 static ProtocolGroup llc("llc", {
-    { 0, &Protocol::ieee8022 },
-    { 1, &Protocol::ieee80211EtherType }
+    { 0, &Protocol::ieee8022llc },
+    { 1, &Protocol::ieee802epd }
 });
 
 }}
@@ -40,4 +40,3 @@ cplusplus(LlcProtocolTag) {{
     virtual const Protocol *getProtocol() const { return llc.findProtocol(getProtocolId()); }
     virtual void setProtocol(const Protocol *protocol) { setProtocolId(static_cast<LlcProtocolId>(protocol->getId())); }
 }}
-

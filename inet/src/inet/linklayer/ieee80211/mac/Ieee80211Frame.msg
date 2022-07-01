@@ -1,19 +1,9 @@
 //
-// Copyright (C) 2006 Andras Varga
+// Copyright (C) 2006 OpenSim Ltd.
 // Copyright (C) 2001 Eric Wu and Steve Woon, Monash University, Melbourne, Australia
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
 
 import inet.common.INETDefs;
 import inet.common.packet.chunk.Chunk;
@@ -34,13 +24,13 @@ class BitVector
     @toString(.toString());
 }
 
-class SequenceNumber
+namespace inet::ieee80211;
+
+class SequenceNumberCyclic
 {
     @existingClass;
     @opaque;
 }
-
-namespace inet::ieee80211;
 
 cplusplus {{
 const b LENGTH_RTS = b(160);    //bits
@@ -199,7 +189,7 @@ class Ieee80211DataOrMgmtHeader extends Ieee80211TwoAddressHeader
     chunkLength = LENGTH_MGMT - B(4);
     MacAddress address3;
     short fragmentNumber;
-    SequenceNumber sequenceNumber;
+    SequenceNumberCyclic sequenceNumber;
 }
 
 //
@@ -210,7 +200,7 @@ class Ieee80211DataHeader extends Ieee80211DataOrMgmtHeader
 //  The presence of the Address 4 field is determined by the setting of the To DS and From DS subfields of
 //  the Frame Control field (see below). The QoS Control field is present when the QoS subfield of the Subtype
 //  field is set to 1 (8.3.2.1 Data frame format)
-//  FIXME: chunkLength is not a constant value DATAFRAME_HEADER_MINLENGTH (24 bytes).
+//  FIXME chunkLength is not a constant value DATAFRAME_HEADER_MINLENGTH (24 bytes).
 //  For example, with Address 4 and without QoS the correct length is 30 bytes.
 //  Without Address 4 and QoS the correct value is indeed 24 bytes.
 //  With Address 4 and QoS the correct value is indeed 32 bytes.
@@ -218,18 +208,18 @@ class Ieee80211DataHeader extends Ieee80211DataOrMgmtHeader
     type = ST_DATA;         // or ST_DATA_WITH_QOS
     MacAddress address4;    // optional field, exists when toDS and fromDS are true
     AckPolicy ackPolicy = NORMAL_ACK;
-    uint8 tid;              // optional field, exists when type == ST_DATA_WITH_QOS
+    uint8_t tid;              // optional field, exists when type == ST_DATA_WITH_QOS
     bool aMsduPresent = false; // 8.2.4.5.9 A-MSDU Present subfield
 }
 
-//TODO this can be introduced when the SNAP header 
+//TODO this can be introduced when the SNAP header
 //class Ieee80211QoSDataHeader extends Ieee80211DataHeader
 //{
 //    type = ST_DATA_WITH_QOS;
 //    chunkLength = DATAFRAME_HEADER_MINLENGTH + QOSCONTROL_PART_LENGTH;
 //    AckPolicy ackPolicy = NORMAL_ACK; //FIXME in real life this is part of the optional qos field above...
-//    uint8 tid;
-//    // TODO: other QoS control field parts
+//    uint8_t tid;
+//    // TODO other QoS control field parts
 //}
 
 //
@@ -245,8 +235,8 @@ class Ieee80211ActionFrame extends Ieee80211MgmtHeader
     type = ST_ACTION;
     short category;
     uint8_t blockAckAction;
-    // TODO: subclasses will add action subfield contents
-    //WirelessNetworkManagementAction action; // action TODO: remove it
+    // TODO subclasses will add action subfield contents
+    //WirelessNetworkManagementAction action; // action TODO remove it
 }
 
 class Ieee80211MsduSubframeHeader extends FieldsChunk
@@ -288,8 +278,8 @@ class Ieee80211AddbaRequest extends Ieee80211ActionFrame
     // Block Ack Starting Sequence Control (2 bytes)
     // The Starting Sequence Number subfield of the Block Ack Starting Sequence Control subfield contains the sequence number of the first MSDU for which this Basic
     // BlockAckReq frame is sent. The Fragment Number subfield is set to 0.
-    uint8_t _fragmentNumber = 0; // FIXME: DataOrMgmtFreme has a fragmentNumber (4 bits)
-    SequenceNumber startingSequenceNumber; // the sequence number of the first MSDU (12 bits)
+    uint8_t _fragmentNumber = 0; // FIXME DataOrMgmtFreme has a fragmentNumber (4 bits)
+    SequenceNumberCyclic startingSequenceNumber; // the sequence number of the first MSDU (12 bits)
 }
 
 //
@@ -328,7 +318,7 @@ class Ieee80211Delba extends Ieee80211ActionFrame
     // DELBA Parameter Set (2 bytes)
     uint16_t reserved = 0; // Reserved. (11 bits)
     bool initiator; // It is set to 1 to indicate the originator and is set to 0 to indicate the recipient.
-    				// The Initiator subfield indicates if the originator or the recipient of the data is sending this frame. (1 bit)
+                    // The Initiator subfield indicates if the originator or the recipient of the data is sending this frame. (1 bit)
     uint8_t tid; // The TID subfield indicates the TSID or the UP for which the Block Ack has been originally set up. (4 bits)
 
     // This Reason Code field is used to indicate the reason that an unsolicited notification management frame of
@@ -363,7 +353,7 @@ class Ieee80211BasicBlockAckReq extends Ieee80211BlockAckReq
     // Starting Sequence Control subfield contains the sequence number of the first MSDU for which this Basic
     // BlockAckReq frame is sent. The Fragment Number subfield is set to 0.
     int fragmentNumber = 0;
-    SequenceNumber startingSequenceNumber;
+    SequenceNumberCyclic startingSequenceNumber;
 
     multiTid = 0;
     compressedBitmap = 0;
@@ -381,7 +371,7 @@ class Ieee80211CompressedBlockAckReq extends Ieee80211BlockAckReq
     // Control subfield is set to 0.
 
     int fragmentNumber = 0;
-    SequenceNumber startingSequenceNumber;
+    SequenceNumberCyclic startingSequenceNumber;
 
     multiTid = 0;
     compressedBitmap = 1;
@@ -399,7 +389,7 @@ class Ieee80211MultiTidBlockAckReq extends Ieee80211BlockAckReq
     multiTid = 1;
     compressedBitmap = 1;
 
-    // TODO: unimplemented
+    // TODO unimplemented
 }
 
 //
@@ -433,7 +423,7 @@ class Ieee80211BasicBlockAck extends Ieee80211BlockAck
     // subfield and the Block Ack Bitmap subfield, as shown in Figure 8-26.
 
     int fragmentNumber = 0; // ??
-    SequenceNumber startingSequenceNumber;
+    SequenceNumberCyclic startingSequenceNumber;
     // The Block Ack Bitmap subfield is 128 octets in length and is used to indicate the received status of up to
     // 64 MSDUs. Bit position n of the Block Ack bitmap, if equal to 1, acknowledges receipt of an MPDU with an
     // MPDU sequence control value equal to (Block Ack Starting Sequence Control + n). Bit position n of the
@@ -461,7 +451,7 @@ class Ieee80211CompressedBlockAck extends Ieee80211BlockAck
     // Control subfield and the Block Ack Bitmap subfield, as shown in Figure 8-27.
 
     int fragmentNumber = 0;
-    SequenceNumber startingSequenceNumber;
+    SequenceNumberCyclic startingSequenceNumber;
     BitVector blockAckBitmap; // 64 bits
 
     // The TID_INFO subfield of the BA Control field of the Compressed BlockAck frame contains the TID for
@@ -478,6 +468,5 @@ class Ieee80211MultiTidBlockAck extends Ieee80211BlockAck
     multiTid = 1;
     compressedBitmap = 1;
 
-    // TODO: unimplemented
+    // TODO unimplemented
 }
-

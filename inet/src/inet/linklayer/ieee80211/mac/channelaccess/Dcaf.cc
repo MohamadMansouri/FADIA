@@ -1,24 +1,16 @@
 //
 // Copyright (C) 2016 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see http://www.gnu.org/licenses/.
-// 
+
+
+#include "inet/linklayer/ieee80211/mac/channelaccess/Dcaf.h"
 
 #include "inet/common/ModuleAccess.h"
 #include "inet/linklayer/ieee80211/mac/Ieee80211Frame_m.h"
-#include "inet/linklayer/ieee80211/mac/channelaccess/Dcaf.h"
 #include "inet/linklayer/ieee80211/mac/contract/IRx.h"
+#include "inet/networklayer/common/NetworkInterface.h"
 
 namespace inet {
 namespace ieee80211 {
@@ -33,7 +25,7 @@ void Dcaf::initialize(int stage)
         getContainingNicModule(this)->subscribe(modesetChangedSignal, this);
     }
     else if (stage == INITSTAGE_LINK_LAYER) {
-        // TODO: calculateTimingParameters()
+        // TODO calculateTimingParameters()
         pendingQueue = check_and_cast<queueing::IPacketQueue *>(getSubmodule("pendingQueue"));
         inProgressFrames = check_and_cast<InProgressFrames *>(getSubmodule("inProgressFrames"));
         contention = check_and_cast<IContention *>(getSubmodule("contention"));
@@ -56,7 +48,7 @@ void Dcaf::refreshDisplay() const
     std::string text;
     if (owning)
         text = "Owning";
-    else if (contention->isContentionInProgress())
+    else if (contention != nullptr && contention->isContentionInProgress())
         text = "Contending";
     else
         text = "Idle";
@@ -90,7 +82,7 @@ void Dcaf::calculateTimingParameters()
 
 void Dcaf::incrementCw()
 {
-    Enter_Method_Silent("incrementCw");
+    Enter_Method("incrementCw");
     int newCw = 2 * cw + 1;
     if (newCw > cwMax)
         cw = cwMax;
@@ -101,32 +93,32 @@ void Dcaf::incrementCw()
 
 void Dcaf::resetCw()
 {
-    Enter_Method_Silent("resetCw");
+    Enter_Method("resetCw");
     cw = cwMin;
     EV_DEBUG << "Contention window is reset: cw = " << cw << std::endl;
 }
 
 void Dcaf::channelAccessGranted()
 {
-    Enter_Method_Silent("channelAccessGranted");
+    Enter_Method("channelAccessGranted");
     ASSERT(callback != nullptr);
     owning = true;
     emit(channelOwnershipChangedSignal, owning);
     callback->channelGranted(this);
 }
 
-void Dcaf::releaseChannel(IChannelAccess::ICallback* callback)
+void Dcaf::releaseChannel(IChannelAccess::ICallback *callback)
 {
-    Enter_Method_Silent("releaseChannel");
+    Enter_Method("releaseChannel");
     owning = false;
     emit(channelOwnershipChangedSignal, owning);
     this->callback = nullptr;
     EV_INFO << "Channel released.\n";
 }
 
-void Dcaf::requestChannel(IChannelAccess::ICallback* callback)
+void Dcaf::requestChannel(IChannelAccess::ICallback *callback)
 {
-    Enter_Method_Silent("requestChannel");
+    Enter_Method("requestChannel");
     this->callback = callback;
     if (owning)
         callback->channelGranted(this);
@@ -141,14 +133,16 @@ void Dcaf::expectedChannelAccess(simtime_t time)
     // don't care
 }
 
-void Dcaf::receiveSignal(cComponent* source, simsignal_t signalID, cObject* obj, cObject* details)
+void Dcaf::receiveSignal(cComponent *source, simsignal_t signalID, cObject *obj, cObject *details)
 {
-    Enter_Method_Silent("receiveSignal");
+    Enter_Method("%s", cComponent::getSignalName(signalID));
+
     if (signalID == modesetChangedSignal) {
-        modeSet = check_and_cast<Ieee80211ModeSet*>(obj);
+        modeSet = check_and_cast<Ieee80211ModeSet *>(obj);
         calculateTimingParameters();
     }
 }
 
 } /* namespace ieee80211 */
 } /* namespace inet */
+

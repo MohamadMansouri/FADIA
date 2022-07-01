@@ -1,31 +1,23 @@
 //
-// Copyright (C) 2011 Andras Varga
+// Copyright (C) 2011 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 package inet.applications.ethernet;
 
 //
 // A simple traffic generator for the Ethernet model and the 802.11 model, and
 // generally for any L2 model that accepts ~Ieee802SapReq tag on packets. It
-// should be connected directly to ~EtherEncap module.
+// should be connected directly to ~Ieee8022Llc module.
 //
 simple EtherTrafGen
 {
     parameters:
         string destAddress = default("");  // destination MAC address, or module path name of destination station; empty means off
+        string interface;   // outgoing interface
+        string interfaceTableModule;
         int ssap = default(-1);  // llc ssap to set on outgoing packets
         int dsap = default(-1);  // llc dsap to set on outgoing packets
         double startTime @unit(s) = default(this.sendInterval);  // time of sending the first packet
@@ -43,7 +35,7 @@ simple EtherTrafGen
         @statistic[packetSent](title="packets sent"; source=packetSent; record=count,"sum(packetBytes)","vector(packetBytes)"; interpolationmode=none);
         @statistic[endToEndDelay](title="end-to-end delay"; source="dataAge(packetReceived)"; unit=s; record=histogram,vector; interpolationmode=none);
     gates:
-        input in @labels(Ieee802Ctrl/up);
-        output out @labels(Ieee802Ctrl/down);
+        input in @labels(Ieee802Ctrl/up) @messageKinds(inet::SocketStatusInd);
+        output out @labels(Ieee802Ctrl/down) @messageKinds(inet::SocketCommandCode);
 }
 

@@ -1,20 +1,12 @@
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program.  If not, see http://www.gnu.org/licenses/.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-#ifndef __INET_MATH_FUNCTIONBASE_H_
-#define __INET_MATH_FUNCTIONBASE_H_
+
+#ifndef __INET_FUNCTIONBASE_H
+#define __INET_FUNCTIONBASE_H
 
 #include "inet/common/math/IFunction.h"
 
@@ -44,7 +36,7 @@ template<typename R, typename D>
 class INET_API FunctionBase : public IFunction<R, D>
 {
   public:
-    virtual void partition(const typename D::I& i, const std::function<void (const typename D::I&, const IFunction<R, D> *)> callback) const override {
+    virtual void partition(const typename D::I& i, const std::function<void(const typename D::I&, const IFunction<R, D> *)> callback) const override {
         auto m = (1 << std::tuple_size<typename D::P::type>::value) - 1;
         if (i.getFixed() == m) {
             ASSERT(i.getLower() == i.getUpper());
@@ -89,7 +81,7 @@ class INET_API FunctionBase : public IFunction<R, D>
     virtual R getMin(const typename D::I& i) const override {
         R result(getUpperBound<R>());
         this->partition(i, [&] (const typename D::I& i1, const IFunction<R, D> *f1) {
-            result = std::min(f1->getMin(i1), result);
+            result = math::minnan(f1->getMin(i1), result);
         });
         return result;
     }
@@ -98,7 +90,7 @@ class INET_API FunctionBase : public IFunction<R, D>
     virtual R getMax(const typename D::I& i) const override {
         R result(getLowerBound<R>());
         this->partition(i, [&] (const typename D::I& i1, const IFunction<R, D> *f1) {
-            result = std::max(f1->getMax(i1), result);
+            result = math::maxnan(f1->getMax(i1), result);
         });
         return result;
     }
@@ -136,6 +128,11 @@ class INET_API FunctionBase : public IFunction<R, D>
         return makeShared<DividedFunction<R, D>>(const_cast<FunctionBase<R, D> *>(this)->shared_from_this(), o);
     }
 
+    virtual std::ostream& printOn(std::ostream& os) const override {
+        print(os);
+        return os;
+    }
+
     virtual void print(std::ostream& os, int level = 0) const override {
         print(os, getDomain(), level);
     }
@@ -161,7 +158,7 @@ class INET_API FunctionBase : public IFunction<R, D>
 
     virtual void printPartition(std::ostream& os, const typename D::I& i, int level = 0) const override {
         os << "over " << i << " → {";
-        iterateCorners(i, std::function<void (const typename D::P&)>([&] (const typename D::P& p) {
+        iterateCorners(i, std::function<void(const typename D::P&)>([&] (const typename D::P& p) {
             os << "\n" << std::string(level + 2, ' ') << "at " << p << " → " << this->getValue(p);
         }));
         os << "\n" << std::string(level, ' ') << "} min = " << getMin(i) << ", max = " << getMax(i) << ", mean = " << getMean(i) << "\n";
@@ -181,5 +178,5 @@ class INET_API FunctionBase : public IFunction<R, D>
 
 } // namespace inet
 
-#endif // #ifndef __INET_MATH_FUNCTIONBASE_H_
+#endif
 

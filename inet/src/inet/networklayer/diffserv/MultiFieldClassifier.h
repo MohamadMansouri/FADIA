@@ -1,36 +1,17 @@
 //
-// Copyright (C) 2012 Opensim Ltd.
-// Author: Tamas Borbely
+// Copyright (C) 2012 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 #ifndef __INET_MULTIFIELDCLASSIFIER_H
 #define __INET_MULTIFIELDCLASSIFIER_H
 
-#include "inet/common/INETDefs.h"
-#include "inet/queueing/base/PacketClassifierBase.h"
-#include "inet/common/packet/dissector/PacketDissector.h"
 #include "inet/common/packet/Packet.h"
-
-#ifdef WITH_IPv4
-#include "inet/networklayer/ipv4/Ipv4Header_m.h"
-#endif
-
-#ifdef WITH_IPv6
-#include "inet/networklayer/ipv6/Ipv6Header.h"
-#endif
+#include "inet/common/packet/dissector/PacketDissector.h"
+#include "inet/networklayer/common/L3Address.h"
+#include "inet/queueing/base/PacketClassifierBase.h"
 
 namespace inet {
 
@@ -40,8 +21,7 @@ namespace inet {
 class INET_API MultiFieldClassifier : public queueing::PacketClassifierBase
 {
   protected:
-    class INET_API PacketDissectorCallback : public PacketDissector::ICallback
-    {
+    class INET_API PacketDissectorCallback : public PacketDissector::ICallback {
       protected:
         bool dissect = true;
         bool matchesL3 = false;
@@ -67,7 +47,7 @@ class INET_API MultiFieldClassifier : public queueing::PacketClassifierBase
         PacketDissectorCallback() {}
         virtual ~PacketDissectorCallback() {}
 
-        bool matches(const Packet *packet);
+        bool matches(Packet *packet);
 
         virtual bool shouldDissectProtocolDataUnit(const Protocol *protocol) override;
         virtual void startProtocolDataUnit(const Protocol *protocol) override {}
@@ -94,13 +74,16 @@ class INET_API MultiFieldClassifier : public queueing::PacketClassifierBase
   protected:
     virtual int numInitStages() const override { return NUM_INIT_STAGES; }
     virtual void initialize(int stage) override;
-    virtual void pushPacket(Packet *packet, cGate *gate = nullptr) override;
+    virtual void pushPacket(Packet *packet, cGate *gate) override;
     virtual void refreshDisplay() const override;
 
     virtual int classifyPacket(Packet *packet) override;
+
+    virtual void mapRegistrationForwardingGates(cGate *gate, std::function<void(cGate *)> f) override;
+
 };
 
 } // namespace inet
 
-#endif // ifndef __INET_MULTIFIELDCLASSIFIER_H
+#endif
 

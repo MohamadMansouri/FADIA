@@ -1,28 +1,16 @@
 //
-// Copyright (C) 2012 Opensim Ltd.
-// Author: Tamas Borbely
+// Copyright (C) 2012 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 #ifndef __INET_BEHAVIORAGGREGATECLASSIFIER_H
 #define __INET_BEHAVIORAGGREGATECLASSIFIER_H
 
-#include "inet/common/INETDefs.h"
-#include "inet/queueing/base/PacketClassifierBase.h"
-#include "inet/common/packet/dissector/PacketDissector.h"
 #include "inet/common/packet/Packet.h"
+#include "inet/common/packet/dissector/PacketDissector.h"
+#include "inet/queueing/base/PacketClassifierBase.h"
 
 namespace inet {
 
@@ -32,8 +20,7 @@ namespace inet {
 class INET_API BehaviorAggregateClassifier : public queueing::PacketClassifierBase
 {
   protected:
-    class INET_API PacketDissectorCallback : public PacketDissector::ICallback
-    {
+    class INET_API PacketDissectorCallback : public PacketDissector::ICallback {
       protected:
         bool matches_ = false;
         bool dissect = true;
@@ -44,7 +31,7 @@ class INET_API BehaviorAggregateClassifier : public queueing::PacketClassifierBa
       public:
         PacketDissectorCallback() {}
 
-        bool matches(const Packet *packet);
+        bool matches(Packet *packet);
 
         virtual bool shouldDissectProtocolDataUnit(const Protocol *protocol) override { return dissect; }
         virtual void startProtocolDataUnit(const Protocol *protocol) override {}
@@ -73,5 +60,5 @@ class INET_API BehaviorAggregateClassifier : public queueing::PacketClassifierBa
 
 } // namespace inet
 
-#endif // ifndef __INET_BEHAVIORAGGREGATECLASSIFIER_H
+#endif
 

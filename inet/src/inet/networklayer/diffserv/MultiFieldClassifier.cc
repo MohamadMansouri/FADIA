@@ -1,64 +1,49 @@
 //
-// Copyright (C) 2012 Opensim Ltd.
-// Author: Tamas Borbely
+// Copyright (C) 2012 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-#include "inet/common/INETDefs.h"
+
+#include "inet/networklayer/diffserv/MultiFieldClassifier.h"
+
 #include "inet/common/ModuleAccess.h"
-#include "inet/common/packet/Packet.h"
 #include "inet/common/ProtocolTag_m.h"
 #include "inet/common/XMLUtils.h"
+#include "inet/common/packet/Packet.h"
 #include "inet/networklayer/common/L3Address.h"
 #include "inet/networklayer/common/L3AddressResolver.h"
 #include "inet/networklayer/diffserv/DiffservUtil.h"
-#include "inet/networklayer/diffserv/MultiFieldClassifier.h"
 #include "inet/transportlayer/contract/TransportHeaderBase_m.h"
 
-#ifdef WITH_IPv4
+#ifdef INET_WITH_IPv4
 #include "inet/networklayer/ipv4/Ipv4Header_m.h"
-#endif // ifdef WITH_IPv4
+#endif // ifdef INET_WITH_IPv4
 
-#ifdef WITH_IPv6
+#ifdef INET_WITH_IPv6
 #include "inet/networklayer/ipv6/Ipv6Header.h"
-#endif // ifdef WITH_IPv6
+#endif // ifdef INET_WITH_IPv6
 
 #include "inet/transportlayer/common/L4Tools.h"
 
-#ifdef WITH_TCP_COMMON
+#ifdef INET_WITH_TCP_COMMON
 #include "inet/transportlayer/tcp_common/TcpHeader.h"
-#endif // ifdef WITH_TCP_COMMON
+#endif // ifdef INET_WITH_TCP_COMMON
 
-#ifdef WITH_UDP
+#ifdef INET_WITH_UDP
 #include "inet/transportlayer/udp/UdpHeader_m.h"
-#endif // ifdef WITH_UDP
+#endif // ifdef INET_WITH_UDP
 
 namespace inet {
 
 using namespace DiffservUtil;
 
-bool MultiFieldClassifier::PacketDissectorCallback::matches(const Packet *packet)
+bool MultiFieldClassifier::PacketDissectorCallback::matches(Packet *packet)
 {
     matchesL3 = matchesL4 = false;
     dissect = true;
-    auto packetProtocolTag = packet->findTag<PacketProtocolTag>();
-    auto protocol = packetProtocolTag != nullptr ? packetProtocolTag->getProtocol() : nullptr;
     PacketDissector packetDissector(ProtocolDissectorRegistry::globalRegistry, *this);
-    auto copy = packet->dup();
-    packetDissector.dissectPacket(copy, protocol);
-    delete copy;
+    packetDissector.dissectPacket(packet);
     return matchesL3 && matchesL4;
 }
 
@@ -73,7 +58,7 @@ void MultiFieldClassifier::PacketDissectorCallback::visitChunk(const Ptr<const C
         return;
     if (*protocol == Protocol::ipv4) {
         dissect = false;
-#ifdef WITH_IPv4
+#ifdef INET_WITH_IPv4
         const auto& ipv4Header = dynamicPtrCast<const Ipv4Header>(chunk);
         if (!ipv4Header)
             return;
@@ -93,11 +78,10 @@ void MultiFieldClassifier::PacketDissectorCallback::visitChunk(const Ptr<const C
             matchesL4 = true;
         else
             dissect = true;
-#endif // ifdef WITH_IPv4
+#endif // ifdef INET_WITH_IPv4
     }
-    else
-    if (*protocol == Protocol::ipv6) {
-#ifdef WITH_IPv6
+    else if (*protocol == Protocol::ipv6) {
+#ifdef INET_WITH_IPv6
         dissect = false;
         const auto& ipv6Header = dynamicPtrCast<const Ipv6Header>(chunk);
         if (!ipv6Header)
@@ -119,10 +103,9 @@ void MultiFieldClassifier::PacketDissectorCallback::visitChunk(const Ptr<const C
             matchesL4 = true;
         else
             dissect = true;
-#endif // ifdef WITH_IPv6
+#endif // ifdef INET_WITH_IPv6
     }
-    else
-    if (isTransportProtocol(*protocol)) {
+    else if (isTransportProtocol(*protocol)) {
         const auto& transportHeader = dynamicPtrCast<const TransportHeaderBase>(chunk);
         if (!transportHeader)
             return;
@@ -148,7 +131,7 @@ simsignal_t MultiFieldClassifier::pkClassSignal = registerSignal("pkClass");
 
 void MultiFieldClassifier::initialize(int stage)
 {
-    cSimpleModule::initialize(stage);
+    PacketClassifierBase::initialize(stage);
 
     if (stage == INITSTAGE_LOCAL) {
         numOutGates = gateSize("out");
@@ -173,7 +156,8 @@ void MultiFieldClassifier::pushPacket(Packet *packet, cGate *inputGate)
         outputGate = gate("out", gateIndex);
     else
         outputGate = gate("defaultOut", gateIndex);
-    pushOrSendPacket(packet, outputGate);
+    auto consumer = findConnectedModule<IPassivePacketSink>(outputGate);
+    pushOrSendPacket(packet, outputGate, consumer);
 }
 
 void MultiFieldClassifier::refreshDisplay() const
@@ -186,7 +170,7 @@ void MultiFieldClassifier::refreshDisplay() const
 
 int MultiFieldClassifier::classifyPacket(Packet *packet)
 {
-    for (auto & elem : filters)
+    for (auto& elem : filters)
         if (elem.matches(packet))
             return elem.gateIndex;
     return -1;
@@ -230,7 +214,7 @@ void MultiFieldClassifier::configureFilters(cXMLElement *config)
 {
     L3AddressResolver addressResolver;
     cXMLElementList filterElements = config->getChildrenByTagName("filter");
-    for (auto & filterElements_i : filterElements) {
+    for (auto& filterElements_i : filterElements) {
         cXMLElement *filterElement = filterElements_i;
         try {
             const char *gateAttr = xmlutils::getMandatoryAttribute(*filterElement, "gate");
@@ -290,6 +274,15 @@ void MultiFieldClassifier::configureFilters(cXMLElement *config)
             throw cRuntimeError("Error in XML <filter> element at %s: %s", filterElement->getSourceLocation(), e.what());
         }
     }
+}
+
+void MultiFieldClassifier::mapRegistrationForwardingGates(cGate *g, std::function<void(cGate *)> f)
+{
+    if (g == gate("defaultOut")) {
+        f(inputGate);
+    }
+    else
+        PacketClassifierBase::mapRegistrationForwardingGates(g, f);
 }
 
 } // namespace inet

@@ -1,55 +1,46 @@
 //
-// Copyright (C) 1992-2012 Andras Varga
+// Copyright (C) 1992-2012 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
+
+#include "inet/common/Topology.h"
+
+#include <stdarg.h>
+#include <stdio.h>
+#include <string.h>
 
 #include <algorithm>
 #include <deque>
 #include <list>
 #include <sstream>
-#include <stdarg.h>
-#include <stdio.h>
-#include <string.h>
 
 #include "inet/common/PatternMatcher.h"
-#include "inet/common/Topology.h"
 #include "inet/common/stlutils.h"
 
 namespace inet {
 
 Register_Class(Topology);
 
-Topology::LinkIn *Topology::Node::getLinkIn(int i)
+Topology::Link *Topology::Node::getLinkIn(int i) const
 {
     if (i < 0 || i >= (int)inLinks.size())
         throw cRuntimeError("Topology::Node::getLinkIn: invalid link index %d", i);
-    return (Topology::LinkIn *)inLinks[i];
+    return inLinks[i];
 }
 
-Topology::LinkOut *Topology::Node::getLinkOut(int i)
+Topology::Link *Topology::Node::getLinkOut(int i) const
 {
     if (i < 0 || i >= (int)outLinks.size())
         throw cRuntimeError("Topology::Node::getLinkOut: invalid index %d", i);
-    return (Topology::LinkOut *)outLinks[i];
+    return outLinks[i];
 }
 
-//----
+// ----
 
 Topology::Topology(const char *name) : cOwnedObject(name)
 {
-    target = nullptr;
 }
 
 Topology::Topology(const Topology& topo) : cOwnedObject(topo)
@@ -86,15 +77,15 @@ Topology& Topology::operator=(const Topology&)
 
 void Topology::clear()
 {
-    for (auto & elem : nodes) {
-        for (auto & _j : elem->outLinks)
+    for (auto& elem : nodes) {
+        for (auto& _j : elem->outLinks)
             delete _j; // delete links from their source side
         delete elem;
     }
     nodes.clear();
 }
 
-//---
+// ---
 
 static bool selectByModulePath(cModule *mod, void *data)
 {
@@ -103,7 +94,7 @@ static bool selectByModulePath(cModule *mod, void *data)
     // actually, this is selectByModuleFullPathPattern()
     const std::vector<std::string>& v = *(const std::vector<std::string> *)data;
     std::string path = mod->getFullPath();
-    for (auto & elem : v)
+    for (auto& elem : v)
         if (PatternMatcher(elem.c_str(), true, true, true).matches(path.c_str()))
             return true;
 
@@ -113,13 +104,12 @@ static bool selectByModulePath(cModule *mod, void *data)
 static bool selectByNedTypeName(cModule *mod, void *data)
 {
     const std::vector<std::string>& v = *(const std::vector<std::string> *)data;
-    return std::find(v.begin(), v.end(), mod->getNedTypeName()) != v.end();
+    return contains(v, mod->getNedTypeName());
 }
 
 static bool selectByProperty(cModule *mod, void *data)
 {
-    struct ParamData
-    {
+    struct ParamData {
         const char *name;
         const char *value;
     };
@@ -136,8 +126,7 @@ static bool selectByProperty(cModule *mod, void *data)
 
 static bool selectByParameter(cModule *mod, void *data)
 {
-    struct PropertyData
-    {
+    struct PropertyData {
         const char *name;
         const char *value;
     };
@@ -145,7 +134,7 @@ static bool selectByParameter(cModule *mod, void *data)
     return mod->hasPar(d->name) && (d->value == nullptr || mod->par(d->name).str() == std::string(d->value));
 }
 
-//---
+// ---
 
 void Topology::extractByModulePath(const std::vector<std::string>& fullPathPatterns)
 {
@@ -159,8 +148,7 @@ void Topology::extractByNedTypeName(const std::vector<std::string>& nedTypeNames
 
 void Topology::extractByProperty(const char *propertyName, const char *value)
 {
-    struct
-    {
+    struct {
         const char *name;
         const char *value;
     } data = {
@@ -171,8 +159,7 @@ void Topology::extractByProperty(const char *propertyName, const char *value)
 
 void Topology::extractByParameter(const char *paramName, const char *paramValue)
 {
-    struct
-    {
+    struct {
         const char *name;
         const char *value;
     } data = {
@@ -181,7 +168,7 @@ void Topology::extractByParameter(const char *paramName, const char *paramValue)
     extractFromNetwork(selectByParameter, (void *)&data);
 }
 
-//---
+// ---
 
 static bool selectByPredicate(cModule *mod, void *data)
 {
@@ -200,8 +187,7 @@ void Topology::extractFromNetwork(bool (*predicate)(cModule *, void *), void *da
 
     // Loop through all modules and find those that satisfy the criteria
     int networkId = 0;
-    for (int modId = 0; modId <= getSimulation()->getLastComponentId(); modId++)
-    {
+    for (int modId = 0; modId <= getSimulation()->getLastComponentId(); modId++) {
         cModule *module = getSimulation()->getModule(modId);
         if (module && predicate(module, data)) {
             Node *node = createNode(module);
@@ -211,7 +197,7 @@ void Topology::extractFromNetwork(bool (*predicate)(cModule *, void *), void *da
     }
 
     // Discover out neighbors too.
-    for (auto & elem : nodes) {
+    for (auto& elem : nodes) {
         // Loop through all its gates and find those which come
         // from or go to modules included in the topology.
 
@@ -242,14 +228,14 @@ void Topology::extractFromNetwork(bool (*predicate)(cModule *, void *), void *da
     }
 
     // fill inLinks vectors
-    for (auto & elem : nodes) {
-        for (auto & _l : elem->outLinks) {
+    for (auto& elem : nodes) {
+        for (auto& _l : elem->outLinks) {
             Topology::Link *link = _l;
             link->destNode->inLinks.push_back(link);
         }
     }
 
-    for (auto & elem : nodes)
+    for (auto& elem : nodes)
         findNetworks(elem);
 }
 
@@ -271,7 +257,7 @@ int Topology::addNode(Node *node)
 void Topology::deleteNode(Node *node)
 {
     // remove outgoing links
-    for (auto & elem : node->outLinks) {
+    for (auto& elem : node->outLinks) {
         Link *link = elem;
         unlinkFromDestNode(link);
         delete link;
@@ -279,7 +265,7 @@ void Topology::deleteNode(Node *node)
     node->outLinks.clear();
 
     // remove incoming links
-    for (auto & elem : node->inLinks) {
+    for (auto& elem : node->inLinks) {
         Link *link = elem;
         unlinkFromSourceNode(link);
         delete link;
@@ -359,33 +345,33 @@ void Topology::unlinkFromDestNode(Link *link)
     destInLinks.erase(it);
 }
 
-Topology::Node *Topology::getNode(int i)
+Topology::Node *Topology::getNode(int i) const
 {
     if (i < 0 || i >= (int)nodes.size())
         throw cRuntimeError(this, "invalid node index %d", i);
     return nodes[i];
 }
 
-Topology::Node *Topology::getNodeFor(cModule *mod)
+Topology::Node *Topology::getNodeFor(cModule *mod) const
 {
     // binary search because nodes[] is ordered by module ID
     Node tmpNode(mod->getId());
     auto it = std::lower_bound(nodes.begin(), nodes.end(), &tmpNode, lessByModuleId);
-//TODO: this does not compile with VC9 (VC10 is OK): auto it = std::lower_bound(nodes.begin(), nodes.end(), mod->getId(), isModuleIdLess);
+    // TODO this does not compile with VC9 (VC10 is OK): auto it = std::lower_bound(nodes.begin(), nodes.end(), mod->getId(), isModuleIdLess);
     return it == nodes.end() || (*it)->moduleId != mod->getId() ? nullptr : *it;
 }
 
-void Topology::calculateUnweightedSingleShortestPathsTo(Node *_target)
+void Topology::calculateUnweightedSingleShortestPathsTo(Node *_target) const
 {
     // multiple paths not supported :-(
 
     if (!_target)
         throw cRuntimeError(this, "..ShortestPathTo(): target node is nullptr");
-    target = _target;
+    auto target = _target;
 
-    for (auto & elem : nodes) {
+    for (auto& elem : nodes) {
         elem->dist = INFINITY;
-        elem->outPath = nullptr;
+        elem->outPaths.clear();
     }
     target->dist = 0;
 
@@ -408,23 +394,25 @@ void Topology::calculateUnweightedSingleShortestPathsTo(Node *_target)
 
             if (w->dist == INFINITY) {
                 w->dist = v->dist + 1;
-                w->outPath = v->inLinks[i];
                 q.push_back(w);
             }
+            // the first one will be the shortest
+            if (!contains(w->outPaths, v->inLinks[i]))
+                w->outPaths.push_back(v->inLinks[i]);
         }
     }
 }
 
-void Topology::calculateWeightedSingleShortestPathsTo(Node *_target)
+void Topology::calculateWeightedSingleShortestPathsTo(Node *_target) const
 {
     if (!_target)
         throw cRuntimeError(this, "..ShortestPathTo(): target node is nullptr");
-    target = _target;
+    auto target = _target;
 
     // clean path infos
-    for (auto & elem : nodes) {
+    for (auto& elem : nodes) {
         elem->dist = INFINITY;
-        elem->outPath = nullptr;
+        elem->outPaths.clear();
     }
 
     target->dist = 0;
@@ -444,7 +432,7 @@ void Topology::calculateWeightedSingleShortestPathsTo(Node *_target)
             if (!(dest->getLinkIn(i)->isEnabled()))
                 continue;
 
-            Node *src = dest->getLinkIn(i)->getRemoteNode();
+            Node *src = dest->getLinkIn(i)->getLinkInRemoteNode();
             if (!src->isEnabled())
                 continue;
 
@@ -456,20 +444,24 @@ void Topology::calculateWeightedSingleShortestPathsTo(Node *_target)
             double newdist = dest->dist + linkWeight;
             if (dest != target)
                 newdist += dest->getWeight(); // dest is not the target, uses weight of dest node as price of routing (infinity means dest node doesn't route between interfaces)
-            if (newdist != INFINITY && src->dist > newdist) {    // it's a valid shorter path from src to target node
+            if (newdist != INFINITY && src->dist > newdist) { // it's a valid shorter path from src to target node
                 if (src->dist != INFINITY)
                     q.remove(src); // src is in the queue
                 src->dist = newdist;
-                src->outPath = dest->inLinks[i];
+                // the first one will be the shortest
+                src->outPaths.erase(std::remove(src->outPaths.begin(), src->outPaths.end(), dest->inLinks[i]), src->outPaths.end());
+                src->outPaths.insert(src->outPaths.begin(), dest->inLinks[i]);
 
                 // insert src node to ordered list
                 auto it = q.begin();
-                for ( ; it != q.end(); ++it)
+                for (; it != q.end(); ++it)
                     if ((*it)->dist > newdist)
                         break;
 
                 q.insert(it, src);
             }
+            else if (!contains(src->outPaths, dest->inLinks[i]))
+                src->outPaths.push_back(dest->inLinks[i]);
         }
     }
 }

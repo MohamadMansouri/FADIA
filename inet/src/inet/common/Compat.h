@@ -1,37 +1,20 @@
 //
-// Copyright (C) 2004 Andras Varga
+// Copyright (C) 2004 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 #ifndef __INET_COMPAT_H
 #define __INET_COMPAT_H
 
-#include <iostream>
 #include <omnetpp.h>
+
+#include <iostream>
 
 namespace inet {
 
-    typedef uint64_t uint64;
-    typedef int64_t  int64;
-    typedef uint32_t uint32;
-    typedef int32_t  int32;
-    typedef uint16_t uint16;
-    typedef int16_t  int16;
-    typedef uint8_t  uint8;
-
-#  define EVSTREAM                      EV
+#define EVSTREAM    EV
 
 #ifdef _MSC_VER
 // complementary error function, not in MSVC
@@ -55,8 +38,9 @@ inline double fmax(double a, double b)
     return a > b ? a : b;
 }
 
-#endif    // _MSC_VER
+#endif // _MSC_VER
 
 } // namespace inet
 
-#endif // ifndef __INET_COMPAT_H
+#endif
+

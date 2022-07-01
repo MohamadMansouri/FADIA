@@ -1,6 +1,7 @@
 //
-// This program is property of its copyright holder. All rights reserved.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
+
 
 package inet.examples.manetrouting.dymo;
 
@@ -8,7 +9,7 @@ import inet.common.scenario.ScenarioManager;
 import inet.networklayer.configurator.ipv4.Ipv4NetworkConfigurator;
 import inet.networklayer.ipv4.RoutingTableRecorder;
 import inet.node.dymo.DymoRouter;
-import inet.physicallayer.ieee80211.packetlevel.Ieee80211ScalarRadioMedium;
+import inet.physicallayer.wireless.ieee80211.packetlevel.Ieee80211ScalarRadioMedium;
 
 
 //

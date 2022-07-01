@@ -1,30 +1,19 @@
 //
 // Copyright (C) 2003 CTIE, Monash University
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 //
 
 
 package inet.examples.voipstream.VoIPStreamLargeNet;
 
-import inet.linklayer.ethernet.EtherBus;
-import inet.linklayer.ethernet.EtherHub;
+import inet.node.ethernet.EthernetHub;
 import inet.networklayer.configurator.ipv4.Ipv4NetworkConfigurator;
-import inet.node.ethernet.EtherHost;
-import inet.node.ethernet.EtherSwitch;
+import inet.node.ethernet.EthernetHost;
+import inet.node.ethernet.EthernetSwitch;
 import inet.node.inet.StandardHost;
+import inet.physicallayer.wired.common.WireJunction;
 import ned.DatarateChannel;
 
 
@@ -47,17 +36,26 @@ module VoIPStreamSmallLAN
     gates:
         inout ethg;
     submodules:
-        hub: EtherHub {
+        switch: EthernetSwitch {
+            parameters:
+                numEthInterfaces = 2;
+                eth[1].duplexMode = false;
+                @display("p=625,100");
+        }
+        hub: EthernetHub {
             @display("is=s");
         }
-        host[h]: EtherHost {
-            @display("is=s");
+        host[h]: EthernetHost {
+            parameters:
+                eth.duplexMode = false;
+                @display("is=s");
         }
     connections:
+        switch.ethg[0] <--> ethg;
+        hub.ethg++ <--> cable <--> switch.ethg[1];
         for i=0..h-1 {
             hub.ethg++ <--> cable <--> host[i].ethg;
         }
-        hub.ethg++ <--> ethg;
 }
 
 
@@ -73,31 +71,40 @@ module VoIPStreamMediumLAN
     gates:
         inout ethg;
     submodules:
-        switch: EtherSwitch {
+        switch: EthernetSwitch {
+            parameters:
+                numEthInterfaces = parent.n+2;
+                eth[0].duplexMode = false;
+                @display("is=s");
+        }
+        host[n]: EthernetHost {
+            parameters:
+                csmacdSupport = false;
+                eth.duplexMode = true;
+                @display("is=s");
+        }
+        hub: EthernetHub {
             @display("is=s");
         }
-        host[n]: EtherHost {
-            @display("is=s");
-        }
-        hub: EtherHub {
-            @display("is=s");
-        }
-        hhost[h]: EtherHost {
-            @display("is=s");
+        hhost[h]: EthernetHost {
+            parameters:
+                csmacdSupport = true;
+                eth.duplexMode = false;
+                @display("is=s");
         }
     connections:
-        for i=0..n-1 {
-            switch.ethg++ <--> cable <--> host[i].ethg;
-        }
-
-        switch.ethg++ <--> ethg;
+        // half-duplex:
+        switch.ethg[0] <--> cable <--> hub.ethg++;
 
         for i=0..h-1 {
             hub.ethg++ <--> cable <--> hhost[i].ethg;
         }
 
-        switch.ethg++ <--> cable <--> hub.ethg++;
-
+        // full-duplex:
+        switch.ethg[1] <--> ethg;
+        for i=0..n-1 {
+            switch.ethg[i+2] <--> cable <--> host[i].ethg;
+        }
 }
 
 
@@ -115,29 +122,40 @@ module VoIPStreamLargeLAN
     gates:
         inout ethg;
     submodules:
-        switch: EtherSwitch {
-            @display("is=s");
-        }
-        host[n]: EtherHost {
-            @display("is=s");
-        }
-        hub: EtherHub {
-            @display("is=s");
-        }
-        hhost[h]: EtherHost {
-            @display("is=s");
-        }
-        bus: EtherBus {
+        switch: EthernetSwitch {
             parameters:
-                positions = "5 10 15"; // every 5 meters
-                propagationSpeed = 2e8 mps;  // 1us = 200m
-                @display("b=424,6;o=#408060");
+                eth[0].duplexMode = false;
+                @display("is=s");
         }
-        bhost[b]: EtherHost {
+        host[n]: EthernetHost {
             parameters:
+                csmacdSupport = false;
+                eth.duplexMode = true;
+                @display("is=s");
+        }
+        hub: EthernetHub {
+            parameters:
+                @display("is=s");
+        }
+        hhost[h]: EthernetHost {
+            parameters:
+                csmacdSupport = true;
+                eth.duplexMode = false;
+                @display("is=s");
+        }
+        tap[b+1]: WireJunction {
+            parameters:
+                @display("p=,,r,50");
+        }
+        bhost[b]: EthernetHost {
+            parameters:
+                csmacdSupport = true;
+                eth.duplexMode = false;
                 @display("is=s;p=,,r");
         }
     connections:
+        switch.ethg++ <--> cable <--> hub.ethg++;
+
         for i=0..n-1 {
             switch.ethg++ <--> cable <--> host[i].ethg;
         }
@@ -148,14 +166,14 @@ module VoIPStreamLargeLAN
             hub.ethg++ <--> cable <--> hhost[i].ethg;
         }
 
-        switch.ethg++ <--> cable <--> hub.ethg++;
+        for i=0..b-1 {
+            tap[i].port++ <--> cable <--> bhost[i].ethg;
+        }
+        tap[b].port++ <--> cable <--> hub.ethg++;
 
         for i=0..b-1 {
-            bus.ethg++ <--> cable <--> bhost[i].ethg;
+            tap[i].port++ <--> cable <--> tap[i+1].port++;
         }
-
-        bus.ethg++ <--> cable <--> hub.ethg++;
-
 }
 
 //
@@ -183,29 +201,45 @@ network VoIPStreamLargeNet
         int dm;  // number of medium LANs on switch D
         int dl;  // number of large LANs on switch D
     submodules:
-        switchBB[n]: EtherSwitch {
+        switchBB[n]: EthernetSwitch {
             @display("is=s");
         }
         slanBB[n*bbs]: VoIPStreamSmallLAN;
         mlanBB[n*bbm]: VoIPStreamMediumLAN;
         llanBB[n*bbl]: VoIPStreamLargeLAN;
-        switchA: EtherSwitch;
-        serverA: EtherHost;
+        switchA: EthernetSwitch;
+        serverA: EthernetHost {
+            parameters:
+                csmacdSupport = false;
+                eth.duplexMode = true;
+        }
         slanA[as]: VoIPStreamSmallLAN;
         mlanA[am]: VoIPStreamMediumLAN;
         llanA[al]: VoIPStreamLargeLAN;
-        switchB: EtherSwitch;
-        serverB: EtherHost;
+        switchB: EthernetSwitch;
+        serverB: EthernetHost {
+            parameters:
+                csmacdSupport = false;
+                eth.duplexMode = true;
+        }
         slanB[bs]: VoIPStreamSmallLAN;
         mlanB[bm]: VoIPStreamMediumLAN;
         llanB[bl]: VoIPStreamLargeLAN;
-        switchC: EtherSwitch;
-        serverC: EtherHost;
+        switchC: EthernetSwitch;
+        serverC: EthernetHost {
+            parameters:
+                csmacdSupport = false;
+                eth.duplexMode = true;
+        }
         slanC[cs]: VoIPStreamSmallLAN;
         mlanC[cm]: VoIPStreamMediumLAN;
         llanC[cl]: VoIPStreamLargeLAN;
-        switchD: EtherSwitch;
-        serverD: EtherHost;
+        switchD: EthernetSwitch;
+        serverD: EthernetHost {
+            parameters:
+                csmacdSupport = false;
+                eth.duplexMode = true;
+        }
         slanD[ds]: VoIPStreamSmallLAN;
         mlanD[dm]: VoIPStreamMediumLAN;
         llanD[dl]: VoIPStreamLargeLAN;
@@ -287,5 +321,5 @@ network VoIPStreamLargeNet
 
         switchA.ethg++ <--> cable <--> voipClient.ethg++;
         switchD.ethg++ <--> cable <--> voipServer.ethg++;
-        // voipClient.ethg++ <--> cable <--> voipServer.ethg++;
 }
+

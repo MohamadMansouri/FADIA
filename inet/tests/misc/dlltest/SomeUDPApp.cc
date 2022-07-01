@@ -1,21 +1,9 @@
 //
 // Copyright (C) 2000 Institut fuer Telematik, Universitaet Karlsruhe
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-//
-
 
 #include "inet/common/INETDefs.h"
 
@@ -33,32 +21,31 @@ void SomeUDPApp::initialize(int stage)
 {
     // because of AddressResolver, we need to wait until interfaces are registered,
     // address auto-assignment takes place etc.
-    if (stage != INITSTAGE_APPLICATION_LAYER)
-        return;
+    if (stage == INITSTAGE_APPLICATION_LAYER) {
+        counter = 0;
+        numSent = 0;
+        numReceived = 0;
+        WATCH(numSent);
+        WATCH(numReceived);
 
-    counter = 0;
-    numSent = 0;
-    numReceived = 0;
-    WATCH(numSent);
-    WATCH(numReceived);
+        localPort = par("localPort");
+        destPort = par("destPort");
+        msgLength = par("messageLength");
 
-    localPort = par("localPort");
-    destPort = par("destPort");
-    msgLength = par("messageLength");
+        const char *destAddrs = par("destAddresses");
+        cStringTokenizer tokenizer(destAddrs);
+        const char *token;
+        while ((token = tokenizer.nextToken())!=NULL)
+            destAddresses.push_back(AddressResolver().resolve(token));
 
-    const char *destAddrs = par("destAddresses");
-    cStringTokenizer tokenizer(destAddrs);
-    const char *token;
-    while ((token = tokenizer.nextToken())!=NULL)
-        destAddresses.push_back(AddressResolver().resolve(token));
+        if (destAddresses.empty())
+            return;
 
-    if (destAddresses.empty())
-        return;
+        bindToPort(localPort);
 
-    bindToPort(localPort);
-
-    cMessage *timer = new cMessage("sendTimer");
-    scheduleAt((double)par("sendInterval"), timer);
+        cMessage *timer = new cMessage("sendTimer");
+        scheduleAfter((double)par("sendInterval"), timer);
+    }
 }
 
 Address SomeUDPApp::chooseDestAddr()
@@ -87,7 +74,7 @@ void SomeUDPApp::handleMessage(cMessage *msg)
     {
         // send, then reschedule next sending
         sendPacket();
-        scheduleAt(simTime()+(double)par("sendInterval"), msg);
+        scheduleAfter((double)par("sendInterval"), msg);
     }
     else
     {

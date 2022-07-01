@@ -1,20 +1,11 @@
 //
 // Copyright (C) 2005 Christian Dankbar
 // Copyright (C) 2009 Thomas Reschka
+// Copyright (C) 2006 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 #ifndef __INET_TCPHDR_H
 #define __INET_TCPHDR_H
@@ -31,7 +22,7 @@ namespace tcp {
 #  define TH_URG     0x20
 #  define TH_ECE     0x40
 #  define TH_CWR     0x80
-#define TH_FLAGS     0x3F
+#define TH_FLAGS     0xFF
 
 struct tcphdr
 {
@@ -54,12 +45,12 @@ struct tcphdr
     uint16_t th_urp;    /* urgent pointer */
 
     uint32_t th_options[0];    /* options (optional) */
-    //unsigned char data[0];        XXX MSVC only allows zero-size arrays at the end of a struct
+    //unsigned char data[0];        TODO MSVC only allows zero-size arrays at the end of a struct
 };    // TODO  __attribute__((packed));
 
 } // namespace tcp
 
 } // namespace inet
 
-#endif // ifndef __INET_TCPHDR_H
+#endif
 

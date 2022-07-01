@@ -1,16 +1,8 @@
 //
-// (C) 2005 Vojtech Janota
-// (C) 2004 Andras Varga
+// Copyright (C) 2005 Vojtech Janota
+// Copyright (C) 2004 Andras Varga
 //
-// This library is free software, you can redistribute it
-// and/or modify
-// it under  the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation;
-// either version 2 of the License, or any later version.
-// The library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-// See the GNU Lesser General Public License for more details.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
 #ifndef __INET_LDP_H
@@ -20,7 +12,7 @@
 #include <string>
 #include <vector>
 
-#include "inet/common/INETDefs.h"
+#include "inet/common/ModuleRefByPar.h"
 #include "inet/common/socket/SocketMap.h"
 #include "inet/networklayer/ldp/LdpPacket_m.h"
 #include "inet/networklayer/mpls/IIngressClassifier.h"
@@ -39,7 +31,7 @@ namespace inet {
 // base header: version, length, LSR ID, Label space
 const B LDP_BASEHEADER_BYTES = B(10);
 
-// FIXME: the length below is just a guess. TBD find lengths for individual TLVs
+// FIXME the length below is just a guess. TODO find lengths for individual TLVs
 // making up different LDP packet types, and determine length for each packet type
 const B LDP_HEADER_BYTES = LDP_BASEHEADER_BYTES + B(20);
 
@@ -55,8 +47,7 @@ class INET_API Ldp : public RoutingProtocolBase, public TcpSocket::ReceiveQueueB
 {
   public:
 
-    struct fec_t
-    {
+    struct fec_t {
         int fecid;
 
         // FEC value
@@ -67,12 +58,11 @@ class INET_API Ldp : public RoutingProtocolBase, public TcpSocket::ReceiveQueueB
         Ipv4Address nextHop;
 
         // possibly also: (speed up)
-        // std::string nextHopInterface
+//        std::string nextHopInterface
     };
     typedef std::vector<fec_t> FecVector;
 
-    struct fec_bind_t
-    {
+    struct fec_bind_t {
         int fecid;
 
         Ipv4Address peer;
@@ -80,18 +70,16 @@ class INET_API Ldp : public RoutingProtocolBase, public TcpSocket::ReceiveQueueB
     };
     typedef std::vector<fec_bind_t> FecBindVector;
 
-    struct pending_req_t
-    {
+    struct pending_req_t {
         int fecid;
         Ipv4Address peer;
     };
     typedef std::vector<pending_req_t> PendingVector;
 
-    struct peer_info
-    {
-        Ipv4Address peerIP;    // Ipv4 address of LDP peer
-        bool activeRole;    // we're in active or passive role in this session
-        TcpSocket *socket;    // TCP socket
+    struct peer_info {
+        Ipv4Address peerIP; // Ipv4 address of LDP peer
+        bool activeRole; // we're in active or passive role in this session
+        TcpSocket *socket; // TCP socket
         std::string linkInterface;
         cMessage *timeout;
     };
@@ -117,15 +105,15 @@ class INET_API Ldp : public RoutingProtocolBase, public TcpSocket::ReceiveQueueB
     //
     // other variables:
     //
-    IInterfaceTable *ift = nullptr;
-    IIpv4RoutingTable *rt = nullptr;
-    LibTable *lt = nullptr;
-    Ted *tedmod = nullptr;
+    ModuleRefByPar<IInterfaceTable> ift;
+    ModuleRefByPar<IIpv4RoutingTable> rt;
+    ModuleRefByPar<LibTable> lt;
+    ModuleRefByPar<Ted> tedmod;
 
-    UdpSocket udpSocket;    // for receiving Hello
-    std::vector<UdpSocket> udpSockets;    // for sending Hello, one socket for each multicast interface
-    TcpSocket serverSocket;    // for listening on LDP_PORT
-    SocketMap socketMap;    // holds TCP connections with peers
+    UdpSocket udpSocket; // for receiving Hello
+    std::vector<UdpSocket> udpSockets; // for sending Hello, one socket for each multicast interface
+    TcpSocket serverSocket; // for listening on LDP_PORT
+    SocketMap socketMap; // holds TCP connections with peers
 
     // hello timeout message
     cMessage *sendHelloMsg = nullptr;
@@ -146,7 +134,7 @@ class INET_API Ldp : public RoutingProtocolBase, public TcpSocket::ReceiveQueueB
      */
     virtual Ipv4Address findPeerAddrFromInterface(std::string interfaceName);
 
-    //This method is the reserve of above method
+    // This method is the reserve of above method
     std::string findInterfaceFromPeerAddr(Ipv4Address peerIP);
 
     /** Utility: return peer's index in myPeers table, or -1 if not found */
@@ -160,7 +148,7 @@ class INET_API Ldp : public RoutingProtocolBase, public TcpSocket::ReceiveQueueB
 
     virtual void sendToPeer(Ipv4Address dest, Packet *msg);
 
-    //bool matches(const FecTlv& a, const FecTlv& b);
+//    bool matches(const FecTlv& a, const FecTlv& b);
 
     FecVector::iterator findFecEntry(FecVector& fecs, Ipv4Address addr, int length);
     FecBindVector::iterator findFecEntry(FecBindVector& fecs, int fecid, Ipv4Address peer);
@@ -210,8 +198,8 @@ class INET_API Ldp : public RoutingProtocolBase, public TcpSocket::ReceiveQueueB
     virtual void socketPeerClosed(TcpSocket *socket) override;
     virtual void socketClosed(TcpSocket *socket) override;
     virtual void socketFailure(TcpSocket *socket, int code) override;
-    virtual void socketStatusArrived(TcpSocket *socket, TcpStatusInfo *status) override { }
-    virtual void socketDeleted(TcpSocket *socket) override {}   //TODO
+    virtual void socketStatusArrived(TcpSocket *socket, TcpStatusInfo *status) override {}
+    virtual void socketDeleted(TcpSocket *socket) override {} // TODO
     //@}
 
     /** @name UdpSocket::ICallback methods */
@@ -230,5 +218,5 @@ class INET_API Ldp : public RoutingProtocolBase, public TcpSocket::ReceiveQueueB
 
 } // namespace inet
 
-#endif // ifndef __INET_LDP_H
+#endif
 

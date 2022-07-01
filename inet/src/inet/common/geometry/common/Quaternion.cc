@@ -1,19 +1,9 @@
 //
 // Copyright (C) 2014 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 #include "inet/common/geometry/common/Quaternion.h"
 
@@ -22,7 +12,7 @@ namespace inet {
 Quaternion Quaternion::IDENTITY = Quaternion();
 Quaternion Quaternion::NIL = Quaternion(NaN, NaN, NaN, NaN);
 
-Quaternion::Quaternion(const Coord &axis, double angle) : Quaternion(std::cos(angle/2), axis*std::sin(angle/2))
+Quaternion::Quaternion(const Coord& axis, double angle) : Quaternion(std::cos(angle / 2), axis * std::sin(angle / 2))
 {
     // nothing
 }
@@ -38,27 +28,27 @@ Quaternion::Quaternion(const EulerAngles& angles)
     double sin_x_2 = std::sin(0.5 * rad(angles.gamma).get());
 
     // and now compute Quaternion
-    s   = cos_z_2*cos_y_2*cos_x_2 + sin_z_2*sin_y_2*sin_x_2;
-    v.x = cos_z_2*cos_y_2*sin_x_2 - sin_z_2*sin_y_2*cos_x_2;
-    v.y = cos_z_2*sin_y_2*cos_x_2 + sin_z_2*cos_y_2*sin_x_2;
-    v.z = sin_z_2*cos_y_2*cos_x_2 - cos_z_2*sin_y_2*sin_x_2;
+    s = cos_z_2 * cos_y_2 * cos_x_2 + sin_z_2 * sin_y_2 * sin_x_2;
+    v.x = cos_z_2 * cos_y_2 * sin_x_2 - sin_z_2 * sin_y_2 * cos_x_2;
+    v.y = cos_z_2 * sin_y_2 * cos_x_2 + sin_z_2 * cos_y_2 * sin_x_2;
+    v.z = sin_z_2 * cos_y_2 * cos_x_2 - cos_z_2 * sin_y_2 * sin_x_2;
 }
 
-const Quaternion Quaternion::operator *(const Quaternion &q) const
+const Quaternion Quaternion::operator*(const Quaternion& q) const
 {
-    return Quaternion(s*q.s - v*q.v,
-              v.y*q.v.z - v.z*q.v.y + s*q.v.x + v.x*q.s,
-              v.z*q.v.x - v.x*q.v.z + s*q.v.y + v.y*q.s,
-              v.x*q.v.y - v.y*q.v.x + s*q.v.z + v.z*q.s);
+    return Quaternion(s * q.s - v * q.v,
+                      v.y * q.v.z - v.z * q.v.y + s * q.v.x + v.x * q.s,
+                      v.z * q.v.x - v.x * q.v.z + s * q.v.y + v.y * q.s,
+                      v.x * q.v.y - v.y * q.v.x + s * q.v.z + v.z * q.s);
 }
 
-const Quaternion& Quaternion::operator *=(const Quaternion &q)
+const Quaternion& Quaternion::operator*=(const Quaternion& q)
 {
-    double x = v.x, y = v.y, z = v.z, sn = s*q.s - v*q.v;
+    double x = v.x, y = v.y, z = v.z, sn = s * q.s - v * q.v;
 
-    v.x = y*q.v.z - z*q.v.y + s*q.v.x + x*q.s;
-    v.y = z*q.v.x - x*q.v.z + s*q.v.y + y*q.s;
-    v.z = x*q.v.y - y*q.v.x + s*q.v.z + z*q.s;
+    v.x = y * q.v.z - z * q.v.y + s * q.v.x + x * q.s;
+    v.y = z * q.v.x - x * q.v.z + s * q.v.y + y * q.s;
+    v.z = x * q.v.y - y * q.v.x + s * q.v.z + z * q.s;
 
     s = sn;
 
@@ -96,7 +86,7 @@ operator matrix3() const
 }
 */
 
-Quaternion Quaternion::slerp(const Quaternion &q1, const Quaternion &q2, double t)
+Quaternion Quaternion::slerp(const Quaternion& q1, const Quaternion& q2, double t)
 {
     Quaternion q3;
     double dot = Quaternion::dot(q1, q2);
@@ -112,13 +102,13 @@ Quaternion Quaternion::slerp(const Quaternion &q1, const Quaternion &q2, double 
 
     if (dot < 0.95) {
         double angle = std::acos(dot);
-        return (q1*std::sin(angle*(1-t)) + q3*std::sin(angle*t))/std::sin(angle);
+        return (q1 * std::sin(angle * (1 - t)) + q3 * std::sin(angle * t)) / std::sin(angle);
     }
     else // if the angle is small, use linear interpolation
         return lerp(q1, q3, t);
 }
 
-void Quaternion::getRotationAxisAndAngle(Coord &axis, double &angle) const
+void Quaternion::getRotationAxisAndAngle(Coord& axis, double& angle) const
 {
     angle = std::acos(s);
 
@@ -133,7 +123,7 @@ void Quaternion::getRotationAxisAndAngle(Coord &axis, double &angle) const
     angle *= 2;
 }
 
-Coord Quaternion::rotate(const Coord &v) const
+Coord Quaternion::rotate(const Coord& v) const
 {
     Quaternion V(0, v);
     Quaternion conjugate(*this);
@@ -144,21 +134,21 @@ Coord Quaternion::rotate(const Coord &v) const
 EulerAngles Quaternion::toEulerAngles(bool homogenous) const
 {
     // NOTE: this algorithm is prone to gimbal lock when beta is close to +-90
-    double sqw = s*s;
-    double sqx = v.x*v.x;
-    double sqy = v.y*v.y;
-    double sqz = v.z*v.z;
+    double sqw = s * s;
+    double sqx = v.x * v.x;
+    double sqy = v.y * v.y;
+    double sqz = v.z * v.z;
 
     EulerAngles euler;
     if (homogenous) {
-        euler.gamma = rad(std::atan2(2.0 * (v.x*v.y + v.z*s), sqx - sqy - sqz + sqw));
-        euler.beta = rad(std::asin(std::min(1.0, std::max(-1.0, -2.0 * (v.x*v.z - v.y*s)))));
-        euler.alpha = rad(std::atan2(2.0 * (v.y*v.z + v.x*s), -sqx - sqy + sqz + sqw));
+        euler.gamma = rad(std::atan2(2.0 * (v.x * v.y + v.z * s), sqx - sqy - sqz + sqw));
+        euler.beta = rad(std::asin(math::minnan(1.0, math::maxnan(-1.0, -2.0 * (v.x * v.z - v.y * s)))));
+        euler.alpha = rad(std::atan2(2.0 * (v.y * v.z + v.x * s), -sqx - sqy + sqz + sqw));
     }
     else {
-        euler.gamma = rad(std::atan2(2.0 * (v.z*v.y + v.x*s), 1 - 2*(sqx + sqy)));
-        euler.beta = rad(std::asin(std::min(1.0, std::max(-1.0, -2.0 * (v.x*v.z - v.y*s)))));
-        euler.alpha = rad(std::atan2(2.0 * (v.x*v.y + v.z*s), 1 - 2*(sqy + sqz)));
+        euler.gamma = rad(std::atan2(2.0 * (v.z * v.y + v.x * s), 1 - 2 * (sqx + sqy)));
+        euler.beta = rad(std::asin(math::minnan(1.0, math::maxnan(-1.0, -2.0 * (v.x * v.z - v.y * s)))));
+        euler.alpha = rad(std::atan2(2.0 * (v.x * v.y + v.z * s), 1 - 2 * (sqy + sqz)));
     }
     euler.normalize();
     return euler;
@@ -204,3 +194,4 @@ void Quaternion::getSwingAndTwist(const Coord& direction, Quaternion& swing, Qua
 }
 
 } /* namespace inet */
+

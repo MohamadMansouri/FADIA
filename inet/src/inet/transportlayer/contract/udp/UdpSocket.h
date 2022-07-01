@@ -1,26 +1,15 @@
 //
-// Copyright (C) 2005,2011 Andras Varga
+// Copyright (C) 2005,2011 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 #ifndef __INET_UDPSOCKET_H
 #define __INET_UDPSOCKET_H
 
 #include <vector>
 
-#include "inet/common/INETDefs.h"
 #include "inet/common/packet/Message.h"
 #include "inet/common/packet/Packet.h"
 #include "inet/common/socket/ISocket.h"
@@ -66,8 +55,7 @@ namespace inet {
 class INET_API UdpSocket : public ISocket
 {
   public:
-    class INET_API ICallback
-    {
+    class INET_API ICallback {
       public:
         virtual ~ICallback() {}
 
@@ -86,7 +74,7 @@ class INET_API UdpSocket : public ISocket
          */
         virtual void socketClosed(UdpSocket *socket) = 0;
     };
-    enum State { CONNECTED, CLOSED};
+    enum State { CONNECTED, CLOSED };
 
   protected:
     int socketId;
@@ -264,13 +252,13 @@ class INET_API UdpSocket : public ISocket
      * Sends a data packet to the address and port specified previously
      * in a connect() call.
      */
-    void send(Packet *msg);
+    virtual void send(Packet *msg) override;
 
     /**
      * Unbinds the socket. Once closed, a closed socket may be bound to another
      * (or the same) port, and reused.
      */
-    void close() override;
+    virtual void close() override;
     //@}
 
     virtual void destroy() override;
@@ -313,5 +301,5 @@ class INET_API UdpSocket : public ISocket
 
 } // namespace inet
 
-#endif // ifndef __INET_UDPSOCKET_H
+#endif
 

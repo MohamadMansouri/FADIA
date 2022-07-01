@@ -1,19 +1,11 @@
 //
 // Copyright (C) 2016 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see http://www.gnu.org/licenses/.
-//
+
+
+#include "inet/linklayer/ieee80211/mac/Tx.h"
 
 #include "inet/common/INETUtils.h"
 #include "inet/common/ModuleAccess.h"
@@ -21,7 +13,6 @@
 #include "inet/linklayer/common/MacAddressTag_m.h"
 #include "inet/linklayer/ieee80211/mac/Ieee80211Frame_m.h"
 #include "inet/linklayer/ieee80211/mac/Ieee80211Mac.h"
-#include "inet/linklayer/ieee80211/mac/Tx.h"
 #include "inet/linklayer/ieee80211/mac/contract/IRx.h"
 
 namespace inet {
@@ -41,7 +32,7 @@ void Tx::initialize(int stage)
     if (stage == INITSTAGE_LOCAL) {
         mac = check_and_cast<Ieee80211Mac *>(getContainingNicModule(this)->getSubmodule("mac"));
         endIfsTimer = new cMessage("endIFS");
-        rx = dynamic_cast<IRx *>(getModuleByPath(par("rxModule")));
+        rx = dynamic_cast<IRx *>(findModuleByPath(par("rxModule")));
         WATCH(transmitting);
     }
 }
@@ -53,10 +44,9 @@ void Tx::transmitFrame(Packet *packet, const Ptr<const Ieee80211MacHeader>& head
 
 void Tx::transmitFrame(Packet *packet, const Ptr<const Ieee80211MacHeader>& header, simtime_t ifs, ITx::ICallback *txCallback)
 {
-    Enter_Method_Silent("transmitFrame(\"%s\")", packet->getName());
+    Enter_Method("transmitFrame(\"%s\")", packet->getName());
     ASSERT(this->txCallback == nullptr);
     this->txCallback = txCallback;
-    take(packet);
     auto macAddressInd = packet->addTagIfAbsent<MacAddressInd>();
     const auto& updatedHeader = packet->removeAtFront<Ieee80211MacHeader>();
     if (auto oneAddressHeader = dynamicPtrCast<Ieee80211OneAddressHeader>(updatedHeader)) {
@@ -76,23 +66,23 @@ void Tx::transmitFrame(Packet *packet, const Ptr<const Ieee80211MacHeader>& head
         fcsBytes->copyToBuffer(buffer, bufferLength);
         auto fcs = ethernetCRC(buffer, bufferLength);
         updatedTrailer->setFcs(fcs);
-        delete [] buffer;
+        delete[] buffer;
     }
     packet->insertAtBack(updatedTrailer);
     this->frame = packet->dup();
-    ASSERT(!endIfsTimer->isScheduled() && !transmitting);    // we are idle
+    ASSERT(!endIfsTimer->isScheduled() && !transmitting); // we are idle
     if (ifs == 0) {
         // do directly what handleMessage() would do
         transmitting = true;
         mac->sendDownFrame(frame->dup());
     }
     else
-        scheduleAt(simTime() + ifs, endIfsTimer);
+        scheduleAfter(ifs, endIfsTimer);
 }
 
 void Tx::radioTransmissionFinished()
 {
-    Enter_Method_Silent();
+    Enter_Method("radioTransmissionFinished");
     if (transmitting) {
         EV_DETAIL << "Tx: radioTransmissionFinished()\n";
         transmitting = false;
@@ -104,6 +94,7 @@ void Tx::radioTransmissionFinished()
         frame = nullptr;
         txCallback = nullptr;
         tmpTxCallback->transmissionComplete(tmpFrame, tmpFrame->peekAtFront<Ieee80211MacHeader>());
+        delete tmpFrame;
         rx->frameTransmitted(duration);
     }
 }
@@ -121,7 +112,7 @@ void Tx::handleMessage(cMessage *msg)
 
 void Tx::refreshDisplay() const
 {
-    const char *stateName = endIfsTimer->isScheduled() ? "WAIT_IFS" : transmitting ? "TRANSMIT" : "IDLE";
+    const char *stateName = endIfsTimer != nullptr && endIfsTimer->isScheduled() ? "WAIT_IFS" : transmitting ? "TRANSMIT" : "IDLE";
     // faster version is just to display the state: getDisplayString().setTagArg("t", 0, stateName);
     std::stringstream os;
     if (frame)

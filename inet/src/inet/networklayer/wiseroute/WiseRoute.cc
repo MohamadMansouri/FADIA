@@ -1,3 +1,7 @@
+//
+// SPDX-License-Identifier: LGPL-3.0-or-later
+//
+//
 /***************************************************************************
  * file:        WiseRoute.cc
  *
@@ -7,13 +11,6 @@
  *
  * description: Implementation of the routing protocol of WiseStack.
  *
- *              This program is free software; you can redistribute it
- *              and/or modify it under the terms of the GNU General Public
- *              License as published by the Free Software Foundation; either
- *              version 2 of the License, or (at your option) any later
- *              version.
- *              For further information see file COPYING
- *              in the top level directory
  *
  *
  * Funding: This work was partially financed by the European Commission under the
@@ -23,6 +20,8 @@
  * ported to Mixim 2.0.1 by Theodoros Kapourniotis
  * last modification: 06/02/11
  **************************************************************************/
+
+#include "inet/networklayer/wiseroute/WiseRoute.h"
 
 #include <algorithm>
 #include <limits>
@@ -37,7 +36,6 @@
 #include "inet/networklayer/common/L3AddressResolver.h"
 #include "inet/networklayer/common/L3AddressTag_m.h"
 #include "inet/networklayer/contract/IL3AddressType.h"
-#include "inet/networklayer/wiseroute/WiseRoute.h"
 
 namespace inet {
 
@@ -49,7 +47,7 @@ void WiseRoute::initialize(int stage)
 {
     NetworkProtocolBase::initialize(stage);
     if (stage == INITSTAGE_LOCAL) {
-        arp = getModuleFromPar<IArp>(par("arpModule"), this);
+        arp.reference(this, "arpModule", true);
         headerLength = par("headerLength");
         rssiThreshold = math::dBmW2mW(par("rssiThreshold"));
         routeFloodsInterval = par("routeFloodsInterval");
@@ -79,20 +77,23 @@ void WiseRoute::initialize(int stage)
 
         routeFloodTimer = new cMessage("route-flood-timer", SEND_ROUTE_FLOOD_TIMER);
     }
+    else if (stage == INITSTAGE_NETWORK_INTERFACE_CONFIGURATION) {
+        for (int i = 0; i < interfaceTable->getNumInterfaces(); i++)
+            interfaceTable->getInterface(i)->setHasModulePathAddress(true);
+    }
     else if (stage == INITSTAGE_NETWORK_LAYER) {
         L3AddressResolver addressResolver;
         sinkAddress = addressResolver.resolve(par("sinkAddress"));
 
         IInterfaceTable *interfaceTable = getModuleFromPar<IInterfaceTable>(par("interfaceTableModule"), this);
-        auto ie = interfaceTable->findFirstNonLoopbackInterface();
-        if (ie != nullptr)
+        if (auto ie = interfaceTable->findFirstNonLoopbackInterface())
             myNetwAddr = ie->getNetworkAddress();
         else
             throw cRuntimeError("No non-loopback interface found!");
 
         // only schedule a flood of the node is a sink!!
         if (routeFloodsInterval > 0 && myNetwAddr == sinkAddress)
-            scheduleAt(simTime() + uniform(0.5, 1.5), routeFloodTimer);
+            scheduleAfter(uniform(0.5, 1.5), routeFloodTimer);
     }
 }
 
@@ -117,13 +118,14 @@ void WiseRoute::handleSelfMessage(cMessage *msg)
         pkt->setSeqNum(floodSeqNumber);
         floodSeqNumber++;
         pkt->setIsFlood(1);
-        auto packet = new Packet("route-flood", ROUTE_FLOOD);
+        pkt->setHeaderKind(ROUTE_FLOOD);
+        auto packet = new Packet("route-flood");
         packet->insertAtBack(pkt);
         setDownControlInfo(packet, MacAddress::BROADCAST_ADDRESS);
         sendDown(packet);
         nbFloodsSent++;
         nbRouteFloodsSent++;
-        scheduleAt(simTime() + routeFloodsInterval + uniform(0, 1), routeFloodTimer);
+        scheduleAfter(routeFloodsInterval + uniform(0, 1), routeFloodTimer);
     }
     else {
         EV << "WiseRoute - handleSelfMessage: got unexpected message of kind " << msg->getKind() << endl;
@@ -137,10 +139,10 @@ void WiseRoute::handleLowerPacket(Packet *packet)
     const L3Address& finalDestAddr = wiseRouteHeader->getFinalDestAddr();
     const L3Address& initialSrcAddr = wiseRouteHeader->getInitialSrcAddr();
     const L3Address& srcAddr = wiseRouteHeader->getSourceAddress();
-    // KLUDGE: TODO: get rssi and ber
+    // KLUDGE get rssi and ber
     EV_ERROR << "Getting RSSI and BER from the received frame is not yet implemented. Using default values.\n";
-    double rssi = 1;    // TODO: ctrlInfo->getRSSI();
-    double ber = 0;    // TODO: ctrlInfo->getBitErrorRate();
+    double rssi = 1; // TODO ctrlInfo->getRSSI();
+    double ber = 0; // TODO ctrlInfo->getBitErrorRate();
     // Check whether the message is a flood and if it has to be forwarded.
     floodTypes floodType = updateFloodTable(wiseRouteHeader->getIsFlood(), initialSrcAddr, finalDestAddr,
                 wiseRouteHeader->getSeqNum());
@@ -153,7 +155,7 @@ void WiseRoute::handleLowerPacket(Packet *packet)
     else {
         const cObject *pCtrlInfo = nullptr;
         // If the message is a route flood, update the routing table.
-        if (packet->getKind() == ROUTE_FLOOD)
+        if (wiseRouteHeader->getHeaderKind() == ROUTE_FLOOD)
             updateRouteTable(initialSrcAddr, srcAddr, rssi, ber);
 
         if (finalDestAddr == myNetwAddr || finalDestAddr.isBroadcast()) {
@@ -168,7 +170,7 @@ void WiseRoute::handleLowerPacket(Packet *packet)
                 wiseRouteHeader->setSourceAddress(myNetwAddr);
                 pCtrlInfo = packet->removeControlInfo();
                 wiseRouteHeader->setNbHops(wiseRouteHeader->getNbHops() + 1);
-                auto p = new Packet(packet->getName(), packet->getKind());
+                auto p = new Packet(packet->getName());
                 packet->popAtFront<WiseRouteHeader>();
                 p->insertAtBack(packet->peekDataAt(b(0), packet->getDataLength()));
                 wiseRouteHeader->setPayloadLengthField(p->getDataLength());
@@ -181,7 +183,7 @@ void WiseRoute::handleLowerPacket(Packet *packet)
             else {
                 packetCopy = packet;
             }
-            if (packet->getKind() == DATA) {
+            if (wiseRouteHeader->getHeaderKind() == DATA) {
                 decapsulate(packetCopy);
                 sendUp(packetCopy);
                 nbDataPacketsReceived++;
@@ -197,7 +199,7 @@ void WiseRoute::handleLowerPacket(Packet *packet)
                 wiseRouteHeader->setSourceAddress(myNetwAddr);
                 pCtrlInfo = packet->removeControlInfo();
                 wiseRouteHeader->setNbHops(wiseRouteHeader->getNbHops() + 1);
-                auto p = new Packet(packet->getName(), packet->getKind());
+                auto p = new Packet(packet->getName());
                 packet->popAtFront<WiseRouteHeader>();
                 p->insertAtBack(packet->peekDataAt(b(0), packet->getDataLength()));
                 wiseRouteHeader->setPayloadLengthField(p->getDataLength());
@@ -217,11 +219,11 @@ void WiseRoute::handleLowerPacket(Packet *packet)
                 wiseRouteHeader->setSourceAddress(myNetwAddr);
                 wiseRouteHeader->setDestinationAddress(nextHop);
                 pCtrlInfo = packet->removeControlInfo();
-                MacAddress nextHopMacAddr = arp->resolveL3Address(nextHop, nullptr);    //FIXME interface entry pointer needed
+                MacAddress nextHopMacAddr = arp->resolveL3Address(nextHop, nullptr); // FIXME interface entry pointer needed
                 if (nextHopMacAddr.isUnspecified())
                     throw cRuntimeError("Cannot immediately resolve MAC address. Please configure a GlobalArp module.");
                 wiseRouteHeader->setNbHops(wiseRouteHeader->getNbHops() + 1);
-                auto p = new Packet(packet->getName(), packet->getKind());
+                auto p = new Packet(packet->getName());
                 packet->popAtFront<WiseRouteHeader>();
                 p->insertAtBack(packet->peekDataAt(b(0), packet->getDataLength()));
                 wiseRouteHeader->setPayloadLengthField(p->getDataLength());
@@ -247,7 +249,7 @@ void WiseRoute::handleUpperPacket(Packet *packet)
 
     pkt->setChunkLength(B(headerLength));
 
-    auto addrTag = packet->findTag<L3AddressReq>();
+    const auto& addrTag = packet->findTag<L3AddressReq>();
     if (addrTag == nullptr) {
         EV << "WiseRoute warning: Application layer did not specifiy a destination L3 address\n"
            << "\tusing broadcast address instead\n";
@@ -284,13 +286,13 @@ void WiseRoute::handleUpperPacket(Packet *packet)
     else {
         pkt->setIsFlood(0);
         nbPureUnicastSent++;
-        nextHopMacAddr = arp->resolveL3Address(nextHopAddr, nullptr);    //FIXME interface entry pointer needed
+        nextHopMacAddr = arp->resolveL3Address(nextHopAddr, nullptr); // FIXME interface entry pointer needed
         if (nextHopMacAddr.isUnspecified())
             throw cRuntimeError("Cannot immediately resolve MAC address. Please configure a GlobalArp module.");
     }
     pkt->setPayloadLengthField(packet->getDataLength());
+    pkt->setHeaderKind(DATA);
     packet->insertAtFront(pkt);
-    packet->setKind(DATA);
     setDownControlInfo(packet, nextHopMacAddr);
     sendDown(packet);
     nbDataPacketsSent++;
@@ -332,7 +334,7 @@ void WiseRoute::updateRouteTable(const L3Address& origin, const L3Address& lastH
             routeTable.insert(make_pair(origin, newEntry));
             nbRoutesRecorded++;
             if (origin.isUnspecified()) {
-                // TODO: nextHopSelectionForSink.record(static_cast<double>(lastHop));
+                // TODO nextHopSelectionForSink.record(static_cast<double>(lastHop));
             }
         }
     }
@@ -355,7 +357,7 @@ void WiseRoute::decapsulate(Packet *packet)
     auto wiseRouteHeader = packet->popAtFront<WiseRouteHeader>();
     auto payloadLength = wiseRouteHeader->getPayloadLengthField();
     if (packet->getDataLength() < payloadLength) {
-        throw cRuntimeError("Data error: illegal payload length");     //FIXME packet drop
+        throw cRuntimeError("Data error: illegal payload length"); // FIXME packet drop
     }
     if (packet->getDataLength() > payloadLength)
         packet->setBackOffset(packet->getFrontOffset() + payloadLength);
@@ -389,17 +391,14 @@ WiseRoute::floodTypes WiseRoute::updateFloodTable(bool isFlood, const tFloodTabl
         return NOTAFLOOD;
 }
 
-WiseRoute::tFloodTable::key_type WiseRoute::getRoute(const tFloodTable::key_type& destAddr, bool    /*iAmOrigin*/) const
+WiseRoute::tFloodTable::key_type WiseRoute::getRoute(const tFloodTable::key_type& destAddr, bool /*iAmOrigin*/) const
 {
     // Find a route to dest address. As in the embedded code, if no route exists, indicate
     // final destination as next hop. If we'are lucky, final destination is one hop away...
     // If I am the origin of the packet and no route exists, use flood, hence return broadcast
     // address for next hop.
     tRouteTable::const_iterator pos = routeTable.find(destAddr);
-    if (pos != routeTable.end())
-        return pos->second.nextHop;
-    else
-        return myNetwAddr.getAddressType()->getBroadcastAddress();
+    return (pos != routeTable.end()) ? pos->second.nextHop : myNetwAddr.getAddressType()->getBroadcastAddress();
 }
 
 /**

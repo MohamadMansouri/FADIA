@@ -1,25 +1,13 @@
 //
-// Copyright (C) 2005 Andras Varga
+// Copyright (C) 2005 OpenSim Ltd.
 // Copyright (C) 2005 Wei Yang, Ng
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
 #ifndef __INET_ICMPV6_H
 #define __INET_ICMPV6_H
 
-#include "inet/common/INETDefs.h"
 #include "inet/common/IProtocolRegistrationListener.h"
 #include "inet/common/lifecycle/LifecycleUnsupported.h"
 #include "inet/common/packet/Packet.h"
@@ -28,7 +16,7 @@
 
 namespace inet {
 
-//foreign declarations:
+// foreign declarations:
 class Ipv6Address;
 class Ipv6Header;
 class PingPayload;
@@ -36,7 +24,7 @@ class PingPayload;
 /**
  * ICMPv6 implementation.
  */
-class INET_API Icmpv6 : public cSimpleModule, public LifecycleUnsupported, public IProtocolRegistrationListener
+class INET_API Icmpv6 : public cSimpleModule, public LifecycleUnsupported, public DefaultProtocolRegistrationListener
 {
   public:
     /**
@@ -59,12 +47,12 @@ class INET_API Icmpv6 : public cSimpleModule, public LifecycleUnsupported, publi
   protected:
     // internal helper functions
     virtual void sendToIP(Packet *msg, const Ipv6Address& dest);
-    virtual void sendToIP(Packet *msg);    // FIXME check if really needed
+    virtual void sendToIP(Packet *msg); // FIXME check if really needed
 
     virtual Packet *createDestUnreachableMsg(Icmpv6DestUnav code);
     virtual Packet *createPacketTooBigMsg(int mtu);
     virtual Packet *createTimeExceededMsg(Icmpv6TimeEx code);
-    virtual Packet *createParamProblemMsg(Icmpv6ParameterProblem code);    //TODO:Section 3.4 describes a pointer. What is it?
+    virtual Packet *createParamProblemMsg(Icmpv6ParameterProblem code); // TODOSection 3.4 describes a pointer. What is it?
 
   protected:
     /**
@@ -97,8 +85,8 @@ class INET_API Icmpv6 : public cSimpleModule, public LifecycleUnsupported, publi
 
     virtual void errorOut(const Ptr<const Icmpv6Header>& header);
 
-    virtual void handleRegisterService(const Protocol& protocol, cGate *out, ServicePrimitive servicePrimitive) override;
-    virtual void handleRegisterProtocol(const Protocol& protocol, cGate *in, ServicePrimitive servicePrimitive) override;
+    virtual void handleRegisterService(const Protocol& protocol, cGate *gate, ServicePrimitive servicePrimitive) override;
+    virtual void handleRegisterProtocol(const Protocol& protocol, cGate *gate, ServicePrimitive servicePrimitive) override;
 
   public:
     static void insertCrc(CrcMode crcMode, const Ptr<Icmpv6Header>& icmpHeader, Packet *packet);
@@ -108,10 +96,10 @@ class INET_API Icmpv6 : public cSimpleModule, public LifecycleUnsupported, publi
     CrcMode crcMode = CRC_MODE_UNDEFINED;
     typedef std::map<long, int> PingMap;
     PingMap pingMap;
-    std::set<int> transportProtocols;    // where to send up packets
+    std::set<int> transportProtocols; // where to send up packets
 };
 
 } // namespace inet
 
-#endif // ifndef __INET_ICMPV6_H
+#endif
 

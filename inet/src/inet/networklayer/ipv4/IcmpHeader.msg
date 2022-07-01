@@ -1,21 +1,9 @@
 //
 // Copyright (C) 2000 Institut fuer Telematik, Universitaet Karlsruhe
-// Copyright (C) 2004 Andras Varga
+// Copyright (C) 2004 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
-
 
 import inet.common.INETDefs;
 import inet.common.packet.chunk.Chunk;
@@ -118,7 +106,7 @@ inline bool isIcmpInfoType(int type)
 // because their contents is conceptually truncated. decapsulate() would result
 // in a "length became negative" error; use getEncapsulatedMsg() instead.
 //
-// TODO: add originator id and sequence number and create an ICMPControlInfo
+// TODO add originator id and sequence number and create an ICMPControlInfo
 class IcmpHeader extends FieldsChunk
 {
     chunkLength = B(8);
@@ -144,3 +132,10 @@ class IcmpEchoReply extends IcmpHeader
     int seqNumber; // sequence number           // 2 bytes
 }
 
+class IcmpPtb extends IcmpHeader
+{
+    type = ICMP_DESTINATION_UNREACHABLE;
+    code = ICMP_DU_FRAGMENTATION_NEEDED;
+    uint16_t unused = 0;
+    uint16_t mtu = 0;
+}

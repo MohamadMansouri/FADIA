@@ -1,23 +1,14 @@
 //
-// Copyright (C) 2005 Andras Varga
+// Copyright (C) 2005 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
+
+#include "inet/mobility/single/BonnMotionMobility.h"
 
 #include "inet/common/INETMath.h"
 #include "inet/mobility/single/BonnMotionFileCache.h"
-#include "inet/mobility/single/BonnMotionMobility.h"
 
 namespace inet {
 
@@ -35,12 +26,11 @@ void BonnMotionMobility::computeMaxSpeed()
 {
     const BonnMotionFile::Line& vec = *lines;
     double lastTime = vec[0];
-    Coord lastPos(vec[1],vec[2],(is3D ? vec[3] : 0));
-    unsigned int step = (is3D ? 4: 3);
-    for (unsigned int i = step; i < vec.size(); i += step)
-    {
+    Coord lastPos(vec[1], vec[2], (is3D ? vec[3] : 0));
+    unsigned int step = (is3D ? 4 : 3);
+    for (unsigned int i = step; i < vec.size(); i += step) {
         double elapsedTime = vec[i] - lastTime;
-        Coord currPos(vec[i+1], vec[i+2], (is3D ? vec[i+3] : 0));
+        Coord currPos(vec[i + 1], vec[i + 2], (is3D ? vec[i + 3] : 0));
         double distance = currPos.distance(lastPos);
         double speed = distance / elapsedTime;
         if (speed > maxSpeed)

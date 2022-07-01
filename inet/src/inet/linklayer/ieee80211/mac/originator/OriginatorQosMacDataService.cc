@@ -1,26 +1,17 @@
 //
 // Copyright (C) 2016 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see http://www.gnu.org/licenses/.
-// 
+
+
+#include "inet/linklayer/ieee80211/mac/originator/OriginatorQosMacDataService.h"
 
 #include <algorithm>
 
 #include "inet/linklayer/ieee80211/mac/aggregation/MpduAggregation.h"
 #include "inet/linklayer/ieee80211/mac/aggregation/MsduAggregation.h"
 #include "inet/linklayer/ieee80211/mac/fragmentation/Fragmentation.h"
-#include "inet/linklayer/ieee80211/mac/originator/OriginatorQosMacDataService.h"
 #include "inet/linklayer/ieee80211/mac/sequencenumberassignment/QoSSequenceNumberAssignment.h"
 
 namespace inet {
@@ -30,14 +21,14 @@ Define_Module(OriginatorQosMacDataService);
 
 void OriginatorQosMacDataService::initialize()
 {
-    aMsduAggregationPolicy = dynamic_cast<IMsduAggregationPolicy*>(getSubmodule("msduAggregationPolicy"));
+    aMsduAggregationPolicy = dynamic_cast<IMsduAggregationPolicy *>(getSubmodule("msduAggregationPolicy"));
     if (aMsduAggregationPolicy)
         aMsduAggregation = new MsduAggregation();
-    aMpduAggregationPolicy = dynamic_cast<IMpduAggregationPolicy*>(getSubmodule("mpduAggregationPolicy"));
+    aMpduAggregationPolicy = dynamic_cast<IMpduAggregationPolicy *>(getSubmodule("mpduAggregationPolicy"));
     if (aMpduAggregationPolicy)
         aMpduAggregation = new MpduAggregation();
-    sequenceNumberAssigment = new QoSSequenceNumberAssignment();
-    fragmentationPolicy = dynamic_cast<IFragmentationPolicy*>(getSubmodule("fragmentationPolicy"));
+    sequenceNumberAssignment = new QoSSequenceNumberAssignment();
+    fragmentationPolicy = dynamic_cast<IFragmentationPolicy *>(getSubmodule("fragmentationPolicy"));
     fragmentation = new Fragmentation();
 }
 
@@ -45,8 +36,10 @@ Packet *OriginatorQosMacDataService::aMsduAggregateIfNeeded(queueing::IPacketQue
 {
     auto subframes = aMsduAggregationPolicy->computeAggregateFrames(pendingQueue);
     if (subframes) {
-        for (auto f : *subframes)
-            pendingQueue->removePacket(f);
+        for (auto subframe : *subframes) {
+            pendingQueue->removePacket(subframe);
+            take(subframe);
+        }
         auto aggregatedFrame = aMsduAggregation->aggregateFrames(subframes);
         emit(packetAggregatedSignal, aggregatedFrame);
         delete subframes;
@@ -71,7 +64,7 @@ Packet *OriginatorQosMacDataService::aMpduAggregateIfNeeded(std::vector<Packet *
 
 void OriginatorQosMacDataService::assignSequenceNumber(const Ptr<Ieee80211DataOrMgmtHeader>& header)
 {
-    sequenceNumberAssigment->assignSequenceNumber(header);
+    sequenceNumberAssignment->assignSequenceNumber(header);
 }
 
 std::vector<Packet *> *OriginatorQosMacDataService::fragmentIfNeeded(Packet *frame)
@@ -87,40 +80,41 @@ std::vector<Packet *> *OriginatorQosMacDataService::fragmentIfNeeded(Packet *fra
 
 std::vector<Packet *> *OriginatorQosMacDataService::extractFramesToTransmit(queueing::IPacketQueue *pendingQueue)
 {
+    Enter_Method("extractFramesToTransmit");
     if (pendingQueue->isEmpty())
         return nullptr;
     else {
-        // if (msduRateLimiting)
-        //    txRateLimitingIfNeeded();
+//        if (msduRateLimiting)
+//            txRateLimitingIfNeeded();
         Packet *packet = nullptr;
         if (aMsduAggregationPolicy)
             packet = aMsduAggregateIfNeeded(pendingQueue);
         if (!packet) {
-            packet = pendingQueue->popPacket();
+            packet = pendingQueue->dequeuePacket();
             take(packet);
         }
         // PS Defer Queueing
-        if (sequenceNumberAssigment) {
+        if (sequenceNumberAssignment) {
             auto header = packet->removeAtFront<Ieee80211DataOrMgmtHeader>();
             assignSequenceNumber(header);
             packet->insertAtFront(header);
         }
-        // if (msduIntegrityAndProtection)
-        //    frame = protectMsduIfNeeded(frame);
+//        if (msduIntegrityAndProtection)
+//            frame = protectMsduIfNeeded(frame);
         std::vector<Packet *> *fragments = nullptr;
         if (fragmentationPolicy)
             fragments = fragmentIfNeeded(packet);
         if (!fragments)
-            fragments = new std::vector<Packet *>({packet});
-        // if (mpduEncryptionAndIntegrity)
-        //    fragments = encryptMpduIfNeeded(fragments);
-        // if (mpduHeaderPlusCrc)
-        //    fragments = mpduCrcFooBarIfNeeded(fragments);
-        // const Ptr<const Ieee80211DataOrMgmtHeader>& aMpdu = nullptr;
-        // if (aMpduAggregation)
-        //    aMpdu = aMpduAggregateIfNeeded(fragments);
-        // if (aMpdu)
-        //    fragments = new Fragments({aMpdu});
+            fragments = new std::vector<Packet *>({ packet });
+//        if (mpduEncryptionAndIntegrity)
+//            fragments = encryptMpduIfNeeded(fragments);
+//        if (mpduHeaderPlusCrc)
+//            fragments = mpduCrcFooBarIfNeeded(fragments);
+//        const Ptr<const Ieee80211DataOrMgmtHeader>& aMpdu = nullptr;
+//        if (aMpduAggregation)
+//            aMpdu = aMpduAggregateIfNeeded(fragments);
+//        if (aMpdu)
+//            fragments = new Fragments({aMpdu});
         return fragments;
     }
 }
@@ -129,9 +123,10 @@ OriginatorQosMacDataService::~OriginatorQosMacDataService()
 {
     delete aMsduAggregation;
     delete aMpduAggregation;
-    delete sequenceNumberAssigment;
+    delete sequenceNumberAssignment;
     delete fragmentation;
 }
 
 } /* namespace ieee80211 */
 } /* namespace inet */
+

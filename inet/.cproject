@@ -1,766 +1,350 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <?fileVersion 4.0.0?><cproject storage_type_id="org.eclipse.cdt.core.XmlProjectDescriptionStorage">
-    	
-    <storageModule moduleId="org.eclipse.cdt.core.settings">
-        		
-        <cconfiguration id="org.omnetpp.cdt.gnu.config.debug.229043752">
-            			
-            <storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="org.omnetpp.cdt.gnu.config.debug.229043752" moduleId="org.eclipse.cdt.core.settings" name="debug">
-                				
-                <externalSettings/>
-                				
-                <extensions>
-                    					
-                    <extension id="org.eclipse.cdt.core.MachO64" point="org.eclipse.cdt.core.BinaryParser"/>
-                    					
-                    <extension id="org.eclipse.cdt.core.ELF" point="org.eclipse.cdt.core.BinaryParser"/>
-                    					
-                    <extension id="org.eclipse.cdt.core.PE" point="org.eclipse.cdt.core.BinaryParser"/>
-                    					
-                    <extension id="org.eclipse.cdt.core.GmakeErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
-                    					
-                    <extension id="org.eclipse.cdt.core.CWDLocator" point="org.eclipse.cdt.core.ErrorParser"/>
-                    					
-                    <extension id="org.eclipse.cdt.core.GCCErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
-                    					
-                    <extension id="org.eclipse.cdt.core.GASErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
-                    					
-                    <extension id="org.eclipse.cdt.core.GLDErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
-                    				
-                </extensions>
-                			
-            </storageModule>
-            			
-            <storageModule moduleId="cdtBuildSystem" version="4.0.0">
-                				
-                <configuration artifactName="${ProjName}" buildProperties="" description="" id="org.omnetpp.cdt.gnu.config.debug.229043752" name="debug" parent="org.omnetpp.cdt.gnu.config.debug">
-                    					
-                    <folderInfo id="org.omnetpp.cdt.gnu.config.debug.229043752." name="/" resourcePath="">
-                        						
-                        <toolChain id="org.omnetpp.cdt.gnu.toolchain.debug.268477749" name="GCC for OMNeT++" superClass="org.omnetpp.cdt.gnu.toolchain.debug">
-                            							
-                            <targetPlatform binaryParser="org.eclipse.cdt.core.ELF;org.eclipse.cdt.core.MachO64;org.eclipse.cdt.core.PE" id="org.omnetpp.cdt.targetPlatform.946608572" isAbstract="false" name="Windows, Linux, Mac" osList="win32,linux,macosx" superClass="org.omnetpp.cdt.targetPlatform"/>
-                            							
-                            <builder id="org.omnetpp.cdt.gnu.builder.debug.859740860" keepEnvironmentInBuildfile="false" managedBuildOn="true" name="OMNeT++ Make Builder (opp_makemake)" parallelBuildOn="true" parallelizationNumber="optimal" superClass="org.omnetpp.cdt.gnu.builder.debug">
-                                								
-                                <outputEntries>
-                                    									
-                                    <entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="outputPath" name=""/>
-                                    								
-                                </outputEntries>
-                                							
-                            </builder>
-                            							
-                            <tool id="cdt.managedbuild.tool.gnu.archiver.base.1843986175" name="GCC Archiver" superClass="cdt.managedbuild.tool.gnu.archiver.base"/>
-                            							
-                            <tool id="cdt.managedbuild.tool.gnu.cpp.compiler.base.1544720771" name="GCC C++ Compiler" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.base">
-                                								
-                                <option id="gnu.cpp.compiler.option.preprocessor.def.33891026" name="Defined symbols (-D)" superClass="gnu.cpp.compiler.option.preprocessor.def" useByScannerDiscovery="false"/>
-                                								
-                                <option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.cpp.compiler.option.include.paths.1304941279" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
-                                    									
-                                    <listOptionValue builtIn="false" value="../../src"/>
-                                    								
-                                </option>
-                                								
-                                <inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.1163034331" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
-                                							
-                            </tool>
-                            							
-                            <tool id="cdt.managedbuild.tool.gnu.c.compiler.base.892294620" name="GCC C Compiler" superClass="cdt.managedbuild.tool.gnu.c.compiler.base">
-                                								
-                                <option id="gnu.c.compiler.option.preprocessor.def.symbols.193803687" name="Defined symbols (-D)" superClass="gnu.c.compiler.option.preprocessor.def.symbols" useByScannerDiscovery="false"/>
-                                								
-                                <option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.c.compiler.option.include.paths.552444216" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
-                                    									
-                                    <listOptionValue builtIn="false" value="../../src"/>
-                                    								
-                                </option>
-                                								
-                                <inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.1458844290" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
-                                							
-                            </tool>
-                            							
-                            <tool id="cdt.managedbuild.tool.gnu.c.linker.base.1169210834" name="GCC C Linker" superClass="cdt.managedbuild.tool.gnu.c.linker.base"/>
-                            							
-                            <tool id="cdt.managedbuild.tool.gnu.cpp.linker.base.1065738287" name="GCC C++ Linker" superClass="cdt.managedbuild.tool.gnu.cpp.linker.base">
-                                								
-                                <inputType id="cdt.managedbuild.tool.gnu.cpp.linker.input.1326537913" superClass="cdt.managedbuild.tool.gnu.cpp.linker.input">
-                                    									
-                                    <additionalInput kind="additionalinputdependency" paths="$(USER_OBJS)"/>
-                                    									
-                                    <additionalInput kind="additionalinput" paths="$(LIBS)"/>
-                                    								
-                                </inputType>
-                                							
-                            </tool>
-                            							
-                            <tool id="cdt.managedbuild.tool.gnu.assembler.base.420284418" name="GCC Assembler" superClass="cdt.managedbuild.tool.gnu.assembler.base">
-                                								
-                                <option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.both.asm.option.include.paths.1342559985" name="Include paths (-I)" superClass="gnu.both.asm.option.include.paths" valueType="includePath">
-                                    									
-                                    <listOptionValue builtIn="false" value="../../src"/>
-                                    								
-                                </option>
-                                								
-                                <inputType id="cdt.managedbuild.tool.gnu.assembler.input.732390572" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
-                                							
-                            </tool>
-                            						
-                        </toolChain>
-                        					
-                    </folderInfo>
-                    					
-                    <folderInfo id="org.omnetpp.cdt.gnu.config.debug.229043752.1655066356" name="/" resourcePath="src">
-                        						
-                        <toolChain id="org.omnetpp.cdt.gnu.toolchain.debug.1098408581" name="GCC for OMNeT++" superClass="org.omnetpp.cdt.gnu.toolchain.debug" unusedChildren="">
-                            							
-                            <tool id="cdt.managedbuild.tool.gnu.archiver.base.1268720224" name="GCC Archiver" superClass="cdt.managedbuild.tool.gnu.archiver.base.1843986175"/>
-                            							
-                            <tool id="cdt.managedbuild.tool.gnu.cpp.compiler.base.1963354652" name="GCC C++ Compiler" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.base.1544720771">
-                                								
-                                <inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.1623252375" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
-                                							
-                            </tool>
-                            							
-                            <tool id="cdt.managedbuild.tool.gnu.c.compiler.base.1012167517" name="GCC C Compiler" superClass="cdt.managedbuild.tool.gnu.c.compiler.base.892294620">
-                                								
-                                <inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.861728750" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
-                                							
-                            </tool>
-                            							
-                            <tool id="cdt.managedbuild.tool.gnu.c.linker.base.1988286745" name="GCC C Linker" superClass="cdt.managedbuild.tool.gnu.c.linker.base.1169210834"/>
-                            							
-                            <tool id="cdt.managedbuild.tool.gnu.cpp.linker.base.488338572" name="GCC C++ Linker" superClass="cdt.managedbuild.tool.gnu.cpp.linker.base.1065738287"/>
-                            							
-                            <tool id="cdt.managedbuild.tool.gnu.assembler.base.2119871372" name="GCC Assembler" superClass="cdt.managedbuild.tool.gnu.assembler.base.420284418">
-                                								
-                                <inputType id="cdt.managedbuild.tool.gnu.assembler.input.186380573" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
-                                							
-                            </tool>
-                            						
-                        </toolChain>
-                        					
-                    </folderInfo>
-                    					
-                    <sourceEntries>
-                        						
-                        <entry excluding="inet/applications/voipstream|inet/emulation|inet/linklayer/ext|inet/transportlayer/tcp_nsc|inet/transportlayer/tcp_lwip|inet/routing/extras|transport/tcp_nsc|transport/tcp_lwip" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="src"/>
-                        					
-                    </sourceEntries>
-                    				
-                </configuration>
-                			
-            </storageModule>
-            			
-            <storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>
-            		
-        </cconfiguration>
-        		
-        <cconfiguration id="org.omnetpp.cdt.gnu.config.release.1746235823">
-            			
-            <storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="org.omnetpp.cdt.gnu.config.release.1746235823" moduleId="org.eclipse.cdt.core.settings" name="release">
-                				
-                <externalSettings/>
-                				
-                <extensions>
-                    					
-                    <extension id="org.eclipse.cdt.core.MachO64" point="org.eclipse.cdt.core.BinaryParser"/>
-                    					
-                    <extension id="org.eclipse.cdt.core.ELF" point="org.eclipse.cdt.core.BinaryParser"/>
-                    					
-                    <extension id="org.eclipse.cdt.core.PE" point="org.eclipse.cdt.core.BinaryParser"/>
-                    					
-                    <extension id="org.eclipse.cdt.core.GmakeErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
-                    					
-                    <extension id="org.eclipse.cdt.core.CWDLocator" point="org.eclipse.cdt.core.ErrorParser"/>
-                    					
-                    <extension id="org.eclipse.cdt.core.GCCErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
-                    					
-                    <extension id="org.eclipse.cdt.core.GASErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
-                    					
-                    <extension id="org.eclipse.cdt.core.GLDErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
-                    				
-                </extensions>
-                			
-            </storageModule>
-            			
-            <storageModule moduleId="cdtBuildSystem" version="4.0.0">
-                				
-                <configuration artifactName="${ProjName}" buildProperties="" description="" id="org.omnetpp.cdt.gnu.config.release.1746235823" name="release" parent="org.omnetpp.cdt.gnu.config.release">
-                    					
-                    <folderInfo id="org.omnetpp.cdt.gnu.config.release.1746235823." name="/" resourcePath="">
-                        						
-                        <toolChain id="org.omnetpp.cdt.gnu.toolchain.release.1498166216" name="GCC for OMNeT++" superClass="org.omnetpp.cdt.gnu.toolchain.release">
-                            							
-                            <targetPlatform binaryParser="org.eclipse.cdt.core.ELF;org.eclipse.cdt.core.MachO64;org.eclipse.cdt.core.PE" id="org.omnetpp.cdt.targetPlatform.1049800537" isAbstract="false" name="Windows, Linux, Mac" osList="win32,linux,macosx" superClass="org.omnetpp.cdt.targetPlatform"/>
-                            							
-                            <builder id="org.omnetpp.cdt.gnu.builder.release.1176677325" keepEnvironmentInBuildfile="false" managedBuildOn="true" name="OMNeT++ Make Builder (opp_makemake)" parallelBuildOn="true" parallelizationNumber="optimal" superClass="org.omnetpp.cdt.gnu.builder.release"/>
-                            							
-                            <tool id="cdt.managedbuild.tool.gnu.archiver.base.1643927787" name="GCC Archiver" superClass="cdt.managedbuild.tool.gnu.archiver.base"/>
-                            							
-                            <tool id="cdt.managedbuild.tool.gnu.cpp.compiler.base.1039888888" name="GCC C++ Compiler" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.base">
-                                								
-                                <option id="gnu.cpp.compiler.option.preprocessor.def.655304152" name="Defined symbols (-D)" superClass="gnu.cpp.compiler.option.preprocessor.def" useByScannerDiscovery="false"/>
-                                								
-                                <option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.cpp.compiler.option.include.paths.1086707691" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
-                                    									
-                                    <listOptionValue builtIn="false" value="../../src"/>
-                                    								
-                                </option>
-                                								
-                                <inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.958073850" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
-                                							
-                            </tool>
-                            							
-                            <tool id="cdt.managedbuild.tool.gnu.c.compiler.base.419916163" name="GCC C Compiler" superClass="cdt.managedbuild.tool.gnu.c.compiler.base">
-                                								
-                                <option id="gnu.c.compiler.option.preprocessor.def.symbols.1241715501" name="Defined symbols (-D)" superClass="gnu.c.compiler.option.preprocessor.def.symbols" useByScannerDiscovery="false"/>
-                                								
-                                <option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.c.compiler.option.include.paths.951413942" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
-                                    									
-                                    <listOptionValue builtIn="false" value="../../src"/>
-                                    								
-                                </option>
-                                								
-                                <inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.406690453" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
-                                							
-                            </tool>
-                            							
-                            <tool id="cdt.managedbuild.tool.gnu.c.linker.base.1190158571" name="GCC C Linker" superClass="cdt.managedbuild.tool.gnu.c.linker.base"/>
-                            							
-                            <tool id="cdt.managedbuild.tool.gnu.cpp.linker.base.893445214" name="GCC C++ Linker" superClass="cdt.managedbuild.tool.gnu.cpp.linker.base">
-                                								
-                                <inputType id="cdt.managedbuild.tool.gnu.cpp.linker.input.422104919" superClass="cdt.managedbuild.tool.gnu.cpp.linker.input">
-                                    									
-                                    <additionalInput kind="additionalinputdependency" paths="$(USER_OBJS)"/>
-                                    									
-                                    <additionalInput kind="additionalinput" paths="$(LIBS)"/>
-                                    								
-                                </inputType>
-                                							
-                            </tool>
-                            							
-                            <tool id="cdt.managedbuild.tool.gnu.assembler.base.960891752" name="GCC Assembler" superClass="cdt.managedbuild.tool.gnu.assembler.base">
-                                								
-                                <option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.both.asm.option.include.paths.963947628" name="Include paths (-I)" superClass="gnu.both.asm.option.include.paths" valueType="includePath">
-                                    									
-                                    <listOptionValue builtIn="false" value="../../src"/>
-                                    								
-                                </option>
-                                								
-                                <inputType id="cdt.managedbuild.tool.gnu.assembler.input.1865888372" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
-                                							
-                            </tool>
-                            						
-                        </toolChain>
-                        					
-                    </folderInfo>
-                    					
-                    <folderInfo id="org.omnetpp.cdt.gnu.config.release.1746235823.1883332705" name="/" resourcePath="src">
-                        						
-                        <toolChain id="org.omnetpp.cdt.gnu.toolchain.release.1094337758" name="GCC for OMNeT++" superClass="org.omnetpp.cdt.gnu.toolchain.release" unusedChildren="">
-                            							
-                            <tool id="cdt.managedbuild.tool.gnu.archiver.base.467162370" name="GCC Archiver" superClass="cdt.managedbuild.tool.gnu.archiver.base.1643927787"/>
-                            							
-                            <tool id="cdt.managedbuild.tool.gnu.cpp.compiler.base.495786637" name="GCC C++ Compiler" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.base.1039888888">
-                                								
-                                <inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.1237221019" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
-                                							
-                            </tool>
-                            							
-                            <tool id="cdt.managedbuild.tool.gnu.c.compiler.base.566514650" name="GCC C Compiler" superClass="cdt.managedbuild.tool.gnu.c.compiler.base.419916163">
-                                								
-                                <inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.245958732" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
-                                							
-                            </tool>
-                            							
-                            <tool id="cdt.managedbuild.tool.gnu.c.linker.base.1904191275" name="GCC C Linker" superClass="cdt.managedbuild.tool.gnu.c.linker.base.1190158571"/>
-                            							
-                            <tool id="cdt.managedbuild.tool.gnu.cpp.linker.base.1732741249" name="GCC C++ Linker" superClass="cdt.managedbuild.tool.gnu.cpp.linker.base.893445214"/>
-                            							
-                            <tool id="cdt.managedbuild.tool.gnu.assembler.base.903336110" name="GCC Assembler" superClass="cdt.managedbuild.tool.gnu.assembler.base.960891752">
-                                								
-                                <inputType id="cdt.managedbuild.tool.gnu.assembler.input.1376420455" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
-                                							
-                            </tool>
-                            						
-                        </toolChain>
-                        					
-                    </folderInfo>
-                    					
-                    <sourceEntries>
-                        						
-                        <entry excluding="inet/applications/voipstream|inet/emulation|inet/linklayer/ext|inet/transportlayer/tcp_nsc|inet/transportlayer/tcp_lwip|inet/routing/extras|transport/tcp_nsc|transport/tcp_lwip" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="src"/>
-                        					
-                    </sourceEntries>
-                    				
-                </configuration>
-                			
-            </storageModule>
-            			
-            <storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>
-            		
-        </cconfiguration>
-        	
-    </storageModule>
-    	
-    <storageModule moduleId="cdtBuildSystem" version="4.0.0">
-        		
-        <project id="inet.org.omnetpp.cdt.omnetppProjectType.1299021111" name="OMNeT++ Simulation" projectType="org.omnetpp.cdt.omnetppProjectType"/>
-        	
-    </storageModule>
-    	
-    <storageModule moduleId="scannerConfiguration">
-        		
-        <autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="org.eclipse.cdt.make.core.GCCStandardMakePerProjectProfile"/>
-        		
-        <profile id="org.eclipse.cdt.make.core.GCCStandardMakePerFileProfile">
-            			
-            <buildOutputProvider>
-                				
-                <openAction enabled="true" filePath=""/>
-                				
-                <parser enabled="true"/>
-                			
-            </buildOutputProvider>
-            			
-            <scannerInfoProvider id="makefileGenerator">
-                				
-                <runAction arguments="-f ${project_name}_scd.mk" command="make" useDefault="true"/>
-                				
-                <parser enabled="true"/>
-                			
-            </scannerInfoProvider>
-            		
-        </profile>
-        		
-        <profile id="org.eclipse.cdt.managedbuilder.core.GCCWinManagedMakePerProjectProfile">
-            			
-            <buildOutputProvider>
-                				
-                <openAction enabled="true" filePath=""/>
-                				
-                <parser enabled="true"/>
-                			
-            </buildOutputProvider>
-            			
-            <scannerInfoProvider id="specsFile">
-                				
-                <runAction arguments="-E -P -v -dD ${plugin_state_location}/${specs_file}" command="gcc" useDefault="true"/>
-                				
-                <parser enabled="true"/>
-                			
-            </scannerInfoProvider>
-            		
-        </profile>
-        		
-        <profile id="org.eclipse.cdt.managedbuilder.core.GCCWinManagedMakePerProjectProfileCPP">
-            			
-            <buildOutputProvider>
-                				
-                <openAction enabled="true" filePath=""/>
-                				
-                <parser enabled="true"/>
-                			
-            </buildOutputProvider>
-            			
-            <scannerInfoProvider id="specsFile">
-                				
-                <runAction arguments="-E -P -v -dD ${plugin_state_location}/specs.cpp" command="g++" useDefault="true"/>
-                				
-                <parser enabled="true"/>
-                			
-            </scannerInfoProvider>
-            		
-        </profile>
-        		
-        <profile id="org.eclipse.cdt.managedbuilder.core.GCCWinManagedMakePerProjectProfileC">
-            			
-            <buildOutputProvider>
-                				
-                <openAction enabled="true" filePath=""/>
-                				
-                <parser enabled="true"/>
-                			
-            </buildOutputProvider>
-            			
-            <scannerInfoProvider id="specsFile">
-                				
-                <runAction arguments="-E -P -v -dD ${plugin_state_location}/specs.c" command="gcc" useDefault="true"/>
-                				
-                <parser enabled="true"/>
-                			
-            </scannerInfoProvider>
-            		
-        </profile>
-        		
-        <profile id="org.omnetpp.cdt.OmnetppGCCPerProjectProfile">
-            			
-            <buildOutputProvider>
-                				
-                <openAction enabled="false" filePath=""/>
-                				
-                <parser enabled="false"/>
-                			
-            </buildOutputProvider>
-            		
-        </profile>
-        		
-        <scannerConfigBuildInfo instanceId="org.omnetpp.cdt.gnu.config.release.960890479">
-            			
-            <autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="org.omnetpp.cdt.OmnetppGCCPerProjectProfile"/>
-            		
-        </scannerConfigBuildInfo>
-        		
-        <scannerConfigBuildInfo instanceId="org.omnetpp.cdt.msvc.config.debug.646282618">
-            			
-            <autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="org.omnetpp.cdt.msvc.MSVCScannerInfo"/>
-            			
-            <profile id="org.eclipse.cdt.make.core.GCCStandardMakePerFileProfile">
-                				
-                <buildOutputProvider>
-                    					
-                    <openAction enabled="true" filePath=""/>
-                    					
-                    <parser enabled="true"/>
-                    				
-                </buildOutputProvider>
-                				
-                <scannerInfoProvider id="makefileGenerator">
-                    					
-                    <runAction arguments="-f ${project_name}_scd.mk" command="make" useDefault="true"/>
-                    					
-                    <parser enabled="true"/>
-                    				
-                </scannerInfoProvider>
-                			
-            </profile>
-            			
-            <profile id="org.eclipse.cdt.managedbuilder.core.GCCWinManagedMakePerProjectProfile">
-                				
-                <buildOutputProvider>
-                    					
-                    <openAction enabled="true" filePath=""/>
-                    					
-                    <parser enabled="true"/>
-                    				
-                </buildOutputProvider>
-                				
-                <scannerInfoProvider id="specsFile">
-                    					
-                    <runAction arguments="-E -P -v -dD ${plugin_state_location}/${specs_file}" command="gcc" useDefault="true"/>
-                    					
-                    <parser enabled="true"/>
-                    				
-                </scannerInfoProvider>
-                			
-            </profile>
-            			
-            <profile id="org.eclipse.cdt.managedbuilder.core.GCCWinManagedMakePerProjectProfileCPP">
-                				
-                <buildOutputProvider>
-                    					
-                    <openAction enabled="true" filePath=""/>
-                    					
-                    <parser enabled="true"/>
-                    				
-                </buildOutputProvider>
-                				
-                <scannerInfoProvider id="specsFile">
-                    					
-                    <runAction arguments="-E -P -v -dD ${plugin_state_location}/specs.cpp" command="g++" useDefault="true"/>
-                    					
-                    <parser enabled="true"/>
-                    				
-                </scannerInfoProvider>
-                			
-            </profile>
-            			
-            <profile id="org.eclipse.cdt.managedbuilder.core.GCCWinManagedMakePerProjectProfileC">
-                				
-                <buildOutputProvider>
-                    					
-                    <openAction enabled="true" filePath=""/>
-                    					
-                    <parser enabled="true"/>
-                    				
-                </buildOutputProvider>
-                				
-                <scannerInfoProvider id="specsFile">
-                    					
-                    <runAction arguments="-E -P -v -dD ${plugin_state_location}/specs.c" command="gcc" useDefault="true"/>
-                    					
-                    <parser enabled="true"/>
-                    				
-                </scannerInfoProvider>
-                			
-            </profile>
-            			
-            <profile id="org.omnetpp.cdt.OmnetppGCCPerProjectProfile">
-                				
-                <buildOutputProvider>
-                    					
-                    <openAction enabled="false" filePath=""/>
-                    					
-                    <parser enabled="false"/>
-                    				
-                </buildOutputProvider>
-                			
-            </profile>
-            		
-        </scannerConfigBuildInfo>
-        		
-        <scannerConfigBuildInfo instanceId="org.omnetpp.cdt.gnu.config.debug.1696110582">
-            			
-            <autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="org.omnetpp.cdt.OmnetppGCCPerProjectProfile"/>
-            		
-        </scannerConfigBuildInfo>
-        		
-        <scannerConfigBuildInfo instanceId="org.omnetpp.cdt.gnu.config.debug.229043752">
-            			
-            <autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="org.omnetpp.cdt.OmnetppGCCPerProjectProfile"/>
-            		
-        </scannerConfigBuildInfo>
-        		
-        <scannerConfigBuildInfo instanceId="org.omnetpp.cdt.gnu.config.release.1673461738">
-            			
-            <autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="org.omnetpp.cdt.OmnetppGCCPerProjectProfile"/>
-            			
-            <profile id="org.eclipse.cdt.make.core.GCCStandardMakePerFileProfile">
-                				
-                <buildOutputProvider>
-                    					
-                    <openAction enabled="true" filePath=""/>
-                    					
-                    <parser enabled="true"/>
-                    				
-                </buildOutputProvider>
-                				
-                <scannerInfoProvider id="makefileGenerator">
-                    					
-                    <runAction arguments="-f ${project_name}_scd.mk" command="make" useDefault="true"/>
-                    					
-                    <parser enabled="true"/>
-                    				
-                </scannerInfoProvider>
-                			
-            </profile>
-            			
-            <profile id="org.eclipse.cdt.managedbuilder.core.GCCWinManagedMakePerProjectProfile">
-                				
-                <buildOutputProvider>
-                    					
-                    <openAction enabled="true" filePath=""/>
-                    					
-                    <parser enabled="true"/>
-                    				
-                </buildOutputProvider>
-                				
-                <scannerInfoProvider id="specsFile">
-                    					
-                    <runAction arguments="-E -P -v -dD ${plugin_state_location}/${specs_file}" command="gcc" useDefault="true"/>
-                    					
-                    <parser enabled="true"/>
-                    				
-                </scannerInfoProvider>
-                			
-            </profile>
-            			
-            <profile id="org.eclipse.cdt.managedbuilder.core.GCCWinManagedMakePerProjectProfileCPP">
-                				
-                <buildOutputProvider>
-                    					
-                    <openAction enabled="true" filePath=""/>
-                    					
-                    <parser enabled="true"/>
-                    				
-                </buildOutputProvider>
-                				
-                <scannerInfoProvider id="specsFile">
-                    					
-                    <runAction arguments="-E -P -v -dD ${plugin_state_location}/specs.cpp" command="g++" useDefault="true"/>
-                    					
-                    <parser enabled="true"/>
-                    				
-                </scannerInfoProvider>
-                			
-            </profile>
-            			
-            <profile id="org.eclipse.cdt.managedbuilder.core.GCCWinManagedMakePerProjectProfileC">
-                				
-                <buildOutputProvider>
-                    					
-                    <openAction enabled="true" filePath=""/>
-                    					
-                    <parser enabled="true"/>
-                    				
-                </buildOutputProvider>
-                				
-                <scannerInfoProvider id="specsFile">
-                    					
-                    <runAction arguments="-E -P -v -dD ${plugin_state_location}/specs.c" command="gcc" useDefault="true"/>
-                    					
-                    <parser enabled="true"/>
-                    				
-                </scannerInfoProvider>
-                			
-            </profile>
-            			
-            <profile id="org.omnetpp.cdt.OmnetppGCCPerProjectProfile">
-                				
-                <buildOutputProvider>
-                    					
-                    <openAction enabled="false" filePath=""/>
-                    					
-                    <parser enabled="false"/>
-                    				
-                </buildOutputProvider>
-                			
-            </profile>
-            		
-        </scannerConfigBuildInfo>
-        		
-        <scannerConfigBuildInfo instanceId="org.omnetpp.cdt.gnu.config.debug.1590007136">
-            			
-            <autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="org.omnetpp.cdt.OmnetppGCCPerProjectProfile"/>
-            		
-        </scannerConfigBuildInfo>
-        		
-        <scannerConfigBuildInfo instanceId="org.omnetpp.cdt.gnu.config.debug.200906710">
-            			
-            <autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="org.omnetpp.cdt.OmnetppGCCPerProjectProfile"/>
-            			
-            <profile id="org.eclipse.cdt.make.core.GCCStandardMakePerFileProfile">
-                				
-                <buildOutputProvider>
-                    					
-                    <openAction enabled="true" filePath=""/>
-                    					
-                    <parser enabled="true"/>
-                    				
-                </buildOutputProvider>
-                				
-                <scannerInfoProvider id="makefileGenerator">
-                    					
-                    <runAction arguments="-f ${project_name}_scd.mk" command="make" useDefault="true"/>
-                    					
-                    <parser enabled="true"/>
-                    				
-                </scannerInfoProvider>
-                			
-            </profile>
-            			
-            <profile id="org.eclipse.cdt.managedbuilder.core.GCCWinManagedMakePerProjectProfile">
-                				
-                <buildOutputProvider>
-                    					
-                    <openAction enabled="true" filePath=""/>
-                    					
-                    <parser enabled="true"/>
-                    				
-                </buildOutputProvider>
-                				
-                <scannerInfoProvider id="specsFile">
-                    					
-                    <runAction arguments="-E -P -v -dD ${plugin_state_location}/${specs_file}" command="gcc" useDefault="true"/>
-                    					
-                    <parser enabled="true"/>
-                    				
-                </scannerInfoProvider>
-                			
-            </profile>
-            			
-            <profile id="org.eclipse.cdt.managedbuilder.core.GCCWinManagedMakePerProjectProfileCPP">
-                				
-                <buildOutputProvider>
-                    					
-                    <openAction enabled="true" filePath=""/>
-                    					
-                    <parser enabled="true"/>
-                    				
-                </buildOutputProvider>
-                				
-                <scannerInfoProvider id="specsFile">
-                    					
-                    <runAction arguments="-E -P -v -dD ${plugin_state_location}/specs.cpp" command="g++" useDefault="true"/>
-                    					
-                    <parser enabled="true"/>
-                    				
-                </scannerInfoProvider>
-                			
-            </profile>
-            			
-            <profile id="org.eclipse.cdt.managedbuilder.core.GCCWinManagedMakePerProjectProfileC">
-                				
-                <buildOutputProvider>
-                    					
-                    <openAction enabled="true" filePath=""/>
-                    					
-                    <parser enabled="true"/>
-                    				
-                </buildOutputProvider>
-                				
-                <scannerInfoProvider id="specsFile">
-                    					
-                    <runAction arguments="-E -P -v -dD ${plugin_state_location}/specs.c" command="gcc" useDefault="true"/>
-                    					
-                    <parser enabled="true"/>
-                    				
-                </scannerInfoProvider>
-                			
-            </profile>
-            			
-            <profile id="org.omnetpp.cdt.OmnetppGCCPerProjectProfile">
-                				
-                <buildOutputProvider>
-                    					
-                    <openAction enabled="false" filePath=""/>
-                    					
-                    <parser enabled="false"/>
-                    				
-                </buildOutputProvider>
-                			
-            </profile>
-            		
-        </scannerConfigBuildInfo>
-        		
-        <scannerConfigBuildInfo instanceId="org.omnetpp.cdt.gnu.config.release.63841363">
-            			
-            <autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="org.omnetpp.cdt.OmnetppGCCPerProjectProfile"/>
-            		
-        </scannerConfigBuildInfo>
-        		
-        <scannerConfigBuildInfo instanceId="org.omnetpp.cdt.gnu.config.release.1746235823">
-            			
-            <autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="org.omnetpp.cdt.OmnetppGCCPerProjectProfile"/>
-            		
-        </scannerConfigBuildInfo>
-        	
-    </storageModule>
-    	
-    <storageModule moduleId="org.eclipse.cdt.core.LanguageSettingsProviders"/>
-    	
-    <storageModule moduleId="refreshScope" versionNumber="2">
-        		
-        <configuration configurationName="debug"/>
-        		
-        <configuration configurationName="release"/>
-        		
-        <configuration configurationName="gcc-release">
-            			
-            <resource resourceType="PROJECT" workspacePath="/inet"/>
-            		
-        </configuration>
-        		
-        <configuration configurationName="gcc-debug">
-            			
-            <resource resourceType="PROJECT" workspacePath="/inet"/>
-            		
-        </configuration>
-        	
-    </storageModule>
-    	
-    <storageModule moduleId="org.eclipse.cdt.make.core.buildtargets"/>
-    
+	<storageModule moduleId="org.eclipse.cdt.core.settings">
+		<cconfiguration id="org.omnetpp.cdt.gnu.config.debug.229043752">
+			<storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="org.omnetpp.cdt.gnu.config.debug.229043752" moduleId="org.eclipse.cdt.core.settings" name="debug">
+				<externalSettings/>
+				<extensions>
+					<extension id="org.eclipse.cdt.core.MachO64" point="org.eclipse.cdt.core.BinaryParser"/>
+					<extension id="org.eclipse.cdt.core.ELF" point="org.eclipse.cdt.core.BinaryParser"/>
+					<extension id="org.eclipse.cdt.core.PE" point="org.eclipse.cdt.core.BinaryParser"/>
+					<extension id="org.eclipse.cdt.core.GmakeErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+					<extension id="org.eclipse.cdt.core.CWDLocator" point="org.eclipse.cdt.core.ErrorParser"/>
+					<extension id="org.eclipse.cdt.core.GCCErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+					<extension id="org.eclipse.cdt.core.GASErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+					<extension id="org.eclipse.cdt.core.GLDErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+				</extensions>
+			</storageModule>
+			<storageModule moduleId="cdtBuildSystem" version="4.0.0">
+				<configuration artifactName="${ProjName}" buildProperties="" description="" id="org.omnetpp.cdt.gnu.config.debug.229043752" name="debug" parent="org.omnetpp.cdt.gnu.config.debug">
+					<folderInfo id="org.omnetpp.cdt.gnu.config.debug.229043752." name="/" resourcePath="">
+						<toolChain id="org.omnetpp.cdt.gnu.toolchain.debug.268477749" name="GCC for OMNeT++" superClass="org.omnetpp.cdt.gnu.toolchain.debug">
+							<targetPlatform binaryParser="org.eclipse.cdt.core.ELF;org.eclipse.cdt.core.MachO64;org.eclipse.cdt.core.PE" id="org.omnetpp.cdt.targetPlatform.946608572" isAbstract="false" name="Windows, Linux, Mac" osList="win32,linux,macosx" superClass="org.omnetpp.cdt.targetPlatform"/>
+							<builder id="org.omnetpp.cdt.gnu.builder.debug.859740860" keepEnvironmentInBuildfile="false" managedBuildOn="true" name="OMNeT++ Make Builder (opp_makemake)" parallelBuildOn="true" parallelizationNumber="optimal" superClass="org.omnetpp.cdt.gnu.builder.debug">
+								<outputEntries>
+									<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="outputPath" name=""/>
+								</outputEntries>
+							</builder>
+							<tool id="cdt.managedbuild.tool.gnu.archiver.base.1843986175" name="GCC Archiver" superClass="cdt.managedbuild.tool.gnu.archiver.base"/>
+							<tool id="cdt.managedbuild.tool.gnu.cpp.compiler.base.1544720771" name="GCC C++ Compiler" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.base">
+								<option id="gnu.cpp.compiler.option.preprocessor.def.33891026" name="Defined symbols (-D)" superClass="gnu.cpp.compiler.option.preprocessor.def" useByScannerDiscovery="false"/>
+								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.cpp.compiler.option.include.paths.1304941279" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
+									<listOptionValue builtIn="false" value="../../src"/>
+								</option>
+								<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.1163034331" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
+							</tool>
+							<tool id="cdt.managedbuild.tool.gnu.c.compiler.base.892294620" name="GCC C Compiler" superClass="cdt.managedbuild.tool.gnu.c.compiler.base">
+								<option id="gnu.c.compiler.option.preprocessor.def.symbols.193803687" name="Defined symbols (-D)" superClass="gnu.c.compiler.option.preprocessor.def.symbols" useByScannerDiscovery="false"/>
+								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.c.compiler.option.include.paths.552444216" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
+									<listOptionValue builtIn="false" value="../../src"/>
+								</option>
+								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.1458844290" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
+							</tool>
+							<tool id="cdt.managedbuild.tool.gnu.c.linker.base.1169210834" name="GCC C Linker" superClass="cdt.managedbuild.tool.gnu.c.linker.base"/>
+							<tool id="cdt.managedbuild.tool.gnu.cpp.linker.base.1065738287" name="GCC C++ Linker" superClass="cdt.managedbuild.tool.gnu.cpp.linker.base">
+								<inputType id="cdt.managedbuild.tool.gnu.cpp.linker.input.1326537913" superClass="cdt.managedbuild.tool.gnu.cpp.linker.input">
+									<additionalInput kind="additionalinputdependency" paths="$(USER_OBJS)"/>
+									<additionalInput kind="additionalinput" paths="$(LIBS)"/>
+								</inputType>
+							</tool>
+							<tool id="cdt.managedbuild.tool.gnu.assembler.base.420284418" name="GCC Assembler" superClass="cdt.managedbuild.tool.gnu.assembler.base">
+								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.both.asm.option.include.paths.1342559985" name="Include paths (-I)" superClass="gnu.both.asm.option.include.paths" valueType="includePath">
+									<listOptionValue builtIn="false" value="../../src"/>
+								</option>
+								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.732390572" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
+							</tool>
+						</toolChain>
+					</folderInfo>
+					<sourceEntries>
+						<entry excluding="inet/node/xmipv6|inet/networklayer/xmipv6|inet/linklayer/xmac|inet/networklayer/wiseroute|inet/physicallayer/wireless/noise|inet/visualizer/canvas|inet/visualizer/util|inet/visualizer/contract|inet/visualizer/common|inet/visualizer/base|inet/linklayer/virtual|inet/physicallayer/wireless/unitdisk|inet/transportlayer/udp|inet/applications/udpapp|inet/linklayer/tun|inet/applications/tunapp|inet/node/tsn|inet/networks/tsn|inet/transportlayer/tcp|inet/transportlayer/tcp_common|inet/applications/tcpapp|inet/applications/voip|inet/physicallayer/wireless/shortcut|inet/linklayer/shortcut|inet/transportlayer/sctp|inet/applications/sctpapp|inet/transportlayer/rtp|inet/node/rtp|inet/applications/rtpapp|inet/routing/rip|inet/node/rip|inet/queueing/tokengenerator|inet/queueing/source|inet/queueing/sink|inet/queueing/shaper|inet/queueing/server|inet/queueing/scheduler|inet/queueing/queue|inet/queueing/policing|inet/queueing/meter|inet/queueing/marker|inet/queueing/gate|inet/queueing/flow|inet/queueing/filter|inet/queueing/classifier|inet/queueing/buffer|inet/protocolelement/transceiver|inet/protocolelement/trafficconditioner|inet/protocolelement/socket|inet/protocolelement/shaper|inet/protocolelement/service|inet/protocolelement/selectivity|inet/protocolelement/redundancy|inet/protocolelement/processing|inet/protocolelement/ordering|inet/protocolelement/measurement|inet/protocolelement/lifetime|inet/protocolelement/fragmentation|inet/protocolelement/forwarding|inet/protocolelement/dispatching|inet/protocolelement/common|inet/protocolelement/checksum|inet/protocolelement/aggregation|inet/protocolelement/acknowledgement|inet/linklayer/ppp|inet/routing/pim|inet/physicallayer/wireless/common/signal|inet/physicallayer/wireless/common/radio|inet/physicallayer/wireless/common/propagation|inet/physicallayer/wireless/common/pathloss|inet/physicallayer/wireless/common/obstacleloss|inet/physicallayer/wireless/common/neighborcache|inet/physicallayer/wireless/common/modulation|inet/physicallayer/wireless/common/medium|inet/physicallayer/wireless/common/errormodel|inet/physicallayer/wireless/common/energyconsumer|inet/physicallayer/wireless/common/communicationcache|inet/physicallayer/wireless/common/base|inet/physicallayer/wireless/common/backgroundnoise|inet/physicallayer/wireless/common/antenna|inet/physicallayer/wireless/common/analogmodel|inet/environment/objectcache|inet/environment/ground|inet/environment/common|inet/routing/ospfv3|inet/node/ospfv3|inet/routing/ospfv2|inet/node/ospfv2|inet/networklayer/nexthop|inet/networklayer/configurator/nexthop|inet/node/mpls|inet/networklayer/ted|inet/networklayer/rsvpte|inet/networklayer/mpls|inet/networklayer/ldp|inet/linklayer/lmac|inet/node/ipv6|inet/networklayer/ipv6tunneling|inet/networklayer/ipv6|inet/networklayer/icmpv6|inet/networklayer/configurator/ipv6|inet/networklayer/ipv4|inet/networklayer/configurator/ipv4|inet/networklayer/arp/ipv4|inet/node/internetcloud|inet/networklayer/internetcloud|inet/linklayer/ieee8022|inet/applications/ieee8022|inet/linklayer/ieee8021r|inet/linklayer/vlan|inet/linklayer/ieee8021q|inet/linklayer/ieee8021d|inet/linklayer/ieee8021as|inet/linklayer/ieee8021ae|inet/physicallayer/wireless/ieee802154|inet/linklayer/ieee802154|inet/physicallayer/wireless/ieee80211|inet/node/wireless|inet/linklayer/ieee80211|inet/routing/gpsr|inet/node/gpsr|inet/linklayer/configurator/gatescheduling/common|inet/linklayer/configurator/gatescheduling/base|inet/networklayer/probabilistic|inet/networklayer/flooding|inet/physicallayer/wired/ethernet|inet/node/ethernet|inet/linklayer/ethernet|inet/applications/ethernet|inet/routing/eigrp|inet/routing/dymo|inet/node/dymo|inet/routing/dsdv|inet/node/dsdv|inet/networklayer/diffserv|inet/applications/dhcp|inet/linklayer/csmaca|inet/clock/oscillator|inet/clock/model|inet/clock/common|inet/clock/base|inet/applications/clock|inet/linklayer/bmac|inet/routing/bgpv4|inet/node/bgp|inet/physicallayer/wireless/apsk|inet/routing/aodv|inet/node/aodv|inet/linklayer/acking|inet/linklayer/configurator/gatescheduling/z3|inet/common/selfdoc|inet/visualizer/osg|inet/applications/voipstream|inet/transportlayer/tcp_nsc|inet/transportlayer/tcp_lwip|inet/emulation|inet/linklayer/ext|inet/routing/extras|transport/tcp_nsc|transport/tcp_lwip" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="src"/>
+					</sourceEntries>
+				</configuration>
+			</storageModule>
+			<storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>
+		</cconfiguration>
+		<cconfiguration id="org.omnetpp.cdt.gnu.config.release.1746235823">
+			<storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="org.omnetpp.cdt.gnu.config.release.1746235823" moduleId="org.eclipse.cdt.core.settings" name="release">
+				<externalSettings/>
+				<extensions>
+					<extension id="org.eclipse.cdt.core.MachO64" point="org.eclipse.cdt.core.BinaryParser"/>
+					<extension id="org.eclipse.cdt.core.ELF" point="org.eclipse.cdt.core.BinaryParser"/>
+					<extension id="org.eclipse.cdt.core.PE" point="org.eclipse.cdt.core.BinaryParser"/>
+					<extension id="org.eclipse.cdt.core.GmakeErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+					<extension id="org.eclipse.cdt.core.CWDLocator" point="org.eclipse.cdt.core.ErrorParser"/>
+					<extension id="org.eclipse.cdt.core.GCCErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+					<extension id="org.eclipse.cdt.core.GASErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+					<extension id="org.eclipse.cdt.core.GLDErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+				</extensions>
+			</storageModule>
+			<storageModule moduleId="cdtBuildSystem" version="4.0.0">
+				<configuration artifactName="${ProjName}" buildProperties="" description="" id="org.omnetpp.cdt.gnu.config.release.1746235823" name="release" parent="org.omnetpp.cdt.gnu.config.release">
+					<folderInfo id="org.omnetpp.cdt.gnu.config.release.1746235823." name="/" resourcePath="">
+						<toolChain id="org.omnetpp.cdt.gnu.toolchain.release.1498166216" name="GCC for OMNeT++" superClass="org.omnetpp.cdt.gnu.toolchain.release">
+							<targetPlatform binaryParser="org.eclipse.cdt.core.ELF;org.eclipse.cdt.core.MachO64;org.eclipse.cdt.core.PE" id="org.omnetpp.cdt.targetPlatform.1049800537" isAbstract="false" name="Windows, Linux, Mac" osList="win32,linux,macosx" superClass="org.omnetpp.cdt.targetPlatform"/>
+							<builder id="org.omnetpp.cdt.gnu.builder.release.1176677325" keepEnvironmentInBuildfile="false" managedBuildOn="true" name="OMNeT++ Make Builder (opp_makemake)" parallelBuildOn="true" parallelizationNumber="optimal" superClass="org.omnetpp.cdt.gnu.builder.release"/>
+							<tool id="cdt.managedbuild.tool.gnu.archiver.base.1643927787" name="GCC Archiver" superClass="cdt.managedbuild.tool.gnu.archiver.base"/>
+							<tool id="cdt.managedbuild.tool.gnu.cpp.compiler.base.1039888888" name="GCC C++ Compiler" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.base">
+								<option id="gnu.cpp.compiler.option.preprocessor.def.655304152" name="Defined symbols (-D)" superClass="gnu.cpp.compiler.option.preprocessor.def" useByScannerDiscovery="false"/>
+								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.cpp.compiler.option.include.paths.1086707691" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
+									<listOptionValue builtIn="false" value="../../src"/>
+								</option>
+								<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.958073850" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
+							</tool>
+							<tool id="cdt.managedbuild.tool.gnu.c.compiler.base.419916163" name="GCC C Compiler" superClass="cdt.managedbuild.tool.gnu.c.compiler.base">
+								<option id="gnu.c.compiler.option.preprocessor.def.symbols.1241715501" name="Defined symbols (-D)" superClass="gnu.c.compiler.option.preprocessor.def.symbols" useByScannerDiscovery="false"/>
+								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.c.compiler.option.include.paths.951413942" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
+									<listOptionValue builtIn="false" value="../../src"/>
+								</option>
+								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.406690453" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
+							</tool>
+							<tool id="cdt.managedbuild.tool.gnu.c.linker.base.1190158571" name="GCC C Linker" superClass="cdt.managedbuild.tool.gnu.c.linker.base"/>
+							<tool id="cdt.managedbuild.tool.gnu.cpp.linker.base.893445214" name="GCC C++ Linker" superClass="cdt.managedbuild.tool.gnu.cpp.linker.base">
+								<inputType id="cdt.managedbuild.tool.gnu.cpp.linker.input.422104919" superClass="cdt.managedbuild.tool.gnu.cpp.linker.input">
+									<additionalInput kind="additionalinputdependency" paths="$(USER_OBJS)"/>
+									<additionalInput kind="additionalinput" paths="$(LIBS)"/>
+								</inputType>
+							</tool>
+							<tool id="cdt.managedbuild.tool.gnu.assembler.base.960891752" name="GCC Assembler" superClass="cdt.managedbuild.tool.gnu.assembler.base">
+								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.both.asm.option.include.paths.963947628" name="Include paths (-I)" superClass="gnu.both.asm.option.include.paths" valueType="includePath">
+									<listOptionValue builtIn="false" value="../../src"/>
+								</option>
+								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.1865888372" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
+							</tool>
+						</toolChain>
+					</folderInfo>
+					<sourceEntries>
+						<entry excluding="inet/node/xmipv6|inet/networklayer/xmipv6|inet/linklayer/xmac|inet/networklayer/wiseroute|inet/physicallayer/wireless/noise|inet/visualizer/canvas|inet/visualizer/util|inet/visualizer/contract|inet/visualizer/common|inet/visualizer/base|inet/linklayer/virtual|inet/physicallayer/wireless/unitdisk|inet/transportlayer/udp|inet/applications/udpapp|inet/linklayer/tun|inet/applications/tunapp|inet/node/tsn|inet/networks/tsn|inet/transportlayer/tcp|inet/transportlayer/tcp_common|inet/applications/tcpapp|inet/applications/voip|inet/physicallayer/wireless/shortcut|inet/linklayer/shortcut|inet/transportlayer/sctp|inet/applications/sctpapp|inet/transportlayer/rtp|inet/node/rtp|inet/applications/rtpapp|inet/routing/rip|inet/node/rip|inet/queueing/tokengenerator|inet/queueing/source|inet/queueing/sink|inet/queueing/shaper|inet/queueing/server|inet/queueing/scheduler|inet/queueing/queue|inet/queueing/policing|inet/queueing/meter|inet/queueing/marker|inet/queueing/gate|inet/queueing/flow|inet/queueing/filter|inet/queueing/classifier|inet/queueing/buffer|inet/protocolelement/transceiver|inet/protocolelement/trafficconditioner|inet/protocolelement/socket|inet/protocolelement/shaper|inet/protocolelement/service|inet/protocolelement/selectivity|inet/protocolelement/redundancy|inet/protocolelement/processing|inet/protocolelement/ordering|inet/protocolelement/measurement|inet/protocolelement/lifetime|inet/protocolelement/fragmentation|inet/protocolelement/forwarding|inet/protocolelement/dispatching|inet/protocolelement/common|inet/protocolelement/checksum|inet/protocolelement/aggregation|inet/protocolelement/acknowledgement|inet/linklayer/ppp|inet/routing/pim|inet/physicallayer/wireless/common/signal|inet/physicallayer/wireless/common/radio|inet/physicallayer/wireless/common/propagation|inet/physicallayer/wireless/common/pathloss|inet/physicallayer/wireless/common/obstacleloss|inet/physicallayer/wireless/common/neighborcache|inet/physicallayer/wireless/common/modulation|inet/physicallayer/wireless/common/medium|inet/physicallayer/wireless/common/errormodel|inet/physicallayer/wireless/common/energyconsumer|inet/physicallayer/wireless/common/communicationcache|inet/physicallayer/wireless/common/base|inet/physicallayer/wireless/common/backgroundnoise|inet/physicallayer/wireless/common/antenna|inet/physicallayer/wireless/common/analogmodel|inet/environment/objectcache|inet/environment/ground|inet/environment/common|inet/routing/ospfv3|inet/node/ospfv3|inet/routing/ospfv2|inet/node/ospfv2|inet/networklayer/nexthop|inet/networklayer/configurator/nexthop|inet/node/mpls|inet/networklayer/ted|inet/networklayer/rsvpte|inet/networklayer/mpls|inet/networklayer/ldp|inet/linklayer/lmac|inet/node/ipv6|inet/networklayer/ipv6tunneling|inet/networklayer/ipv6|inet/networklayer/icmpv6|inet/networklayer/configurator/ipv6|inet/networklayer/ipv4|inet/networklayer/configurator/ipv4|inet/networklayer/arp/ipv4|inet/node/internetcloud|inet/networklayer/internetcloud|inet/linklayer/ieee8022|inet/applications/ieee8022|inet/linklayer/ieee8021r|inet/linklayer/vlan|inet/linklayer/ieee8021q|inet/linklayer/ieee8021d|inet/linklayer/ieee8021as|inet/linklayer/ieee8021ae|inet/physicallayer/wireless/ieee802154|inet/linklayer/ieee802154|inet/physicallayer/wireless/ieee80211|inet/node/wireless|inet/linklayer/ieee80211|inet/routing/gpsr|inet/node/gpsr|inet/linklayer/configurator/gatescheduling/common|inet/linklayer/configurator/gatescheduling/base|inet/networklayer/probabilistic|inet/networklayer/flooding|inet/physicallayer/wired/ethernet|inet/node/ethernet|inet/linklayer/ethernet|inet/applications/ethernet|inet/routing/eigrp|inet/routing/dymo|inet/node/dymo|inet/routing/dsdv|inet/node/dsdv|inet/networklayer/diffserv|inet/applications/dhcp|inet/linklayer/csmaca|inet/clock/oscillator|inet/clock/model|inet/clock/common|inet/clock/base|inet/applications/clock|inet/linklayer/bmac|inet/routing/bgpv4|inet/node/bgp|inet/physicallayer/wireless/apsk|inet/routing/aodv|inet/node/aodv|inet/linklayer/acking|inet/linklayer/configurator/gatescheduling/z3|inet/common/selfdoc|inet/visualizer/osg|inet/applications/voipstream|inet/transportlayer/tcp_nsc|inet/transportlayer/tcp_lwip|inet/emulation|inet/linklayer/ext|inet/routing/extras|transport/tcp_nsc|transport/tcp_lwip" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="src"/>
+					</sourceEntries>
+				</configuration>
+			</storageModule>
+			<storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>
+		</cconfiguration>
+	</storageModule>
+	<storageModule moduleId="cdtBuildSystem" version="4.0.0">
+		<project id="inet.org.omnetpp.cdt.omnetppProjectType.1299021111" name="OMNeT++ Simulation" projectType="org.omnetpp.cdt.omnetppProjectType"/>
+	</storageModule>
+	<storageModule moduleId="scannerConfiguration">
+		<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="org.eclipse.cdt.make.core.GCCStandardMakePerProjectProfile"/>
+		<profile id="org.eclipse.cdt.make.core.GCCStandardMakePerFileProfile">
+			<buildOutputProvider>
+				<openAction enabled="true" filePath=""/>
+				<parser enabled="true"/>
+			</buildOutputProvider>
+			<scannerInfoProvider id="makefileGenerator">
+				<runAction arguments="-f ${project_name}_scd.mk" command="make" useDefault="true"/>
+				<parser enabled="true"/>
+			</scannerInfoProvider>
+		</profile>
+		<profile id="org.eclipse.cdt.managedbuilder.core.GCCWinManagedMakePerProjectProfile">
+			<buildOutputProvider>
+				<openAction enabled="true" filePath=""/>
+				<parser enabled="true"/>
+			</buildOutputProvider>
+			<scannerInfoProvider id="specsFile">
+				<runAction arguments="-E -P -v -dD ${plugin_state_location}/${specs_file}" command="gcc" useDefault="true"/>
+				<parser enabled="true"/>
+			</scannerInfoProvider>
+		</profile>
+		<profile id="org.eclipse.cdt.managedbuilder.core.GCCWinManagedMakePerProjectProfileCPP">
+			<buildOutputProvider>
+				<openAction enabled="true" filePath=""/>
+				<parser enabled="true"/>
+			</buildOutputProvider>
+			<scannerInfoProvider id="specsFile">
+				<runAction arguments="-E -P -v -dD ${plugin_state_location}/specs.cpp" command="g++" useDefault="true"/>
+				<parser enabled="true"/>
+			</scannerInfoProvider>
+		</profile>
+		<profile id="org.eclipse.cdt.managedbuilder.core.GCCWinManagedMakePerProjectProfileC">
+			<buildOutputProvider>
+				<openAction enabled="true" filePath=""/>
+				<parser enabled="true"/>
+			</buildOutputProvider>
+			<scannerInfoProvider id="specsFile">
+				<runAction arguments="-E -P -v -dD ${plugin_state_location}/specs.c" command="gcc" useDefault="true"/>
+				<parser enabled="true"/>
+			</scannerInfoProvider>
+		</profile>
+		<profile id="org.omnetpp.cdt.OmnetppGCCPerProjectProfile">
+			<buildOutputProvider>
+				<openAction enabled="false" filePath=""/>
+				<parser enabled="false"/>
+			</buildOutputProvider>
+		</profile>
+		<scannerConfigBuildInfo instanceId="org.omnetpp.cdt.gnu.config.release.960890479">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="org.omnetpp.cdt.OmnetppGCCPerProjectProfile"/>
+		</scannerConfigBuildInfo>
+		<scannerConfigBuildInfo instanceId="org.omnetpp.cdt.msvc.config.debug.646282618">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="org.omnetpp.cdt.msvc.MSVCScannerInfo"/>
+			<profile id="org.eclipse.cdt.make.core.GCCStandardMakePerFileProfile">
+				<buildOutputProvider>
+					<openAction enabled="true" filePath=""/>
+					<parser enabled="true"/>
+				</buildOutputProvider>
+				<scannerInfoProvider id="makefileGenerator">
+					<runAction arguments="-f ${project_name}_scd.mk" command="make" useDefault="true"/>
+					<parser enabled="true"/>
+				</scannerInfoProvider>
+			</profile>
+			<profile id="org.eclipse.cdt.managedbuilder.core.GCCWinManagedMakePerProjectProfile">
+				<buildOutputProvider>
+					<openAction enabled="true" filePath=""/>
+					<parser enabled="true"/>
+				</buildOutputProvider>
+				<scannerInfoProvider id="specsFile">
+					<runAction arguments="-E -P -v -dD ${plugin_state_location}/${specs_file}" command="gcc" useDefault="true"/>
+					<parser enabled="true"/>
+				</scannerInfoProvider>
+			</profile>
+			<profile id="org.eclipse.cdt.managedbuilder.core.GCCWinManagedMakePerProjectProfileCPP">
+				<buildOutputProvider>
+					<openAction enabled="true" filePath=""/>
+					<parser enabled="true"/>
+				</buildOutputProvider>
+				<scannerInfoProvider id="specsFile">
+					<runAction arguments="-E -P -v -dD ${plugin_state_location}/specs.cpp" command="g++" useDefault="true"/>
+					<parser enabled="true"/>
+				</scannerInfoProvider>
+			</profile>
+			<profile id="org.eclipse.cdt.managedbuilder.core.GCCWinManagedMakePerProjectProfileC">
+				<buildOutputProvider>
+					<openAction enabled="true" filePath=""/>
+					<parser enabled="true"/>
+				</buildOutputProvider>
+				<scannerInfoProvider id="specsFile">
+					<runAction arguments="-E -P -v -dD ${plugin_state_location}/specs.c" command="gcc" useDefault="true"/>
+					<parser enabled="true"/>
+				</scannerInfoProvider>
+			</profile>
+			<profile id="org.omnetpp.cdt.OmnetppGCCPerProjectProfile">
+				<buildOutputProvider>
+					<openAction enabled="false" filePath=""/>
+					<parser enabled="false"/>
+				</buildOutputProvider>
+			</profile>
+		</scannerConfigBuildInfo>
+		<scannerConfigBuildInfo instanceId="org.omnetpp.cdt.gnu.config.debug.1696110582">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="org.omnetpp.cdt.OmnetppGCCPerProjectProfile"/>
+		</scannerConfigBuildInfo>
+		<scannerConfigBuildInfo instanceId="org.omnetpp.cdt.gnu.config.debug.229043752">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="org.omnetpp.cdt.OmnetppGCCPerProjectProfile"/>
+		</scannerConfigBuildInfo>
+		<scannerConfigBuildInfo instanceId="org.omnetpp.cdt.gnu.config.release.1673461738">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="org.omnetpp.cdt.OmnetppGCCPerProjectProfile"/>
+			<profile id="org.eclipse.cdt.make.core.GCCStandardMakePerFileProfile">
+				<buildOutputProvider>
+					<openAction enabled="true" filePath=""/>
+					<parser enabled="true"/>
+				</buildOutputProvider>
+				<scannerInfoProvider id="makefileGenerator">
+					<runAction arguments="-f ${project_name}_scd.mk" command="make" useDefault="true"/>
+					<parser enabled="true"/>
+				</scannerInfoProvider>
+			</profile>
+			<profile id="org.eclipse.cdt.managedbuilder.core.GCCWinManagedMakePerProjectProfile">
+				<buildOutputProvider>
+					<openAction enabled="true" filePath=""/>
+					<parser enabled="true"/>
+				</buildOutputProvider>
+				<scannerInfoProvider id="specsFile">
+					<runAction arguments="-E -P -v -dD ${plugin_state_location}/${specs_file}" command="gcc" useDefault="true"/>
+					<parser enabled="true"/>
+				</scannerInfoProvider>
+			</profile>
+			<profile id="org.eclipse.cdt.managedbuilder.core.GCCWinManagedMakePerProjectProfileCPP">
+				<buildOutputProvider>
+					<openAction enabled="true" filePath=""/>
+					<parser enabled="true"/>
+				</buildOutputProvider>
+				<scannerInfoProvider id="specsFile">
+					<runAction arguments="-E -P -v -dD ${plugin_state_location}/specs.cpp" command="g++" useDefault="true"/>
+					<parser enabled="true"/>
+				</scannerInfoProvider>
+			</profile>
+			<profile id="org.eclipse.cdt.managedbuilder.core.GCCWinManagedMakePerProjectProfileC">
+				<buildOutputProvider>
+					<openAction enabled="true" filePath=""/>
+					<parser enabled="true"/>
+				</buildOutputProvider>
+				<scannerInfoProvider id="specsFile">
+					<runAction arguments="-E -P -v -dD ${plugin_state_location}/specs.c" command="gcc" useDefault="true"/>
+					<parser enabled="true"/>
+				</scannerInfoProvider>
+			</profile>
+			<profile id="org.omnetpp.cdt.OmnetppGCCPerProjectProfile">
+				<buildOutputProvider>
+					<openAction enabled="false" filePath=""/>
+					<parser enabled="false"/>
+				</buildOutputProvider>
+			</profile>
+		</scannerConfigBuildInfo>
+		<scannerConfigBuildInfo instanceId="org.omnetpp.cdt.gnu.config.debug.1590007136">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="org.omnetpp.cdt.OmnetppGCCPerProjectProfile"/>
+		</scannerConfigBuildInfo>
+		<scannerConfigBuildInfo instanceId="org.omnetpp.cdt.gnu.config.debug.200906710">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="org.omnetpp.cdt.OmnetppGCCPerProjectProfile"/>
+			<profile id="org.eclipse.cdt.make.core.GCCStandardMakePerFileProfile">
+				<buildOutputProvider>
+					<openAction enabled="true" filePath=""/>
+					<parser enabled="true"/>
+				</buildOutputProvider>
+				<scannerInfoProvider id="makefileGenerator">
+					<runAction arguments="-f ${project_name}_scd.mk" command="make" useDefault="true"/>
+					<parser enabled="true"/>
+				</scannerInfoProvider>
+			</profile>
+			<profile id="org.eclipse.cdt.managedbuilder.core.GCCWinManagedMakePerProjectProfile">
+				<buildOutputProvider>
+					<openAction enabled="true" filePath=""/>
+					<parser enabled="true"/>
+				</buildOutputProvider>
+				<scannerInfoProvider id="specsFile">
+					<runAction arguments="-E -P -v -dD ${plugin_state_location}/${specs_file}" command="gcc" useDefault="true"/>
+					<parser enabled="true"/>
+				</scannerInfoProvider>
+			</profile>
+			<profile id="org.eclipse.cdt.managedbuilder.core.GCCWinManagedMakePerProjectProfileCPP">
+				<buildOutputProvider>
+					<openAction enabled="true" filePath=""/>
+					<parser enabled="true"/>
+				</buildOutputProvider>
+				<scannerInfoProvider id="specsFile">
+					<runAction arguments="-E -P -v -dD ${plugin_state_location}/specs.cpp" command="g++" useDefault="true"/>
+					<parser enabled="true"/>
+				</scannerInfoProvider>
+			</profile>
+			<profile id="org.eclipse.cdt.managedbuilder.core.GCCWinManagedMakePerProjectProfileC">
+				<buildOutputProvider>
+					<openAction enabled="true" filePath=""/>
+					<parser enabled="true"/>
+				</buildOutputProvider>
+				<scannerInfoProvider id="specsFile">
+					<runAction arguments="-E -P -v -dD ${plugin_state_location}/specs.c" command="gcc" useDefault="true"/>
+					<parser enabled="true"/>
+				</scannerInfoProvider>
+			</profile>
+			<profile id="org.omnetpp.cdt.OmnetppGCCPerProjectProfile">
+				<buildOutputProvider>
+					<openAction enabled="false" filePath=""/>
+					<parser enabled="false"/>
+				</buildOutputProvider>
+			</profile>
+		</scannerConfigBuildInfo>
+		<scannerConfigBuildInfo instanceId="org.omnetpp.cdt.gnu.config.release.63841363">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="org.omnetpp.cdt.OmnetppGCCPerProjectProfile"/>
+		</scannerConfigBuildInfo>
+		<scannerConfigBuildInfo instanceId="org.omnetpp.cdt.gnu.config.release.1746235823">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="org.omnetpp.cdt.OmnetppGCCPerProjectProfile"/>
+		</scannerConfigBuildInfo>
+	</storageModule>
+	<storageModule moduleId="org.eclipse.cdt.core.LanguageSettingsProviders"/>
+	<storageModule moduleId="refreshScope" versionNumber="2">
+		<configuration configurationName="gcc-release">
+			<resource resourceType="PROJECT" workspacePath="/inet"/>
+		</configuration>
+		<configuration configurationName="gcc-debug">
+			<resource resourceType="PROJECT" workspacePath="/inet"/>
+		</configuration>
+	</storageModule>
+	<storageModule moduleId="org.eclipse.cdt.make.core.buildtargets"/>
 </cproject>

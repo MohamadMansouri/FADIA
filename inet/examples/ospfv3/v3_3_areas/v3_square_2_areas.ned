@@ -4,7 +4,7 @@ import inet.node.ospfv3.Ospfv3Router;
 import inet.networklayer.configurator.ipv4.Ipv4NetworkConfigurator;
 import inet.networklayer.configurator.ipv6.Ipv6FlatNetworkConfigurator;
 import inet.common.misc.ThruputMeteringChannel;
-import inet.node.ethernet.EtherSwitch;
+import inet.node.ethernet.EthernetSwitch;
 import inet.node.inet.StandardHost;
 
 
@@ -20,12 +20,12 @@ network v3_3_areas
     submodules:
         configurator: Ipv4NetworkConfigurator {
             parameters:
-                config = xml("<config>"+                             
+                config = xml("<config>"+
                             "</config>"
                             );
                 addStaticRoutes = false;
-           	 	addDefaultRoutes = false;
-            	addSubnetRoutes = false;
+                addDefaultRoutes = false;
+                addSubnetRoutes = false;
                 @display("p=147,54");
         }
         Router1: Ospfv3Router {

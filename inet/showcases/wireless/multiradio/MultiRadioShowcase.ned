@@ -1,6 +1,7 @@
 //
-// This program is property of its copyright holder. All rights reserved.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
+
 
 package inet.showcases.wireless.multiradio;
 
@@ -8,8 +9,8 @@ import inet.networklayer.configurator.ipv4.Ipv4NetworkConfigurator;
 import inet.node.inet.Router;
 import inet.node.inet.WirelessHost;
 import inet.node.wireless.AccessPoint;
-import inet.physicallayer.ieee80211.packetlevel.Ieee80211ScalarRadioMedium;
-import inet.visualizer.integrated.IntegratedMultiCanvasVisualizer;
+import inet.physicallayer.wireless.ieee80211.packetlevel.Ieee80211ScalarRadioMedium;
+import inet.visualizer.canvas.integrated.IntegratedMultiCanvasVisualizer;
 
 
 network MultiRadioShowcase

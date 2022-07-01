@@ -1,44 +1,32 @@
 //
-// Copyright (C) 2004 Andras Varga
+// Copyright (C) 2004 OpenSim Ltd.
 // Copyright (C) 2012 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public
-// License along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
-// @author Andras Varga
-// @author Zoltan Bojthe
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
+
 #include "inet/networklayer/common/L3AddressResolver.h"
+
 #include "inet/networklayer/common/ModuleIdAddress.h"
 #include "inet/networklayer/common/ModulePathAddress.h"
 #include "inet/networklayer/contract/IInterfaceTable.h"
 
-#ifdef WITH_IPv4
+#ifdef INET_WITH_IPv4
 #include "inet/networklayer/configurator/ipv4/Ipv4NetworkConfigurator.h"
 #include "inet/networklayer/ipv4/IIpv4RoutingTable.h"
-#include "inet/networklayer/ipv4/Ipv4InterfaceData.h"
-#endif // ifdef WITH_IPv4
+#endif // ifdef INET_WITH_IPv4
 
-#ifdef WITH_IPv6
+#ifdef INET_WITH_IPv6
 #include "inet/networklayer/ipv6/Ipv6InterfaceData.h"
 #include "inet/networklayer/ipv6/Ipv6RoutingTable.h"
-#endif // ifdef WITH_IPv6
+#endif // ifdef INET_WITH_IPv6
 
-#ifdef WITH_NEXTHOP
+#ifdef INET_WITH_NEXTHOP
+#include "inet/networklayer/configurator/nexthop/NextHopNetworkConfigurator.h"
 #include "inet/networklayer/nexthop/NextHopInterfaceData.h"
 #include "inet/networklayer/nexthop/NextHopRoutingTable.h"
-#endif // ifdef WITH_NEXTHOP
+#endif // ifdef INET_WITH_NEXTHOP
 
 namespace inet {
 
@@ -46,7 +34,7 @@ L3Address L3AddressResolver::resolve(const char *s, int addrType)
 {
     L3Address addr;
     if (!tryResolve(s, addr, addrType))
-        throw cRuntimeError("L3AddressResolver: address `%s' not configured (yet?)", s);
+        throw cRuntimeError("L3AddressResolver: Cannot resolve address `%s'", s);
     return addr;
 }
 
@@ -80,7 +68,6 @@ bool L3AddressResolver::tryParse(L3Address& result, const char *addr, int addrTy
         return false;
     return true;
 }
-
 
 bool L3AddressResolver::tryResolve(const char *s, L3Address& result, int addrType)
 {
@@ -160,7 +147,7 @@ bool L3AddressResolver::tryResolve(const char *s, L3Address& result, int addrTyp
         throw cRuntimeError("L3AddressResolver: syntax error parsing address spec `%s'", s);
 
     // find module
-    cModule *mod = getSimulation()->getModuleByPath(modname.c_str());
+    cModule *mod = getSimulation()->findModuleByPath(modname.c_str());
     if (!mod)
         throw cRuntimeError("L3AddressResolver: module `%s' not found", modname.c_str());
 
@@ -185,7 +172,7 @@ bool L3AddressResolver::tryResolve(const char *s, L3Address& result, int addrTyp
     // find interface for dest node
     // get address from the given module/interface
     if (!destnodename.empty()) {
-        cModule *destnode = getSimulation()->getModuleByPath(destnodename.c_str());
+        cModule *destnode = getSimulation()->findModuleByPath(destnodename.c_str());
         if (!destnode)
             throw cRuntimeError("L3AddressResolver: destination module `%s' not found", destnodename.c_str());
         result = addressOf(mod, destnode, addrType);
@@ -201,12 +188,12 @@ bool L3AddressResolver::tryResolve(const char *s, L3Address& result, int addrTyp
 
 L3Address L3AddressResolver::routerIdOf(cModule *host)
 {
-#ifdef WITH_IPv4
+#ifdef INET_WITH_IPv4
     IIpv4RoutingTable *rt = getIpv4RoutingTableOf(host);
     return L3Address(rt->getRouterId());
-#else // ifdef WITH_IPv4
+#else // ifdef INET_WITH_IPv4
     throw cRuntimeError("INET was compiled without Ipv4 support");
-#endif // ifdef WITH_IPv4
+#endif // ifdef INET_WITH_IPv4
 }
 
 L3Address L3AddressResolver::addressOf(cModule *host, int addrType)
@@ -218,7 +205,7 @@ L3Address L3AddressResolver::addressOf(cModule *host, int addrType)
 L3Address L3AddressResolver::addressOf(cModule *host, const char *ifname, int addrType)
 {
     IInterfaceTable *ift = interfaceTableOf(host);
-    InterfaceEntry *ie = ift->findInterfaceByName(ifname);
+    NetworkInterface *ie = ift->findInterfaceByName(ifname);
     if (ie)
         return getAddressFrom(ie, addrType);
 
@@ -229,7 +216,7 @@ L3Address L3AddressResolver::addressOf(cModule *host, cModule *destmod, int addr
 {
     IInterfaceTable *ift = interfaceTableOf(host);
     for (int i = 0; i < ift->getNumInterfaces(); i++) {
-        InterfaceEntry *ie = ift->getInterface(i);
+        NetworkInterface *ie = ift->getInterface(i);
         if (ie) {
             int gateId = ie->getNodeOutputGateId();
             if (gateId != -1)
@@ -255,16 +242,13 @@ L3Address L3AddressResolver::getAddressFrom(IInterfaceTable *ift, int addrType)
         return ret;
     else if ((addrType & ADDR_MODULEID) && getModuleIdAddressFrom(ret, ift, netmask))
         return ret;
-    else
-        throw cRuntimeError("L3AddressResolver: unknown addrType %d", addrType);
     return ret;
 }
 
-L3Address L3AddressResolver::getAddressFrom(InterfaceEntry *ie, int addrType)
+L3Address L3AddressResolver::getAddressFrom(NetworkInterface *ie, int addrType)
 {
     L3Address ret;
     bool mask = addrType & ADDR_MASK;
-
     if ((addrType & ADDR_IPv4) && getInterfaceIpv4Address(ret, ie, mask))
         return ret;
     else if ((addrType & ADDR_IPv6) && getInterfaceIpv6Address(ret, ie, mask))
@@ -275,9 +259,6 @@ L3Address L3AddressResolver::getAddressFrom(InterfaceEntry *ie, int addrType)
         return ret;
     else if ((addrType & ADDR_MODULEID) && getInterfaceModuleIdAddress(ret, ie, mask))
         return ret;
-    else
-        throw cRuntimeError("L3AddressResolver: unknown addrType %d at %s", addrType, ie->getInterfaceFullPath().c_str());
-
     return ret;
 }
 
@@ -287,16 +268,16 @@ bool L3AddressResolver::getIpv4AddressFrom(L3Address& retAddr, IInterfaceTable *
         throw cRuntimeError("L3AddressResolver: interface table `%s' has no interface registered "
                             "(yet? try in a later init stage!)", ift->getFullPath().c_str());
 
-#ifdef WITH_IPv4
+#ifdef INET_WITH_IPv4
     // choose first usable interface address (configured for Ipv4, non-loopback if, addr non-null)
     for (int i = 0; i < ift->getNumInterfaces(); i++) {
-        InterfaceEntry *ie = ift->getInterface(i);
+        NetworkInterface *ie = ift->getInterface(i);
         if (ie->isLoopback())
             continue;
         if (getInterfaceIpv4Address(retAddr, ie, netmask))
             return true;
     }
-#endif // ifdef WITH_IPv4
+#endif // ifdef INET_WITH_IPv4
     return false;
 }
 
@@ -307,9 +288,9 @@ bool L3AddressResolver::getIpv6AddressFrom(L3Address& retAddr, IInterfaceTable *
         throw cRuntimeError("L3AddressResolver: interface table `%s' has no interface registered "
                             "(yet? try in a later init stage!)", ift->getFullPath().c_str());
 
-#ifndef WITH_IPv6
+#ifndef INET_WITH_IPv6
     return false;
-#else // ifndef WITH_IPv6
+#else // ifndef INET_WITH_IPv6
     if (netmask)
         return false; // Ipv6 netmask not supported yet
 
@@ -317,12 +298,12 @@ bool L3AddressResolver::getIpv6AddressFrom(L3Address& retAddr, IInterfaceTable *
     Ipv6Address::Scope retScope = Ipv6Address::UNSPECIFIED;
 
     for (int i = 0; i < ift->getNumInterfaces() && retScope != Ipv6Address::GLOBAL; i++) {
-        InterfaceEntry *ie = ift->getInterface(i);
-        auto ipv6Data = ie->findProtocolData<Ipv6InterfaceData>();
-        if (!ipv6Data || ie->isLoopback())
+        NetworkInterface *ie = ift->getInterface(i);
+        L3Address curAddr;
+        bool ieHasIpv6Addr = getInterfaceIpv6Address(curAddr, ie, false);
+        if (!ieHasIpv6Addr || ie->isLoopback())
             continue;
-        Ipv6Address curAddr = ipv6Data->getPreferredAddress();
-        Ipv6Address::Scope curScope = curAddr.getScope();
+        Ipv6Address::Scope curScope = curAddr.toIpv6().getScope();
         if (curScope > retScope) {
             retAddr = curAddr;
             retScope = curScope;
@@ -330,7 +311,7 @@ bool L3AddressResolver::getIpv6AddressFrom(L3Address& retAddr, IInterfaceTable *
         }
     }
     return ret;
-#endif // ifndef WITH_IPv6
+#endif // ifndef INET_WITH_IPv6
 }
 
 bool L3AddressResolver::getMacAddressFrom(L3Address& retAddr, IInterfaceTable *ift, bool netmask)
@@ -341,7 +322,7 @@ bool L3AddressResolver::getMacAddressFrom(L3Address& retAddr, IInterfaceTable *i
 
     // choose first usable interface address (configured for generic, non-loopback if, addr non-null)
     for (int i = 0; i < ift->getNumInterfaces(); i++) {
-        InterfaceEntry *ie = ift->getInterface(i);
+        NetworkInterface *ie = ift->getInterface(i);
         if (ie->isLoopback())
             continue;
         if (getInterfaceMacAddress(retAddr, ie, netmask))
@@ -358,7 +339,7 @@ bool L3AddressResolver::getModulePathAddressFrom(L3Address& retAddr, IInterfaceT
 
     // choose first usable interface address (configured for generic, non-loopback if, addr non-null)
     for (int i = 0; i < ift->getNumInterfaces(); i++) {
-        InterfaceEntry *ie = ift->getInterface(i);
+        NetworkInterface *ie = ift->getInterface(i);
         if (ie->isLoopback())
             continue;
         if (getInterfaceModulePathAddress(retAddr, ie, netmask))
@@ -375,7 +356,7 @@ bool L3AddressResolver::getModuleIdAddressFrom(L3Address& retAddr, IInterfaceTab
 
     // choose first usable interface address (configured for generic, non-loopback if, addr non-null)
     for (int i = 0; i < ift->getNumInterfaces(); i++) {
-        InterfaceEntry *ie = ift->getInterface(i);
+        NetworkInterface *ie = ift->getInterface(i);
         if (ie->isLoopback())
             continue;
         if (getInterfaceModuleIdAddress(retAddr, ie, netmask))
@@ -384,9 +365,9 @@ bool L3AddressResolver::getModuleIdAddressFrom(L3Address& retAddr, IInterfaceTab
     return false;
 }
 
-bool L3AddressResolver::getInterfaceIpv6Address(L3Address& ret, InterfaceEntry *ie, bool netmask)
+bool L3AddressResolver::getInterfaceIpv6Address(L3Address& ret, NetworkInterface *ie, bool netmask)
 {
-#ifdef WITH_IPv6
+#ifdef INET_WITH_IPv6
     if (netmask)
         return false; // Ipv6 netmask not supported yet
     if (auto ipv6Data = ie->findProtocolData<Ipv6InterfaceData>()) {
@@ -396,32 +377,30 @@ bool L3AddressResolver::getInterfaceIpv6Address(L3Address& ret, InterfaceEntry *
             return true;
         }
     }
-#endif // ifdef WITH_IPv6
+#endif // ifdef INET_WITH_IPv6
     return false;
 }
 
-bool L3AddressResolver::getInterfaceIpv4Address(L3Address& ret, InterfaceEntry *ie, bool netmask)
+bool L3AddressResolver::getInterfaceIpv4Address(L3Address& ret, NetworkInterface *ie, bool netmask)
 {
-#ifdef WITH_IPv4
-    if (auto ipv4Data = ie->findProtocolData<Ipv4InterfaceData>()) {
-        Ipv4Address addr = ipv4Data->getIPAddress();
-        if (!addr.isUnspecified()) {
-            ret.set(netmask ? ipv4Data->getNetmask() : addr);
-            return true;
-        }
+#ifdef INET_WITH_IPv4
+    Ipv4Address addr = ie->getIpv4Address();
+    if (!addr.isUnspecified()) {
+        ret.set(netmask ? ie->getIpv4Netmask() : addr);
+        return true;
     }
     else {
         // find address in the configurator's notebook
-        // TODO: how do we know where is the configurator? get the path from a NED parameter?
-        L3AddressResolver *configurator = dynamic_cast<L3AddressResolver *>(getSimulation()->getModuleByPath("configurator"));
+        // TODO how do we know where is the configurator? get the path from a NED parameter?
+        Ipv4NetworkConfigurator *configurator = dynamic_cast<Ipv4NetworkConfigurator *>(getSimulation()->findModuleByPath("configurator"));
         if (configurator)
-            return configurator->getInterfaceIpv4Address(ret, ie, netmask);
+            return static_cast<L3AddressResolver *>(configurator)->getInterfaceIpv4Address(ret, ie, netmask);
     }
-#endif // ifdef WITH_IPv4
+#endif // ifdef INET_WITH_IPv4
     return false;
 }
 
-bool L3AddressResolver::getInterfaceMacAddress(L3Address& ret, InterfaceEntry *ie, bool netmask)
+bool L3AddressResolver::getInterfaceMacAddress(L3Address& ret, NetworkInterface *ie, bool netmask)
 {
     if (!ie->getMacAddress().isUnspecified()) {
         ret = ie->getMacAddress();
@@ -430,14 +409,46 @@ bool L3AddressResolver::getInterfaceMacAddress(L3Address& ret, InterfaceEntry *i
     return false;
 }
 
-bool L3AddressResolver::getInterfaceModulePathAddress(L3Address& ret, InterfaceEntry *ie, bool netmask)
+bool L3AddressResolver::getInterfaceModulePathAddress(L3Address& ret, NetworkInterface *ie, bool netmask)
 {
+#ifdef INET_WITH_NEXTHOP
+    if (auto nextHopData = ie->findProtocolData<NextHopInterfaceData>()) {
+        L3Address addr = nextHopData->getAddress();
+        if (!addr.isUnspecified() && addr.getType() == L3Address::MODULEPATH) {
+            ret = addr;
+            return true;
+        }
+    }
+    else {
+        // find address in the configurator's notebook
+        // TODO how do we know where is the configurator? getNextHopNetworkConfigurator the path from a NED parameter?
+        NextHopNetworkConfigurator *configurator = dynamic_cast<NextHopNetworkConfigurator *>(getSimulation()->findModuleByPath("configurator"));
+        if (configurator)
+            return static_cast<L3AddressResolver *>(configurator)->getInterfaceIpv4Address(ret, ie, netmask);
+    }
+#endif // ifdef INET_WITH_NEXTHOP
     ret = ie->getModulePathAddress();
     return true;
 }
 
-bool L3AddressResolver::getInterfaceModuleIdAddress(L3Address& ret, InterfaceEntry *ie, bool netmask)
+bool L3AddressResolver::getInterfaceModuleIdAddress(L3Address& ret, NetworkInterface *ie, bool netmask)
 {
+#ifdef INET_WITH_NEXTHOP
+    if (auto nextHopData = ie->findProtocolData<NextHopInterfaceData>()) {
+        L3Address addr = nextHopData->getAddress();
+        if (!addr.isUnspecified() && addr.getType() == L3Address::MODULEID) {
+            ret = addr;
+            return true;
+        }
+    }
+    else {
+        // find address in the configurator's notebook
+        // TODO how do we know where is the configurator? getNextHopNetworkConfigurator the path from a NED parameter?
+        NextHopNetworkConfigurator *configurator = dynamic_cast<NextHopNetworkConfigurator *>(getSimulation()->findModuleByPath("configurator"));
+        if (configurator)
+            return static_cast<L3AddressResolver *>(configurator)->getInterfaceIpv4Address(ret, ie, netmask);
+    }
+#endif // ifdef INET_WITH_NEXTHOP
     ret = ie->getModuleIdAddress();
     return true;
 }
@@ -479,39 +490,39 @@ IInterfaceTable *L3AddressResolver::findInterfaceTableOf(cModule *host)
 
 IIpv4RoutingTable *L3AddressResolver::findIpv4RoutingTableOf(cModule *host)
 {
-#ifdef WITH_IPv4
-    return dynamic_cast<IIpv4RoutingTable *>(host->getModuleByPath(".ipv4.routingTable"));
-#else // ifdef WITH_IPv4
+#ifdef INET_WITH_IPv4
+    return dynamic_cast<IIpv4RoutingTable *>(host->findModuleByPath(".ipv4.routingTable"));
+#else // ifdef INET_WITH_IPv4
     return nullptr;
-#endif // ifdef WITH_IPv4
+#endif // ifdef INET_WITH_IPv4
 }
 
 Ipv6RoutingTable *L3AddressResolver::findIpv6RoutingTableOf(cModule *host)
 {
-#ifdef WITH_IPv6
-    return dynamic_cast<Ipv6RoutingTable *>(host->getModuleByPath(".ipv6.routingTable"));
-#else // ifdef WITH_IPv6
+#ifdef INET_WITH_IPv6
+    return dynamic_cast<Ipv6RoutingTable *>(host->findModuleByPath(".ipv6.routingTable"));
+#else // ifdef INET_WITH_IPv6
     return nullptr;
-#endif // ifdef WITH_IPv6
+#endif // ifdef INET_WITH_IPv6
 }
 
 NextHopRoutingTable *L3AddressResolver::findNextHopRoutingTableOf(cModule *host)
 {
-#ifdef WITH_NEXTHOP
-    return dynamic_cast<NextHopRoutingTable *>(host->getModuleByPath(".generic.routingTable"));
-#else // ifdef WITH_NEXTHOP
+#ifdef INET_WITH_NEXTHOP
+    return dynamic_cast<NextHopRoutingTable *>(host->findModuleByPath(".generic.routingTable"));
+#else // ifdef INET_WITH_NEXTHOP
     return nullptr;
-#endif // ifdef WITH_NEXTHOP
+#endif // ifdef INET_WITH_NEXTHOP
 }
 
-std::vector<cModule*> L3AddressResolver::collectNetworkNodes()
+std::vector<cModule *> L3AddressResolver::collectNetworkNodes()
 {
-    std::vector<cModule*> result;
+    std::vector<cModule *> result;
     doCollectNetworkNodes(getSimulation()->getSystemModule(), result);
     return result;
 }
 
-void L3AddressResolver::doCollectNetworkNodes(cModule *parent, std::vector<cModule*>& result)
+void L3AddressResolver::doCollectNetworkNodes(cModule *parent, std::vector<cModule *>& result)
 {
     for (cModule::SubmoduleIterator it(parent); !it.end(); ++it) {
         cModule *submodule = *it;
@@ -531,43 +542,14 @@ cModule *L3AddressResolver::findHostWithAddress(const L3Address& add)
     for (cModule *mod : networkNodes) {
         IInterfaceTable *itable = L3AddressResolver().findInterfaceTableOf(mod);
         if (itable != nullptr) {
-            for (int i = 0; i < itable->getNumInterfaces(); i++) {
-                InterfaceEntry *entry = itable->getInterface(i);
-                switch (add.getType()) {
-#ifdef WITH_IPv6
-                    case L3Address::IPv6: {
-                        auto protocolData = entry->findProtocolData<Ipv6InterfaceData>();
-                        if (protocolData != nullptr && protocolData->hasAddress(add.toIpv6()))
-                            return mod;
-                        break;
-                    }
-
-#endif // ifdef WITH_IPv6
-#ifdef WITH_IPv4
-                    case L3Address::IPv4: {
-                        auto protocolData = entry->findProtocolData<Ipv4InterfaceData>();
-                        if (protocolData != nullptr && protocolData->getIPAddress() == add.toIpv4())
-                            return mod;
-                        break;
-                    }
-
-#endif // ifdef WITH_IPv4
-                    case L3Address::MAC:
-                        if (entry->getMacAddress() == add.toMac())
-                            return mod;
-                        break;
-                    default:
-                        (void)entry;    // eliminate warning: unused variable 'entry'
-                        throw cRuntimeError("findHostWithAddress() doesn't accept AddressType '%s', yet", L3Address::getTypeName(add.getType()));
-                        break;
-                }
-            }
+            if(itable->isLocalAddress(add))
+                return mod;
         }
     }
     return nullptr;
 }
 
-InterfaceEntry *L3AddressResolver::findInterfaceWithMacAddress(const MacAddress& addr)
+NetworkInterface *L3AddressResolver::findInterfaceWithMacAddress(const MacAddress& addr)
 {
     if (addr.isUnspecified() || addr.isBroadcast() || addr.isMulticast())
         return nullptr;
@@ -577,7 +559,7 @@ InterfaceEntry *L3AddressResolver::findInterfaceWithMacAddress(const MacAddress&
         IInterfaceTable *itable = L3AddressResolver().findInterfaceTableOf(mod);
         if (itable != nullptr) {
             for (int i = 0; i < itable->getNumInterfaces(); i++) {
-                InterfaceEntry *entry = itable->getInterface(i);
+                NetworkInterface *entry = itable->getInterface(i);
                 if (entry->getMacAddress() == addr)
                     return entry;
             }
@@ -588,7 +570,7 @@ InterfaceEntry *L3AddressResolver::findInterfaceWithMacAddress(const MacAddress&
 
 cModule *L3AddressResolver::findHostWithMacAddress(const MacAddress& addr)
 {
-    InterfaceEntry *entry = findInterfaceWithMacAddress(addr);
+    NetworkInterface *entry = findInterfaceWithMacAddress(addr);
     return entry ? entry->getInterfaceTable()->getHostModule() : nullptr;
 }
 

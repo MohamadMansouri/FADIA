@@ -1,18 +1,7 @@
 //
 // Copyright (C) 2006 Andras Babos and Andras Varga
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
 #ifndef __INET_OSPFV2_H
@@ -20,7 +9,7 @@
 
 #include <vector>
 
-#include "inet/common/INETDefs.h"
+#include "inet/common/ModuleRefByPar.h"
 #include "inet/networklayer/contract/IInterfaceTable.h"
 #include "inet/networklayer/ipv4/IIpv4RoutingTable.h"
 #include "inet/routing/base/RoutingProtocolBase.h"
@@ -34,14 +23,14 @@ namespace ospfv2 {
 /**
  * Implements the OSPFv2 routing protocol. See the NED file for more information.
  */
-class Ospfv2 : public RoutingProtocolBase, protected cListener
+class INET_API Ospfv2 : public RoutingProtocolBase, protected cListener
 {
   private:
-    cModule *host = nullptr;    // the host module that owns this module
-    IIpv4RoutingTable *rt = nullptr;
-    IInterfaceTable *ift = nullptr;
-    Router *ospfRouter = nullptr;    // root object of the OSPF data structure
-    cMessage *startupTimer = nullptr;    // timer for delayed startup
+    cModule *host = nullptr; // the host module that owns this module
+    ModuleRefByPar<IIpv4RoutingTable> rt;
+    ModuleRefByPar<IInterfaceTable> ift;
+    Router *ospfRouter = nullptr; // root object of the OSPF data structure
+    cMessage *startupTimer = nullptr; // timer for delayed startup
 
   public:
     Ospfv2();
@@ -75,12 +64,12 @@ class Ospfv2 : public RoutingProtocolBase, protected cListener
     virtual void handleStopOperation(LifecycleOperation *operation) override;
     virtual void handleCrashOperation(LifecycleOperation *operation) override;
 
-    void handleInterfaceDown(const InterfaceEntry *ie);
+    void handleInterfaceDown(const NetworkInterface *ie);
 };
 
 } // namespace ospfv2
 
 } // namespace inet
 
-#endif // ifndef __INET_OSPFV2_H
+#endif
 

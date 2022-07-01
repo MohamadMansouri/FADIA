@@ -1,26 +1,15 @@
 //
 // Copyright (C) 2000 Institut fuer Telematik, Universitaet Karlsruhe
 // Copyright (C) 2007 Universidad de Málaga
-// Copyright (C) 2011 Zoltan Bojthe
+// Copyright (C) 2011 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
+
+#include "inet/applications/udpapp/UdpBasicBurst.h"
 
 #include "inet/applications/base/ApplicationPacket_m.h"
-#include "inet/applications/udpapp/UdpBasicBurst.h"
 #include "inet/common/ModuleAccess.h"
 #include "inet/common/TimeTag_m.h"
 #include "inet/common/packet/Packet.h"
@@ -33,7 +22,7 @@ namespace inet {
 EXECUTE_ON_STARTUP(
         cEnum * e = cEnum::find("inet::ChooseDestAddrMode");
         if (!e)
-            enums.getInstance()->add(e = new cEnum("inet::ChooseDestAddrMode"));
+            omnetpp::internal::enums.getInstance()->add(e = new cEnum("inet::ChooseDestAddrMode"));
         e->insert(UdpBasicBurst::ONCE, "once");
         e->insert(UdpBasicBurst::PER_BURST, "perBurst");
         e->insert(UdpBasicBurst::PER_SEND, "perSend");
@@ -298,7 +287,7 @@ void UdpBasicBurst::generateBurst()
         throw cRuntimeError("The sendInterval parameter must be bigger than 0");
     nextPkt += sendInterval;
 
-    if (activeBurst && nextBurst <= now) {    // new burst
+    if (activeBurst && nextBurst <= now) { // new burst
         double burstDuration = *burstDurationPar;
         if (burstDuration < 0.0)
             throw cRuntimeError("The burstDuration parameter mustn't be smaller than 0");
@@ -321,7 +310,7 @@ void UdpBasicBurst::generateBurst()
         destAddr = chooseDestAddr();
 
     Packet *payload = createPacket();
-    if(dontFragment)
+    if (dontFragment)
         payload->addTag<FragmentationReq>()->setDontFragment(true);
     payload->setTimestamp();
     emit(packetSentSignal, payload);
@@ -371,8 +360,8 @@ void UdpBasicBurst::handleCrashOperation(LifecycleOperation *operation)
     if (timerNext)
         cancelEvent(timerNext);
     activeBurst = false;
-    if (operation->getRootModule() != getContainingNode(this))     // closes socket when the application crashed only
-        socket.destroy();         //TODO  in real operating systems, program crash detected by OS and OS closes sockets of crashed programs.
+    if (operation->getRootModule() != getContainingNode(this)) // closes socket when the application crashed only
+        socket.destroy(); // TODO  in real operating systems, program crash detected by OS and OS closes sockets of crashed programs.
 }
 
 } // namespace inet

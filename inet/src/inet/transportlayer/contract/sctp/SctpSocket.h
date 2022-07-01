@@ -2,26 +2,15 @@
 // Copyright (C) 2008 Irene Ruengeler
 // Copyright (C) 2015 Thomas Dreibholz
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 #ifndef __INET_SCTPSOCKET_H
 #define __INET_SCTPSOCKET_H
 
 #include <vector>
 
-#include "inet/common/INETDefs.h"
 #include "inet/common/packet/Message.h"
 #include "inet/common/socket/ISocket.h"
 #include "inet/networklayer/common/L3Address.h"
@@ -31,7 +20,8 @@ namespace inet {
 
 typedef std::vector<L3Address> AddressVector;
 
-typedef struct {
+typedef struct
+{
     int maxInitRetrans;
     int maxInitRetransTimeout;
     double rtoInitial;
@@ -48,7 +38,8 @@ typedef struct {
     int assocMaxRtx;
 } SocketOptions;
 
-typedef struct {
+typedef struct
+{
     int inboundStreams;
     int outboundStreams;
     bool streamReset;
@@ -65,8 +56,7 @@ class INET_API SctpSocket : public ISocket
      * classes may have both this class and cSimpleModule as base class,
      * and cSimpleModule is already a cObject.
      */
-    class INET_API ICallback
-    {
+    class INET_API ICallback {
       public:
         virtual ~ICallback() {}
         virtual void socketDataArrived(SctpSocket *socket, Packet *packet, bool urgent) = 0;
@@ -77,7 +67,7 @@ class INET_API SctpSocket : public ISocket
         virtual void socketPeerClosed(SctpSocket *socket) {}
         virtual void socketClosed(SctpSocket *socket) {}
         virtual void socketFailure(SctpSocket *socket, int code) {}
-        virtual void socketStatusArrived(SctpSocket *socket, SctpStatusReq *status) { }
+        virtual void socketStatusArrived(SctpSocket *socket, SctpStatusReq *status) {}
         virtual void socketDeleted(SctpSocket *socket) {}
         virtual void sendRequestArrived(SctpSocket *socket) {}
         virtual void msgAbandonedArrived(SctpSocket *socket) {}
@@ -91,7 +81,7 @@ class INET_API SctpSocket : public ISocket
 
   protected:
     int assocId;
-    static int32 nextAssocId;
+    static int32_t nextAssocId;
     int sockstate;
     bool oneToOne;
     bool appLimited;
@@ -151,7 +141,7 @@ class INET_API SctpSocket : public ISocket
      * Generates a new integer, to be used as assocId. (assocId is part of the key
      * which associates connections with their apps).
      */
-    static int32 getNewAssocId() { return getEnvir()->getUniqueNumber(); }
+    static int32_t getNewAssocId() { return getEnvir()->getUniqueNumber(); }
 
     /**
      * Returns the socket state, one of NOT_BOUND, CLOSED, LISTENING, CONNECTING,
@@ -181,33 +171,33 @@ class INET_API SctpSocket : public ISocket
      * Sets the gate on which to send to SCTP. Must be invoked before socket
      * can be used. Example: <tt>socket.setOutputGate(gate("sctpOut"));</tt>
      */
-    void setOutputGate(cGate *toSctp) { gateToSctp = toSctp; };
+    void setOutputGate(cGate *toSctp) { gateToSctp = toSctp; }
 
     /**
      * Setter and getter methods for socket and API Parameters
      */
-    void setOutboundStreams(int streams) { appOptions->outboundStreams = streams; };
-    void setInboundStreams(int streams) { appOptions->inboundStreams = streams; };
-    void setAppLimited(bool option) { appLimited = option; };
-    void setStreamReset(int option) { appOptions->streamReset = option; };
-    void setStreamPriority(uint32 stream, uint32 priority);
-    void setMaxInitRetrans(int option) { sOptions->maxInitRetrans = option; };
-    void setMaxInitRetransTimeout(int option) { sOptions->maxInitRetransTimeout = option; };
-    void setRtoInitial(double option) { sOptions->rtoInitial = option; };
-    void setRtoMin(double option) { sOptions->rtoMin = option; };
-    void setRtoMax(double option) { sOptions->rtoMax = option; };
-    void setSackFrequency(int option) { sOptions->sackFrequency = option; };
-    void setSackPeriod(double option) { sOptions->sackPeriod = option; };
-    void setMaxBurst(int option) { sOptions->maxBurst = option; };
-    void setFragPoint(int option) { sOptions->fragPoint = option; };
-    void setNagle(int option) { sOptions->nagle = option; };
-    void setPathMaxRetrans(int option) { sOptions->pathMaxRetrans = option; };
-    void setEnableHeartbeats(bool option) { sOptions->enableHeartbeats = option; };
-    void setHbInterval(double option) { sOptions->hbInterval = option; };
+    void setOutboundStreams(int streams) { appOptions->outboundStreams = streams; }
+    void setInboundStreams(int streams) { appOptions->inboundStreams = streams; }
+    void setAppLimited(bool option) { appLimited = option; }
+    void setStreamReset(int option) { appOptions->streamReset = option; }
+    void setStreamPriority(uint32_t stream, uint32_t priority);
+    void setMaxInitRetrans(int option) { sOptions->maxInitRetrans = option; }
+    void setMaxInitRetransTimeout(int option) { sOptions->maxInitRetransTimeout = option; }
+    void setRtoInitial(double option) { sOptions->rtoInitial = option; }
+    void setRtoMin(double option) { sOptions->rtoMin = option; }
+    void setRtoMax(double option) { sOptions->rtoMax = option; }
+    void setSackFrequency(int option) { sOptions->sackFrequency = option; }
+    void setSackPeriod(double option) { sOptions->sackPeriod = option; }
+    void setMaxBurst(int option) { sOptions->maxBurst = option; }
+    void setFragPoint(int option) { sOptions->fragPoint = option; }
+    void setNagle(int option) { sOptions->nagle = option; }
+    void setPathMaxRetrans(int option) { sOptions->pathMaxRetrans = option; }
+    void setEnableHeartbeats(bool option) { sOptions->enableHeartbeats = option; }
+    void setHbInterval(double option) { sOptions->hbInterval = option; }
     void setRtoInfo(double initial, double max, double min);
-    void setAssocMaxRtx(int option) { sOptions->assocMaxRtx = option; };
+    void setAssocMaxRtx(int option) { sOptions->assocMaxRtx = option; }
 
-    void setUserOptions(SocketOptions* msg) { delete sOptions; sOptions = msg; };
+    void setUserOptions(SocketOptions *msg) { delete sOptions; sOptions = msg; }
 
     int getOutboundStreams() { return appOptions->outboundStreams; };
     int getInboundStreams() { return appOptions->inboundStreams; };
@@ -237,10 +227,10 @@ class INET_API SctpSocket : public ISocket
 
     void addAddress(L3Address addr);
     //
-    // TBD add support for these options too!
-    //  string sendQueueClass;
-    //  string receiveQueueClass;
-    //  string sctpAlgorithmClass;
+    // TODO add support for these options too!
+//    string sendQueueClass;
+//    string receiveQueueClass;
+//    string sctpAlgorithmClass;
     //
 
     /**
@@ -250,34 +240,34 @@ class INET_API SctpSocket : public ISocket
      * connection will be accepted, and SCTP will refuse subsequent ones.
      * See SctpOpenCommand documentation (neddoc) for more info.
      */
-    void listen(bool fork = true, bool streamReset = false, uint32 requests = 0, uint32 messagesToPush = 0);
+    void listen(bool fork = true, bool streamReset = false, uint32_t requests = 0, uint32_t messagesToPush = 0);
 
-    void listen(uint32 requests = 0, bool fork = false, uint32 messagesToPush = 0, bool options = false, int32 fd = -1);
+    void listen(uint32_t requests = 0, bool fork = false, uint32_t messagesToPush = 0, bool options = false, int32_t fd = -1);
 
     void accept(int socketId);
 
     /**
      * Active OPEN to the given remote socket.
      */
-    void connect(L3Address remoteAddress, int32 remotePort, bool streamReset = false, int32 prMethod = 0, uint32 numRequests = 0);
+    void connect(L3Address remoteAddress, int32_t remotePort, bool streamReset = false, int32_t prMethod = 0, uint32_t numRequests = 0);
 
-    void connect(int32 fd, L3Address remoteAddress, int32 remotePort, uint32 numRequests, bool options = false);
+    void connect(int32_t fd, L3Address remoteAddress, int32_t remotePort, uint32_t numRequests, bool options = false);
 
     /**
      * Active OPEN to the given remote socket.
      * The current implementation just calls connect() with the first address
      * of the given list. This behaviour may be improved in the future.
      */
-    void connectx(AddressVector remoteAddresses, int32 remotePort, bool streamReset = false, int32 prMethod = 0, uint32 numRequests = 0);
+    void connectx(AddressVector remoteAddresses, int32_t remotePort, bool streamReset = false, int32_t prMethod = 0, uint32_t numRequests = 0);
 
-    void accept(int32 assocId, int32 fd);
+    void accept(int32_t assocId, int32_t fd);
 
     void acceptSocket(int newSockId);
 
     /**
      * Send data message
      */
-    void send(Packet *packet);
+    virtual void send(Packet *packet) override;
 
     /**
      * Send notification.
@@ -357,9 +347,9 @@ class INET_API SctpSocket : public ISocket
     void processMessage(cMessage *msg) override;
     //@}
 
-    void setState(int state) { sockstate = state; };
+    void setState(int state) { sockstate = state; }
 
-    void setTunInterface(int id) { interfaceIdToTun = id; };
+    void setTunInterface(int id) { interfaceIdToTun = id; }
 
     int getTunInterface() { return interfaceIdToTun; };
 
@@ -370,6 +360,5 @@ class INET_API SctpSocket : public ISocket
 
 } // namespace inet
 
-#endif // ifndef __INET_SCTPSOCKET_H
-
+#endif
 

@@ -1,19 +1,9 @@
-/***************************************************************************
-                       RtpProfile.h  -  description
-                             -------------------
-    (C) 2007 Ahmed Ayadi  <ahmed.ayadi@sophia.inria.fr>
-    (C) 2001 Matthias Oppitz <Matthias.Oppitz@gmx.de>
-
-***************************************************************************/
-
-/***************************************************************************
-*                                                                         *
-*   This program is free software; you can redistribute it and/or modify  *
-*   it under the terms of the GNU General Public License as published by  *
-*   the Free Software Foundation; either version 2 of the License, or     *
-*   (at your option) any later version.                                   *
-*                                                                         *
-***************************************************************************/
+//
+// Copyright (C) 2001 Matthias Oppitz <Matthias.Oppitz@gmx.de>
+// Copyright (C) 2007 Ahmed Ayadi <ahmed.ayadi@sophia.inria.fr>
+//
+// SPDX-License-Identifier: LGPL-3.0-or-later
+//
 
 #ifndef __INET_RTPPROFILE_H
 #define __INET_RTPPROFILE_H
@@ -24,7 +14,7 @@ namespace inet {
 
 namespace rtp {
 
-//Forward declarations:
+// Forward declarations:
 class RtpInnerPacket;
 
 /**
@@ -45,16 +35,15 @@ class INET_API RtpProfile : public cSimpleModule
     // and the gate which leads to the RtpPayloadReceiver module.
     // Note: in the original, this used to be a hundred lines, as RTPSSRCGate.cc/h,
     // but even this class is an overkill --Andras
-    class SsrcGate : public cNamedObject    //FIXME why is it a namedObject?
-    {
+    class SsrcGate : public cNamedObject { // FIXME why is it a namedObject?
       protected:
-        uint32 ssrc;
+        uint32_t ssrc;
         int gateId;
 
       public:
-        SsrcGate(uint32 ssrc = 0) { this->ssrc = ssrc; gateId = 0; }
-        uint32 getSsrc() { return ssrc; }
-        void setSSRC(uint32 ssrc) { this->ssrc = ssrc; }
+        SsrcGate(uint32_t ssrc = 0) { this->ssrc = ssrc; gateId = 0; }
+        uint32_t getSsrc() { return ssrc; }
+        void setSSRC(uint32_t ssrc) { this->ssrc = ssrc; }
         int getGateId() { return gateId; }
         void setGateId(int gateId) { this->gateId = gateId; }
     };
@@ -165,12 +154,12 @@ class INET_API RtpProfile : public cSimpleModule
      * Finds the gate of the receiver module for rtp data
      * packets from this ssrc.
      */
-    virtual SsrcGate *findSSRCGate(uint32 ssrc);
+    virtual SsrcGate *findSSRCGate(uint32_t ssrc);
 
     /**
      * Creates a new association ssrc/gateId for this ssrc.
      */
-    virtual SsrcGate *newSSRCGate(uint32 ssrc);
+    virtual SsrcGate *newSSRCGate(uint32_t ssrc);
 
     /**
      * The name of this profile. Needed for dynamic creating
@@ -189,7 +178,7 @@ class INET_API RtpProfile : public cSimpleModule
      * Stores information to which gate rtp data packets
      * from a ssrc must be forwarded.
      */
-    typedef std::map<uint32, SsrcGate *> SsrcGateMap;
+    typedef std::map<uint32_t, SsrcGate *> SsrcGateMap;
     SsrcGateMap _ssrcGates;
 
     /**
@@ -219,5 +208,5 @@ class INET_API RtpProfile : public cSimpleModule
 
 } // namespace inet
 
-#endif // ifndef __INET_RTPPROFILE_H
+#endif
 

@@ -1,18 +1,8 @@
 //
 // Copyright (C) 2005 Georg Lutz, Institut fuer Telematik, University of Karlsruhe
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
 //
 
 package inet.mobility.single;
@@ -23,7 +13,7 @@ import inet.mobility.base.MovingMobilityBase;
 // Implements the Random Waypoint mobility model.
 //
 // The node moves in line segments. For each line segment, a random destination
-// position (distributed uniformly over the constraint area or volume) and a 
+// position (distributed uniformly over the constraint area or volume) and a
 // random speed is chosen. You can define a speed as a variate from which a new
 // value will be drawn for each line segment; it is customary to specify it as
 // uniform(minSpeed, maxSpeed). When the node reaches the target position,

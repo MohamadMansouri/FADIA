@@ -1,17 +1,9 @@
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program.  If not, see http://www.gnu.org/licenses/.
-//
+
 
 #ifndef __INET_TCPSERVERSOCKETIO_H
 #define __INET_TCPSERVERSOCKETIO_H
@@ -29,10 +21,12 @@ class INET_API TcpServerSocketIo : public cSimpleModule, public TcpSocket::ICall
     virtual void handleMessage(cMessage *message) override;
 
   public:
+    virtual ~TcpServerSocketIo() { delete socket; }
+
     virtual TcpSocket *getSocket() { return socket; }
     virtual void acceptSocket(TcpAvailableInfo *availableInfo);
 
-    virtual void socketDataArrived(TcpSocket* socket, Packet *packet, bool urgent) override;
+    virtual void socketDataArrived(TcpSocket *socket, Packet *packet, bool urgent) override;
     virtual void socketAvailable(TcpSocket *socket, TcpAvailableInfo *availableInfo) override {}
     virtual void socketEstablished(TcpSocket *socket) override {}
     virtual void socketPeerClosed(TcpSocket *socket) override {}
@@ -44,5 +38,5 @@ class INET_API TcpServerSocketIo : public cSimpleModule, public TcpSocket::ICall
 
 } // namespace inet
 
-#endif // ifndef __INET_TCPSERVERSOCKETIO_H
+#endif
 

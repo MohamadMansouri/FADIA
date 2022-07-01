@@ -1,17 +1,7 @@
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program.  If not, see http://www.gnu.org/licenses/.
-//
+
 
 package inet.examples.ieee8021d;
 
@@ -19,8 +9,8 @@ import inet.common.scenario.ScenarioManager;
 import inet.linklayer.configurator.L2NetworkConfigurator;
 import inet.linklayer.ieee8021d.tester.StpTester;
 import inet.node.ethernet.Eth1G;
-import inet.node.ethernet.EtherHost;
-import inet.node.ethernet.EtherSwitch;
+import inet.node.ethernet.EthernetHost;
+import inet.node.ethernet.EthernetSwitch;
 
 
 network SwitchNetwork
@@ -35,43 +25,43 @@ network SwitchNetwork
         l2NetworkConfigurator: L2NetworkConfigurator {
             @display("p=100,100;is=s");
         }
-        switch1: EtherSwitch {
+        switch1: EthernetSwitch {
             parameters:
                 @display("p=400,100");
             gates:
                 ethg[];
         }
-        switch2: EtherSwitch {
+        switch2: EthernetSwitch {
             parameters:
                 @display("p=475,300");
             gates:
                 ethg[];
         }
-        switch3: EtherSwitch {
+        switch3: EthernetSwitch {
             parameters:
                 @display("p=550,100");
             gates:
                 ethg[];
         }
-        switch4: EtherSwitch {
+        switch4: EthernetSwitch {
             parameters:
                 @display("p=400,200");
             gates:
                 ethg[];
         }
-        switch5: EtherSwitch {
+        switch5: EthernetSwitch {
             parameters:
                 @display("p=625,300");
             gates:
                 ethg[];
         }
-        switch6: EtherSwitch {
+        switch6: EthernetSwitch {
             parameters:
                 @display("p=325,300");
             gates:
                 ethg[];
         }
-        switch7: EtherSwitch {
+        switch7: EthernetSwitch {
             parameters:
                 @display("p=550,200");
             gates:
@@ -92,35 +82,53 @@ network SwitchNetwork
 network LargeNet extends SwitchNetwork
 {
     submodules:
-        host1: EtherHost {
-            @display("p=250,200");
+        host1: EthernetHost {
+            parameters:
+                csmacdSupport = false;
+                eth.duplexMode = true;
+                @display("p=250,200");
         }
-        host2: EtherHost {
-            @display("p=775,300");
+        host2: EthernetHost {
+            parameters:
+                csmacdSupport = false;
+                eth.duplexMode = true;
+                @display("p=775,300");
         }
 
-        host3: EtherHost {
+        host3: EthernetHost {
+            parameters:
+            csmacdSupport = false;
+            eth.duplexMode = true;
             @display("p=700,100");
         }
-        host4: EtherHost {
-            @display("p=775,470");
+        host4: EthernetHost {
+            parameters:
+                csmacdSupport = false;
+                eth.duplexMode = true;
+                @display("p=775,470");
         }
-        host5: EtherHost {
-            @display("p=325,470");
+        host5: EthernetHost {
+            parameters:
+                csmacdSupport = false;
+                eth.duplexMode = true;
+                @display("p=325,470");
         }
-        host6: EtherHost {
-            @display("p=325,370");
+        host6: EthernetHost {
+            parameters:
+                csmacdSupport = false;
+                eth.duplexMode = true;
+                @display("p=325,370");
         }
-        switch8: EtherSwitch {
+        switch8: EthernetSwitch {
             @display("p=475,370");
         }
-        switch9: EtherSwitch {
+        switch9: EthernetSwitch {
             @display("p=475,470");
         }
-        switch10: EtherSwitch {
+        switch10: EthernetSwitch {
             @display("p=625,470");
         }
-        switch11: EtherSwitch {
+        switch11: EthernetSwitch {
             @display("p=625,370");
         }
     connections:

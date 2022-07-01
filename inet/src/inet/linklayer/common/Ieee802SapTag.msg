@@ -1,6 +1,8 @@
 //
-// This program is property of its copyright holder. All rights reserved.
-// 
+// Copyright (C) 2020 OpenSim Ltd.
+//
+// SPDX-License-Identifier: LGPL-3.0-or-later
+//
 
 import inet.common.INETDefs;
 import inet.common.TagBase;
@@ -25,8 +27,8 @@ enum SapCode
 
 class Ieee802SapTagBase extends TagBase
 {
-    int ssap;        // used with IEEE 802 LLC (see ~EtherFrameWithLlc)
-    int dsap;        // used with IEEE 802 LLC (see ~EtherFrameWithLlc)
+    int ssap = -1;        // used with IEEE 802 LLC (see ~EtherFrameWithLlc)
+    int dsap = -1;        // used with IEEE 802 LLC (see ~EtherFrameWithLlc)
 }
 
 class Ieee802SapReq extends Ieee802SapTagBase

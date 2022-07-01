@@ -1,35 +1,18 @@
 //
-// Copyright (C) 2004 Andras Varga
+// Copyright (C) 2004 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-#include "inet/transportlayer/tcp/Tcp.h"
+
 #include "inet/transportlayer/tcp/flavours/TcpTahoeRenoFamily.h"
+
+#include "inet/transportlayer/tcp/Tcp.h"
 
 namespace inet {
 namespace tcp {
 
-TcpTahoeRenoFamilyStateVariables::TcpTahoeRenoFamilyStateVariables()
-{
-    // The initial value of ssthresh SHOULD be set arbitrarily high (e.g.,
-    // to the size of the largest possible advertised window)
-    // Without user interaction there is no limit...
-    ssthresh = 0xFFFFFFFF;
-}
-
-void TcpTahoeRenoFamilyStateVariables::setSendQueueLimit(uint32 newLimit){
+void TcpTahoeRenoFamilyStateVariables::setSendQueueLimit(uint32_t newLimit) {
     // The initial value of ssthresh SHOULD be set arbitrarily high (e.g.,
     // to the size of the largest possible advertised window) -> defined by sendQueueLimit
     sendQueueLimit = newLimit;
@@ -52,11 +35,17 @@ std::string TcpTahoeRenoFamilyStateVariables::detailedInfo() const
     return out.str();
 }
 
-//---
+// ---
 
 TcpTahoeRenoFamily::TcpTahoeRenoFamily() : TcpBaseAlg(),
     state((TcpTahoeRenoFamilyStateVariables *&)TcpAlgorithm::state)
 {
+}
+
+void TcpTahoeRenoFamily::initialize()
+{
+    TcpBaseAlg::initialize();
+    state->ssthresh = conn->getTcpMain()->par("initialSsthresh");
 }
 
 } // namespace tcp

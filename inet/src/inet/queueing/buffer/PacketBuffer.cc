@@ -1,25 +1,17 @@
 //
-// Copyright (C) OpenSim Ltd.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see http://www.gnu.org/licenses/.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
+
+#include "inet/queueing/buffer/PacketBuffer.h"
+
 #include <algorithm>
+
 #include "inet/common/Simsignals.h"
 #include "inet/common/StringFormat.h"
-#include "inet/queueing/buffer/PacketBuffer.h"
-#include "inet/queueing/compat/cpacketqueue.h"
+#include "inet/common/stlutils.h"
 
 namespace inet {
 namespace queueing {
@@ -64,21 +56,23 @@ b PacketBuffer::getTotalLength() const
 void PacketBuffer::addPacket(Packet *packet)
 {
     Enter_Method("addPacket");
-    EV_INFO << "Adding packet " << packet->getName() << " to the buffer.\n";
+    EV_INFO << "Adding packet" << EV_FIELD(packet) << EV_ENDL;
     emit(packetAddedSignal, packet);
     packets.push_back(packet);
     if (isOverloaded()) {
         if (packetDropperFunction != nullptr) {
             while (!isEmpty() && isOverloaded()) {
                 auto packet = packetDropperFunction->selectPacket(this);
-                EV_INFO << "Dropping packet " << packet->getName() << " from the buffer.\n";
-                packets.erase(find(packets.begin(), packets.end(), packet));
+                EV_INFO << "Dropping packet" << EV_FIELD(packet) << EV_ENDL;
+                packets.erase(find(packets, packet));
                 auto queue = dynamic_cast<cPacketQueue *>(packet->getOwner());
                 if (queue != nullptr) {
                     ICallback *callback = dynamic_cast<ICallback *>(queue->getOwner());
                     if (callback != nullptr)
                         callback->handlePacketRemoved(packet);
                 }
+                // TODO maybe the buffer should take ownership and queues should be aware of it
+                take(packet);
                 dropPacket(packet, QUEUE_OVERFLOW);
             }
         }
@@ -91,9 +85,9 @@ void PacketBuffer::addPacket(Packet *packet)
 void PacketBuffer::removePacket(Packet *packet)
 {
     Enter_Method("removePacket");
-    EV_INFO << "Removing packet " << packet->getName() << " from the buffer.\n";
+    EV_INFO << "Removing packet" << EV_FIELD(packet) << EV_ENDL;
     emit(packetRemovedSignal, packet);
-    packets.erase(find(packets.begin(), packets.end(), packet));
+    packets.erase(find(packets, packet));
     updateDisplayString();
     auto queue = dynamic_cast<cPacketQueue *>(packet->getOwner());
     if (queue != nullptr) {
@@ -101,6 +95,24 @@ void PacketBuffer::removePacket(Packet *packet)
         if (callback != nullptr)
             callback->handlePacketRemoved(packet);
     }
+}
+
+void PacketBuffer::removeAllPackets()
+{
+    Enter_Method("removeAllPacket");
+    EV_INFO << "Removing all packets" << EV_ENDL;
+    while (!isEmpty()) {
+        auto packet = getPacket(0);
+        emit(packetRemovedSignal, packet);
+        packets.erase(packets.begin());
+        auto queue = dynamic_cast<cPacketQueue *>(packet->getOwner());
+        if (queue != nullptr) {
+            ICallback *callback = dynamic_cast<ICallback *>(queue->getOwner());
+            if (callback != nullptr)
+                callback->handlePacketRemoved(packet);
+        }
+    }
+    updateDisplayString();
 }
 
 Packet *PacketBuffer::getPacket(int index) const

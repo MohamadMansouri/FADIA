@@ -1,23 +1,15 @@
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program.  If not, see http://www.gnu.org/licenses/.
-//
+
 
 package inet.node.wireless;
 
 import inet.mobility.contract.IMobility;
-import inet.node.inet.INetworkNode;
-import inet.physicallayer.contract.packetlevel.IAntenna;
+import inet.node.contract.INetworkNode;
+import inet.physicallayer.wireless.common.contract.packetlevel.IAntenna;
 
 module Probe like INetworkNode
 {
@@ -27,7 +19,7 @@ module Probe like INetworkNode
     submodules:
         mobility: <default("StationaryMobility")> like IMobility {
             parameters:
-	            subjectModule = default("^");
+                subjectModule = default("^");
                 @display("p=100,100");
         }
         antenna: <default("IsotropicAntenna")> like IAntenna {

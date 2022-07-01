@@ -1,17 +1,12 @@
 //
-// Copyright 2017 OpenSim Ltd.
+// Copyright (C) 2017 OpenSim Ltd.
 //
-// This library is free software, you can redistribute it and/or modify
-// it under  the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation;
-// either version 3 of the License, or any later version.
-// The library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-// See the GNU Lesser General Public License for more details.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-#include "inet/common/INETDefs.h"
+
+#include "inet/transportlayer/sctp/SctpCrcInsertionHook.h"
+
 #include "inet/common/ProtocolTag_m.h"
 #include "inet/common/packet/Packet.h"
 #include "inet/linklayer/common/InterfaceTag_m.h"
@@ -19,17 +14,20 @@
 #include "inet/networklayer/common/L3Tools.h"
 #include "inet/networklayer/contract/INetfilter.h"
 #include "inet/transportlayer/sctp/SctpChecksum.h"
-#include "inet/transportlayer/sctp/SctpCrcInsertionHook.h"
 #include "inet/transportlayer/sctp/SctpHeader.h"
 #include "inet/transportlayer/udp/UdpHeader_m.h"
 
 namespace inet {
 namespace sctp {
 
+Define_Module(SctpCrcInsertion);
+
 INetfilter::IHook::Result SctpCrcInsertion::datagramPostRoutingHook(Packet *packet)
 {
+    Enter_Method("datagramPostRoutingHook");
+
     if (packet->findTag<InterfaceInd>())
-        return ACCEPT;  // FORWARD
+        return ACCEPT; // FORWARD
     auto networkProtocol = packet->getTag<PacketProtocolTag>()->getProtocol();
     const auto& networkHeader = getNetworkProtocolHeader(packet);
     if (networkHeader->getProtocol() == &Protocol::sctp) {
@@ -71,7 +69,7 @@ void SctpCrcInsertion::insertCrc(const Protocol *networkProtocol, const L3Addres
             std::copy(sctpPacketBytes.begin(), sctpPacketBytes.end(), (uint8_t *)buffer);
             auto crc = SctpChecksum::checksum(buffer, length);
             sctpHeader->setCrc(crc);
-            delete [] buffer;
+            delete[] buffer;
             break;
         }
         default:

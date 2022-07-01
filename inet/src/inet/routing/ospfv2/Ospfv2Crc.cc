@@ -1,24 +1,13 @@
 //
 // Copyright (C) 2019 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
-// author: Zoltan Bojthe
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-#include "inet/common/checksum/TcpIpChecksum.h"
+
 #include "inet/routing/ospfv2/Ospfv2Crc.h"
+
+#include "inet/common/checksum/TcpIpChecksum.h"
 #include "inet/routing/ospfv2/Ospfv2PacketSerializer.h"
 #include "inet/routing/ospfv2/router/Ospfv2Common.h"
 
@@ -72,10 +61,10 @@ void setLsaCrc(Ospfv2Lsa& lsa, CrcMode crcMode)
             lsaHeader.setLsCrc(0);
             MemoryOutputStream stream;
             auto lsAge = lsaHeader.getLsAge();
-            lsaHeader.setLsAge(0);    // disable lsAge from CRC
+            lsaHeader.setLsAge(0); // disable lsAge from CRC
             Ospfv2PacketSerializer::serializeLsa(stream, lsa);
             uint16_t crc = TcpIpChecksum::checksum(stream.getData());
-            lsaHeader.setLsAge(lsAge);    // restore lsAge
+            lsaHeader.setLsAge(lsAge); // restore lsAge
             lsaHeader.setLsCrc(crc);
             break;
         }
@@ -98,10 +87,10 @@ void setLsaHeaderCrc(Ospfv2LsaHeader& lsaHeader, CrcMode crcMode)
             lsaHeader.setLsCrc(0);
             MemoryOutputStream stream;
             auto lsAge = lsaHeader.getLsAge();
-            lsaHeader.setLsAge(0);    // disable lsAge from CRC
+            lsaHeader.setLsAge(0); // disable lsAge from CRC
             Ospfv2PacketSerializer::serializeLsaHeader(stream, lsaHeader);
             uint16_t crc = TcpIpChecksum::checksum(stream.getData());
-            lsaHeader.setLsAge(lsAge);    // restore lsAge
+            lsaHeader.setLsAge(lsAge); // restore lsAge
             lsaHeader.setLsCrc(crc);
             break;
         }

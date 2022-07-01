@@ -1,3 +1,7 @@
+//
+// SPDX-License-Identifier: LGPL-3.0-or-later
+//
+//
 /* -*- mode:c++ -*- ********************************************************
  * file:        Flooding.cc
  *
@@ -6,13 +10,6 @@
  * copyright:   (C) 2004 Telecommunication Networks Group (TKN) at
  *              Technische Universitaet Berlin, Germany.
  *
- *              This program is free software; you can redistribute it
- *              and/or modify it under the terms of the GNU General Public
- *              License as published by the Free Software Foundation; either
- *              version 2 of the License, or (at your option) any later
- *              version.
- *              For further information see file COPYING
- *              in the top level directory
  *
  ***************************************************************************
  * part of:     framework implementation developed by tkn
@@ -20,12 +17,13 @@
  *              the user can decide whether to use plain flooding or not
  **************************************************************************/
 
+#include "inet/networklayer/flooding/Flooding.h"
+
 #include "inet/common/ProtocolTag_m.h"
 #include "inet/linklayer/common/MacAddressTag_m.h"
 #include "inet/networklayer/common/HopLimitTag_m.h"
 #include "inet/networklayer/common/L3AddressTag_m.h"
 #include "inet/networklayer/contract/IL3AddressType.h"
-#include "inet/networklayer/flooding/Flooding.h"
 
 namespace inet {
 
@@ -41,7 +39,7 @@ void Flooding::initialize(int stage)
 {
     NetworkProtocolBase::initialize(stage);
     if (stage == INITSTAGE_LOCAL) {
-        //initialize seqence number to 0
+        // initialize seqence number to 0
         seqNum = 0;
         nbDataPacketsReceived = 0;
         nbDataPacketsSent = 0;
@@ -55,16 +53,19 @@ void Flooding::initialize(int stage)
            << " plainFlooding = " << plainFlooding << endl;
 
         if (plainFlooding) {
-            //these parameters are only needed for plain flooding
+            // these parameters are only needed for plain flooding
             bcMaxEntries = par("bcMaxEntries");
             bcDelTime = par("bcDelTime");
             EV << "bcMaxEntries = " << bcMaxEntries
                << " bcDelTime = " << bcDelTime << endl;
         }
     }
+    else if (stage == INITSTAGE_NETWORK_INTERFACE_CONFIGURATION) {
+        for (int i = 0; i < interfaceTable->getNumInterfaces(); i++)
+            interfaceTable->getInterface(i)->setHasModulePathAddress(true);
+    }
     else if (stage == INITSTAGE_NETWORK_LAYER) {
-        auto ie = interfaceTable->findFirstNonLoopbackInterface();
-        if (ie != nullptr)
+        if (auto ie = interfaceTable->findFirstNonLoopbackInterface())
             myNetwAddr = ie->getNetworkAddress();
         else
             throw cRuntimeError("No non-loopback interface found!");
@@ -108,14 +109,14 @@ void Flooding::handleUpperPacket(Packet *packet)
 
     if (plainFlooding) {
         if (bcMsgs.size() >= bcMaxEntries) {
-            //serach the broadcast list of outdated entries and delete them
-            for (auto it = bcMsgs.begin(); it != bcMsgs.end(); ) {
+            // serach the broadcast list of outdated entries and delete them
+            for (auto it = bcMsgs.begin(); it != bcMsgs.end();) {
                 if (it->delTime < simTime())
                     it = bcMsgs.erase(it);
                 else
                     ++it;
             }
-            //delete oldest entry if max size is reached
+            // delete oldest entry if max size is reached
             if (bcMsgs.size() >= bcMaxEntries) {
                 EV << "bcMsgs is full, delete oldest entry" << endl;
                 bcMsgs.pop_front();
@@ -123,7 +124,7 @@ void Flooding::handleUpperPacket(Packet *packet)
         }
         bcMsgs.push_back(Bcast(floodHeader->getSeqNum(), floodHeader->getSourceAddress(), simTime() + bcDelTime));
     }
-    //there is no routing so all messages are broadcast for the mac layer
+    // there is no routing so all messages are broadcast for the mac layer
     sendDown(packet);
     nbDataPacketsSent++;
 }
@@ -146,9 +147,9 @@ void Flooding::handleLowerPacket(Packet *packet)
 {
     auto floodHeader = packet->peekAtFront<FloodingHeader>();
 
-    //msg not broadcasted yet
+    // msg not broadcasted yet
     if (notBroadcasted(floodHeader.get())) {
-        //msg is for me
+        // msg is for me
         if (interfaceTable->isLocalAddress(floodHeader->getDestinationAddress())) {
             EV << " data msg for me! send to Upper" << endl;
             nbHops = nbHops + (defaultTtl + 1 - floodHeader->getTtl());
@@ -156,9 +157,9 @@ void Flooding::handleLowerPacket(Packet *packet)
             sendUp(packet);
             nbDataPacketsReceived++;
         }
-        //broadcast message
+        // broadcast message
         else if (floodHeader->getDestinationAddress().isBroadcast()) {
-            //check ttl and rebroadcast
+            // check ttl and rebroadcast
             if (floodHeader->getTtl() > 1) {
                 EV << " data msg BROADCAST! ttl = " << floodHeader->getTtl()
                    << " > 1 -> rebroadcast msg & send to upper\n";
@@ -179,9 +180,9 @@ void Flooding::handleLowerPacket(Packet *packet)
             sendUp(packet);
             nbDataPacketsReceived++;
         }
-        //not for me -> rebroadcast
+        // not for me -> rebroadcast
         else {
-            //check ttl and rebroadcast
+            // check ttl and rebroadcast
             if (floodHeader->getTtl() > 1) {
                 EV << " data msg not for me! ttl = " << floodHeader->getTtl()
                    << " > 1 -> forward\n";
@@ -201,7 +202,7 @@ void Flooding::handleLowerPacket(Packet *packet)
                 delete packet;
             }
             else {
-                //max hops reached -> delete
+                // max hops reached -> delete
                 EV << " max hops reached (ttl = " << floodHeader->getTtl() << ") -> delete msg\n";
                 delete packet;
             }
@@ -227,12 +228,12 @@ bool Flooding::notBroadcasted(const FloodingHeader *msg)
     if (!plainFlooding)
         return true;
 
-    //serach the broadcast list of outdated entries and delete them
-    for (auto it = bcMsgs.begin(); it != bcMsgs.end(); ) {
+    // serach the broadcast list of outdated entries and delete them
+    for (auto it = bcMsgs.begin(); it != bcMsgs.end();) {
         if (it->delTime < simTime()) {
             it = bcMsgs.erase(it);
         }
-        //message was already broadcasted
+        // message was already broadcasted
         else if ((it->srcAddr == msg->getSourceAddress()) && (it->seqNum == msg->getSeqNum())) {
             // update entry
             it->delTime = simTime() + bcDelTime;
@@ -242,7 +243,7 @@ bool Flooding::notBroadcasted(const FloodingHeader *msg)
             ++it;
     }
 
-    //delete oldest entry if max size is reached
+    // delete oldest entry if max size is reached
     if (bcMsgs.size() >= bcMaxEntries) {
         EV << "bcMsgs is full, delete oldest entry\n";
         bcMsgs.pop_front();
@@ -260,7 +261,7 @@ void Flooding::decapsulate(Packet *packet)
     auto floodHeader = packet->popAtFront<FloodingHeader>();
     auto payloadLength = floodHeader->getPayloadLengthField();
     if (packet->getDataLength() < payloadLength) {
-        throw cRuntimeError("Data error: illegal payload length");     //FIXME packet drop
+        throw cRuntimeError("Data error: illegal payload length"); // FIXME packet drop
     }
     if (packet->getDataLength() > payloadLength)
         packet->setBackOffset(packet->getFrontOffset() + payloadLength);
@@ -286,12 +287,11 @@ void Flooding::encapsulate(Packet *appPkt)
     EV << "in encaps...\n";
 
     auto cInfo = appPkt->removeControlInfo();
-    auto pkt = makeShared<FloodingHeader>(); // TODO: appPkt->getName(), appPkt->getKind());
+    auto pkt = makeShared<FloodingHeader>(); // TODO appPkt->getName(), appPkt->getKind());
     pkt->setChunkLength(b(headerLength));
 
-    auto hopLimitReq = appPkt->removeTagIfPresent<HopLimitReq>();
+    auto& hopLimitReq = appPkt->removeTagIfPresent<HopLimitReq>();
     int ttl = (hopLimitReq != nullptr) ? hopLimitReq->getHopLimit() : -1;
-    delete hopLimitReq;
     if (ttl == -1)
         ttl = defaultTtl;
 
@@ -299,7 +299,7 @@ void Flooding::encapsulate(Packet *appPkt)
     seqNum++;
     pkt->setTtl(ttl);
 
-    auto addressReq = appPkt->findTag<L3AddressReq>();
+    const auto& addressReq = appPkt->findTag<L3AddressReq>();
     if (addressReq == nullptr) {
         EV << "warning: Application layer did not specifiy a destination L3 address\n"
            << "\tusing broadcast address instead\n";
@@ -321,7 +321,7 @@ void Flooding::encapsulate(Packet *appPkt)
 
     pkt->setPayloadLengthField(appPkt->getDataLength());
 
-    //encapsulate the application packet
+    // encapsulate the application packet
     setDownControlInfo(appPkt, MacAddress::BROADCAST_ADDRESS);
 
     appPkt->insertAtFront(pkt);

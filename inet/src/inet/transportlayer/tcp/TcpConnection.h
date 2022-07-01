@@ -1,28 +1,17 @@
 //
-// Copyright (C) 2004 Andras Varga
+// Copyright (C) 2004 OpenSim Ltd.
 // Copyright (C) 2009-2010 Thomas Reschka
-// Copyright (C) 2010 Zoltan Bojthe
+// Copyright (C) 2010 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
 #ifndef __INET_TCPCONNECTION_H
 #define __INET_TCPCONNECTION_H
 
-#include "inet/common/INETDefs.h"
 #include "inet/networklayer/common/L3Address.h"
 #include "inet/transportlayer/tcp/Tcp.h"
+#include "inet/transportlayer/tcp/TcpConnectionState_m.h"
 #include "inet/transportlayer/tcp_common/TcpHeader.h"
 
 namespace inet {
@@ -32,87 +21,8 @@ class TcpOpenCommand;
 
 namespace tcp {
 
-class TcpHeader;
-class TcpSendQueue;
 class TcpSackRexmitQueue;
-class TcpReceiveQueue;
 class TcpAlgorithm;
-
-//
-// TCP FSM states
-//
-// Brief descriptions (cf RFC 793, page 20):
-//
-// LISTEN - waiting for a connection request
-// SYN-SENT - part of 3-way handshake (waiting for peer's SYN+ACK or SYN)
-// SYN-RECEIVED - part of 3-way handshake (we sent SYN too, waiting for it to be acked)
-// ESTABLISHED - normal data transfer
-// FIN-WAIT-1 - FIN sent, waiting for its ACK (or peer's FIN)
-// FIN-WAIT-2 - our side of the connection closed (our FIN acked), waiting for peer's FIN
-// CLOSE-WAIT - FIN received and acked, waiting for local user to close
-// LAST-ACK - remote side closed, FIN sent, waiting for its ACK
-// CLOSING - simultaneous close: sent FIN, then got peer's FIN
-// TIME-WAIT - both FIN's acked, waiting for some time to be sure remote TCP received our ACK
-// CLOSED - represents no connection state at all.
-//
-// Note: FIN-WAIT-1, FIN-WAIT-2, CLOSING, TIME-WAIT represents active close (that is,
-// local user closes first), and CLOSE-WAIT and LAST-ACK represents passive close.
-//
-enum TcpState {
-    TCP_S_INIT = 0,
-    TCP_S_CLOSED = FSM_Steady(1),
-    TCP_S_LISTEN = FSM_Steady(2),
-    TCP_S_SYN_SENT = FSM_Steady(3),
-    TCP_S_SYN_RCVD = FSM_Steady(4),
-    TCP_S_ESTABLISHED = FSM_Steady(5),
-    TCP_S_CLOSE_WAIT = FSM_Steady(6),
-    TCP_S_LAST_ACK = FSM_Steady(7),
-    TCP_S_FIN_WAIT_1 = FSM_Steady(8),
-    TCP_S_FIN_WAIT_2 = FSM_Steady(9),
-    TCP_S_CLOSING = FSM_Steady(10),
-    TCP_S_TIME_WAIT = FSM_Steady(11)
-};
-
-//
-// Event, strictly for the FSM state transition purposes.
-// DO NOT USE outside performStateTransition()!
-//
-enum TcpEventCode {
-    TCP_E_IGNORE,
-
-    // app commands
-    // (Note: no RECEIVE command, data are automatically passed up)
-    TCP_E_OPEN_ACTIVE,
-    TCP_E_OPEN_PASSIVE,
-    TCP_E_ACCEPT,
-    TCP_E_SEND,
-    TCP_E_CLOSE,
-    TCP_E_ABORT,
-    TCP_E_DESTROY,
-    TCP_E_STATUS,
-    TCP_E_QUEUE_BYTES_LIMIT,
-    TCP_E_READ,
-    TCP_E_SETOPTION,
-
-    // TPDU types
-    TCP_E_RCV_DATA,
-    TCP_E_RCV_ACK,
-    TCP_E_RCV_SYN,
-    TCP_E_RCV_SYN_ACK,
-    TCP_E_RCV_FIN,
-    TCP_E_RCV_FIN_ACK,
-    TCP_E_RCV_RST,    // covers RST+ACK too
-
-    TCP_E_RCV_UNEXP_SYN,    // unexpected SYN
-
-    // timers
-    TCP_E_TIMEOUT_2MSL,    // RFC 793, a.k.a. TIME-WAIT timer
-    TCP_E_TIMEOUT_CONN_ESTAB,
-    TCP_E_TIMEOUT_FIN_WAIT_2,
-
-    // All other timers (REXMT, PERSIST, DELAYED-ACK, KEEP-ALIVE, etc.),
-    // are handled in TcpAlgorithm.
-};
 
 /** @name Timeout values */
 //@{
@@ -124,157 +34,9 @@ enum TcpEventCode {
 
 #define MAX_SYN_REXMIT_COUNT          12  // will only be used with SYN+ACK: with SYN CONN_ESTAB occurs sooner
 #define TCP_MAX_WIN                   65535  // 65535 bytes, largest value (16 bit) for (unscaled) window size
-#define DUPTHRESH                     3  // used for TcpTahoe, TcpReno and SACK (RFC 3517)
+#define TCP_MAX_WIN_SCALED            0x3fffffffL // 2^30-1 bytes, largest value for scaled window size
 #define MAX_SACK_BLOCKS               60  // will only be used with SACK
 #define PAWS_IDLE_TIME_THRESH         (24 * 24 * 3600)  // 24 days in seconds (RFC 1323)
-
-typedef std::list<Sack> SackList;
-
-/**
- * Contains state variables ("TCB") for TCP.
- *
- * TcpStateVariables is effectively a "struct" -- it only contains
- * public data members. (Only declared as a class so that we can use
- * cObject as base class and make it possible to inspect
- * it in Tkenv.)
- *
- * TcpStateVariables only contains variables needed to implement
- * the "base" (RFC 793) TCP. More advanced TCP variants are encapsulated
- * into TcpAlgorithm subclasses which can have their own state blocks,
- * subclassed from TcpStateVariables. See TcpAlgorithm::createStateVariables().
- */
-class INET_API TcpStateVariables : public cObject
-{
-  public:
-    TcpStateVariables();
-    virtual std::string str() const override;
-    virtual std::string detailedInfo() const OMNETPP5_CODE(override);
-
-  public:
-    bool active;    // set if the connection was initiated by an active open
-    bool fork;    // if passive and in LISTEN: whether to fork on an incoming connection
-
-    uint32 snd_mss;    // sender maximum segment size (without headers, i.e. only segment text); see RFC 2581, page 1.
-                       // This will be set to the minimum of the local smss parameter and the value specified in the
-                       // MSS option received during connection setup.
-
-    // send sequence number variables (see RFC 793, "3.2. Terminology")
-    uint32 snd_una;    // send unacknowledged
-    uint32 snd_nxt;    // send next (drops back on retransmission)
-    uint32 snd_max;    // max seq number sent (needed because snd_nxt is re-set on retransmission)
-    uint32 snd_wnd;    // send window
-    uint32 snd_up;    // send urgent pointer
-    uint32 snd_wl1;    // segment sequence number used for last window update
-    uint32 snd_wl2;    // segment ack. number used for last window update
-    uint32 iss;    // initial sequence number (ISS)
-
-    // receive sequence number variables
-    uint32 rcv_nxt;    // receive next
-    uint32 rcv_wnd;    // receive window
-    uint32 rcv_up;    // receive urgent pointer;
-    uint32 irs;    // initial receive sequence number
-    uint32 rcv_adv;    // advertised window
-
-    // SYN, SYN+ACK retransmission variables (handled separately
-    // because normal rexmit belongs to TcpAlgorithm)
-    int syn_rexmit_count;    // number of SYN/SYN+ACK retransmissions (=1 after first rexmit)
-    simtime_t syn_rexmit_timeout;    // current SYN/SYN+ACK retransmission timeout
-
-    // whether ACK of our FIN has been received. Needed in FIN bit processing
-    // to decide between transition to TIME-WAIT and CLOSING (set event code
-    // TCP_E_RCV_FIN or TCP_E_RCV_FIN_ACK).
-    bool fin_ack_rcvd;
-
-    bool send_fin;    // true if a user CLOSE command has been "queued"
-    uint32 snd_fin_seq;    // if send_fin == true: FIN should be sent just before this sequence number
-
-    bool fin_rcvd;    // whether FIN received or not
-    uint32 rcv_fin_seq;    // if fin_rcvd: sequence number of received FIN
-
-    uint32 sentBytes;    // amount of user data (in bytes) sent in last segment
-
-    bool nagle_enabled;    // set if Nagle's algorithm (RFC 896) is enabled
-    bool delayed_acks_enabled;    // set if delayed ACK algorithm (RFC 1122) is enabled
-    bool limited_transmit_enabled;    // set if Limited Transmit algorithm (RFC 3042) is enabled
-    bool increased_IW_enabled;    // set if Increased Initial Window (RFC 3390) is enabled
-
-    uint32 full_sized_segment_counter;    // this counter is needed for delayed ACK
-    bool ack_now;    // send ACK immediately, needed if delayed_acks_enabled is set
-                     // Based on [Stevens, W.R.: TCP/IP Illustrated, Volume 2, page 861].
-                     // ack_now should be set when:
-                     //   - delayed ACK timer expires
-                     //   - an out-of-order segment is received
-                     //   - SYN is received during the three-way handshake
-                     //   - a persist probe is received
-                     //   - FIN is received
-
-    bool afterRto;    // set at RTO, reset when snd_nxt == snd_max or snd_una == snd_max
-
-    // WINDOW_SCALE related variables
-    bool ws_support;    // set if the host supports Window Scale (header option) (RFC 1322)
-    bool ws_enabled;    // set if the connection uses Window Scale (header option)
-    int  ws_manual_scale; // the value of scale parameter if it was set manually (-1 otherwise)
-    bool snd_ws;    // set if initial WINDOW_SCALE has been sent
-    bool rcv_ws;    // set if initial WINDOW_SCALE has been received
-    uint rcv_wnd_scale;    // RFC 1323, page 31: "Receive window scale power"
-    uint snd_wnd_scale;    // RFC 1323, page 31: "Send window scale power"
-
-    // TIMESTAMP related variables
-    bool ts_support;    // set if the host supports Timestamps (header option) (RFC 1322)
-    bool ts_enabled;    // set if the connection uses Window Scale (header option)
-    bool snd_initial_ts;    // set if initial TIMESTAMP has been sent
-    bool rcv_initial_ts;    // set if initial TIMESTAMP has been received
-    uint32 ts_recent;    // RFC 1323, page 31: "Latest received Timestamp"
-    uint32 last_ack_sent;    // RFC 1323, page 31: "Last ACK field sent"
-    simtime_t time_last_data_sent;    // time at which the last data segment was sent (needed to compute the IDLE time for PAWS)
-
-    // SACK related variables
-    bool sack_support;    // set if the host supports selective acknowledgment (header option) (RFC 2018, 2883, 3517)
-    bool sack_enabled;    // set if the connection uses selective acknowledgment (header option)
-    bool snd_sack_perm;    // set if SACK_PERMITTED has been sent
-    bool rcv_sack_perm;    // set if SACK_PERMITTED has been received
-    uint32 start_seqno;    // start sequence number of last received out-of-order segment
-    uint32 end_seqno;    // end sequence number of last received out-of-order segment
-    bool snd_sack;    // set if received vaild out-of-order segment or rcv_nxt changed, but receivedQueue is not empty
-    bool snd_dsack;    // set if received duplicated segment (sequenceNo+PLength < rcv_nxt) or (segment is not acceptable)
-    SackList sacks_array;    // MAX_SACK_BLOCKS is set to 60
-    uint32 highRxt;    // RFC 3517, page 3: ""HighRxt" is the highest sequence number which has been retransmitted during the current loss recovery phase."
-    uint32 pipe;    // RFC 3517, page 3: ""Pipe" is a sender's estimate of the number of bytes outstanding in the network."
-    uint32 recoveryPoint;    // RFC 3517
-    uint32 sackedBytes;    // number of sackedBytes
-    uint32 sackedBytes_old;    // old number of sackedBytes - needed for RFC 3042 to check if last dupAck contained new sack information
-    bool lossRecovery;    // indicates if algorithm is in loss recovery phase
-
-    // queue management
-    uint32 sendQueueLimit;
-    bool queueUpdate;
-
-    // those counters would logically belong to TcpAlgorithm, but it's a lot easier to manage them here
-    uint32 dupacks;    // current number of received consecutive duplicate ACKs
-    uint32 snd_sacks;    // number of sent sacks
-    uint32 rcv_sacks;    // number of received sacks
-    uint32 rcv_oooseg;    // number of received out-of-order segments
-    uint32 rcv_naseg;    // number of received not acceptable segments
-
-    // receiver buffer / receiver queue related variables
-    uint32 maxRcvBuffer;    // maximal amount of bytes in tcp receive queue
-    uint32 usedRcvBuffer;    // current amount of used bytes in tcp receive queue
-    uint32 freeRcvBuffer;    // current amount of free bytes in tcp receive queue
-    uint32 tcpRcvQueueDrops;    // number of drops in tcp receive queue
-
-    //ECN
-    bool ecnEchoState;         // indicates if connection is in echo mode (got CE indication from IP and didn't get CWR from sender yet)
-    bool sndCwr;               // set if ECE was handled
-    bool gotEce;               // set if packet with ECE arrived
-    bool gotCeIndication;      // set if CE was set in controlInfo from IP
-    bool ect;                  // set if this connection is ECN Capable (ECT stands for ECN-Capable transport - rfc-3168)
-    bool endPointIsWillingECN; // set if the other end-point is willing to use ECN
-    bool ecnSynSent;           // set if ECN-setup SYN packet was sent
-    bool ecnWillingness;       // set if current host is willing to use ECN
-    bool sndAck;               // set if sending Ack packet, used to set relevant info in controlInfo.
-    bool rexmit;               // set if retransmitting data, used to send not-ECT codepoint (rfc3168, p. 20)
-    simtime_t eceReactionTime; // records the time of the last ECE reaction
-};
 
 /**
  * Manages a TCP connection. This class itself implements the TCP state
@@ -328,31 +90,32 @@ class INET_API TcpConnection : public cSimpleModule
 {
   public:
     static simsignal_t tcpConnectionAddedSignal;
-    static simsignal_t stateSignal;    // FSM state
-    static simsignal_t sndWndSignal;    // snd_wnd
-    static simsignal_t rcvWndSignal;    // rcv_wnd
-    static simsignal_t rcvAdvSignal;    // current advertised window (=rcv_adv)
-    static simsignal_t sndNxtSignal;    // sent seqNo
-    static simsignal_t sndAckSignal;    // sent ackNo
-    static simsignal_t rcvSeqSignal;    // received seqNo
-    static simsignal_t rcvAckSignal;    // received ackNo (=snd_una)
-    static simsignal_t unackedSignal;    // number of bytes unacknowledged
-    static simsignal_t dupAcksSignal;    // current number of received dupAcks
-    static simsignal_t pipeSignal;    // current sender's estimate of bytes outstanding in the network
-    static simsignal_t sndSacksSignal;    // number of sent Sacks
-    static simsignal_t rcvSacksSignal;    // number of received Sacks
-    static simsignal_t rcvOooSegSignal;    // number of received out-of-order segments
-    static simsignal_t rcvNASegSignal;    // number of received not acceptable segments
-    static simsignal_t sackedBytesSignal;    // current number of received sacked bytes
-    static simsignal_t tcpRcvQueueBytesSignal;    // current amount of used bytes in tcp receive queue
-    static simsignal_t tcpRcvQueueDropsSignal;    // number of drops in tcp receive queue
+    static simsignal_t stateSignal; // FSM state
+    static simsignal_t sndWndSignal; // snd_wnd
+    static simsignal_t rcvWndSignal; // rcv_wnd
+    static simsignal_t rcvAdvSignal; // current advertised window (=rcv_adv)
+    static simsignal_t sndNxtSignal; // sent seqNo
+    static simsignal_t sndAckSignal; // sent ackNo
+    static simsignal_t rcvSeqSignal; // received seqNo
+    static simsignal_t rcvAckSignal; // received ackNo (=snd_una)
+    static simsignal_t unackedSignal; // number of bytes unacknowledged
+    static simsignal_t dupAcksSignal; // current number of received dupAcks
+    static simsignal_t pipeSignal; // current sender's estimate of bytes outstanding in the network
+    static simsignal_t sndSacksSignal; // number of sent Sacks
+    static simsignal_t rcvSacksSignal; // number of received Sacks
+    static simsignal_t rcvOooSegSignal; // number of received out-of-order segments
+    static simsignal_t rcvNASegSignal; // number of received not acceptable segments
+    static simsignal_t sackedBytesSignal; // current number of received sacked bytes
+    static simsignal_t tcpRcvQueueBytesSignal; // current amount of used bytes in tcp receive queue
+    static simsignal_t tcpRcvQueueDropsSignal; // number of drops in tcp receive queue
+    static simsignal_t tcpRcvPayloadBytesSignal; // amount of payload bytes received (including duplicates, out of order etc) for TCP throughput
 
     // connection identification by apps: socketId
-    int socketId = -1;    // identifies connection within the app
+    int socketId = -1; // identifies connection within the app
     int getSocketId() const { return socketId; }
     void setSocketId(int newSocketId) { ASSERT(socketId == -1); socketId = newSocketId; }
 
-    int listeningSocketId = -1;    // identifies listening connection within the app
+    int listeningSocketId = -1; // identifies listening connection within the app
     int getListeningSocketId() const { return listeningSocketId; }
 
     // socket pair
@@ -369,7 +132,7 @@ class INET_API TcpConnection : public cSimpleModule
     short tos = -1;
 
   protected:
-    Tcp *tcpMain = nullptr;    // Tcp module
+    Tcp *tcpMain = nullptr; // Tcp module
 
     // TCP state machine
     cFSM fsm;
@@ -396,7 +159,7 @@ class INET_API TcpConnection : public cSimpleModule
     cMessage *the2MSLTimer = nullptr;
     cMessage *connEstabTimer = nullptr;
     cMessage *finWait2Timer = nullptr;
-    cMessage *synRexmitTimer = nullptr;    // for retransmitting SYN and SYN+ACK
+    cMessage *synRexmitTimer = nullptr; // for retransmitting SYN and SYN+ACK
 
   protected:
     /** @name FSM transitions: analysing events and executing state transitions */
@@ -430,27 +193,27 @@ class INET_API TcpConnection : public cSimpleModule
      * Shortcut to process most common case as fast as possible. Returns false
      * if segment requires normal (slow) route.
      */
-    virtual bool tryFastRoute(const Ptr<const TcpHeader>& tcpseg);
+    virtual bool tryFastRoute(const Ptr<const TcpHeader>& tcpHeader);
     /**
      * Process incoming TCP segment. Returns a specific event code (e.g. TCP_E_RCV_SYN)
      * which will drive the state machine.
      */
-    virtual TcpEventCode process_RCV_SEGMENT(Packet *packet, const Ptr<const TcpHeader>& tcpseg, L3Address src, L3Address dest);
-    virtual TcpEventCode processSegmentInListen(Packet *packet, const Ptr<const TcpHeader>& tcpseg, L3Address src, L3Address dest);
-    virtual TcpEventCode processSynInListen(Packet *packet, const Ptr<const TcpHeader>& tcpseg, L3Address srcAddr, L3Address destAddr);
-    virtual TcpEventCode processSegmentInSynSent(Packet *packet, const Ptr<const TcpHeader>& tcpseg, L3Address src, L3Address dest);
-    virtual TcpEventCode processSegment1stThru8th(Packet *packet, const Ptr<const TcpHeader>& tcpseg);
-    virtual TcpEventCode processRstInSynReceived(const Ptr<const TcpHeader>& tcpseg);
-    virtual bool processAckInEstabEtc(Packet *packet, const Ptr<const TcpHeader>& tcpseg);
+    virtual TcpEventCode process_RCV_SEGMENT(Packet *tcpSegment, const Ptr<const TcpHeader>& tcpHeader, L3Address src, L3Address dest);
+    virtual TcpEventCode processSegmentInListen(Packet *tcpSegment, const Ptr<const TcpHeader>& tcpHeader, L3Address src, L3Address dest);
+    virtual TcpEventCode processSynInListen(Packet *tcpSegment, const Ptr<const TcpHeader>& tcpHeader, L3Address srcAddr, L3Address destAddr);
+    virtual TcpEventCode processSegmentInSynSent(Packet *tcpSegment, const Ptr<const TcpHeader>& tcpHeader, L3Address src, L3Address dest);
+    virtual TcpEventCode processSegment1stThru8th(Packet *tcpSegment, const Ptr<const TcpHeader>& tcpHeader);
+    virtual TcpEventCode processRstInSynReceived(const Ptr<const TcpHeader>& tcpHeader);
+    virtual bool processAckInEstabEtc(Packet *tcpSegment, const Ptr<const TcpHeader>& tcpHeader);
     //@}
 
     /** @name Processing of TCP options. Invoked from readHeaderOptions(). Return value indicates whether the option was valid. */
     //@{
-    virtual bool processMSSOption(const Ptr<const TcpHeader>& tcpseg, const TcpOptionMaxSegmentSize& option);
-    virtual bool processWSOption(const Ptr<const TcpHeader>& tcpseg, const TcpOptionWindowScale& option);
-    virtual bool processSACKPermittedOption(const Ptr<const TcpHeader>& tcpseg, const TcpOptionSackPermitted& option);
-    virtual bool processSACKOption(const Ptr<const TcpHeader>& tcpseg, const TcpOptionSack& option);
-    virtual bool processTSOption(const Ptr<const TcpHeader>& tcpseg, const TcpOptionTimestamp& option);
+    virtual bool processMSSOption(const Ptr<const TcpHeader>& tcpHeader, const TcpOptionMaxSegmentSize& option);
+    virtual bool processWSOption(const Ptr<const TcpHeader>& tcpHeader, const TcpOptionWindowScale& option);
+    virtual bool processSACKPermittedOption(const Ptr<const TcpHeader>& tcpHeader, const TcpOptionSackPermitted& option);
+    virtual bool processSACKOption(const Ptr<const TcpHeader>& tcpHeader, const TcpOptionSack& option);
+    virtual bool processTSOption(const Ptr<const TcpHeader>& tcpHeader, const TcpOptionTimestamp& option);
     //@}
 
     /** @name Processing timeouts. Invoked from processTimer(). */
@@ -476,7 +239,7 @@ class INET_API TcpConnection : public cSimpleModule
     virtual void selectInitialSeqNum();
 
     /** Utility: check if segment is acceptable (all bytes are in receive window) */
-    virtual bool isSegmentAcceptable(Packet *packet, const Ptr<const TcpHeader>& tcpseg) const;
+    virtual bool isSegmentAcceptable(Packet *tcpSegment, const Ptr<const TcpHeader>& tcpHeader) const;
 
     /** Utility: send SYN */
     virtual void sendSyn();
@@ -485,19 +248,19 @@ class INET_API TcpConnection : public cSimpleModule
     virtual void sendSynAck();
 
     /** Utility: readHeaderOptions (Currently only EOL, NOP, MSS, WS, SACK_PERMITTED, SACK and TS are implemented) */
-    virtual void readHeaderOptions(const Ptr<const TcpHeader>& tcpseg);
+    virtual void readHeaderOptions(const Ptr<const TcpHeader>& tcpHeader);
 
     /** Utility: writeHeaderOptions (Currently only EOL, NOP, MSS, WS, SACK_PERMITTED, SACK and TS are implemented) */
-    virtual TcpHeader writeHeaderOptions(const Ptr<TcpHeader>& tcpseg);
+    virtual TcpHeader writeHeaderOptions(const Ptr<TcpHeader>& tcpHeader);
 
     /** Utility: adds SACKs to segments header options field */
-    virtual TcpHeader addSacks(const Ptr<TcpHeader>& tcpseg);
+    virtual TcpHeader addSacks(const Ptr<TcpHeader>& tcpHeader);
 
     /** Utility: get TSval from segments TS header option */
-    virtual uint32 getTSval(const Ptr<const TcpHeader>& tcpseg) const;
+    virtual uint32_t getTSval(const Ptr<const TcpHeader>& tcpHeader) const;
 
     /** Utility: get TSecr from segments TS header option */
-    virtual uint32 getTSecr(const Ptr<const TcpHeader>& tcpseg) const;
+    virtual uint32_t getTSecr(const Ptr<const TcpHeader>& tcpHeader) const;
 
     /** Utility: returns true if the connection is not yet accepted by the application */
     virtual bool isToBeAccepted() const { return listeningSocketId != -1; }
@@ -508,10 +271,8 @@ class INET_API TcpConnection : public cSimpleModule
 
     /**
      * Utility: Send data from sendQueue, at most congestionWindow.
-     * If fullSegmentsOnly is set, don't send segments smaller than SMSS (needed for Nagle).
-     * Returns true if some data was actually sent.
      */
-    virtual bool sendData(bool fullSegmentsOnly, uint32 congestionWindow);
+    virtual bool sendData(uint32_t congestionWindow);
 
     /** Utility: sends 1 bytes as "probe", called by the "persist" mechanism */
     virtual bool sendProbe();
@@ -523,11 +284,11 @@ class INET_API TcpConnection : public cSimpleModule
     virtual void retransmitData();
 
     /** Utility: sends RST */
-    virtual void sendRst(uint32 seqNo);
+    virtual void sendRst(uint32_t seqNo);
     /** Utility: sends RST; does not use connection state */
-    virtual void sendRst(uint32 seq, L3Address src, L3Address dest, int srcPort, int destPort);
+    virtual void sendRst(uint32_t seq, L3Address src, L3Address dest, int srcPort, int destPort);
     /** Utility: sends RST+ACK; does not use connection state */
-    virtual void sendRstAck(uint32 seq, uint32 ack, L3Address src, L3Address dest, int srcPort, int destPort);
+    virtual void sendRstAck(uint32_t seq, uint32_t ack, L3Address src, L3Address dest, int srcPort, int destPort);
 
     /** Utility: sends FIN */
     virtual void sendFin();
@@ -535,11 +296,12 @@ class INET_API TcpConnection : public cSimpleModule
     /**
      * Utility: sends one segment of 'bytes' bytes from snd_nxt, and advances snd_nxt.
      * sendData(), sendProbe() and retransmitData() internally all rely on this one.
+     * Returns the number of bytes sent.
      */
-    virtual void sendSegment(uint32 bytes);
+    virtual uint32_t sendSegment(uint32_t bytes);
 
     /** Utility: adds control info to segment and sends it to IP */
-    virtual void sendToIP(Packet *packet, const Ptr<TcpHeader>& tcpseg);
+    virtual void sendToIP(Packet *tcpSegment, const Ptr<TcpHeader>& tcpHeader);
 
     /** Utility: start SYN-REXMIT timer */
     virtual void startSynRexmitTimer();
@@ -547,15 +309,9 @@ class INET_API TcpConnection : public cSimpleModule
     /** Utility: signal to user that connection timed out */
     virtual void signalConnectionTimeout();
 
-    /** Utility: start a timer */
-    void scheduleTimeout(cMessage *msg, simtime_t timeout) { scheduleAt(simTime() + timeout, msg); }
-
   protected:
-    /** Utility: cancel a timer */
-    // cMessage *cancelEvent(cMessage *msg) { return tcpMain->cancelEvent(msg); }
-
     /** Utility: send IP packet */
-    virtual void sendToIP(Packet *pkt, const Ptr<TcpHeader>& tcpseg, L3Address src, L3Address dest);
+    virtual void sendToIP(Packet *pkt, const Ptr<TcpHeader>& tcpHeader, L3Address src, L3Address dest);
 
     /** Utility: sends packet to application */
     virtual void sendToApp(cMessage *msg);
@@ -576,7 +332,7 @@ class INET_API TcpConnection : public cSimpleModule
     /** Utility: prints local/remote addr/port and app gate index/socketId */
     virtual void printConnBrief() const;
     /** Utility: prints important header fields */
-    static void printSegmentBrief(Packet *packet, const Ptr<const TcpHeader>& tcpseg);
+    static void printSegmentBrief(Packet *tcpSegment, const Ptr<const TcpHeader>& tcpHeader);
     /** Utility: returns name of TCP_S_xxx constants */
     static const char *stateName(int state);
     /** Utility: returns name of TCP_E_xxx constants */
@@ -588,8 +344,8 @@ class INET_API TcpConnection : public cSimpleModule
     /** Utility: update receiver queue related variables and statistics - called before setting rcv_wnd */
     virtual void updateRcvQueueVars();
 
-    /** Utility: returns true when receive queue has enough space for store the tcpseg */
-    virtual bool hasEnoughSpaceForSegmentInReceiveQueue(Packet *packet, const Ptr<const TcpHeader>& tcpseg);
+    /** Utility: returns true when receive queue has enough space for store the tcpHeader */
+    virtual bool hasEnoughSpaceForSegmentInReceiveQueue(Packet *tcpSegment, const Ptr<const TcpHeader>& tcpHeader);
 
     /** Utility: update receive window (rcv_wnd), and calculate scaled value if window scaling enabled.
      *  Returns the (scaled) receive window size.
@@ -597,11 +353,11 @@ class INET_API TcpConnection : public cSimpleModule
     virtual unsigned short updateRcvWnd();
 
     /** Utility: update window information (snd_wnd, snd_wl1, snd_wl2) */
-    virtual void updateWndInfo(const Ptr<const TcpHeader>& tcpseg, bool doAlways = false);
+    virtual void updateWndInfo(const Ptr<const TcpHeader>& tcpHeader, bool doAlways = false);
 
   public:
     TcpConnection() {}
-    TcpConnection(const TcpConnection& other) {}    //FIXME kludge
+    TcpConnection(const TcpConnection& other) {} // FIXME kludge
     void initialize() {}
 
     /**
@@ -626,7 +382,7 @@ class INET_API TcpConnection : public cSimpleModule
      * connection object so that it can call this method, then immediately
      * deletes it.
      */
-    virtual void segmentArrivalWhileClosed(Packet *packet, const Ptr<const TcpHeader>& tcpseg, L3Address src, L3Address dest);
+    virtual void segmentArrivalWhileClosed(Packet *tcpSegment, const Ptr<const TcpHeader>& tcpHeader, L3Address src, L3Address dest);
 
     /** @name Various getters **/
     //@{
@@ -652,7 +408,7 @@ class INET_API TcpConnection : public cSimpleModule
      * of false means that the connection structure must be deleted by the
      * caller (TCP).
      */
-    virtual bool processTCPSegment(Packet *packet, const Ptr<const TcpHeader>& tcpseg, L3Address srcAddr, L3Address destAddr);
+    virtual bool processTCPSegment(Packet *tcpSegment, const Ptr<const TcpHeader>& tcpHeader, L3Address srcAddr, L3Address destAddr);
 
     /**
      * Process commands from the application.
@@ -671,7 +427,7 @@ class INET_API TcpConnection : public cSimpleModule
      * than 'SeqNum' have been SACKed.  Otherwise, the routine returns
      * false."
      */
-    virtual bool isLost(uint32 seqNum);
+    virtual bool isLost(uint32_t seqNum);
 
     /**
      * For SACK TCP. RFC 3517, page 3: "This routine traverses the sequence
@@ -691,32 +447,33 @@ class INET_API TcpConnection : public cSimpleModule
      * Returns true if a valid sequence number (for the next segment) is found and
      * returns false if no segment should be send.
      */
-    virtual bool nextSeg(uint32& seqNum);
+    virtual bool nextSeg(uint32_t& seqNum);
 
     /**
      * Utility: send data during Loss Recovery phase (if SACK is enabled).
      */
-    virtual void sendDataDuringLossRecoveryPhase(uint32 congestionWindow);
+    virtual void sendDataDuringLossRecoveryPhase(uint32_t congestionWindow);
 
     /**
      * Utility: send segment during Loss Recovery phase (if SACK is enabled).
+     * Returns the number of bytes sent.
      */
-    virtual void sendSegmentDuringLossRecoveryPhase(uint32 seqNum);
+    virtual uint32_t sendSegmentDuringLossRecoveryPhase(uint32_t seqNum);
 
     /**
      * Utility: send one new segment from snd_max if allowed (RFC 3042).
      */
-    virtual void sendOneNewSegment(bool fullSegmentsOnly, uint32 congestionWindow);
+    virtual void sendOneNewSegment(bool fullSegmentsOnly, uint32_t congestionWindow);
 
     /**
      * Utility: converts a given simtime to a timestamp (TS).
      */
-    static uint32 convertSimtimeToTS(simtime_t simtime);
+    static uint32_t convertSimtimeToTS(simtime_t simtime);
 
     /**
      * Utility: converts a given timestamp (TS) to a simtime.
      */
-    static simtime_t convertTSToSimtime(uint32 timestamp);
+    static simtime_t convertTSToSimtime(uint32_t timestamp);
 
     /**
      * Utility: checks if send queue is empty (no data to send).
@@ -728,5 +485,5 @@ class INET_API TcpConnection : public cSimpleModule
 
 } // namespace inet
 
-#endif // ifndef __INET_TCPCONNECTION_H
+#endif
 

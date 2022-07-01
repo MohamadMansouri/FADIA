@@ -1,31 +1,19 @@
 //
-// Copyright (C) 2010 Zoltan Bojthe
+// Copyright (C) 2010 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 #include <stddef.h>
 #include <string.h>
 
+#include "inet/networklayer/common/L3Address.h"
+#include "inet/transportlayer/tcp_lwip/LwipTcpStackIf.h"
 #include "lwip/lwip_tcp.h"
 #include "lwip/memp.h"
 
-#include "inet/networklayer/common/L3Address.h"
-#include "inet/transportlayer/tcp_lwip/LwipTcpStackIf.h"
-
 namespace inet {
-
 namespace tcp {
 
 LwipTcpLayer::LwipTcpLayer(LwipTcpStackIf& stackIfP) :
@@ -49,7 +37,7 @@ LwipTcpLayer::LwipTcpLayer(LwipTcpStackIf& stackIfP) :
     tcp_timer(0)
 {
     tcp_listen_pcbs.pcbs = nullptr;
-    memset(&inseg, 0, sizeof(inseg));
+    memset((void *)&inseg, 0, sizeof(inseg));
 }
 
 void LwipTcpLayer::if_receive_packet(int interfaceId, void *data, int datalen)
@@ -57,7 +45,7 @@ void LwipTcpLayer::if_receive_packet(int interfaceId, void *data, int datalen)
     struct pbuf *p = pbuf_alloc(PBUF_RAW, datalen, PBUF_RAM);
     memcpy(p->payload, data, datalen);
 
-    tcp_input(p, nullptr    /*interface*/);
+    tcp_input(p, nullptr /*interface*/);
 }
 
 /**
@@ -92,7 +80,7 @@ err_t LwipTcpLayer::ip_output(LwipTcpLayer::tcp_pcb *pcb, struct pbuf *p,
         len += p->len;
     }
     stackIf.ip_output(pcb, src->addr, dest->addr, buffer, p->tot_len);
-    delete [] buffer;
+    delete[] buffer;
     return 0;
 }
 
@@ -132,6 +120,5 @@ void LwipTcpLayer::notifyAboutIncomingSegmentProcessing(LwipTcpLayer::tcp_pcb *p
 }
 
 } // namespace tcp
-
 } // namespace inet
 

@@ -1,5 +1,6 @@
 //
 // Copyright (C) 2008
+//
 // DSDV simple example for INET (add-on)
 // Version 1.0
 // Diogo Antio & Pedro Menezes
@@ -26,4 +27,3 @@ class DsdvHello extends FieldsChunk
     Ipv4Address nextAddress; //terminal que re-/transmite o pacote
     int hopdistance; //distancia em hops/custo
 }
-

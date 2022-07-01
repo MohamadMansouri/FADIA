@@ -1,35 +1,26 @@
 //
-// Copyright (C) OpenSim Ltd.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see http://www.gnu.org/licenses/.
-//
+
 
 #ifndef __INET_TIMEBASEDTOKENGENERATOR_H
 #define __INET_TIMEBASEDTOKENGENERATOR_H
 
+#include "inet/common/clock/ClockUserModuleMixin.h"
 #include "inet/queueing/base/TokenGeneratorBase.h"
 
 namespace inet {
 namespace queueing {
 
-class INET_API TimeBasedTokenGenerator : public TokenGeneratorBase
+class INET_API TimeBasedTokenGenerator : public ClockUserModuleMixin<TokenGeneratorBase>
 {
   protected:
     cPar *generationIntervalParameter = nullptr;
     cPar *numTokensParameter = nullptr;
 
-    cMessage *generationTimer = nullptr;
+    ClockEvent *generationTimer = nullptr;
 
   protected:
     virtual void initialize(int stage) override;
@@ -38,14 +29,14 @@ class INET_API TimeBasedTokenGenerator : public TokenGeneratorBase
     virtual void scheduleGenerationTimer();
 
   public:
-    virtual ~TimeBasedTokenGenerator() { cancelAndDelete(generationTimer); }
+    virtual ~TimeBasedTokenGenerator() { cancelAndDeleteClockEvent(generationTimer); }
 
-    virtual bool supportsPushPacket(cGate *gate) const override { return false; }
-    virtual bool supportsPopPacket(cGate *gate) const override { return false; }
+    virtual bool supportsPacketPushing(cGate *gate) const override { return false; }
+    virtual bool supportsPacketPulling(cGate *gate) const override { return false; }
 };
 
 } // namespace queueing
 } // namespace inet
 
-#endif // ifndef __INET_TIMEBASEDTOKENGENERATOR_H
+#endif
 

@@ -1,6 +1,7 @@
 //
-// This program is property of its copyright holder. All rights reserved.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
+
 
 // Created: 2012-6-10 for project inet
 

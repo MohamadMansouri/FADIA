@@ -1,5 +1,26 @@
 ====== inet-4.x ======
 
+2022-05-13  ------ inet-4.4.0 released ------
+
+2021-07-01  Zoltan Bojthe
+
+	Fixed type differences between MSG and c++ code.
+
+2021-01-11  ------ inet-4.3.0 released ------
+
+2020-12-08  Levente Mészáros
+
+	Fixed leaks detected by Valgrind.
+
+2020-10-19  Levente Mészáros
+
+	Removed weird deletion of management frames from FrameSequenceStep (e.g RTS/CTS).
+
+2020-10-21  Levente Mészáros
+
+	Moved deletion dropped frames in FrameSequenceContext from destructor to
+	finishFrameSequence and abortFrameSequence.
+
 2020-01-08  ------ inet-4.2.0 released ------
 
 2019-02-13  Levente Mészáros

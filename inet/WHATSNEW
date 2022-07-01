@@ -1,6 +1,879 @@
 Recent changes in the INET Framework
 ====================================
 
+INET-4.4 (May 2022) - Stable
+----------------------------
+
+This is a new minor stable release of the INET 4.x branch. The highlight of this
+release is the implementation of several Time-Sensitive Networking (TSN) features.
+Also, INET is now fully licensed under LGPL (see later for details).
+
+Experimental Python support has been added for running simulations concurrently
+and optionally on an SSH cluster. This is mostly useful for running parameter
+studies, automated testing and optimizing parameters.
+
+There are also a number of small improvements, and several bug fixes. Some changes
+are backward incompatible, so existing models may need to be updated. This version
+requires OMNeT++ 6.0 or later.
+
+For a complete list of all added, removed, and changed folders, NED modules, packet
+chunks, packet tags, statistics, C++ classes, and signals please refer to the ChangeLog
+file in the src folder.
+
+Notable backward incompatible changes are the following:
+
+1. Network interfaces
+
+   The queue modules are placed back inside the network interface compound module
+   as direct submodules, reverting back a previous change in INET 4.2 version.
+
+   In the INET 3.x versions, the network interface queue submodules were part
+   of the network interface compound modules, and they were directly connected
+   to other submodules within the network interface using connections and gates.
+   This structure was not ideal when a packet could be immediately served by the
+   MAC layer, because the queue recorded a zero simulation time increase in the
+   queue length. The problem was especially difficult to get around when compound
+   packet queues were used. In order to fix this issue, we decided to move the
+   MAC layer queues (as simple submodules) under the MAC layer compound module.
+   Having this structure allowed the MAC modules to completely bypass the queue
+   modules if the queueing of the packet was not necessary.
+
+   Unfortunately, this change turned out to be bad for various reasons. The most
+   important is that the queue needs to communicate with the module it is connected
+   to. For example, a complex compound queue which can delay packets needs to notify
+   the connected module, in this case of the MAC module, when a packet becomes ready
+   to be pulled. So once again, we decided to move the queues back where they were
+   before, outside of the MAC modules. Of course, the original queue length hazard
+   problem still had to be solved, but as it turned out that problem had to be solved
+   anyway.
+
+   This change may require the modification of simulation models, because the queue
+   module parameter assignments (referring to the old module positions) may have no
+   effect any more. This change can break existing simulations silently producing
+   different results.
+
+2. Network nodes
+
+   The addition of Time-Sensitive Networking features required to further extend
+   the network node architecture by adding a separate bridging layer compound
+   module between the L2 and L3 layers. This new module is optional and it can
+   be present in both Ethernet switches and standard hosts.
+
+   The VLAN policy module has been moved into the new bridging layer in order
+   to correctly combine with the TSN stream features.
+
+   This change requires updating the VLAN policy module parameter assignments,
+   otherwise simulations may silently produce different results.
+
+3. Packet filter expressions
+
+   Several INET modules (packet filters, packet classifiers, packet schedulers,
+   various visualizers, etc.) use packet filter expressions to differentiate
+   packets. In earlier INET versions, the packet filter expressions were limited
+   to only access certain parts of the packet: name, length, kind, one protocol
+   header at a time. Perhaps the most important such limitation was that it was
+   not really possible to combine conditions for different protocol headers.
+
+   The new packet filter expression syntax is more general while it retains the
+   often useful simple pattern matching mechanism for packet names. The generic
+   NED expression syntax supports the more complicated cases, where filtering for
+   packet content and packet meta-data is needed. It also allows the combination
+   of conditions for different protocol headers that was not possible before.
+
+   This change may require the modification of simulation models, because packet
+   filter expressions are not backward compatible. This change can break existing
+   simulations silently producing different results.
+
+   The User's Guide contains a separate chapter describing the packet filter
+   expressions with several examples.
+
+4. Signals and statistics
+
+   Several signals and statistics have been renamed and several others are split
+   into multiple different ones. This change was necessary in order to have a
+   more coherent naming and also to have more fine-grained results. The most
+   important affected modules are the flow measurement recorder and the queueing
+   model elements. See the ChangeLog file under the src folder for more details.
+
+   This change may require the modification of analysis files, because the results
+   may be different. This change can break existing analysis files silently producing
+   different diagrams.
+
+Notable backward compatible changes are the following:
+
+1. Time-Sensitive Networking
+
+   Several new modules have been added to provide new features of Time-Sensitive
+   Networking.
+
+   An existing implementation of the gPTP time synchronization protocol has been
+   ported and merged into the INET framework. The protocol has been extended with
+   the support of multiple time synchronization domains. The clock model has been
+   extended to allow changing the active time domain to simulate failover. Please
+   note that the actual mechanism that detects the time synchronization failure
+   is not yet provided, so right now only manual failover can be simulated.
+
+   The new traffic shaping feature provides modules for time-aware shaping,
+   credit-based shaping, asynchronous shaping, and also various combinations
+   of them. These modules are usually part of the network interfaces in the
+   complex queueing mechanism of Time-Sensitive Networking.
+
+   The per-stream filtering feature provides modules for token-bucket-based
+   traffic metering, transmission eligibility time calculation, and a form
+   of statistical traffic metering. These modules are usually part of the
+   ingress traffic filter of the bridging layer.
+
+   The frame replication and elimination feature provides modules for stream
+   identification, stream splitting/merging, and stream encoding/decoding as
+   part of the bridging layer.
+
+   All of the above TSN features are described in detail in the User's Guide
+   and the respective NED files. Besides, there are several new showcases that
+   demonstrate the individual TSN features and a few combinations.
+
+2. Ethernet model
+
+   The old Ethernet (non-TSN) network interface infrastructure has been changed.
+
+   The FCS protocol header insertion has been moved from the Ethernet MAC layer
+   module to the Ethernet protocol layer module. The Ethernet protocol layer was
+   already separated from the network interface and moved to separate module in
+   network nodes in the previous INET version. This change makes it possible to
+   use the old and the new TSN capable Ethernet models interchangeably.
+
+3. Link-layer network-wide automatic configuration
+
+   Several new network-wide automatic configurator modules have been added.
+
+   One such network configurator module configures all MAC address tables (aka.
+   MAC forwarding information databases) automatically in all Ethernet switches
+   by discovering the network topology and finding the shortest paths between
+   all network node pairs. This configurator can be used instead of manually
+   configuring the Ethernet switches or instead of using an automatic spanning
+   tree protocol such as STP or RSTP.
+
+   There are several newly added gate scheduling configurators. They can configure
+   the gate schedules of time-aware shapers for all traffic categories in all
+   network interfaces of all network nodes. The resulting schedules are such that
+   the required end-to-end latency and jitter limits are met for all configured
+   streams. The following gate scheduling configurators are available:
+     - simple eager configurator
+     - Z3 SAT-solver-based configurator (requires installation of external library)
+     - TSNsched-based configurator (requires installation of external tool)
+
+   Another network level configurator that is used in Time-Sensitive Networking
+   is the stream redundancy configurator. This module configures the stream merger
+   and stream splitter modules in all network nodes such that all redundant traffic
+   paths are used. The redundant streams make the network resilient to various
+   node and/or link failures.
+
+   Finally, there is the so called failure protection configurator that is used
+   in Time-Sensitive Networking. This module configures the network using the
+   stream redundancy, and optionally the gate scheduling configurators, to meet
+   the complex node and/or link failure protection requirements of all traffic
+   streams by figuring out the necessary redundant paths.
+
+4. Processing delay
+
+   A simple packet processing delay mechanism has been added to the TSN network
+   interface and also to the bridging layer. This allows one to simulate a very
+   simple packet processing delay for incoming and outgoing packets, and also for
+   packets that are forwarded by the bridging layer.
+
+5. Queueing model and protocol elements
+
+   The queueing model have been extended with various token bucket meters and
+   classifiers. The model also allows one to create chained token buckets where
+   the overflowing tokens go to another bucket. Meters simply attach meta data
+   to packets while classifiers push packets to different gates, both based
+   on the state of the token buckets. These modules are currently used in TSN
+   per-stream traffic filtering.
+
+   Several new generic protocol support elements have been added. There are several
+   new modules, currently used in TSN frame replication, for stream identification,
+   stream splitting/merging, stream encoding/decoding. There are a few other new
+   modules, currently used in TSN asynchronous shaping, for transmission eligibility
+   time metering, filtering, and queueing. 
+
+   A new interactive packet gate has been added that allows the user to directly
+   control the gate's open/closed state from Qtenv and experiment interactively.
+
+   Please note that in OMNeT++ 6.0 version of Qtenv the simulation may stop more
+   than once in the same event. This is called pause points, and it happens every
+   time a packet is passed from one module to another using to queueing model
+   elements, the protocol support modules, or the INET packet processing API.
+
+6. Applications
+
+   A new simple out-of-band clock synchronizer application has been added. This
+   module can be used to synchronize clocks in the whole network without actually
+   sending any time synchronization packets.
+
+   New IEEE 802.2 LLC protocol-specific applications have been added. These allow
+   to send IEEE 802.2 LLC packets directly from the application layer.
+
+7. Packet chunks, tags and serializers
+
+   New packet chunks have been added for the IEEE 802.1r protocol.
+
+   Several new packet tags have been added: PcpReq/PcpInd, StreamReq/StreamInd,
+   SequenceNumberReq/SequenceNumberInd, ResidenceTimeTag, EligibilityTimeTag,
+   CreditGateTag, EnapsulationProtocolReq/EnapsulationProtocolInd. The purpose
+   and usage of these tags can be found at the relevant modules.
+
+   New packet chunk serializers have been added for the IEEE 802.1as and IEEE
+   802.1r tags. This allows recording of PCAP traces in TSN simulations.
+
+8. Signals and statistics
+
+   Several new signals and statistics have been added. The most notable newly
+   added statistics are the measurement of the transmission duration, the signal
+   propagation time, and the packet residence time. The latter being the duration
+   the packet spends in individual network nodes. For a complete list of signal
+   and statistic changes see the ChangeLog in the src folder.
+
+9. Project features
+
+   Several new project features have been added. The IEEE 802.1as and the IEEE
+   802.1r features are used in Time-Sensitive Networking. Another feature is
+   added for the Microsoft Z3 SAT-solver-based gate schedule configurator, it
+   requires the installation of an external library.
+
+   Finally, there is a new feature for an automatic simulation model self documenter.
+   This feature allows one to observe the simulations while they are running and
+   to collect several categories of information about what the simulation modules
+   are doing. The result can be automatically included in the generated NED
+   documentation.
+
+10. Visualization
+
+   New visualizers have been added that display some aspects of the Time-Sensitive
+   Networking configuration. One visualizer displays the gate schedule for the
+   time-aware shapers for multiple network interfaces in multiple network nodes.
+   Another visualizer displays the redundant traffic paths configured in the
+   stream splitting and stream merging components.
+
+11. Examples
+
+   Several new Time-Sensitive Networking specific examples have been added
+   under the showcases/tsn folder. The new examples cover the topic of time
+   synchronization, traffic shaping, gate scheduling, per-stream filtering,
+   frame replication, frame preemption, cut-through switching, and several
+   combinations of these features.
+
+   Another set of new examples, found under the showcases/measurement folder,
+   have been added to demonstrate how to do some widely used communication
+   network measurements. There are examples for datarate, throughput,
+   utilization, end-to-end delay, jitter, queueing time, residence time,
+   transmission time, propagation time and various packet-flow-specific
+   measurements.
+
+12. Experimental Python support
+
+   A new experimental Python package has been added that allows the automation
+   of running and testing multiple simulations concurrently and also optionally
+   on an SSH cluster. The automated testing covers smoke, fingerprint, sanitizer,
+   statistical, and several other tests. The inet_python_repl shell script starts
+   the Python interpreter and loads the required OMNeT++/INET Python packages.
+   The main entry points are run_simulations, run_smoke_tests, run_fingerprint_tests,
+   and several other run_* functions, there's also an optimize_simulation_parameters
+   function. There are also shell scripts (called inet_run_*) that can be used in
+   the simulation folders directly.
+
+   This package will be officially supported in the next OMNeT++/INET release.
+
+13. Documentation
+
+   The User's Guide has been extended with new chapters. One new chapter is
+   about the new Time-Sensitive Networking features. It gives an overview of
+   the available modules and how to use them. Another new chapter is about the
+   new packet filter expression syntax. It gives a brief description of the
+   syntax and provides several examples.
+
+14. Licensing and code formatting
+
+   The whole INET Framework has been re-licensed under the LGPL. The vast majority
+   of INET components were already licensed under LGPL. All other components that
+   were not, and where we could not reach the original authors, or they did not
+   agree with the new license, have been moved into a separate INET-GPL project.
+
+   As of today, the new INET-GPL project (https://github.com/inet-framework/inet-gpl)
+   contains the following old INET components:
+    - TCP NSC
+    - packetdrill
+    - HTB queue and scheduler
+    - HTTP tools
+
+   All source files have been changed with respect to license headers. The longer
+   license header variants have been replaced with a standard one-liner SPX license
+   reference.
+
+15. Notable bug fixes and other changes
+
+   Fixed packet level region tag updating when packet contents are changed.
+
+   Fixed copying region tags in fragmentation, defragmentation, aggregation, and deaggregation.
+
+   Fixed the hazards in queue length statistics that allowed the length to go
+   below 0 or above the queue capacity for zero simulation time.
+
+   Fixed the utilization result filter that incorrectly calculated 1-utilization.
+
+   Fixed several memory leaks and other problems found by the sanitizer.
+
+   There were several other minor bug fixes some of which are documented on Github.
+
+   The VoIP stream modules have been updated to the latest development library.
+
+INET-4.3 (January 2021) - Stable
+--------------------------------
+
+This is a new minor stable release of the INET 4.x branch. The highlights of this
+release are the infrastructure for Time-Sensitive Networking protocols, the EIGRP
+routing protocol and DCTCP congestion control.
+
+For TSN support, a new modular Ethernet MAC and PHY layer model has been added
+which provides Ethernet frame preemption, Ethernet cut-through switching, a gating
+mechanism for packet queueing, and a clock model which also models clock drifting.
+
+New API level features include intra-node packet streaming, inter-node transmission
+update support, bit level packet data identity tracking, and the ability to define
+and measure packet flows.
+
+There are also a number of small improvements, and several bug fixes. Some changes
+are backward incompatible, so existing models may need to be updated. This version
+requires OMNeT++ 6.0 preview 10 or later.
+
+For a complete list of all added, removed, and changed folders, NED modules, packet
+chunks, packet tags, statistics, C++ classes, and signals please refer to src/ChangeLog.
+
+Notable backward incompatible changes are the following:
+
+1. Packet API
+
+   The packet tag, chunk tag and chunk region tag APIs have been changed to
+   store all tags using shared pointers. Moreover, the vectors containing said
+   tags have also been changed to be stored using shared pointers. These shared
+   data structures are automatically copied behind the scenes when they are
+   modified, and they are also shared among multiple packets.
+
+   The reasoning is that packets are copied quite often, so this operation must
+   be very efficient both in terms of space and time. Often the copied packet is
+   not modified with respect to the attached tags, so it makes sense to share these
+   data structures. The previous packet API already shared the packet data between
+   copies, but it didn't share the attached tags.
+
+   Internally, the class TagSet has been replaced with another class, SharedTagSet,
+   and similarly, the class RegionTagSet has been replaced with SharedRegionTagSet.
+
+   This change requires the modification of simulation models, because tags are
+   now returned as shared pointers. Moreover, a different method must be called,
+   namely the ones with the 'ForUpdate' suffix, to modify existing tags. Due to
+   this copy-on-write semantics, this change can also break existing user code.
+
+2. Ethernet
+
+   Several modules which had an abbreviated Ether in their names have been renamed
+   to have the complete word, Ethernet, in their names instead. This change affects
+   many names: EthernetSwitch, EthernetMac, EthernetLink, EthernetSignal, etc.
+
+   The Ethernet switch relay functionality provided by the MacRelayUnit and
+   Ieee8021dRelay modules have been refactored. The most prominent change is that
+   these modules no longer work on Ethernet frames only. They simply expect the
+   packets to contain the necessary metadata such as the incoming interface
+   indication (InterfaceInd) and the source and destination MAC address indication
+   (MacAddressInd) in order to operate.
+
+   A new WireJunction module has been added which replaces the functionality of
+   the old EtherBus and EtherHub modules. This module represents a generic wiring
+   hub, and simply broadcasts messages (packets, frames, signals) received on one
+   port to all other ports, mimicking the propagation of wired electrical signals.
+
+   The physical signal class hierarchy has been refactored, the old Signal class
+   has been split into a generic wireless signal, called WirelessSignal, and
+   a generic wired signal, called WiredSignal, both subclassed from Signal.
+
+   The renames may break existing simulations but they are easy to follow. The
+   MAC relay changes are internal to network nodes and may only break Ethernet
+   extension models. All the other changes are likely to produce compilation
+   errors.
+
+3. IEEE 802.1q support
+
+   The old 802.1q support has been removed from the default EthernetInterface,
+   because it unnecessarily complicated the network interface and it was not
+   extensible.
+
+   The LinkLayerNodeBase base module has been extended with separate and optional
+   Ethernet and IEEE 802.1q protocol layers, where protocol modules have on instance
+   per network node. This results in a different structure from the default one
+   where the Ethernet protocol is part of the network interface. The advantage is
+   that various additional IEEE 802 protocols such as 802 LLC, 802 SNAP, 802.1q
+   and 802.1ae are better composable this way.
+
+   Several small layered protocol models and infrastructure components have been
+   added to support these IEEE 802 protocols. These include among others protocol
+   header inserters and checkers, protocol printers and dissectors, etc.
+
+   This change may break simulations that used the old IEEE 802.1q support. They
+   must be carefully investigated and updated to use the new model instead.
+
+4. VLAN support
+
+   The VLAN support has been completely refactored to use separate modules for
+   filtering and mapping VLAN indications and requests on packets according to
+   a user-configurable policy. The new VlanIndFilter and VlanReqMapper modules
+   are part of a VLAN policy module of Ethernet switches by default.
+
+   This change may cause simulations to ignore certain parameters which are
+   expected to affect virtual interfaces and thus break existing simulations.
+
+5. Virtual interfaces
+
+   The vlan submodule vector of network nodes inherited from LinkLayerNodeBase
+   has been renamed to virt. The original name suggested misleadingly that this
+   set of network interfaces were meant to be used exclusively for VLAN, but that
+   is not the case. The virtual interfaces, called VirtualInterface, can be used
+   for all kinds of protocol parameterization such as changing the source MAC
+   address.
+
+   This change may cause simulations to ignore certain parameters which are
+   expected to affect virtual interfaces.
+
+6. Registering protocols and services
+
+   There was some confusion with respect to the expected module gates in the
+   arguments of the registerService() and registerProtocol() methods. Following
+   the OSI terminology, the registerService() method now takes the requestIn
+   and indicationOut gates, the registerProtocol() method takes the requestOut
+   and indicationIn gates as arguments. This change has been followed with
+   all affected modules.
+
+   Unfortunately, this change may break existing code silently, although not
+   very likely. The registration calls may provide the incorrect gates to the
+   MessageDispatcher modules, which in turn will dispatch the packets to the
+   wrong modules or not at all. Luckily, in the latter case, an error will be
+   thrown and the simulation terminates.
+
+7. Mobility
+
+   All methods in the IMobility interface that returned a Coord or a Quaternion
+   data structure by value have been changed to return a const reference instead.
+   These methods, especially the getCurrentPosition() method, may be called quite
+   often, so avoiding the copying of said data structures increases performance.
+
+   This change can be followed easily by implementations, because in most cases
+   the values were already stored in the mobility modules. This change is not
+   expected to break existing models silently.
+
+8. Radio medium analog model
+
+   Similarly to the IMobility interface change, several methods that returned
+   or received as an argument a Coord or a Quaternion data structure by value
+   has been changed to return or receive a const reference instead. Again, these
+   methods may be called quite often in wireless network simulations, so avoiding
+   the copying of these data structures increases performance.
+
+   This change has very little effect on the implementations, since in most cases
+   the values were already stored in the related object with a large enough dynamic
+   extent. This change is not expected to break existing models silently.
+
+9. Queueing model
+
+   The IPacketQueue interface has been changed to use explicit enqueuePacket()
+   and dequeuePacket() methods instead of relying on the generic pushPacket()
+   and pullPacket().
+
+   This change required to updated all existing MAC models to use the new API.
+   Other 3rd party MAC modules have to be updated accordingly.
+
+10. Renames
+
+   Several folders in the physicallayer folder have been moved below the newly
+   added wired and wireless folders, and renamed. Besides, all support modules have
+   been moved one level deeper into the common folders. This change helps new
+   users to find existing physical layer technologies more easily, because they
+   have their own folders right inside the wired and wireless folders. This change
+   separates the largely independent wired and wireless physical layer support
+   modules and implementations.
+
+   Similary to the above, several folders in the visualizer folder have been
+   moved below the newly added canvas and osg folders. This change is required
+   in order to be able to add separate features for canvas (2D) and OSG (3D)
+   visualizations.
+
+   The InterfaceEntry module that represents network interfaces has been renamed
+   to NetworkInterface. The old name was a left-over from the time when this
+   class was really an integral part of the InterfaceTable module. This is no
+   longer the case, thus the renaming makes perfect sense.
+
+   The Protocol::ieee8022 global protocol variable has been renamed, and split
+   into Protocol::ieee8022llc and Protocol::ieee8022snap.
+
+   The queueing API has been updated to reflect the new push/pull duality in
+   the naming convention as opposed to the old push/pop duality. For example,
+   the old packetPopped signal has been renamed to packetPulled, and the old
+   popPacket() method in the IPassivePacketSource has been renamed to pullPacket().
+
+   The IPacketQueueingElement C++ interface and the corresponding base class,
+   called PacketQueueingElementBase, has been renamed to IPacketProcessor and
+   PacketProcessorBase, respectively. The reason is that, although these classes
+   are part of the queueing API, they are more general and their original name
+   didn't capture this fact. Also, in several protocol implementations deriving
+   classes from the classes with the original names looked really weird.
+
+   All integral C++ type alias have been replaced with the standard variants.
+   For example, the int64 type alias has been replaced with int64_t.
+
+   These changes mostly result in NED errors and C++ compilation errors in the
+   simulation models which are affected, and they are easy to follow.
+
+11. Removed models
+
+   The NetAnimTrace module has been removed. The visualization functionality it
+   provided has been replaced with the much more versatile and feature rich
+   visualizer modules.
+
+   The PacketDump class, which was used to provide a very basic human readable
+   string representation of the packet content, has been removed. The packet
+   printer API is a much more versatile and widely parameterizable way of
+   printing packets, and there's no reason to have two different ways of doing
+   the same thing.
+
+   The EtherBus module has been removed because it has been completely replaced
+   with the generic WireJunction module.
+
+   The Ieee8021qEncap module has been removed. This module was used in the Ethernet
+   network interfaces to provide IEEE 802.1q protocol support and VLAN networking.
+
+   These changes break existing simulation models with a compile time or runtime
+   error.
+
+Notable backward compatible changes are the following:
+
+1. Packet API
+
+   The Packet API has been extended with several new replace and update methods.
+   The replace methods allow replacing arbitrary parts of the packet content with
+   a single method call. The update methods allow updating arbitrary parts of the
+   packet content in place with a single method call. Similarly to the completeness
+   of these methods, the remove and insert methods have also been further extended.
+
+   Moreover, the Packet API has been extended with a packet level region tag
+   support. This allows attaching region tags to the data of packets similarly
+   to how chunks already allowed this. The main difference is that when data
+   is attached to chunks, then it must be in a form that can be shared among
+   multiple packets which share the same chunk throughout the network. For
+   example, the creation timestamp of coherent data fragments is such a data.
+   In contrast, the queueing time of coherent data fragments belongs to the
+   individual packets, and must be separately updated for different paths the
+   same data takes in the network.
+
+   The chunk API has been extended with a bit-level identity tracking of data.
+   In other words, it is now possible to determine if the data that shows up at
+   two different locations in the network, independently of whether these locations
+   are in the same network node or not, and also independently of how the data
+   is represented (field-based or binary), is the same data or not. This feature,
+   for example, is useful for end-to-end delay measurements and more accurate
+   path visualization.
+
+   A new chunk class, called EncryptedChunk, has been added to allow storing
+   encrypted data in a packet without actually encrypting the data. Internally,
+   the new chunk uses a shared reference to the encrypted chunk and the length
+   of the encrypted binary representation.
+
+   Efficient parsim support has been added to all classes of the Packet API,
+   including the Packet class itself, all chunk classes, and all tags.
+
+   The PacketProtocolTag has been extended with an extra front and back offset
+   that further specifies where the actual protocol is to be found within the
+   packet data. This feature is primarily useful to keep the associated protocol
+   of the packet up to date even while the packet is being constructed within a
+   protocol module. Doing so allows the packet printer and packet dissector to
+   understand a partially encapsulated, incomplete packet.
+
+2. Clock model
+
+   Several new modules have been added to support the modeling of hardware clocks
+   and the related clock drift phenomena. The new modules can be found in a new
+   top level folder called clock. The clock model is an optional feature that
+   can be most conveniently used via the ClockUserModuleBase and ClockUserModuleMixin
+   classes.
+
+   Several modules have been extended with optional clock support: UdpBasicApp,
+   InterpacketGapInserter, TransmitterBase, PeriodicGate, etc. This feature has
+   been documented in the User's Guide.
+
+3. Ethernet
+
+   A completely new modular Ethernet model has been added to the linklayer and
+   physicallayer folders. The three most prominent new features that are directly
+   supported are the Ethernet frame preemption, Ethernet cut-through switching,
+   and the gating mechanism in the Ethernet queues.
+
+   The new model contains of several smaller modules that allow the user to
+   combine them in more ways than before and also to customize their behavior.
+   The main purpose of this change was to provide support for Ethernet
+   Time-Sensitive Networking (TSN) features.
+
+   Following the changes in the OMNeT++ cDatarateChannel API, both existing
+   Ethernet MAC models that used the old forceTransmissionFinishTime() API have
+   been updated to use the new transmission update mechanism instead.
+
+4. PPP
+
+   Similarly to the change in the Ethernet model, the PPP protocol implementation
+   has been changed to use the new transmission update API in place of the old
+   forceTransmissionFinishTime().
+
+5. TCP
+
+   A new congestion control algorithm, called DCTCP, has been added by Marcel
+   Marek. Also, related to this change, the ECN support has been enhanced to be
+   customizable by congestion control algorithms.
+
+6. Enhanced Interior Gateway Routing Protocol (EIGRP)
+
+   A new model of the routing protocol EIGRP with support for IPv4 and IPv6 has
+   been ported from ANSAINET 3.4.0 to INET. This is a large addition that adds a
+   lot of modules, some new network node types, and it also comes with several new
+   examples.
+
+   This model was contributed by Vladimir Vesely, Jan Bloudicek, Vit Rek, and Jan
+   Zavrel from the Brno University of Technology.
+
+7. Packet flows and timing measurements
+
+   The concept of packet flows has been added to provide support for advanced timing
+   measurements. A packet flow is a logical classification of packets, identified
+   by a name, over the whole network and over the duration of the whole simulation.
+   Packets may have a PacketFlow tag attached to a region of data which describes
+   flow membership.
+
+   This feature allows making timing measurements between two or more arbitrary
+   end points in the network. The measurement can separate queueing time, processing
+   time, propagation time, transmission time, etc. on a per-bit basis efficiently.
+   It is also possible to collect all packet events (e.g queueing, processing,
+   transmission, propagation) and do arbitrary computations again on a per-bit
+   basis. This feature is provided by the FlowMeasurementStarter and FlowMeasurementRecorder
+   modules. The measurement data are collected on packets in various time tags
+   (e.g. QueueingTimeTag), which are updated by all related modules (e.g. PacketQueue).
+
+8. Queueing model
+
+   The synchronous packet processing API has been extended with the support of
+   packet streaming between modules. This feature allows two modules within the
+   same network node to communicate synchronously (without sending asynchronous
+   messages) and process a packet bit by bit over a nonzero amount of time. The
+   related methods are called pushPacketStart(), pushPacketEnd(), pushPacketProgress(),
+   pullPacketStart(), pullPacketEnd(), and pullPacketProgress().
+
+   Several queueing model base classes have been refined and somewhat refactored
+   in order to better support the new feature. Also, many queueing model elements
+   have been extended with direct packet streaming support.
+
+   A few new queueing model elements have also been added that provide support
+   for the gating mechanism of Time-Sensitive Networking and for the preemption
+   mechanism of Ethernet. Some notable examples are PacketGate, PeriodicGate,
+   PreemptingServer, PreemptableStreamer, etc.
+
+9. PCAP
+
+   The PCAP support has been extended with the more modern PCAPng file format.
+   This is the new default output file format for the PcapRecorder module. The
+   support for recording PCAP files has been extended to the network, network
+   node, and network interface level. The new format allows recording the network
+   interface and packet direction (outbound/inbound) for frames and also supports
+   mixing packet formats, making it possible to record the traffic of potentially
+   the whole network into a single file.
+
+10. Socket processing
+
+   Several new modular socket command and packet processing components have been
+   added for Ethernet and IEEE 802.2 LLC protocols. There are modules for handling
+   the opening, configuration, and closing commands for sockets, others for maintaining
+   a table of open sockets (which can also be inspected in the runtime user interface),
+   and some for processing and duplicating the incoming packets for all open sockets.
+
+11. Protocol elements library
+
+   Many small generic and reusable protocol implementation support components
+   have been added. These components include, among others, generic components for
+   packet fragmentation and defragmentation, aggregation and deaggregation, CRC and
+   FCS insertion and checking, and physical layer wired transmitter and receiver
+   models.
+
+12. Visualizer
+
+   A new packet flow visualizer has been added, called PacketFlowCanvasVisualizer
+   and its OSG variant PacketFlowOsgVisualizer. They have also been included in
+   the integrated visualizer modules. The new visualizers display the packet flow
+   paths as polylines along with some basic statistics. This visualizer relies on
+   the newly introduced packet flow concept.
+
+   The spectrum and spectrogram visualization of the MediumCanvasVisualizer has
+   been further enhanced with better options and a more efficient implementation.
+
+13. Printing formatted output
+
+   Support for producing formatted log output has been added with the new EV_FIELD
+   and other EV_ macros. The default str() method in several Packet API classes
+   (e.g. Packet, various Chunks, Signal) have been enhanced to provide better
+   textual representation in the log.
+
+   The IPrintableObject C++ interface has been moved to the common folder. It
+   has also been extended with template support for printing objects without
+   having to repeat a lot of code and with using the default shift operator.
+
+14. Features (.oppfeatures)
+
+   Several new OMNeT++ features have been added and some old features have been
+   split. These changes can be found in the IDE on the INET project properties:
+
+    - Clock
+    - Clock examples
+    - EIGRP routing
+    - EIGRP routing examples
+    - Emulation showcase
+    - IEEE 802.1ae
+    - IEEE 802.1q
+    - IEEE 802.2
+    - Internet protocol examples
+    - Open MP support
+    - Physical layer common
+    - Physical layer wired common
+    - Physical layer wireless common
+    - Protocol support
+    - Protocol tutorial
+    - Queueing library
+    - Queueing tutorial
+    - Unit disk radio
+    - Virtual interface
+    - Visualization OSG (3D)
+    - Visualization OSG (3D) showcases
+    - Visualization canvas (2D)
+    - Visualization canvas (2D) showcases
+    - Visualization common
+    - Wireless noise source
+
+15. Examples
+
+   Several new examples have been added:
+    - clock drift
+    - Ethernet frame preemption
+    - Ethernet cut-through switching
+    - gating mechanism in Ethernet queueing
+    - modular Ethernet interface
+    - DCTCP congestion algorithm
+    - timing measurement along packet flows
+    - video streaming using network emulation
+    - signal power spectral density visualization
+
+   A few examples have been substantially changed to follow other changes:
+    - IEEE 802.1d
+    - virtual LAN
+
+16. Testing
+
+   The fingerprint testing script has been extended with support for computing
+   multiple different fingerprints and a separate fingerprint calculator option.
+   The updated fingerprint tests contain four separate fingerprint values for
+   each example simulation:
+
+    - detailed model behavior
+    - complete network byte order packet data and timing at the network level
+    - complete network packet length and timing at the network level
+    - graphics in the runtime user interface.
+
+   Several new fingerprint, module, and unit tests have been added for the new
+   clock model, the protocol support modules, and the new formatted output.
+
+17. Documentation
+
+   A new chapter about the newly added clock model has been added to the User's
+   Guide. The Collecting Results chapter has been completed and also extended
+   with a new section that describes how to do timing measurements along packet
+   flows. The queueing model and emulation chapters of the User's Guide has been
+   updated to reflect the changes in the queueing model of this release.
+
+18. Bug fixes
+
+   A bug in the TCP Nagle's algorithm has been fixed, see #558.
+
+   A bug related to using the latest avcodec libraries (e.g. Ubuntu 20.10) in
+   the VoIP streaming applications has been fixed.
+
+   The C++ numeric type selection/promotion support for unit specific binary
+   operators has been fixed to follow what C++ does with the standard types.
+
+19. Code cleanup and formatting
+
+   The whole source tree has been cleaned up with respect to C++ code formatting,
+   indentation, header guards, whitespace, and so on. Moreover, all copyright
+   headers in the C++ source files have been updated to use the official GPL-2
+   and GPL-3 formats as suggested.
+
+   All markers (TBD, XXX, etc.) in the source code has been unified to use one
+   of the standard TODO, FIXME, and KLUDGE markers. These have well-defined
+   meaning and it makes finding them easier.
+
+20. Other notable changes
+
+   A few new multi-dimensional mathematical functions have been added that can
+   be useful to represent signal power density in the physical layer. These new
+   functions are the Rasterized2DFunction, PeriodicallyInterpolated2DFunction,
+   LeftCurryingFunction and RightCurryingFunction.
+
+   In several places the std::min and std::max calls have been replaced with
+   inet::minnan, inet::maxnan that properly propagate NaN values.
+
+   The IProtocolRegistrationListener interfaces have been extended to allow
+   registering a protocol group or any protocol as a fallback for a service or
+   protocol available at a module gate.
+
+   A new OperationalMixin template base class has been added that allows using
+   the same behavior as the OperationBase where it was not applicable due to
+   it having a specific base class.
+
+   Several network base NED modules (NetworkBase, WiredNetworkBase, WirelessNetworkBase,
+   Ieee80211NetworkBase) have been added to support easier use of the typical
+   configurator, radio medium, visualizer, etc. network level submodules.
+
+   The module initialization stages have been extended with INITSTAGE_CLOCK and
+   INITSTAGE_NETWORK_LAYER_PROTOCOLS.
+
+   Several automatic weak shared module pointers have been added to so simplify
+   direct cross module communication via C++ method calls. The added classes are
+   called ModuleRef, ModuleRefByGate, and ModuleRefByParameter.
+
+   A new generic C++ compound module class has been added, called OmittedModule,
+   which allows optional submodules to be easily omitted by the user via INI
+   file parameters without unnecessarily complicating the parent compound module
+   structure with several conditionals due to optional connections.
+
+   Several packet serializers have been extended to be more complete in terms of
+   being able to serialize packets into network byte order. Most notable changes
+   are in the Ipv6HeaderSerializer, and the DsdvHelloSerializer.
+
+   The INET specific FingerprintCalculator class has been refactored and made
+   official. This fingerprint calculator supports computing a fingerprint that
+   contains all packet data and timestamps on the network.
+
+   The usage of transmissionStarted, transmissionEnded and receptionStarted,
+   receptionEnded signals have been extended to the new wired physical layer
+   models.
+
+   Many models have been updated to use the new scheduleAfter(), rescheduleAt(),
+   and rescheduleAfter() methods that were introduced in the OMNeT++ API.
+
+   The generic MessageDispatcher has been extended to support the new packet
+   streaming API. It has also been enhanced to have better circular connection
+   detection and error reporting.
+
+   All Enter_Method_Silent() calls have been replaced with Enter_Method() because
+   Qtenv has been extended with filter expressions for the method call animation,
+   which provides a better control.
+
 INET-4.2 (January 2020) - Stable
 --------------------------------
 
@@ -308,7 +1181,7 @@ Notable backward compatible changes are the following:
     Numerous other bug fixes and small improvements.
 
 INET-4.1 (January 2019) - Stable
----------------------------------
+--------------------------------
 
 This is a new minor stable release of the INET 4.x branch. It comes with some
 backward incompatile changes, a few new features, a number of smaller improvements,
@@ -402,7 +1275,7 @@ The backward compatible changes are the following:
     parameters of switches and hosts. Additionally, all network nodes can have
     any number of virtual network interfaces which can be configured to request
     VLAN tagging. This feature allows using multiple different virtual networks
-    on the same physical network on a per application basis.
+    on the same physical network on a per-application basis.
 
 12. Raphael Riebl contributed support for ether type discrimantion for IEEE 802.11p
     networks in the 5.9 GHz band. The new modules provide both IEEE 802.11 EPD and

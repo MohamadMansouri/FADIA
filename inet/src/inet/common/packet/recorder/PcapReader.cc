@@ -1,23 +1,15 @@
 //
-// Copyright (C) OpenSim Ltd.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see http://www.gnu.org/licenses/.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-#include <errno.h>
-#include "inet/common/INETUtils.h"
+
 #include "inet/common/packet/recorder/PcapReader.h"
+
+#include <cerrno>
+
+#include "inet/common/INETUtils.h"
 #include "inet/common/ProtocolTag_m.h"
 
 namespace inet {
@@ -34,7 +26,7 @@ static uint32_t swapByteOrder32(uint32_t v)
 
 void PcapReader::openPcap(const char *filename, const char *packetNameFormat)
 {
-    if (!filename || !filename[0])
+    if (opp_isempty(filename))
         throw cRuntimeError("Cannot open pcap file: file name is empty");
     this->packetNameFormat = packetNameFormat;
     inet::utils::makePathForFile(filename);
@@ -44,7 +36,7 @@ void PcapReader::openPcap(const char *filename, const char *packetNameFormat)
     struct pcap_hdr fh;
     auto err = fread(&fh, sizeof(fh), 1, file);
     if (err != 1)
-        throw cRuntimeError("Cannot read fileheader from file '%s', errno is %ld.", filename, err);
+        throw cRuntimeError("Cannot read fileheader from file '%s', errno is %zu.", filename, err);
     if (fh.magic == 0xa1b2c3d4)
         swapByteOrder = false;
     else if (fh.magic == 0xd4c3b2a1)
@@ -66,16 +58,16 @@ std::pair<simtime_t, Packet *> PcapReader::readPacket()
     if (file == nullptr)
         throw cRuntimeError("Cannot read packet: pcap input file is not open");
     if (feof(file))
-        return {-1, nullptr};
+        return { -1, nullptr };
     struct pcaprec_hdr packetHeader;
     auto err = fread(&packetHeader, sizeof(packetHeader), 1, file);
     if (err != 1)
-        throw cRuntimeError("Cannot read packetheader, errno is %ld.", err);
-    uint8 buffer[1 << 16];
+        throw cRuntimeError("Cannot read packetheader, errno is %zu.", err);
+    uint8_t buffer[1 << 16];
     memset(buffer, 0, sizeof(buffer));
     err = fread(buffer, packetHeader.incl_len, 1, file);
     if (err != 1)
-        throw cRuntimeError("Cannot read packet, errno is %ld.", err);
+        throw cRuntimeError("Cannot read packet, errno is %zu.", err);
     if (swapByteOrder) {
         packetHeader.ts_sec = swapByteOrder32(packetHeader.ts_sec);
         packetHeader.ts_usec = swapByteOrder32(packetHeader.ts_usec);
@@ -110,7 +102,7 @@ std::pair<simtime_t, Packet *> PcapReader::readPacket()
     if (protocol != nullptr)
         packet->addTag<PacketProtocolTag>()->setProtocol(protocol);
     packet->setName(packetPrinter.printPacketToString(packet, packetNameFormat).c_str());
-    return {time, packet};
+    return { time, packet };
 }
 
 void PcapReader::closePcap()

@@ -1,26 +1,12 @@
 //
-// Copyright (C) 2006 Andras Varga
+// Copyright (C) 2006 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-#include "inet/common/ModuleAccess.h"
-#include "inet/common/ProtocolTag_m.h"
-#include "inet/linklayer/common/InterfaceTag_m.h"
-#include "inet/linklayer/common/MacAddressTag_m.h"
-#include "inet/linklayer/common/UserPriorityTag_m.h"
+
 #include "inet/linklayer/ieee80211/mgmt/Ieee80211MgmtStaSimplified.h"
+
 #include "inet/networklayer/common/L3AddressResolver.h"
 
 namespace inet {
@@ -43,8 +29,8 @@ void Ieee80211MgmtStaSimplified::initialize(int stage)
         mib->bssData.bssid = accessPointAddress;
         auto host = addressResolver.findHostWithAddress(mib->bssData.bssid);
         auto interfaceTable = addressResolver.findInterfaceTableOf(host);
-        auto interfaceEntry = interfaceTable->findInterfaceByAddress(mib->bssData.bssid);
-        auto apMib = dynamic_cast<Ieee80211Mib *>(interfaceEntry->getSubmodule("mib"));
+        auto networkInterface = interfaceTable->findInterfaceByAddress(mib->bssData.bssid);
+        auto apMib = dynamic_cast<Ieee80211Mib *>(networkInterface->getSubmodule("mib"));
         apMib->bssAccessPointData.stations[mib->address] = Ieee80211Mib::ASSOCIATED;
         mib->bssData.ssid = apMib->bssData.ssid;
     }

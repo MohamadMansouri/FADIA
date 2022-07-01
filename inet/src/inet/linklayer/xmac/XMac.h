@@ -2,34 +2,25 @@
 // Copyright (C) 2017 Jan Peter Drees
 // Copyright (C) 2015 Joaquim Oller
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-#ifndef __INET_XMAC_H_
-#define __INET_XMAC_H_
+#ifndef __INET_XMAC_H
+#define __INET_XMAC_H
 
 #include <list>
 #include <sstream>
 #include <string>
 #include <vector>
 
-#include "inet/queueing/contract/IPacketQueue.h"
+#include "inet/common/ModuleRefByPar.h"
 #include "inet/linklayer/base/MacProtocolBase.h"
 #include "inet/linklayer/common/MacAddress.h"
 #include "inet/linklayer/contract/IMacProtocol.h"
 #include "inet/linklayer/xmac/XMacHeader_m.h"
-#include "inet/physicallayer/contract/packetlevel/IRadio.h"
+#include "inet/physicallayer/wireless/common/contract/packetlevel/IRadio.h"
+#include "inet/queueing/contract/IActivePacketSink.h"
+#include "inet/queueing/contract/IPacketQueue.h"
 
 namespace inet {
 
@@ -52,7 +43,7 @@ class MacPkt;
  * @author Joaquim Oller and Jan Peter Drees
  *
  */
-class INET_API XMac : public MacProtocolBase, public IMacProtocol
+class INET_API XMac : public MacProtocolBase, public IMacProtocol, public queueing::IActivePacketSink
 {
   private:
     /** @brief Copy constructor is not allowed.
@@ -68,9 +59,9 @@ class INET_API XMac : public MacProtocolBase, public IMacProtocol
         , nbTxDataPackets(0), nbTxPreambles(0), nbRxDataPackets(0), nbRxPreambles(0)
         , nbMissedAcks(0), nbRecvdAcks(0), nbDroppedDataPackets(0), nbTxAcks(0)
         , macState(INIT)
-        , resend_data(NULL), ack_timeout(NULL), start_xmac(NULL), wakeup(NULL)
-        , send_ack(NULL), cca_timeout(NULL), ack_tx_over(NULL), send_preamble(NULL), stop_preambles(NULL)
-        , data_tx_over(NULL), data_timeout(NULL)
+        , resend_data(nullptr), ack_timeout(nullptr), start_xmac(nullptr), wakeup(nullptr)
+        , send_ack(nullptr), cca_timeout(nullptr), ack_tx_over(nullptr), send_preamble(nullptr), stop_preambles(nullptr)
+        , data_tx_over(nullptr), data_timeout(nullptr)
         , lastDataPktSrcAddr()
         , lastDataPktDestAddr()
         , txAttempts(0)
@@ -99,10 +90,15 @@ class INET_API XMac : public MacProtocolBase, public IMacProtocol
 
     void receiveSignal(cComponent *source, simsignal_t signalID, intval_t value, cObject *details) override;
 
+    // IActivePacketSink:
+    virtual queueing::IPassivePacketSource *getProvider(cGate *gate) override;
+    virtual void handleCanPullPacketChanged(cGate *gate) override;
+    virtual void handlePullPacketProcessed(Packet *packet, cGate *gate, bool successful) override;
+
   protected:
     /** implements MacBase functions */
     //@{
-    virtual void configureInterfaceEntry() override;
+    virtual void configureNetworkInterface() override;
     //@}
 
     /** @name Different tracked statistics.*/
@@ -119,37 +115,37 @@ class INET_API XMac : public MacProtocolBase, public IMacProtocol
     /*@}*/
 
     /** @brief MAC states
-    *
-    *  The MAC states help to keep track what the MAC is actually
-    *  trying to do.
-    *  INIT -- node has just started and its status is unclear
-    *  SLEEP -- node sleeps, but accepts packets from the network layer
-    *  CCA -- Clear Channel Assessment - MAC checks
-    *         whether medium is busy
-    *  SEND_PREAMBLE -- node sends preambles to wake up all nodes
-    *  WAIT_DATA -- node has received at least one preamble from another node
-    *               and wiats for the actual data packet
-    *  SEND_DATA -- node has sent enough preambles and sends the actual data
-    *               packet
-    *  WAIT_TX_DATA_OVER -- node waits until the data packet sending is ready
-    *  WAIT_ACK -- node has sent the data packet and waits for ack from the
-    *              receiving node
-    *  SEND_ACK -- node send an ACK back to the sender
-    *  WAIT_ACK_TX -- node waits until the transmission of the ack packet is
-    *                 over
-    */
+     *
+     *  The MAC states help to keep track what the MAC is actually
+     *  trying to do.
+     *  INIT -- node has just started and its status is unclear
+     *  SLEEP -- node sleeps, but accepts packets from the network layer
+     *  CCA -- Clear Channel Assessment - MAC checks
+     *         whether medium is busy
+     *  SEND_PREAMBLE -- node sends preambles to wake up all nodes
+     *  WAIT_DATA -- node has received at least one preamble from another node
+     *               and wiats for the actual data packet
+     *  SEND_DATA -- node has sent enough preambles and sends the actual data
+     *               packet
+     *  WAIT_TX_DATA_OVER -- node waits until the data packet sending is ready
+     *  WAIT_ACK -- node has sent the data packet and waits for ack from the
+     *              receiving node
+     *  SEND_ACK -- node send an ACK back to the sender
+     *  WAIT_ACK_TX -- node waits until the transmission of the ack packet is
+     *                 over
+     */
     enum States {
-        INIT,   //0
-        SLEEP,  //1
-        CCA,    //2
-        SEND_PREAMBLE,  //3
-        WAIT_DATA,      //4
-        SEND_DATA,      //5
-        WAIT_TX_DATA_OVER,  //6
-        WAIT_ACK,       //~7: think this is not used
-        SEND_ACK,       //8
-        WAIT_ACK_TX     //9
-      };
+        INIT, // 0
+        SLEEP, // 1
+        CCA, // 2
+        SEND_PREAMBLE, // 3
+        WAIT_DATA, // 4
+        SEND_DATA, // 5
+        WAIT_TX_DATA_OVER, // 6
+        WAIT_ACK, // ~7: think this is not used
+        SEND_ACK, // 8
+        WAIT_ACK_TX // 9
+    };
     /** @brief The current state of the protocol */
     States macState;
 
@@ -174,14 +170,14 @@ class INET_API XMac : public MacProtocolBase, public IMacProtocol
     MacAddress lastDataPktSrcAddr;
     MacAddress lastDataPktDestAddr;
     MacAddress lastPreamblePktSrcAddr;
-    b headerLength = b(0);    // XMacDataFrameHeader header length
-    b ctrlFrameLength = b(0);    // XMacControlFrame frame length
+    b headerLength = b(0); // XMacDataFrameHeader header length
+    b ctrlFrameLength = b(0); // XMacControlFrame frame length
 
     /** @brief The radio. */
-    physicallayer::IRadio *radio;
+    ModuleRefByPar<physicallayer::IRadio> radio;
     physicallayer::IRadio::TransmissionState transmissionState = physicallayer::IRadio::TRANSMISSION_STATE_UNDEFINED;
 
-    int              txAttempts;
+    int txAttempts;
     /*@}*/
 
     /** @brief Animate (colorize) the nodes.
@@ -210,10 +206,10 @@ class INET_API XMac : public MacProtocolBase, public IMacProtocol
 
     /** @brief Possible colors of the node for animation */
     enum XMAC_COLORS {
-        GREEN = 1,
-        BLUE = 2,
-        RED = 3,
-        BLACK = 4,
+        GREEN  = 1,
+        BLUE   = 2,
+        RED    = 3,
+        BLACK  = 4,
         YELLOW = 5
     };
 
@@ -238,5 +234,5 @@ class INET_API XMac : public MacProtocolBase, public IMacProtocol
 
 } // namespace inet
 
-#endif /* XMAC_H_ */
+#endif
 

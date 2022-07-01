@@ -1,29 +1,18 @@
 //
-// Copyright (C) 2005 Andras Varga
+// Copyright (C) 2005 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public
-// License along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 #ifndef __INET_INTERFACETABLE_H
 #define __INET_INTERFACETABLE_H
 
 #include <vector>
 
-#include "inet/common/INETDefs.h"
 #include "inet/common/lifecycle/ModuleOperations.h"
 #include "inet/common/lifecycle/OperationalBase.h"
-#include "inet/networklayer/common/InterfaceEntry.h"
+#include "inet/networklayer/common/NetworkInterface.h"
 #include "inet/networklayer/contract/IInterfaceTable.h"
 
 namespace inet {
@@ -40,19 +29,19 @@ namespace inet {
  * updating the interface table.
  *
  * Interfaces are dynamically registered: at the start of the simulation,
- * every L2 module adds its own InterfaceEntry to the table; after that,
+ * every L2 module adds its own NetworkInterface to the table; after that,
  * Ipv4's IIpv4RoutingTable and Ipv6's Ipv6RoutingTable (an possibly, further
- * L3 protocols) add protocol-specific data on each InterfaceEntry
- * (see Ipv4InterfaceData, Ipv6InterfaceData, and InterfaceEntry::setIPv4Data(),
- * InterfaceEntry::setIPv6Data())
+ * L3 protocols) add protocol-specific data on each NetworkInterface
+ * (see Ipv4InterfaceData, Ipv6InterfaceData, and NetworkInterface::setIPv4Data(),
+ * NetworkInterface::setIPv6Data())
  *
- * Interfaces are represented by InterfaceEntry objects.
+ * Interfaces are represented by NetworkInterface objects.
  *
  * When interfaces need to be reliably and efficiently identified from other
  * modules, interfaceIds should be used. They are better suited than pointers
  * because when an interface gets removed (see deleteInterface()), it is
  * often impossible/impractical to invalidate all pointers to it, and also
- * because pointers are not necessarily unique (a new InterfaceEntry may get
+ * because pointers are not necessarily unique (a new NetworkInterface may get
  * allocated exactly at the address of a previously deleted one).
  * Interface Ids are unique (Ids of removed interfaces are not issued again),
  * stale Ids can be detected, and they are also invariant to insertion/deletion.
@@ -63,35 +52,35 @@ namespace inet {
  * State change gets fired for up/down events; all other changes fire as
  * config change.
  *
- * @see InterfaceEntry
+ * @see NetworkInterface
  */
 
 class INET_API InterfaceTable : public OperationalBase, public IInterfaceTable, protected cListener
 {
   protected:
-    cModule *host;    // cached pointer
+    cModule *host; // cached pointer
 
     // primary storage for interfaces: vector indexed by id; may contain NULLs;
     // slots are never reused to ensure id uniqueness
-    typedef std::vector<InterfaceEntry *> InterfaceVector;
+    typedef std::vector<NetworkInterface *> InterfaceVector;
     InterfaceVector idToInterface;
 
     // fields to support getNumInterfaces() and getInterface(pos)
-    mutable int tmpNumInterfaces;    // caches number of non-nullptr elements of idToInterface; -1 if invalid
-    mutable InterfaceEntry **tmpInterfaceList;    // caches non-nullptr elements of idToInterface; nullptr if invalid
+    mutable int tmpNumInterfaces; // caches number of non-nullptr elements of idToInterface; -1 if invalid
+    mutable NetworkInterface **tmpInterfaceList; // caches non-nullptr elements of idToInterface; nullptr if invalid
 
   protected:
     // displays summary above the icon
     virtual void refreshDisplay() const override;
 
     // displays the interface Ipv4/Ipv6 address on the outgoing link that corresponds to the interface
-    virtual void updateLinkDisplayString(InterfaceEntry *entry) const;
+    virtual void updateLinkDisplayString(NetworkInterface *entry) const;
 
     // discover and store which nwlayer/host gates connect to this interface
-    virtual void discoverConnectingGates(InterfaceEntry *entry);
+    virtual void discoverConnectingGates(NetworkInterface *entry);
 
-    // called from InterfaceEntry
-    virtual void interfaceChanged(simsignal_t signalID, const InterfaceEntryChangeDetails *details) override;
+    // called from NetworkInterface
+    virtual void interfaceChanged(simsignal_t signalID, const NetworkInterfaceChangeDetails *details) override;
 
     // internal
     virtual void invalidateTmpInterfaceList();
@@ -138,22 +127,22 @@ class INET_API InterfaceTable : public OperationalBase, public IInterfaceTable, 
     /**
      * Returns an interface given by its address. Returns nullptr if not found.
      */
-    virtual InterfaceEntry *findInterfaceByAddress(const L3Address& address) const override;
+    virtual NetworkInterface *findInterfaceByAddress(const L3Address& address) const override;
 
     /**
      * Adds an interface. The entry->getInterfaceModule() will be used
      * to discover and fill in getNetworkLayerGateIndex(), getNodeOutputGateId(),
-     * and getNodeInputGateId() in InterfaceEntry. It should be nullptr if this is
+     * and getNodeInputGateId() in NetworkInterface. It should be nullptr if this is
      * a virtual interface (e.g. loopback).
      */
-    virtual void addInterface(InterfaceEntry *entry) override;
+    virtual void addInterface(NetworkInterface *entry) override;
 
     /**
      * Deletes the given interface from the table. Indices of existing
      * interfaces (see getInterface(int)) may change. It is an error if
      * the given interface is not in the table.
      */
-    virtual void deleteInterface(InterfaceEntry *entry) override;
+    virtual void deleteInterface(NetworkInterface *entry) override;
 
     /**
      * Returns the number of interfaces.
@@ -161,7 +150,7 @@ class INET_API InterfaceTable : public OperationalBase, public IInterfaceTable, 
     virtual int getNumInterfaces() const override;
 
     /**
-     * Returns the InterfaceEntry specified by an index 0..numInterfaces-1.
+     * Returns the NetworkInterface specified by an index 0..numInterfaces-1.
      * Throws an error if index is out of range.
      *
      * Note that this index is NOT the same as interfaceId! Indices are
@@ -169,21 +158,21 @@ class INET_API InterfaceTable : public OperationalBase, public IInterfaceTable, 
      * so cannot be used to reliably identify the interface. Use interfaceId
      * to refer to interfaces from other modules or from messages/packets.
      */
-    virtual InterfaceEntry *getInterface(int pos) const override;
+    virtual NetworkInterface *getInterface(int pos) const override;
 
     /**
      * Returns an interface by its Id. Ids are guaranteed to be invariant
      * to interface deletions/additions. Returns nullptr if there is no such
      * interface (This allows detecting stale IDs without raising an error.)
      */
-    virtual InterfaceEntry *findInterfaceById(int id) const override;
+    virtual NetworkInterface *findInterfaceById(int id) const override;
 
     /**
      * Returns an interface by its Id. Ids are guaranteed to be invariant
      * to interface deletions/additions. Throws an error if there is no such
      * interface.
      */
-    virtual InterfaceEntry *getInterfaceById(int id) const override;
+    virtual NetworkInterface *getInterfaceById(int id) const override;
 
     /**
      * Returns the biggest interface Id.
@@ -194,49 +183,49 @@ class INET_API InterfaceTable : public OperationalBase, public IInterfaceTable, 
      * Returns an interface given by its getNodeOutputGateId().
      * Returns nullptr if not found.
      */
-    virtual InterfaceEntry *findInterfaceByNodeOutputGateId(int id) const override;
+    virtual NetworkInterface *findInterfaceByNodeOutputGateId(int id) const override;
 
     /**
      * Returns an interface given by its getNodeInputGateId().
      * Returns nullptr if not found.
      */
-    virtual InterfaceEntry *findInterfaceByNodeInputGateId(int id) const override;
+    virtual NetworkInterface *findInterfaceByNodeInputGateId(int id) const override;
 
     /**
      * Returns an interface by one of its component module (e.g. PPP).
      * Returns nullptr if not found.
      */
-    virtual InterfaceEntry *findInterfaceByInterfaceModule(cModule *ifmod) const override;
+    virtual NetworkInterface *findInterfaceByInterfaceModule(cModule *ifmod) const override;
 
     /**
      * Returns an interface given by its name. Returns nullptr if not found.
      */
-    virtual InterfaceEntry *findInterfaceByName(const char *name) const override;
+    virtual NetworkInterface *findInterfaceByName(const char *name) const override;
 
     /**
      * Returns the first interface with the isLoopback flag set.
      * If there's no loopback, it returns nullptr.
      */
-    virtual InterfaceEntry *findFirstLoopbackInterface() const override;
+    virtual NetworkInterface *findFirstLoopbackInterface() const override;
 
     /**
      * Returns the first interface with the isLoopback flag unset.
      * If there's no non-loopback, it returns nullptr.
      */
-    virtual InterfaceEntry *findFirstNonLoopbackInterface() const override;
+    virtual NetworkInterface *findFirstNonLoopbackInterface() const override;
 
     /**
      * Returns the first multicast capable interface.
      * If there is no such interface, then returns nullptr.
      */
-    virtual InterfaceEntry *findFirstMulticastInterface() const override;
+    virtual NetworkInterface *findFirstMulticastInterface() const override;
 
     /**
      * Lifecycle method
      */
-    virtual bool isInitializeStage(int stage) override { return stage == INITSTAGE_LINK_LAYER; }
-    virtual bool isModuleStartStage(int stage) override { return stage == ModuleStartOperation::STAGE_LINK_LAYER; }
-    virtual bool isModuleStopStage(int stage) override { return stage == ModuleStopOperation::STAGE_LINK_LAYER; }
+    virtual bool isInitializeStage(int stage) const override { return stage == INITSTAGE_LINK_LAYER; }
+    virtual bool isModuleStartStage(int stage) const override { return stage == ModuleStartOperation::STAGE_LINK_LAYER; }
+    virtual bool isModuleStopStage(int stage) const override { return stage == ModuleStopOperation::STAGE_LINK_LAYER; }
     virtual void handleStartOperation(LifecycleOperation *operation) override;
     virtual void handleStopOperation(LifecycleOperation *operation) override;
     virtual void handleCrashOperation(LifecycleOperation *operation) override;
@@ -249,5 +238,5 @@ class INET_API InterfaceTable : public OperationalBase, public IInterfaceTable, 
 
 } // namespace inet
 
-#endif // ifndef __INET_INTERFACETABLE_H
+#endif
 

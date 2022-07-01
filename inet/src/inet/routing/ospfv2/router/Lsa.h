@@ -1,27 +1,16 @@
 //
 // Copyright (C) 2006 Andras Babos and Andras Varga
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
 #ifndef __INET_LSA_H
 #define __INET_LSA_H
 
 #include <math.h>
+
 #include <vector>
 
-#include "inet/common/INETDefs.h"
 #include "inet/routing/ospfv2/Ospfv2Packet_m.h"
 #include "inet/routing/ospfv2/router/Ospfv2Common.h"
 
@@ -63,7 +52,7 @@ class INET_API LsaTrackingInfo
   public:
     enum InstallSource {
         ORIGINATED = 0,
-        FLOODED = 1
+        FLOODED    = 1
     };
 
   private:
@@ -91,7 +80,7 @@ class INET_API RouterLsa : public Ospfv2RouterLsa,
     RouterLsa(const RouterLsa& lsa) : Ospfv2RouterLsa(lsa), RoutingInfo(lsa), LsaTrackingInfo(lsa) {}
     virtual ~RouterLsa() {}
 
-    bool validateLSChecksum() const { return true; }    // not implemented
+    bool validateLSChecksum() const { return true; } // not implemented
 
     bool update(const Ospfv2RouterLsa *lsa);
     bool differsFrom(const Ospfv2RouterLsa *routerLSA) const;
@@ -107,7 +96,7 @@ class INET_API NetworkLsa : public Ospfv2NetworkLsa,
     NetworkLsa(const NetworkLsa& lsa) : Ospfv2NetworkLsa(lsa), RoutingInfo(lsa), LsaTrackingInfo(lsa) {}
     virtual ~NetworkLsa() {}
 
-    bool validateLSChecksum() const { return true; }    // not implemented
+    bool validateLSChecksum() const { return true; } // not implemented
 
     bool update(const Ospfv2NetworkLsa *lsa);
     bool differsFrom(const Ospfv2NetworkLsa *networkLSA) const;
@@ -129,7 +118,7 @@ class INET_API SummaryLsa : public Ospfv2SummaryLsa,
     bool getPurgeable() const { return purgeable; }
     void setPurgeable(bool purge = true) { purgeable = purge; }
 
-    bool validateLSChecksum() const { return true; }    // not implemented
+    bool validateLSChecksum() const { return true; } // not implemented
 
     bool update(const Ospfv2SummaryLsa *lsa);
     bool differsFrom(const Ospfv2SummaryLsa *summaryLSA) const;
@@ -151,7 +140,7 @@ class INET_API AsExternalLsa : public Ospfv2AsExternalLsa,
     bool getPurgeable() const { return purgeable; }
     void setPurgeable(bool purge = true) { purgeable = purge; }
 
-    bool validateLSChecksum() const { return true; }    // not implemented
+    bool validateLSChecksum() const { return true; } // not implemented
 
     bool update(const Ospfv2AsExternalLsa *lsa);
     bool differsFrom(const Ospfv2AsExternalLsa *asExternalLSA) const;
@@ -208,5 +197,5 @@ std::ostream& operator<<(std::ostream& ostr, const Ospfv2AsExternalLsa& lsa);
 
 } // namespace inet
 
-#endif    // __LSA_HPP__
+#endif
 

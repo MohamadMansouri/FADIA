@@ -1,23 +1,13 @@
 //
-// Copyright (C) OpenSim Ltd.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see http://www.gnu.org/licenses/.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-#include "inet/common/ModuleAccess.h"
-#include "inet/common/Simsignals.h"
+
 #include "inet/queueing/source/PassivePacketSource.h"
+
+#include "inet/common/Simsignals.h"
 
 namespace inet {
 namespace queueing {
@@ -26,18 +16,16 @@ Define_Module(PassivePacketSource);
 
 void PassivePacketSource::initialize(int stage)
 {
-    PacketSourceBase::initialize(stage);
+    ClockUserModuleMixin::initialize(stage);
     if (stage == INITSTAGE_LOCAL) {
-        outputGate = gate("out");
-        collector = findConnectedModule<IActivePacketSink>(outputGate);
         providingIntervalParameter = &par("providingInterval");
-        providingTimer = new cMessage("ProvidingTimer");
+        providingTimer = new ClockEvent("ProvidingTimer");
+        scheduleForAbsoluteTime = par("scheduleForAbsoluteTime");
         WATCH_PTR(nextPacket);
     }
     else if (stage == INITSTAGE_QUEUEING) {
-        checkPopPacketSupport(outputGate);
         if (collector != nullptr)
-            collector->handleCanPopPacket(outputGate);
+            collector->handleCanPullPacketChanged(outputGate->getPathEndGate());
     }
 }
 
@@ -45,7 +33,7 @@ void PassivePacketSource::handleMessage(cMessage *message)
 {
     if (message == providingTimer) {
         if (collector != nullptr)
-            collector->handleCanPopPacket(outputGate);
+            collector->handleCanPullPacketChanged(outputGate->getPathEndGate());
     }
     else
         throw cRuntimeError("Unknown message");
@@ -53,33 +41,39 @@ void PassivePacketSource::handleMessage(cMessage *message)
 
 void PassivePacketSource::scheduleProvidingTimer()
 {
-    simtime_t interval = providingIntervalParameter->doubleValue();
-    if (interval != 0 || providingTimer->getArrivalModule() == nullptr)
-        scheduleAt(simTime() + interval, providingTimer);
+    clocktime_t interval = providingIntervalParameter->doubleValue();
+    if (interval != 0 || providingTimer->getArrivalModule() == nullptr) {
+        if (scheduleForAbsoluteTime)
+            scheduleClockEventAt(getClockTime() + interval, providingTimer);
+        else
+            scheduleClockEventAfter(interval, providingTimer);
+    }
 }
 
-Packet *PassivePacketSource::canPopPacket(cGate *gate) const
+Packet *PassivePacketSource::canPullPacket(cGate *gate) const
 {
+    Enter_Method("canPullPacket");
     if (providingTimer->isScheduled())
         return nullptr;
     else {
         if (nextPacket == nullptr)
-            // TODO: KLUDGE:
+            // KLUDGE
             nextPacket = const_cast<PassivePacketSource *>(this)->createPacket();
         return nextPacket;
     }
 }
 
-Packet *PassivePacketSource::popPacket(cGate *gate)
+Packet *PassivePacketSource::pullPacket(cGate *gate)
 {
-    Enter_Method("popPacket");
-    if (providingTimer->isScheduled()  && providingTimer->getArrivalTime() > simTime())
+    Enter_Method("pullPacket");
+    if (providingTimer->isScheduled() && providingTimer->getArrivalTime() > simTime())
         throw cRuntimeError("Another packet is already being provided");
     else {
         auto packet = providePacket(gate);
-        animateSend(packet, outputGate);
-        emit(packetPoppedSignal, packet);
+        animatePullPacket(packet, outputGate);
+        emit(packetPulledSignal, packet);
         scheduleProvidingTimer();
+        updateDisplayString();
         return packet;
     }
 }
@@ -93,7 +87,7 @@ Packet *PassivePacketSource::providePacket(cGate *gate)
         packet = nextPacket;
         nextPacket = nullptr;
     }
-    EV_INFO << "Providing packet " << packet->getName() << "." << endl;
+    EV_INFO << "Providing packet" << EV_FIELD(packet) << EV_ENDL;
     updateDisplayString();
     return packet;
 }

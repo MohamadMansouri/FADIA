@@ -1,28 +1,18 @@
-/*
- * Copyright (C) 2009 Christoph Sommer <christoph.sommer@informatik.uni-erlangen.de>
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- */
+//
+// Copyright (C) 2009 Christoph Sommer <christoph.sommer@informatik.uni-erlangen.de>
+//
+// SPDX-License-Identifier: LGPL-3.0-or-later
+//
+
+
+#include "inet/networklayer/configurator/ipv4/HostAutoConfigurator.h"
 
 #include <algorithm>
+
+#include "inet/common/ModuleAccess.h"
 #include "inet/common/lifecycle/ModuleOperations.h"
 #include "inet/common/lifecycle/NodeStatus.h"
-#include "inet/common/ModuleAccess.h"
 #include "inet/networklayer/common/L3AddressResolver.h"
-#include "inet/networklayer/configurator/ipv4/HostAutoConfigurator.h"
-#include "inet/networklayer/contract/IInterfaceTable.h"
 #include "inet/networklayer/contract/IInterfaceTable.h"
 #include "inet/networklayer/contract/ipv4/Ipv4Address.h"
 #include "inet/networklayer/ipv4/Ipv4InterfaceData.h"
@@ -35,11 +25,7 @@ void HostAutoConfigurator::initialize(int stage)
 {
     OperationalBase::initialize(stage);
     if (stage == INITSTAGE_LOCAL) {
-        interfaceTable = getModuleFromPar<IInterfaceTable>(par("interfaceTableModule"), this);
-    }
-    else if (stage == INITSTAGE_NETWORK_INTERFACE_CONFIGURATION) {
-        for (int i = 0; i < interfaceTable->getNumInterfaces(); i++)
-            interfaceTable->getInterface(i)->addProtocolData<Ipv4InterfaceData>();
+        interfaceTable.reference(this, "interfaceTableModule", true);
     }
 }
 
@@ -63,7 +49,7 @@ void HostAutoConfigurator::setupNetworkLayer()
     // get our host module
     cModule *host = getContainingNode(this);
 
-    Ipv4Address myAddress = Ipv4Address(addressBase.getInt() + uint32(host->getId()));
+    Ipv4Address myAddress = Ipv4Address(addressBase.getInt() + uint32_t(host->getId()));
 
     // address test
     if (!Ipv4Address::maskedAddrAreEqual(myAddress, addressBase, netmask))
@@ -77,20 +63,24 @@ void HostAutoConfigurator::setupNetworkLayer()
     // look at all interface table entries
     cStringTokenizer interfaceTokenizer(interfaces.c_str());
     const char *ifname;
+    uint32_t loopbackAddr = Ipv4Address::LOOPBACK_ADDRESS.getInt();
     while ((ifname = interfaceTokenizer.nextToken()) != nullptr) {
-        InterfaceEntry *ie = interfaceTable->findInterfaceByName(ifname);
+        NetworkInterface *ie = interfaceTable->findInterfaceByName(ifname);
         if (!ie)
             throw cRuntimeError("No such interface '%s'", ifname);
 
+        auto ipv4Data = ie->getProtocolDataForUpdate<Ipv4InterfaceData>();
         // assign IP Address to all connected interfaces
         if (ie->isLoopback()) {
-            EV_INFO << "interface " << ifname << " skipped (is loopback)" << std::endl;
+            ipv4Data->setIPAddress(Ipv4Address(loopbackAddr++));
+            ipv4Data->setNetmask(Ipv4Address::LOOPBACK_NETMASK);
+            ipv4Data->setMetric(1);
+            EV_INFO << "loopback interface " << ifname << " gets " << ipv4Data->getIPAddress() << "/" << ipv4Data->getNetmask() << std::endl;
             continue;
         }
 
         EV_INFO << "interface " << ifname << " gets " << myAddress.str() << "/" << netmask.str() << std::endl;
 
-        auto ipv4Data = ie->getProtocolData<Ipv4InterfaceData>();
         ipv4Data->setIPAddress(myAddress);
         ipv4Data->setNetmask(netmask);
         ie->setBroadcast(true);
@@ -107,6 +97,24 @@ void HostAutoConfigurator::setupNetworkLayer()
             ipv4Data->joinMulticastGroup(mcastGroup);
         }
     }
+}
+
+void HostAutoConfigurator::handleStartOperation(LifecycleOperation *operation)
+{
+    if (operation == nullptr) {
+        // in initialize:
+        for (int i = 0; i < interfaceTable->getNumInterfaces(); i++)
+            interfaceTable->getInterface(i)->addProtocolData<Ipv4InterfaceData>();
+    }
+    setupNetworkLayer();
+}
+
+void HostAutoConfigurator::handleStopOperation(LifecycleOperation *operation)
+{
+}
+
+void HostAutoConfigurator::handleCrashOperation(LifecycleOperation *operation)
+{
 }
 
 } // namespace inet

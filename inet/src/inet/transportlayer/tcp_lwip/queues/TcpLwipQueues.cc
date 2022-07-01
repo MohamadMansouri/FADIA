@@ -1,31 +1,19 @@
 //
-// Copyright (C) 2004 Andras Varga
-//               2010 Zoltan Bojthe
+// Copyright (C) 2004 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
+
+#include "inet/transportlayer/tcp_lwip/queues/TcpLwipQueues.h"
 
 #include "inet/common/packet/serializer/BytesChunkSerializer.h"
 #include "inet/transportlayer/contract/tcp/TcpCommand_m.h"
 #include "inet/transportlayer/tcp_common/TcpHeader.h"
 #include "inet/transportlayer/tcp_common/TcpHeaderSerializer.h"
 #include "inet/transportlayer/tcp_lwip/TcpLwipConnection.h"
-#include "inet/transportlayer/tcp_lwip/queues/TcpLwipQueues.h"
 
 namespace inet {
-
 namespace tcp {
 
 Register_Class(TcpLwipSendQueue);
@@ -64,7 +52,7 @@ unsigned int TcpLwipSendQueue::getBytesForTcpLayer(void *bufferP, unsigned int b
         return 0;
 
     const auto& bytesChunk = dataBuffer.peek<BytesChunk>(B(length));
-    return bytesChunk->copyToBuffer(static_cast<uint8_t*>(bufferP), length);
+    return bytesChunk->copyToBuffer(static_cast<uint8_t *>(bufferP), length);
 }
 
 void TcpLwipSendQueue::dequeueTcpLayerMsg(unsigned int msgLengthP)
@@ -81,7 +69,7 @@ Packet *TcpLwipSendQueue::createSegmentWithBytes(const void *tcpDataP, unsigned 
 {
     ASSERT(tcpDataP);
 
-    const auto& bytes = makeShared<BytesChunk>((const uint8_t*)tcpDataP, tcpLengthP);
+    const auto& bytes = makeShared<BytesChunk>((const uint8_t *)tcpDataP, tcpLengthP);
     auto packet = new Packet(nullptr, bytes);
     auto tcpHdr = packet->removeAtFront<TcpHeader>();
     int64_t numBytes = packet->getByteLength();
@@ -125,7 +113,7 @@ void TcpLwipReceiveQueue::setConnection(TcpLwipConnection *connP)
     connM = connP;
 }
 
-void TcpLwipReceiveQueue::notifyAboutIncomingSegmentProcessing(Packet *packet, uint32 seqno, const void *bufferP, size_t bufferLengthP)
+void TcpLwipReceiveQueue::notifyAboutIncomingSegmentProcessing(Packet *packet, uint32_t seqno, const void *bufferP, size_t bufferLengthP)
 {
     ASSERT(packet);
     ASSERT(bufferP);
@@ -157,12 +145,12 @@ Packet *TcpLwipReceiveQueue::extractBytesUpTo()
     return dataMsg;
 }
 
-uint32 TcpLwipReceiveQueue::getAmountOfBufferedBytes() const
+uint32_t TcpLwipReceiveQueue::getAmountOfBufferedBytes() const
 {
     return B(dataBuffer.getLength()).get();
 }
 
-uint32 TcpLwipReceiveQueue::getQueueLength() const
+uint32_t TcpLwipReceiveQueue::getQueueLength() const
 {
     return B(dataBuffer.getLength()).get();
 }
@@ -178,6 +166,5 @@ void TcpLwipReceiveQueue::notifyAboutSending(const TcpHeader *tcpsegP)
 }
 
 } // namespace tcp
-
 } // namespace inet
 

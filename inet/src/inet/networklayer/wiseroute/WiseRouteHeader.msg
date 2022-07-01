@@ -1,18 +1,7 @@
 //
-// Copyright (C) 2012 Andras Varga
+// Copyright (C) 2012 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
 import inet.common.INETDefs;
@@ -25,6 +14,11 @@ cplusplus {{
 
 namespace inet;
 
+enum WiseRouteMsgType {
+    DATA = 1;
+    ROUTE_FLOOD = 2;
+};
+
 class WiseRouteHeader extends NetworkHeaderBase
 {
     L3Address   srcAddr;
@@ -32,6 +26,7 @@ class WiseRouteHeader extends NetworkHeaderBase
     unsigned long seqNum = 0;
     int     isFlood;
     int     nbHops;
+    WiseRouteMsgType     headerKind = static_cast<WiseRouteMsgType>(-1);
     IpProtocolId     protocolId;
     L3Address finalDestAddr;
     L3Address initialSrcAddr;
@@ -48,4 +43,3 @@ cplusplus(WiseRouteHeader) {{
     virtual void setProtocol(const Protocol *protocol) override { setProtocolId(static_cast<IpProtocolId>(ProtocolGroup::ipprotocol.getProtocolNumber(protocol))); }
     virtual bool isFragment() const override { return false; }
 }}
-

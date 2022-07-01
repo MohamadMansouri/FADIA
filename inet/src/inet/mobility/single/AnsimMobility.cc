@@ -1,22 +1,13 @@
 //
-// Copyright (C) 2005 Andras Varga
+// Copyright (C) 2005 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-#include "inet/common/INETMath.h"
+
 #include "inet/mobility/single/AnsimMobility.h"
+
+#include "inet/common/INETMath.h"
 
 namespace inet {
 
@@ -34,7 +25,6 @@ static cXMLElement *firstChildWithTag(cXMLElement *node, const char *tagname)
 
     return child;
 }
-
 
 void AnsimMobility::computeMaxSpeed()
 {
@@ -55,8 +45,7 @@ void AnsimMobility::computeMaxSpeed()
     // first position is the initial position so we don't take it into account to compute maxSpeed
     if (curElem)
         curElem = curElem->getNextSibling();
-    while (curElem)
-    {
+    while (curElem) {
         cXMLElement *destElem = firstChildWithTag(curElem, "destination");
         const char *xStr = firstChildWithTag(destElem, "xpos")->getNodeValue();
         const char *yStr = firstChildWithTag(destElem, "ypos")->getNodeValue();

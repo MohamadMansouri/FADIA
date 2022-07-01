@@ -1,5 +1,69 @@
 ====== inet-4.x ======
 
+2022-05-13  ------ inet-4.4.0 released ------
+
+2022-04-11  Levente Mészáros
+
+	Changed initial values of simtime_t fields to -1 instead of NaN.
+
+2022-02-21  Zoltan Bojthe
+
+	MSG pointers are initialized to nullptr automatically.
+	Added more missing @packetData annotations in MSG files.
+
+2021-07-25  Andras Varga
+
+	Added @toValue(), @fromValue() to MSG files.
+
+2021-04-26  Zoltan Bojthe
+
+	Added/updated Enter_Method() info to the signalname in receiveSignal().
+
+2021-04-19  Zoltan Bojthe
+
+	Switch to using ModuleRef, ModuleRefByPar, opp_component_ptr for pointers to other modules.
+
+2021-03-19  Zoltan Bojthe
+
+	Changed if-else-if ladders in initialize() to separate if statements because
+	different stages may have the same number.
+
+2021-01-11  ------ inet-4.3.0 released ------
+
+2020-08-03  Levente Mészáros
+
+	Updated all registerService, registerProtocol methods and calls.
+
+2020-07-22  Levente Mészáros
+
+	Renamed InterfaceEntry -> NetworkInterface and interfaceEntry -> networkInterface.
+
+2020-06-29  Zoltan Bojthe
+
+	Fixed Stop/Crash handlers and some memory leak.
+	Optimized jitter: jitterTimer contains owned packet, jitterTimers are stored in std::set.
+
+2020-05-30  Edward Longman
+
+	Reimplement sendDelayed the Dymo jitter packet with local timer queue, see #527.
+
+	sendDelayed relies on the assumption that the receiving module will be in
+	the same state after the delay.
+
+	When the Dymo module sends a packet it delays it delays it to reduce
+	contention probability for MANET (RFC5148). If the host node shuts down
+	between scheduling and delivery the Ipv4 module throws a runtime error.
+	The sendDelayed message can't be tracked or cancelled from Dymo once
+	scheduled.
+
+	Therefore this adds a replacement map of outgoing packets with random
+	jitter added. Then the queue can be properly cleared on Stop operation
+	since the outgoing packets can be tracked.
+
+2020-05-30  Edward Longman
+
+	Cancel Dymo timers on StopOperation, see #527.
+
 2020-01-08  ------ inet-4.2.0 released ------
 
 2019-09-02  Zoltan Bojthe

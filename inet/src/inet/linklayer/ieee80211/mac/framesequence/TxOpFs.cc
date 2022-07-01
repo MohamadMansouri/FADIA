@@ -1,28 +1,19 @@
 //
 // Copyright (C) 2016 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see http://www.gnu.org/licenses/.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-#include "inet/linklayer/ieee80211/mac/framesequence/PrimitiveFrameSequences.h"
+
 #include "inet/linklayer/ieee80211/mac/framesequence/TxOpFs.h"
+
+#include "inet/linklayer/ieee80211/mac/framesequence/PrimitiveFrameSequences.h"
 
 namespace inet {
 namespace ieee80211 {
 
 /*
- * TODO: add [ RTS CTS ] (txop-part-requiring-ack txop-part-providing-ack )|
+ * TODO add [ RTS CTS ] (txop-part-requiring-ack txop-part-providing-ack )|
  */
 TxOpFs::TxOpFs() :
     // Excerpt from G.3 EDCA and HCCA sequences
@@ -36,12 +27,12 @@ TxOpFs::TxOpFs() :
                                       new DataFs()}),
                     new SequentialFs({new OptionalFs(new RtsCtsFs(), OPTIONALFS_PREDICATE(isRtsCtsNeeded)),
                                       new DataFs(),
-                                      new AckFs()}), // TODO: should be in txop-part-requiring-ack
+                                      new AckFs()}), // TODO should be in txop-part-requiring-ack
                     new SequentialFs({new OptionalFs(new RtsCtsFs(), OPTIONALFS_PREDICATE(isBlockAckReqRtsCtsNeeded)),
                                       new BlockAckReqBlockAckFs()}),
                     new SequentialFs({new OptionalFs(new RtsCtsFs(), OPTIONALFS_PREDICATE(isRtsCtsNeeded)),
                                       new AlternativesFs({new ManagementAckFs(),
-                                                          /* TODO: DATA + QAP*/},
+                                                          /* TODO DATA + QAP*/},
                                                          ALTERNATIVESFS_SELECTOR(selectMgmtOrDataQap))})},
                    ALTERNATIVESFS_SELECTOR(selectTxOpSequence))
 {
@@ -62,7 +53,7 @@ int TxOpFs::selectTxOpSequence(AlternativesFs *frameSequence, FrameSequenceConte
         return 3;
     else {
         auto dataHeaderToTransmit = dynamicPtrCast<const Ieee80211DataHeader>(macHeader);
-        OriginatorBlockAckAgreement* agreement = nullptr;
+        OriginatorBlockAckAgreement *agreement = nullptr;
         if (context->getQoSContext()->blockAckAgreementHandler)
             agreement = context->getQoSContext()->blockAckAgreementHandler->getAgreement(dataHeaderToTransmit->getReceiverAddress(), dataHeaderToTransmit->getTid());
         auto ackPolicy = context->getQoSContext()->ackPolicy->computeAckPolicy(frameToTransmit, dataHeaderToTransmit, agreement);
@@ -83,8 +74,9 @@ bool TxOpFs::isRtsCtsNeeded(OptionalFs *frameSequence, FrameSequenceContext *con
 
 bool TxOpFs::isBlockAckReqRtsCtsNeeded(OptionalFs *frameSequence, FrameSequenceContext *context)
 {
-    return false; // FIXME: QosRtsPolicy should handle this case
+    return false; // FIXME QosRtsPolicy should handle this case
 }
 
 } // namespace ieee80211
 } // namespace inet
+

@@ -1,18 +1,7 @@
 //
 // Copyright (C) 2006 Andras Babos and Andras Varga
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
 #ifndef __INET_OSPFV2ROUTER_H
@@ -21,7 +10,6 @@
 #include <map>
 #include <vector>
 
-#include "inet/common/INETDefs.h"
 #include "inet/routing/ospfv2/interface/Ospfv2Interface.h"
 #include "inet/routing/ospfv2/messagehandler/MessageHandler.h"
 #include "inet/routing/ospfv2/router/Lsa.h"
@@ -44,16 +32,16 @@ class INET_API Router
   private:
     IInterfaceTable *ift = nullptr;
     IIpv4RoutingTable *rt = nullptr;
-    RouterId routerID;    ///< The router ID assigned by the IP layer.
-    std::map<AreaId, Ospfv2Area *> areasByID;    ///< A map of the contained areas with the AreaId as key.
-    std::vector<Ospfv2Area *> areas;    ///< A list of the contained areas.
-    std::map<LsaKeyType, AsExternalLsa *, LsaKeyType_Less> asExternalLSAsByID;    ///< A map of the ASExternalLSAs advertised by this router.
-    std::vector<AsExternalLsa *> asExternalLSAs;    ///< A list of the ASExternalLSAs advertised by this router.
-    std::map<Ipv4Address, Ospfv2AsExternalLsaContents> externalRoutes;    ///< A map of the external route advertised by this router.
-    cMessage *ageTimer;    ///< Database age timer - fires every second.
-    std::vector<Ospfv2RoutingTableEntry *> ospfRoutingTable;    ///< The OSPF routing table - contains more information than the one in the IP layer.
-    MessageHandler *messageHandler;    ///< The message dispatcher class.
-    bool rfc1583Compatibility;    ///< Decides whether to handle the preferred routing table entry to an AS boundary router as defined in RFC1583 or not.
+    RouterId routerID; ///< The router ID assigned by the IP layer.
+    std::map<AreaId, Ospfv2Area *> areasByID; ///< A map of the contained areas with the AreaId as key.
+    std::vector<Ospfv2Area *> areas; ///< A list of the contained areas.
+    std::map<LsaKeyType, AsExternalLsa *, LsaKeyType_Less> asExternalLSAsByID; ///< A map of the ASExternalLSAs advertised by this router.
+    std::vector<AsExternalLsa *> asExternalLSAs; ///< A list of the ASExternalLSAs advertised by this router.
+    std::map<Ipv4Address, Ospfv2AsExternalLsaContents> externalRoutes; ///< A map of the external route advertised by this router.
+    cMessage *ageTimer; ///< Database age timer - fires every second.
+    std::vector<Ospfv2RoutingTableEntry *> ospfRoutingTable; ///< The OSPF routing table - contains more information than the one in the IP layer.
+    MessageHandler *messageHandler; ///< The message dispatcher class.
+    bool rfc1583Compatibility; ///< Decides whether to handle the preferred routing table entry to an AS boundary router as defined in RFC1583 or not.
 
   public:
     /**
@@ -230,7 +218,7 @@ class INET_API Router
     /**
      * get the default route in the routing table.
      */
-    Ipv4Route* getDefaultRoute();
+    Ipv4Route *getDefaultRoute();
 
     /**
      * Stores information on an AS External Route in externalRoutes and intalls(or
@@ -361,8 +349,7 @@ class INET_API Router
      * @param fromRoutingTable [in] The routing table to look in.
      * @param asbrRouterID     [in] The ID of the AS Boundary Router to look for.
      */
-    std::vector<Ospfv2RoutingTableEntry *>
-    getRoutesToASBoundaryRouter(const std::vector<Ospfv2RoutingTableEntry *>& fromRoutingTable, RouterId routerID) const;
+    std::vector<Ospfv2RoutingTableEntry *> getRoutesToASBoundaryRouter(const std::vector<Ospfv2RoutingTableEntry *>& fromRoutingTable, RouterId routerID) const;
 
     /**
      * Prunes the input std::vector of RoutingTableEntries according to the RFC2328
@@ -381,12 +368,12 @@ class INET_API Router
     Ospfv2RoutingTableEntry *selectLeastCostRoutingEntry(std::vector<Ospfv2RoutingTableEntry *>& entries) const;
 
     void printAsExternalLsa();
-    bool isDirectRoute(Ospfv2RoutingTableEntry &entry);
+    bool isDirectRoute(Ospfv2RoutingTableEntry& entry);
 };
 
 } // namespace ospfv2
 
 } // namespace inet
 
-#endif // ifndef __INET_OSPFV2ROUTER_H
+#endif
 

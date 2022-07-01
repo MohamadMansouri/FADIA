@@ -1,7 +1,7 @@
 package inet.examples.openstreetmap;
 
 import inet.common.geometry.common.SimpleGeographicCoordinateSystem;
-import inet.visualizer.integrated.IntegratedCanvasVisualizer;
+import inet.visualizer.canvas.integrated.IntegratedCanvasVisualizer;
 
 network OpenStreetMapExample
 {
@@ -12,6 +12,6 @@ network OpenStreetMapExample
         }
         coordinateSystem: SimpleGeographicCoordinateSystem {
             parameters:
-	            @display("p=100,200");
+                @display("p=100,200");
         }
 }

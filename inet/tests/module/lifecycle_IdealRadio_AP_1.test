@@ -49,7 +49,7 @@ snapshot-file = "${resultdir}/${configname}-${runnumber}.sna"
 
 import inet.test.moduletest.lib.*;
 import inet.node.wireless.AccessPoint;
-import inet.physicallayer.unitdisk.UnitDiskRadioMedium;
+import inet.physicallayer.wireless.unitdisk.UnitDiskRadioMedium;
 import inet.common.scenario.ScenarioManager;
 
 
@@ -90,8 +90,7 @@ Test.host shutting down
 .*
 Test.host shut down
 %#--------------------------------------------------------------------------------------------------------------
-%not-contains: stdout
-undisposed object:
-%not-contains: stdout
--- check module destructor
+%postrun-command: grep "undisposed object:" test.out > test_undisposed.out || true
+%not-contains: test_undisposed.out
+undisposed object: (
 %#--------------------------------------------------------------------------------------------------------------

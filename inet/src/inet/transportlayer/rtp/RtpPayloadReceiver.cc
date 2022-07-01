@@ -1,25 +1,15 @@
-/***************************************************************************
-                          RtpPayloadReceiver.cc  -  description
-                             -------------------
-    begin                : Fri Nov 2 2001
-    copyright            : (C) 2001 by Matthias Oppitz
-    email                : Matthias.Oppitz@gmx.de
-***************************************************************************/
+//
+// Copyright (C) 2001 Matthias Oppitz <Matthias.Oppitz@gmx.de>
+//
+// SPDX-License-Identifier: LGPL-3.0-or-later
+//
 
-/***************************************************************************
-*                                                                         *
-*   This program is free software; you can redistribute it and/or modify  *
-*   it under the terms of the GNU General Public License as published by  *
-*   the Free Software Foundation; either version 2 of the License, or     *
-*   (at your option) any later version.                                   *
-*                                                                         *
-***************************************************************************/
+#include "inet/transportlayer/rtp/RtpPayloadReceiver.h"
 
 #include <fstream>
 
 #include "inet/transportlayer/rtp/RtpInnerPacket_m.h"
 #include "inet/transportlayer/rtp/RtpPacket_m.h"
-#include "inet/transportlayer/rtp/RtpPayloadReceiver.h"
 
 namespace inet {
 namespace rtp {
@@ -39,8 +29,7 @@ void RtpPayloadReceiver::initialize()
     const char *logFileName = par("outputLogFileName");
     if (strcmp(fileName, ""))
         openOutputFile(fileName);
-    if (strcmp(logFileName, ""))
-    {
+    if (strcmp(logFileName, "")) {
         char logName[200];
         sprintf(logName, logFileName, getId());
         _outputLogLoss.open(logName);
@@ -56,7 +45,7 @@ void RtpPayloadReceiver::handleMessage(cMessage *msg)
         delete rinp;
     }
     else {
-        //delete rinp;
+//        delete rinp;
         throw cRuntimeError("RtpInnerPacket of wrong type received");
     }
 }

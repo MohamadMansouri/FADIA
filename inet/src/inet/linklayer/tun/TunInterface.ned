@@ -2,42 +2,35 @@
 // Copyright (C) 2015 Irene Ruengeler
 // Copyright (C) 2018 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
 package inet.linklayer.tun;
 
 import inet.linklayer.contract.ITunnelInterface;
-import inet.networklayer.common.InterfaceEntry;
+import inet.networklayer.common.NetworkInterface;
 
-module TunInterface extends InterfaceEntry like ITunnelInterface
+//
+// This module implements a TUN network interface.
+//
+module TunInterface extends NetworkInterface like ITunnelInterface
 {
     parameters:
-        @class(InterfaceEntry);
-        string interfaceTableModule;    // The path to the InterfaceTable module
+        bool isWireless = default(false);
+        string interfaceTableModule;
         int mtu @unit(B) = default(1500B);
+        *.interfaceTableModule = default(absPath(this.interfaceTableModule));
         @display("i=block/tunnel");
-        *.interfaceTableModule = default(absPath(interfaceTableModule));
     gates:
-        input upperLayerIn;    // from upper layers
-        output upperLayerOut;  // to upper layers
+        input upperLayerIn;
+        output upperLayerOut;
     submodules:
         tun: Tun {
-            @display("p=100,100");
+            parameters:
+                @display("p=300,100");
         }
     connections:
         upperLayerIn --> { @display("m=n"); } --> tun.upperLayerIn;
-        upperLayerOut <-- { @display("m=n"); } <-- tun.upperLayerOut;
+        tun.upperLayerOut --> { @display("m=n"); } --> upperLayerOut;
 }
 

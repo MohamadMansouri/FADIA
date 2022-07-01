@@ -2,19 +2,9 @@
 // Copyright (C) 2005 Christian Dankbar, Irene Ruengeler, Michael Tuexen, Andras Varga
 //               2009 Zoltan Bojthe
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 #include "inet/common/checksum/TcpIpChecksum.h"
 
@@ -46,7 +36,7 @@ uint16_t TcpIpChecksum::_checksum(const std::vector<uint8_t>& vec)
 {
     uint32_t sum = 0;
     for (size_t i = 0; i < vec.size(); i++) {
-        sum += (i&1) ? vec[i] : (vec[i] << 8);
+        sum += (i & 1) ? vec[i] : (vec[i] << 8);
         if (sum & 0x80000000)
             sum = (sum & 0xFFFF) + (sum >> 16);
     }

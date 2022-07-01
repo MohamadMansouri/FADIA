@@ -1,23 +1,13 @@
 //
-// Copyright (C) 2016 OpenSim Ltd
+// Copyright (C) 2016 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-#include "inet/common/INETUtils.h"
+
 #include "inet/common/figures/ThermometerFigure.h"
+
+#include "inet/common/INETUtils.h"
 
 namespace inet {
 
@@ -55,8 +45,8 @@ ThermometerFigure::~ThermometerFigure()
 {
     // delete figures which is not in canvas
     for (size_t i = numTicks; i < tickFigures.size(); ++i) {
-        delete tickFigures[i];
-        delete numberFigures[i];
+        dropAndDelete(tickFigures[i]);
+        dropAndDelete(numberFigures[i]);
     }
 }
 
@@ -95,11 +85,12 @@ int ThermometerFigure::getLabelOffset() const
 {
     return labelOffset;
 }
+
 void ThermometerFigure::setLabelOffset(int offset)
 {
-    if(labelOffset != offset)   {
-    labelOffset = offset;
-    labelFigure->setPosition(Point(getBounds().getCenter().x, getBounds().y + getBounds().height + labelOffset));
+    if (labelOffset != offset) {
+        labelOffset = offset;
+        labelFigure->setPosition(Point(getBounds().getCenter().x, getBounds().y + getBounds().height + labelOffset));
     }
 }
 
@@ -169,13 +160,10 @@ void ThermometerFigure::parse(cProperty *property)
 {
     cGroupFigure::parse(property);
 
-
     setBounds(parseBounds(property, getBounds()));
-
 
     // Set default
     redrawTicks();
-
 
     const char *s;
     if ((s = property->getValue(PKEY_MERCURY_COLOR)) != nullptr)
@@ -183,7 +171,7 @@ void ThermometerFigure::parse(cProperty *property)
     if ((s = property->getValue(PKEY_LABEL)) != nullptr)
         setLabel(s);
     if ((s = property->getValue(PKEY_LABEL_OFFSET)) != nullptr)
-            setLabelOffset(atoi(s));
+        setLabelOffset(atoi(s));
     if ((s = property->getValue(PKEY_LABEL_FONT)) != nullptr)
         setLabelFont(parseFont(s));
     if ((s = property->getValue(PKEY_LABEL_COLOR)) != nullptr)
@@ -295,8 +283,8 @@ void ThermometerFigure::setMercuryAndContainerGeometry()
 
     containerFigure->addMoveTo(x, y);
     containerFigure->addLineRel(0, height + 2 * offset);
-    //TODO this does not work with Qtenv:
-    //containerFigure->addCubicBezierCurveRel(0, width, width, width, width, 0);
+    // TODO this does not work with Qtenv:
+//    containerFigure->addCubicBezierCurveRel(0, width, width, width, width, 0);
     containerFigure->addArcRel(width / 2, width / 2, 0, true, false, width, 0);
     containerFigure->addLineRel(0, -height - 2 * offset);
     containerFigure->addArcRel(width / 2, width / 2, 0, true, false, -width, 0);
@@ -322,8 +310,8 @@ void ThermometerFigure::setMercuryAndContainerGeometry()
 
     mercuryFigure->addMoveTo(x, y + offset + height * (1 - mercuryLevel));
     mercuryFigure->addLineRel(0, height * mercuryLevel + overflow + offset);
-    //TODO this does not work with Qtenv:
-    //mercuryFigure->addCubicBezierCurveRel(0, width, width, width, width, 0);
+    // TODO this does not work with Qtenv:
+//    mercuryFigure->addCubicBezierCurveRel(0, width, width, width, width, 0);
     mercuryFigure->addArcRel(width / 2, width / 2, 0, true, false, width, 0);
     mercuryFigure->addLineRel(0, -height * mercuryLevel - overflow - offset);
     if (overflow > 0)
@@ -349,6 +337,8 @@ void ThermometerFigure::redrawTicks()
         while ((size_t)numTicks > tickFigures.size()) {
             cLineFigure *tick = new cLineFigure();
             cTextFigure *number = new cTextFigure();
+            take(tick);
+            take(number);
 
             number->setAnchor(cFigure::ANCHOR_W);
 
@@ -361,8 +351,12 @@ void ThermometerFigure::redrawTicks()
     for (int i = numTicks; i < prevNumTicks; ++i) {
         removeFigure(tickFigures[i]);
         removeFigure(numberFigures[i]);
+        take(tickFigures[i]);
+        take(numberFigures[i]);
     }
     for (int i = prevNumTicks; i < numTicks; ++i) {
+        drop(tickFigures[i]);
+        drop(numberFigures[i]);
         addFigure(tickFigures[i]);
         addFigure(numberFigures[i]);
     }

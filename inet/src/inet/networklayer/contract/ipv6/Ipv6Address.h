@@ -1,19 +1,8 @@
 //
 // Copyright (C) 2005 Wei Yang, Ng
-// Copyright (C) 2005 Andras Varga
+// Copyright (C) 2005 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public
-// License along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
 #ifndef __INET_IPV6ADDRESS_H
@@ -22,14 +11,13 @@
 #include <iostream>
 #include <string>
 
-#include "inet/common/INETDefs.h"
+#include "inet/linklayer/common/MacAddress.h"
+#include "inet/networklayer/common/InterfaceToken.h"
 
 namespace inet {
 
-class InterfaceToken;
-
 enum {
-    IPv6_ADDRESS_SIZE = 16  // bytes
+    IPv6_ADDRESS_SIZE = 16 // bytes
 };
 
 /**
@@ -41,7 +29,7 @@ class INET_API Ipv6Address
   private:
     // The 128-bit address in four 32-bit integers. d[0] is the most
     // significant word, d[3] is the least significant one.
-    uint32 d[4];
+    uint32_t d[4];
 
   protected:
     bool doTryParse(const char *& addr);
@@ -50,7 +38,7 @@ class INET_API Ipv6Address
     /**
      * Ipv6 address scope (RFC 3513)
      */
-    // FIXME TBD add multicast address scopes!!! rfc 3513, section 2.7
+    // FIXME add multicast address scopes!!! rfc 3513, section 2.7
     enum Scope {
         UNSPECIFIED,
         LOOPBACK,
@@ -107,9 +95,9 @@ class INET_API Ipv6Address
     /**
      * Constructs an Ipv6 address from two 64-bit integers.
      */
-    Ipv6Address(uint64 hi, uint64 lo)
+    Ipv6Address(uint64_t hi, uint64_t lo)
     {
-        uint32 mask = 0xFFFFFFFF;
+        uint32_t mask = 0xFFFFFFFF;
         d[0] = (hi >> 32) & mask;
         d[1] = hi & mask;
         d[2] = (lo >> 32) & mask;
@@ -120,7 +108,7 @@ class INET_API Ipv6Address
      * Constructs an Ipv6 address from four 32-bit integers. The most significant
      * word should be passed in the first argument.
      */
-    Ipv6Address(uint32 segment0, uint32 segment1, uint32 segment2, uint32 segment3)
+    Ipv6Address(uint32_t segment0, uint32_t segment1, uint32_t segment2, uint32_t segment3)
     {
         d[0] = segment0;
         d[1] = segment1;
@@ -139,7 +127,7 @@ class INET_API Ipv6Address
 
     bool operator==(const Ipv6Address& addr) const
     {
-        return d[3] == addr.d[3] && d[2] == addr.d[2] && d[1] == addr.d[1] && d[0] == addr.d[0];    // d[3] differs most often, compare that first
+        return d[3] == addr.d[3] && d[2] == addr.d[2] && d[1] == addr.d[1] && d[0] == addr.d[0]; // d[3] differs most often, compare that first
     }
 
     bool operator!=(const Ipv6Address& addr) const { return !operator==(addr); }
@@ -189,7 +177,7 @@ class INET_API Ipv6Address
      * Sets the Ipv6 address from four 32-bit integers. The most significant
      * word should be passed in the first argument.
      */
-    void set(uint32 d0, uint32 d1, uint32 d2, uint32 d3)
+    void set(uint32_t d0, uint32_t d1, uint32_t d2, uint32_t d3)
     {
         d[0] = d0;
         d[1] = d1;
@@ -201,13 +189,13 @@ class INET_API Ipv6Address
      * Returns a pointer to the internal binary representation of the address:
      * four 32-bit words, most significant word first.
      */
-    uint32 *words() { return d; }
+    uint32_t *words() { return d; }
 
     /**
      * Returns a pointer to the internal binary representation of the address:
      * four 32-bit words, most significant word first.
      */
-    const uint32 *words() const { return d; }
+    const uint32_t *words() const { return d; }
 
     /**
      * Get the Ipv6 address scope.
@@ -223,7 +211,7 @@ class INET_API Ipv6Address
      * Construct a 128-bit mask based on the prefix length. Mask should point
      * to an array of four 32-bit words, most significant word first.
      */
-    static void constructMask(int prefixLength, uint32 *mask);
+    static void constructMask(int prefixLength, uint32_t *mask);
     static Ipv6Address constructMask(int prefixLength);
 
     /**
@@ -313,6 +301,8 @@ class INET_API Ipv6Address
      * Get the 4-bit scope field of an Ipv6 multicast address.
      */
     int getMulticastScope() const;
+
+    MacAddress mapToMulticastMacAddress() const;
 };
 
 inline std::ostream& operator<<(std::ostream& os, const Ipv6Address& ip)
@@ -332,5 +322,5 @@ inline void doUnpacking(cCommBuffer *buf, Ipv6Address& addr)
 
 } // namespace inet
 
-#endif // ifndef __INET_IPV6ADDRESS_H
+#endif
 

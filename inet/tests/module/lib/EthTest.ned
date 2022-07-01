@@ -1,7 +1,7 @@
 package inet.test.moduletest.lib;
 
 import inet.linklayer.contract.IEthernetInterface;
-import inet.linklayer.ethernet.EtherQosQueue;
+import inet.linklayer.ethernet.EthernetQosQueue;
 
 
 simple EthTestApp
@@ -20,9 +20,9 @@ module EthTestHost
         bool csmacdSupport = default(true);  // by default use CSMA/CD
         string queueType = default(""); // DropTailQueue, DiffServQueue, or empty to use the internal queue
         *.interfaceTableModule = "";
-        eth.csmacdSupport = csmacdSupport;
-        eth.encap.typename = "EtherEncapDummy";
-        eth.queueType = queueType;
+        eth.csmacdSupport = this.csmacdSupport;
+        eth.encap.typename = "";
+        eth.queueType = this.queueType;
         @networkNode();
     gates:
         inout ethg @labels(EtherFrame-conn);

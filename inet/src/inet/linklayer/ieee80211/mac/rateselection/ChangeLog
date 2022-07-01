@@ -1,5 +1,18 @@
 ====== inet-4.x ======
 
+2022-05-13  ------ inet-4.4.0 released ------
+
+2021-04-26  Zoltan Bojthe
+
+	Added/updated Enter_Method() info to the signalname in receiveSignal().
+
+2021-03-19  Zoltan Bojthe
+
+	Changed if-else-if ladders in initialize() to separate if statements because
+	different stages may have the same number.
+
+2021-01-11  ------ inet-4.3.0 released ------
+
 2020-01-08  ------ inet-4.2.0 released ------
 
 2019-02-04  Levente Mészáros
@@ -10,7 +23,8 @@
 
 2018-09-27  Levente Mészáros
 
-	Renamed INITSTAGE_LINK_LAYER to INITSTAGE_NETWORK_INTERFACE_CONFIGURATION.	Renamed INITSTAGE_LINK_LAYER_2 to INITSTAGE_LINK_LAYER.
+	Renamed INITSTAGE_LINK_LAYER to INITSTAGE_NETWORK_INTERFACE_CONFIGURATION.
+	Renamed INITSTAGE_LINK_LAYER_2 to INITSTAGE_LINK_LAYER.
 
 2018-06-27  ------ inet-4.0.0 released ------
 

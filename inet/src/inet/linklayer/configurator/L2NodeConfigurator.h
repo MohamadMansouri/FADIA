@@ -1,22 +1,13 @@
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program.  If not, see http://www.gnu.org/licenses/.
-//
+
 
 #ifndef __INET_L2NODECONFIGURATOR_H
 #define __INET_L2NODECONFIGURATOR_H
 
-#include "inet/common/INETDefs.h"
 #include "inet/common/lifecycle/ILifecycle.h"
 #include "inet/common/lifecycle/NodeStatus.h"
 #include "inet/linklayer/configurator/L2NetworkConfigurator.h"
@@ -30,9 +21,9 @@ namespace inet {
 class INET_API L2NodeConfigurator : public cSimpleModule, public ILifecycle, public cListener
 {
   protected:
-    NodeStatus *nodeStatus;
-    IInterfaceTable *interfaceTable;
-    L2NetworkConfigurator *networkConfigurator;
+    opp_component_ptr<NodeStatus> nodeStatus;
+    ModuleRefByPar<IInterfaceTable> interfaceTable;
+    ModuleRefByPar<L2NetworkConfigurator> networkConfigurator;
 
   public:
     L2NodeConfigurator();
@@ -45,7 +36,7 @@ class INET_API L2NodeConfigurator : public cSimpleModule, public ILifecycle, pub
     virtual bool handleOperationStage(LifecycleOperation *operation, IDoneCallback *doneCallback) override;
 
     virtual void prepareNode();
-    virtual void prepareInterface(InterfaceEntry *interfaceEntry);
+    virtual void prepareInterface(NetworkInterface *networkInterface);
     virtual void configureNode();
 
     // cListener:
@@ -54,5 +45,5 @@ class INET_API L2NodeConfigurator : public cSimpleModule, public ILifecycle, pub
 
 } // namespace inet
 
-#endif // ifndef __INET_L2NODECONFIGURATOR_H
+#endif
 

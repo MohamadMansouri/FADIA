@@ -1,24 +1,13 @@
 //
 // Copyright (C) 2015 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 #ifndef __INET_IPV4SOCKET_H
 #define __INET_IPV4SOCKET_H
 
-#include "inet/common/INETDefs.h"
 #include "inet/common/Protocol.h"
 #include "inet/common/packet/Message.h"
 #include "inet/common/packet/Packet.h"
@@ -32,8 +21,7 @@ namespace inet {
 class INET_API Ipv4Socket : public INetworkSocket
 {
   public:
-    class INET_API ICallback : public INetworkSocket::ICallback
-    {
+    class INET_API ICallback : public INetworkSocket::ICallback {
       public:
         virtual void socketDataArrived(INetworkSocket *socket, Packet *packet) override { socketDataArrived(check_and_cast<Ipv4Socket *>(socket), packet); }
         virtual void socketDataArrived(Ipv4Socket *socket, Packet *packet) = 0;
@@ -44,6 +32,7 @@ class INET_API Ipv4Socket : public INetworkSocket
         virtual void socketClosed(INetworkSocket *socket) override { socketClosed(check_and_cast<Ipv4Socket *>(socket)); }
         virtual void socketClosed(Ipv4Socket *socket) = 0;
     };
+
   protected:
     bool bound = false;
     bool isOpen_ = false;
@@ -91,5 +80,5 @@ class INET_API Ipv4Socket : public INetworkSocket
 
 } // namespace inet
 
-#endif // ifndef __INET_IPV4SOCKET_H
+#endif
 

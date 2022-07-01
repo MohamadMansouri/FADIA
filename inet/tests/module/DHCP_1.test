@@ -5,7 +5,7 @@ Testing DHCP protocol
 
 import inet.test.moduletest.lib.*;
 import inet.networklayer.configurator.ipv4.Ipv4NetworkConfigurator;
-import inet.node.ethernet.EtherSwitch;
+import inet.node.ethernet.EthernetSwitch;
 import inet.node.inet.StandardHost;
 import inet.common.misc.ThruputMeteringChannel;
 
@@ -22,7 +22,7 @@ network DhcpExample
         }
     submodules:
         srv: StandardHost;
-        switch: EtherSwitch {
+        switch: EthernetSwitch {
             parameters:
                 @display("p=186,250");
         }
@@ -57,7 +57,8 @@ network = DhcpExample
 
 *.numHosts = 10
 
-**.numApps = 1
+**.cli[*].numApps = 1
+**.srv.numApps = 1
 
 **.cli[*].app[0].typename = "DhcpClient"
 **.cli[*].app[0].interface="eth0"   # interface toward dhcp server
@@ -93,8 +94,7 @@ The requested IP 192\.168\.1\.108/255\.255\.255\.0 is available. Assigning it to
 The requested IP 192\.168\.1\.109/255\.255\.255\.0 is available. Assigning it to cli\[9\].
 .*
 %#--------------------------------------------------------------------------------------------------------------
-%not-contains: stdout
-undisposed object:
-%not-contains: stdout
--- check module destructor
+%postrun-command: grep "undisposed object:" test.out > test_undisposed.out || true
+%not-contains: test_undisposed.out
+undisposed object: (
 %#--------------------------------------------------------------------------------------------------------------

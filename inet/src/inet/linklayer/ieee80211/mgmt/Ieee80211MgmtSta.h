@@ -1,30 +1,19 @@
 //
-// Copyright (C) 2006 Andras Varga
+// Copyright (C) 2006 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 #ifndef __INET_IEEE80211MGMTSTA_H
 #define __INET_IEEE80211MGMTSTA_H
 
-#include "inet/common/INETDefs.h"
 #include "inet/linklayer/ieee80211/mgmt/Ieee80211MgmtBase.h"
 #include "inet/linklayer/ieee80211/mgmt/Ieee80211Primitives_m.h"
 
 namespace inet {
 
-class InterfaceEntry;
+class NetworkInterface;
 
 namespace ieee80211 {
 
@@ -32,7 +21,6 @@ namespace ieee80211 {
  * Used in 802.11 infrastructure mode: handles management frames for
  * a station (STA). See corresponding NED file for a detailed description.
  *
- * @author Andras Varga
  */
 class INET_API Ieee80211MgmtSta : public Ieee80211MgmtBase, protected cListener
 {
@@ -40,34 +28,32 @@ class INET_API Ieee80211MgmtSta : public Ieee80211MgmtBase, protected cListener
     //
     // Encapsulates information about the ongoing scanning process
     //
-    struct ScanningInfo
-    {
-        MacAddress bssid;    // specific BSSID to scan for, or the broadcast address
-        std::string ssid;    // SSID to scan for (empty=any)
-        bool activeScan;    // whether to perform active or passive scanning
-        simtime_t probeDelay;    // delay (in s) to be used prior to transmitting a Probe frame during active scanning
-        std::vector<int> channelList;    // list of channels to scan
-        int currentChannelIndex;    // index into channelList[]
-        bool busyChannelDetected;    // during minChannelTime, we have to listen for busy channel
-        simtime_t minChannelTime;    // minimum time to spend on each channel when scanning
-        simtime_t maxChannelTime;    // maximum time to spend on each channel when scanning
+    struct ScanningInfo {
+        MacAddress bssid; // specific BSSID to scan for, or the broadcast address
+        std::string ssid; // SSID to scan for (empty=any)
+        bool activeScan; // whether to perform active or passive scanning
+        simtime_t probeDelay; // delay (in s) to be used prior to transmitting a Probe frame during active scanning
+        std::vector<int> channelList; // list of channels to scan
+        int currentChannelIndex; // index into channelList[]
+        bool busyChannelDetected; // during minChannelTime, we have to listen for busy channel
+        simtime_t minChannelTime; // minimum time to spend on each channel when scanning
+        simtime_t maxChannelTime; // maximum time to spend on each channel when scanning
     };
 
     //
     // Stores AP info received during scanning
     //
-    struct ApInfo : public cObject
-    {
+    struct ApInfo : public cObject {
         int channel;
-        MacAddress address;    // alias bssid
+        MacAddress address; // alias bssid
         std::string ssid;
         Ieee80211SupportedRatesElement supportedRates;
         simtime_t beaconInterval;
         double rxPower;
 
         bool isAuthenticated;
-        int authSeqExpected;    // valid while authenticating; values: 1,3,5...
-        cMessage *authTimeoutMsg;    // if non-nullptr: authentication is in progress
+        int authSeqExpected; // valid while authenticating; values: 1,3,5...
+        cMessage *authTimeoutMsg; // if non-nullptr: authentication is in progress
 
         ApInfo()
         {
@@ -82,8 +68,7 @@ class INET_API Ieee80211MgmtSta : public Ieee80211MgmtBase, protected cListener
     //
     // Associated AP, plus data associated with the association with the associated AP
     //
-    struct AssociatedApInfo : public ApInfo
-    {
+    struct AssociatedApInfo : public ApInfo {
         int receiveSequence;
         cMessage *beaconTimeoutMsg;
 
@@ -106,7 +91,7 @@ class INET_API Ieee80211MgmtSta : public Ieee80211MgmtBase, protected cListener
     AccessPointList apList;
 
     // associated Access Point
-    cMessage *assocTimeoutMsg;    // if non-nullptr: association is in progress
+    cMessage *assocTimeoutMsg; // if non-nullptr: association is in progress
     AssociatedApInfo assocAP;
 
   public:
@@ -204,5 +189,5 @@ class INET_API Ieee80211MgmtSta : public Ieee80211MgmtBase, protected cListener
 
 } // namespace inet
 
-#endif // ifndef __INET_IEEE80211MGMTSTA_H
+#endif
 

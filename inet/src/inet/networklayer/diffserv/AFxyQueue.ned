@@ -1,20 +1,9 @@
 //
-// Copyright (C) 2012 Opensim Ltd.
-// Author: Tamas Borbely
+// Copyright (C) 2012 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 package inet.networklayer.diffserv;
 
@@ -66,26 +55,26 @@ module AFxyQueue
     submodules:
         red1: RedDropper {
             collectionModule = "^.queue";
-            wq = wq;
-            minth = afx1Minth;
-            maxth = afx1Maxth;
-            maxp = afx1Maxp;
+            wq = parent.wq;
+            minth = parent.afx1Minth;
+            maxth = parent.afx1Maxth;
+            maxp = parent.afx1Maxp;
             @display("p=100,100");
         }
         red2: RedDropper {
             collectionModule = "^.queue";
-            wq = wq;
-            minth = afx2Minth;
-            maxth = afx2Maxth;
-            maxp = afx2Maxp;
+            wq = parent.wq;
+            minth = parent.afx2Minth;
+            maxth = parent.afx2Maxth;
+            maxp = parent.afx2Maxp;
             @display("p=100,200");
         }
         red3: RedDropper {
             collectionModule = "^.queue";
-            wq = wq;
-            minth = afx3Minth;
-            maxth = afx3Maxth;
-            maxp = afx3Maxp;
+            wq = parent.wq;
+            minth = parent.afx3Minth;
+            maxth = parent.afx3Maxth;
+            maxp = parent.afx3Maxp;
             @display("p=100,300");
         }
         mux: PacketMultiplexer {

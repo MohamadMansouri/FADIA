@@ -1,22 +1,13 @@
 //
-// Copyright (C) OpenSim Ltd.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-#include "inet/common/geometry/common/Quaternion.h"
+
 #include "inet/mobility/single/SuperpositioningMobility.h"
+
+#include "inet/common/geometry/common/Quaternion.h"
 
 namespace inet {
 
@@ -34,8 +25,10 @@ void SuperpositioningMobility::initialize(int stage)
             positionComposition = PositionComposition::PC_SUM;
         else if (!strcmp(positionCompositionAsString, "average"))
             positionComposition = PositionComposition::PC_AVERAGE;
-        else
-            throw cRuntimeError("Unknown position Composition");
+        else {
+            positionComposition = PositionComposition::PC_ELEMENT;
+            positionElementIndex = std::stoi(positionCompositionAsString);
+        }
         const char *orientationCompositionAsString = par("orientationComposition");
         if (!strcmp(orientationCompositionAsString, "zero"))
             orientationComposition = OrientationComposition::OC_ZERO;
@@ -45,14 +38,18 @@ void SuperpositioningMobility::initialize(int stage)
             orientationComposition = OrientationComposition::OC_AVERAGE;
         else if (!strcmp(orientationCompositionAsString, "faceForward"))
             orientationComposition = OrientationComposition::OC_FACE_FORWARD;
-        else
-            throw cRuntimeError("Unknown orientation composition");
+        else {
+            orientationComposition = OrientationComposition::OC_ELEMENT;
+            orientationElementIndex = std::stoi(orientationCompositionAsString);
+        }
         int numElements = par("numElements");
         for (int i = 0; i < numElements; i++) {
             auto element = getSubmodule("element", i);
             element->subscribe(IMobility::mobilityStateChangedSignal, this);
             elements.push_back(check_and_cast<IMobility *>(element));
         }
+        WATCH(lastVelocity);
+        WATCH(lastAcceleration);
     }
     else if (stage == INITSTAGE_LAST)
         initializePosition();
@@ -63,79 +60,86 @@ void SuperpositioningMobility::setInitialPosition()
     lastPosition = getCurrentPosition();
 }
 
-Coord SuperpositioningMobility::getCurrentPosition()
+const Coord& SuperpositioningMobility::getCurrentPosition()
 {
     switch (positionComposition) {
         case PositionComposition::PC_ZERO:
             lastPosition = Coord::ZERO;
+            break;
         case PositionComposition::PC_AVERAGE:
-        case PositionComposition::PC_SUM: {
-            Coord position;
+        case PositionComposition::PC_SUM:
+            lastPosition = Coord::ZERO;
             for (auto element : elements)
-                position += element->getCurrentPosition();
-            lastPosition = position;
+                lastPosition += element->getCurrentPosition();
             if (positionComposition == PositionComposition::PC_AVERAGE)
                 lastPosition /= elements.size();
             break;
-        }
+        case PositionComposition::PC_ELEMENT:
+            lastPosition = elements[positionElementIndex]->getCurrentPosition();
+            break;
         default:
             throw cRuntimeError("Unknown orientation composition");
     }
     return lastPosition;
 }
 
-Coord SuperpositioningMobility::getCurrentVelocity()
+const Coord& SuperpositioningMobility::getCurrentVelocity()
 {
     switch (positionComposition) {
         case PositionComposition::PC_ZERO:
-            return Coord::ZERO;
+            lastVelocity = Coord::ZERO;
+            break;
         case PositionComposition::PC_AVERAGE:
-        case PositionComposition::PC_SUM: {
-            Coord velocity;
+        case PositionComposition::PC_SUM:
+            lastVelocity = Coord::ZERO;
             for (auto element : elements)
-                velocity += element->getCurrentVelocity();
+                lastVelocity += element->getCurrentVelocity();
             if (positionComposition == PositionComposition::PC_AVERAGE)
-                velocity /= elements.size();
-            return velocity;
-        }
+                lastVelocity /= elements.size();
+            break;
+        case PositionComposition::PC_ELEMENT:
+            lastVelocity = elements[positionElementIndex]->getCurrentVelocity();
+            break;
         default:
             throw cRuntimeError("Unknown orientation composition");
     }
+    return lastVelocity;
 }
 
-Coord SuperpositioningMobility::getCurrentAcceleration()
+const Coord& SuperpositioningMobility::getCurrentAcceleration()
 {
     switch (positionComposition) {
         case PositionComposition::PC_ZERO:
-            return Coord::ZERO;
+            lastAcceleration = Coord::ZERO;
+            break;
         case PositionComposition::PC_AVERAGE:
-        case PositionComposition::PC_SUM: {
-            Coord acceleration;
+        case PositionComposition::PC_SUM:
+            lastAcceleration = Coord::ZERO;
             for (auto element : elements)
-                acceleration += element->getCurrentAcceleration();
+                lastAcceleration += element->getCurrentAcceleration();
             if (positionComposition == PositionComposition::PC_AVERAGE)
-                acceleration /= elements.size();
-            return acceleration;
-        }
+                lastAcceleration /= elements.size();
+            break;
+        case PositionComposition::PC_ELEMENT:
+            lastAcceleration = elements[positionElementIndex]->getCurrentAcceleration();
+            break;
         default:
             throw cRuntimeError("Unknown orientation composition");
     }
+    return lastAcceleration;
 }
 
-Quaternion SuperpositioningMobility::getCurrentAngularPosition()
+const Quaternion& SuperpositioningMobility::getCurrentAngularPosition()
 {
     switch (orientationComposition) {
-        case OrientationComposition::OC_ZERO: {
+        case OrientationComposition::OC_ZERO:
             lastOrientation = Quaternion::IDENTITY;
             break;
-        }
-        case OrientationComposition::OC_SUM: {
-            Quaternion angularPosition;
+        case OrientationComposition::OC_SUM:
+            lastOrientation = Quaternion::IDENTITY;
             for (auto element : elements)
-                angularPosition *= Quaternion(element->getCurrentAngularPosition());
-            lastOrientation = angularPosition;
+                lastOrientation *= Quaternion(element->getCurrentAngularPosition());
             break;
-        }
         case OrientationComposition::OC_AVERAGE: {
             Coord rotatedX;
             Coord rotatedY;
@@ -176,54 +180,72 @@ Quaternion SuperpositioningMobility::getCurrentAngularPosition()
             }
             break;
         }
+        case OrientationComposition::OC_ELEMENT: {
+            lastOrientation = elements[orientationElementIndex]->getCurrentAngularPosition();
+            break;
+        }
         default:
             throw cRuntimeError("Unknown orientation composition");
     }
     return lastOrientation;
 }
 
-Quaternion SuperpositioningMobility::getCurrentAngularVelocity()
+const Quaternion& SuperpositioningMobility::getCurrentAngularVelocity()
 {
     switch (orientationComposition) {
         case OrientationComposition::OC_ZERO:
-            return Quaternion::IDENTITY;
-        case OrientationComposition::OC_SUM: {
-            Quaternion angularVelocity;
+            lastAngularVelocity = Quaternion::IDENTITY;
+            break;
+        case OrientationComposition::OC_SUM:
+            lastAngularVelocity = Quaternion::IDENTITY;
             for (auto element : elements)
-                angularVelocity *= Quaternion(element->getCurrentAngularVelocity());
-            return angularVelocity;
-        }
+                lastAngularVelocity *= Quaternion(element->getCurrentAngularVelocity());
+            break;
         case OrientationComposition::OC_AVERAGE:
-            return Quaternion::NIL;
+            lastAngularVelocity = Quaternion::NIL;
+            break;
         case OrientationComposition::OC_FACE_FORWARD:
-            return Quaternion::NIL;
+            lastAngularVelocity = Quaternion::NIL;
+            break;
+        case OrientationComposition::OC_ELEMENT:
+            lastAngularVelocity = Quaternion::NIL;
+            break;
         default:
             throw cRuntimeError("Unknown orientation composition");
     }
+    return lastAngularVelocity;
 }
 
-Quaternion SuperpositioningMobility::getCurrentAngularAcceleration()
+const Quaternion& SuperpositioningMobility::getCurrentAngularAcceleration()
 {
     switch (orientationComposition) {
         case OrientationComposition::OC_ZERO:
-            return Quaternion::IDENTITY;
-        case OrientationComposition::OC_SUM: {
-            Quaternion angularAcceleration;
+            lastAngularAcceleration = Quaternion::IDENTITY;
+            break;
+        case OrientationComposition::OC_SUM:
+            lastAngularAcceleration = Quaternion::IDENTITY;
             for (auto element : elements)
-                angularAcceleration *= Quaternion(element->getCurrentAngularAcceleration());
-            return angularAcceleration;
-        }
+                lastAngularAcceleration *= Quaternion(element->getCurrentAngularAcceleration());
+            break;
         case OrientationComposition::OC_AVERAGE:
-            return Quaternion::NIL;
+            lastAngularAcceleration = Quaternion::NIL;
+            break;
         case OrientationComposition::OC_FACE_FORWARD:
-            return Quaternion::NIL;
+            lastAngularAcceleration = Quaternion::NIL;
+            break;
+        case OrientationComposition::OC_ELEMENT:
+            lastAngularAcceleration = Quaternion::NIL;
+            break;
         default:
             throw cRuntimeError("Unknown orientation composition");
     }
+    return lastAngularAcceleration;
 }
 
 void SuperpositioningMobility::receiveSignal(cComponent *source, simsignal_t signal, cObject *object, cObject *details)
 {
+    Enter_Method("%s", cComponent::getSignalName(signal));
+
     if (IMobility::mobilityStateChangedSignal == signal)
         emitMobilityStateChangedSignal();
 }

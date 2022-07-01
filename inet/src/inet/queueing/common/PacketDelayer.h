@@ -1,55 +1,36 @@
 //
-// Copyright (C) OpenSim Ltd.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see http://www.gnu.org/licenses/.
-//
+
 
 #ifndef __INET_PACKETDELAYER_H
 #define __INET_PACKETDELAYER_H
 
-#include "inet/queueing/base/PassivePacketSinkBase.h"
-#include "inet/queueing/contract/IActivePacketSource.h"
+#include "inet/common/IProtocolRegistrationListener.h"
+#include "inet/common/clock/ClockUserModuleMixin.h"
+#include "inet/queueing/base/PacketPusherBase.h"
 
 namespace inet {
 namespace queueing {
 
-class INET_API PacketDelayer : public PassivePacketSinkBase, public IActivePacketSource
+class INET_API PacketDelayer : public ClockUserModuleMixin<PacketPusherBase>, public TransparentProtocolRegistrationListener
 {
   protected:
-    cGate *inputGate = nullptr;
-    IActivePacketSource *producer = nullptr;
-
-    cGate *outputGate = nullptr;
-    IPassivePacketSink *consumer = nullptr;
-
-  protected:
-    virtual void initialize(int stage) override;
     virtual void handleMessage(cMessage *message) override;
 
+    virtual cGate *getRegistrationForwardingGate(cGate *gate) override;
+
   public:
-    virtual IPassivePacketSink *getConsumer(cGate *gate) override { return consumer; }
-
-    virtual bool supportsPushPacket(cGate *gate) const override { return true; }
-    virtual bool supportsPopPacket(cGate *gate) const override { return true; }
-
     virtual void pushPacket(Packet *packet, cGate *gate) override;
 
-    virtual void handleCanPushPacket(cGate *gate) override;
+    virtual void handleCanPushPacketChanged(cGate *gate) override;
+    virtual void handlePushPacketProcessed(Packet *packet, cGate *gate, bool successful) override;
 };
 
 } // namespace queueing
 } // namespace inet
 
-#endif // ifndef __INET_PACKETDELAYER_H
+#endif
 

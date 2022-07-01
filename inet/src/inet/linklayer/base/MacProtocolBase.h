@@ -1,19 +1,9 @@
 //
-// Copyright (C) 2013 OpenSim Ltd
+// Copyright (C) 2013 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 #ifndef __INET_MACPROTOCOLBASE_H
 #define __INET_MACPROTOCOLBASE_H
@@ -21,8 +11,8 @@
 #include "inet/common/LayeredProtocolBase.h"
 #include "inet/common/lifecycle/ModuleOperations.h"
 #include "inet/common/packet/Packet.h"
+#include "inet/networklayer/common/NetworkInterface.h"
 #include "inet/queueing/contract/IPacketQueue.h"
-#include "inet/networklayer/common/InterfaceEntry.h"
 
 namespace inet {
 
@@ -37,15 +27,15 @@ class INET_API MacProtocolBase : public LayeredProtocolBase, public cListener
     int lowerLayerOutGateId = -1;
     //@}
 
-    InterfaceEntry *interfaceEntry = nullptr;
+    opp_component_ptr<NetworkInterface> networkInterface;
+
+    opp_component_ptr<cModule> hostModule;
 
     /** Currently transmitted frame if any */
     Packet *currentTxFrame = nullptr;
 
     /** Messages received from upper layer and to be transmitted later */
-    queueing::IPacketQueue *txQueue = nullptr;
-
-    cModule *hostModule = nullptr;
+    opp_component_ptr<queueing::IPacketQueue> txQueue;
 
   protected:
     MacProtocolBase();
@@ -54,23 +44,24 @@ class INET_API MacProtocolBase : public LayeredProtocolBase, public cListener
     virtual void initialize(int stage) override;
 
     virtual void registerInterface();
-    virtual void configureInterfaceEntry() = 0;
+    virtual void configureNetworkInterface() = 0;
 
     virtual MacAddress parseMacAddressParameter(const char *addrstr);
+
+    virtual void deleteCurrentTxFrame();
+    virtual void dropCurrentTxFrame(PacketDropDetails& details);
+
+    virtual void handleMessageWhenDown(cMessage *msg) override;
 
     virtual void sendUp(cMessage *message);
     virtual void sendDown(cMessage *message);
 
-    virtual bool isUpperMessage(cMessage *message) override;
-    virtual bool isLowerMessage(cMessage *message) override;
+    virtual bool isUpperMessage(cMessage *message) const override;
+    virtual bool isLowerMessage(cMessage *message) const override;
 
-    virtual bool isInitializeStage(int stage) override { return stage == INITSTAGE_LINK_LAYER; }
-    virtual bool isModuleStartStage(int stage) override { return stage == ModuleStartOperation::STAGE_LINK_LAYER; }
-    virtual bool isModuleStopStage(int stage) override { return stage == ModuleStopOperation::STAGE_LINK_LAYER; }
-
-    virtual void deleteCurrentTxFrame();
-    virtual void dropCurrentTxFrame(PacketDropDetails& details);
-    virtual void popTxQueue();
+    virtual bool isInitializeStage(int stage) const override { return stage == INITSTAGE_LINK_LAYER; }
+    virtual bool isModuleStartStage(int stage) const override { return stage == ModuleStartOperation::STAGE_LINK_LAYER; }
+    virtual bool isModuleStopStage(int stage) const override { return stage == ModuleStopOperation::STAGE_LINK_LAYER; }
 
     /**
      * should clear queue and emit signal "packetDropped" with entire packets
@@ -83,14 +74,18 @@ class INET_API MacProtocolBase : public LayeredProtocolBase, public cListener
     virtual void clearQueue();
 
     using cListener::receiveSignal;
-    virtual void handleMessageWhenDown(cMessage *msg) override;
     virtual void receiveSignal(cComponent *source, simsignal_t signalID, cObject *obj, cObject *details) override;
     virtual void handleStartOperation(LifecycleOperation *operation) override;
     virtual void handleStopOperation(LifecycleOperation *operation) override;
     virtual void handleCrashOperation(LifecycleOperation *operation) override;
+
+    queueing::IPacketQueue *getQueue(cGate *gate) const;
+
+    virtual bool canDequeuePacket() const;
+    virtual Packet *dequeuePacket();
 };
 
 } // namespace inet
 
-#endif // ifndef __INET_MACPROTOCOLBASE_H
+#endif
 

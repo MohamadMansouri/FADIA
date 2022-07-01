@@ -1,3 +1,7 @@
+//
+// SPDX-License-Identifier: LGPL-3.0-or-later
+//
+//
 /* -*- mode:c++ -*- ********************************************************
  * file:        Posture.h
  *
@@ -10,13 +14,6 @@
  *              Eindhoven University of Technology (TU/e), the Netherlands.
  *
  *
- *              This program is free software; you can redistribute it
- *              and/or modify it under the terms of the GNU General Public
- *              License as published by the Free Software Foundation; either
- *              version 2 of the License, or (at your option) any later
- *              version.
- *              For further information see file COPYING
- *              in the top level directory
  ***************************************************************************
  * part of:    MoBAN (Mobility Model for wireless Body Area Networks)
  * description: A class to store the specification of a posture
@@ -45,7 +42,6 @@
 
 #include <string.h>
 
-#include "inet/common/INETDefs.h"
 #include "inet/common/INETMath.h"
 #include "inet/common/geometry/common/Coord.h"
 
@@ -81,7 +77,7 @@ class INET_API Posture
 
     /** @brief Mean value of the normal distribution for the path lost coefficient (alpha)
      * for any pair of nodes (numNodes by numNodes matrix) */
-    double **alphaSD = nullptr;    // Standard deviation of alpha
+    double **alphaSD = nullptr; // Standard deviation of alpha
 
     /** @brief Radious of the sphere around each node for individual mobility */
     double *nodeRadius = nullptr;
@@ -158,5 +154,5 @@ class INET_API Posture
 
 } // namespace inet
 
-#endif // ifndef __INET_POSTURE_H
+#endif
 

@@ -1,24 +1,13 @@
 //
 // Copyright (C) 2004 - 2016 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 #ifndef __INET_TCPSENDQUEUE_H
 #define __INET_TCPSENDQUEUE_H
 
-#include "inet/common/INETDefs.h"
 #include "inet/common/packet/ChunkQueue.h"
 #include "inet/common/packet/Packet.h"
 #include "inet/transportlayer/tcp/TcpConnection.h"
@@ -35,10 +24,10 @@ namespace tcp {
 class INET_API TcpSendQueue : public cObject
 {
   protected:
-    TcpConnection *conn = nullptr;    // the connection that owns this queue
-    uint32 begin = 0;    // 1st sequence number stored
-    uint32 end = 0;    // last sequence number stored +1
-    ChunkQueue dataBuffer;      // dataBuffer
+    TcpConnection *conn = nullptr; // the connection that owns this queue
+    uint32_t begin = 0; // 1st sequence number stored
+    uint32_t end = 0; // last sequence number stored +1
+    ChunkQueue dataBuffer; // dataBuffer
 
   public:
     /**
@@ -66,7 +55,7 @@ class INET_API TcpSendQueue : public cObject
      * init() may be called more than once; every call flushes the existing contents
      * of the queue.
      */
-    virtual void init(uint32 startSeq);
+    virtual void init(uint32_t startSeq);
 
     /**
      * Returns a string with the region stored.
@@ -86,23 +75,19 @@ class INET_API TcpSendQueue : public cObject
     /**
      * Returns the sequence number of the first byte stored in the buffer.
      */
-    virtual uint32 getBufferStartSeq();
+    virtual uint32_t getBufferStartSeq() const;
 
     /**
      * Returns the sequence number of the last byte stored in the buffer plus one.
      * (The first byte of the next send operation would get this sequence number.)
      */
-    virtual uint32 getBufferEndSeq();
+    virtual uint32_t getBufferEndSeq() const;
 
     /**
      * Utility function: returns how many bytes are available in the queue, from
      * (and including) the given sequence number.
      */
-    inline ulong getBytesAvailable(uint32 fromSeq)
-    {
-        uint32 bufEndSeq = getBufferEndSeq();
-        return seqLess(fromSeq, bufEndSeq) ? bufEndSeq - fromSeq : 0;
-    }
+    virtual uint32_t getBytesAvailable(uint32_t fromSeq) const;
 
     /**
      * Called when the TCP wants to send or retransmit data, it constructs
@@ -111,17 +96,17 @@ class INET_API TcpSendQueue : public cObject
      * maxNumBytes bytes if the subclass wants to reproduce the original
      * segment boundaries when retransmitting.
      */
-    virtual Packet *createSegmentWithBytes(uint32 fromSeq, ulong numBytes);
+    virtual Packet *createSegmentWithBytes(uint32_t fromSeq, uint32_t numBytes);
 
     /**
      * Tells the queue that bytes up to (but NOT including) seqNum have been
      * transmitted and ACKed, so they can be removed from the queue.
      */
-    virtual void discardUpTo(uint32 seqNum);
+    virtual void discardUpTo(uint32_t seqNum);
 };
 
 } // namespace tcp
 } // namespace inet
 
-#endif // ifndef __INET_TCPSENDQUEUE_H
+#endif
 

@@ -1,24 +1,13 @@
 //
-// Copyright (C) 2012 Andras Varga
+// Copyright (C) 2012 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 #ifndef __INET_IROUTINGTABLE_H
 #define __INET_IROUTINGTABLE_H
 
-#include "inet/common/INETDefs.h"
 #include "inet/networklayer/common/L3Address.h"
 #include "inet/networklayer/contract/IRoute.h"
 
@@ -30,14 +19,14 @@ namespace inet {
 class INET_API IRoutingTable
 {
   public:
-    virtual ~IRoutingTable() {};
+    virtual ~IRoutingTable() {}
 
     /** @name Miscellaneous functions */
     //@{
     /**
      * Forwarding on/off
      */
-    virtual bool isForwardingEnabled() const = 0;    //XXX IP modulba?
+    virtual bool isForwardingEnabled() const = 0; // TODO IP modulba?
 
     /**
      * Administrative distance on/off
@@ -47,7 +36,7 @@ class INET_API IRoutingTable
     /**
      * Multicast forwarding on/off
      */
-    virtual bool isMulticastForwardingEnabled() const = 0;    //XXX IP modulba?
+    virtual bool isMulticastForwardingEnabled() const = 0; // TODO IP modulba?
 
     /**
      * Returns routerId.
@@ -57,12 +46,12 @@ class INET_API IRoutingTable
     /**
      * Checks if the address is a local one, i.e. one of the host's.
      */
-    virtual bool isLocalAddress(const L3Address& dest) const = 0;    //XXX maybe into InterfaceTable?
+    virtual bool isLocalAddress(const L3Address& dest) const = 0; // TODO maybe into InterfaceTable?
 
     /**
      * Returns an interface given by its address. Returns nullptr if not found.
      */
-    virtual InterfaceEntry *getInterfaceByAddress(const L3Address& address) const = 0;    //XXX should be find..., see next one
+    virtual NetworkInterface *getInterfaceByAddress(const L3Address& address) const = 0; // TODO should be find..., see next one
 
     /**
      * Prints the routing table.
@@ -85,7 +74,7 @@ class INET_API IRoutingTable
      * Returns the output interface for the packets with dest as destination
      * address, or nullptr if the destination is not in routing table.
      */
-    virtual InterfaceEntry *getOutputInterfaceForDestination(const L3Address& dest) const = 0;    //XXX redundant
+    virtual NetworkInterface *getOutputInterfaceForDestination(const L3Address& dest) const = 0; // TODO redundant
 
     /**
      * Convenience function based on findBestMatchingRoute().
@@ -94,7 +83,7 @@ class INET_API IRoutingTable
      * address if the destination is not in routing table or the gateway field
      * is not filled in in the route.
      */
-    virtual L3Address getNextHopForDestination(const L3Address& dest) const = 0;    //XXX redundant AND unused
+    virtual L3Address getNextHopForDestination(const L3Address& dest) const = 0; // TODO redundant AND unused
     //@}
 
     /** @name Multicast routing functions */
@@ -128,7 +117,7 @@ class INET_API IRoutingTable
     /**
      * Finds and returns the default route, or nullptr if it doesn't exist
      */
-    virtual IRoute *getDefaultRoute() const = 0;    //XXX is this a universal concept?
+    virtual IRoute *getDefaultRoute() const = 0; // TODO is this a universal concept?
 
     /**
      * Adds a route to the routing table. Routes are allowed to be modified
@@ -186,5 +175,5 @@ class INET_API IRoutingTable
 
 } // namespace inet
 
-#endif // ifndef __INET_IROUTINGTABLE_H
+#endif
 

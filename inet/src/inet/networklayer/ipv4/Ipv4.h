@@ -1,20 +1,10 @@
 //
-// Copyright (C) 2004 Andras Varga
+// Copyright (C) 2004 OpenSim Ltd.
 // Copyright (C) 2014 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 #ifndef __INET_IPV4_H
 #define __INET_IPV4_H
@@ -23,7 +13,6 @@
 #include <map>
 #include <set>
 
-#include "inet/common/INETDefs.h"
 #include "inet/common/IProtocolRegistrationListener.h"
 #include "inet/common/lifecycle/ModuleOperations.h"
 #include "inet/common/lifecycle/OperationalBase.h"
@@ -45,14 +34,13 @@ class IIpv4RoutingTable;
 /**
  * Implements the Ipv4 protocol.
  */
-class INET_API Ipv4 : public OperationalBase, public NetfilterBase, public INetworkProtocol, public IProtocolRegistrationListener, public cListener
+class INET_API Ipv4 : public OperationalBase, public NetfilterBase, public INetworkProtocol, public DefaultProtocolRegistrationListener, public cListener
 {
   public:
     /**
      * Represents an Ipv4Header, queued by a Hook
      */
-    class QueuedDatagramForHook
-    {
+    class QueuedDatagramForHook {
       public:
         QueuedDatagramForHook(Packet *packet, IHook::Type hookType) :
             packet(packet), hookType(hookType) {}
@@ -63,22 +51,21 @@ class INET_API Ipv4 : public OperationalBase, public NetfilterBase, public INetw
     };
     typedef std::map<Ipv4Address, cPacketQueue> PendingPackets;
 
-    struct SocketDescriptor
-    {
+    struct SocketDescriptor {
         int socketId = -1;
         int protocolId = -1;
         Ipv4Address localAddress;
         Ipv4Address remoteAddress;
 
         SocketDescriptor(int socketId, int protocolId, Ipv4Address localAddress)
-                : socketId(socketId), protocolId(protocolId), localAddress(localAddress) { }
+            : socketId(socketId), protocolId(protocolId), localAddress(localAddress) {}
     };
 
   protected:
-    IIpv4RoutingTable *rt = nullptr;
-    IInterfaceTable *ift = nullptr;
-    IArp *arp = nullptr;
-    Icmp *icmp = nullptr;
+    ModuleRefByPar<IIpv4RoutingTable> rt;
+    ModuleRefByPar<IInterfaceTable> ift;
+    ModuleRefByPar<IArp> arp;
+    ModuleRefByPar<Icmp> icmp;
     int transportInGateBaseId = -1;
 
     // config
@@ -92,19 +79,19 @@ class INET_API Ipv4 : public OperationalBase, public NetfilterBase, public INetw
     cPatternMatcher directBroadcastInterfaceMatcher;
 
     // working vars
-    uint16_t curFragmentId = -1;    // counter, used to assign unique fragmentIds to datagrams
-    Ipv4FragBuf fragbuf;    // fragmentation reassembly buffer
-    simtime_t lastCheckTime;    // when fragbuf was last checked for state fragments
-    std::set<const Protocol *> upperProtocols;    // where to send packets after decapsulation
+    uint16_t curFragmentId = -1; // counter, used to assign unique fragmentIds to datagrams
+    Ipv4FragBuf fragbuf; // fragmentation reassembly buffer
+    simtime_t lastCheckTime; // when fragbuf was last checked for state fragments
+    std::set<const Protocol *> upperProtocols; // where to send packets after decapsulation
     std::map<int, SocketDescriptor *> socketIdToSocketDescriptor;
 
     // ARP related
-    PendingPackets pendingPackets;    // map indexed with IPv4Address for outbound packets waiting for ARP resolution
+    PendingPackets pendingPackets; // map indexed with IPv4Address for outbound packets waiting for ARP resolution
 
     // statistics
     int numMulticast = 0;
     int numLocalDeliver = 0;
-    int numDropped = 0;    // forwarding off, no outgoing interface, too large but "don't fragment" is set, TTL exceeded, etc
+    int numDropped = 0; // forwarding off, no outgoing interface, too large but "don't fragment" is set, TTL exceeded, etc
     int numUnroutable = 0;
     int numForwarded = 0;
 
@@ -114,12 +101,12 @@ class INET_API Ipv4 : public OperationalBase, public NetfilterBase, public INetw
 
   protected:
     // utility: look up interface from getArrivalGate()
-    virtual const InterfaceEntry *getSourceInterface(Packet *packet);
-    virtual const InterfaceEntry *getDestInterface(Packet *packet);
+    virtual const NetworkInterface *getSourceInterface(Packet *packet);
+    virtual const NetworkInterface *getDestInterface(Packet *packet);
     virtual Ipv4Address getNextHop(Packet *packet);
 
     // utility: look up route to the source of the datagram and return its interface
-    virtual const InterfaceEntry *getShortestPathInterfaceToSource(const Ptr<const Ipv4Header>& ipv4Header) const;
+    virtual const NetworkInterface *getShortestPathInterfaceToSource(const Ptr<const Ipv4Header>& ipv4Header) const;
 
     // utility: show current statistics above the icon
     virtual void refreshDisplay() const override;
@@ -186,7 +173,7 @@ class INET_API Ipv4 : public OperationalBase, public NetfilterBase, public INetw
     /**
      * Determines the output interface for the given multicast datagram.
      */
-    virtual const InterfaceEntry *determineOutgoingInterfaceForMulticastDatagram(const Ptr<const Ipv4Header>& ipv4Header, const InterfaceEntry *multicastIFOption);
+    virtual const NetworkInterface *determineOutgoingInterfaceForMulticastDatagram(const Ptr<const Ipv4Header>& ipv4Header, const NetworkInterface *multicastIFOption);
 
     /**
      * Forwards packets to all multicast destinations, using fragmentAndSend().
@@ -223,7 +210,7 @@ class INET_API Ipv4 : public OperationalBase, public NetfilterBase, public INetw
      */
     virtual void sendDatagramToOutput(Packet *packet);
 
-    virtual MacAddress resolveNextHopMacAddress(cPacket *packet, Ipv4Address nextHopAddr, const InterfaceEntry *destIE);
+    virtual MacAddress resolveNextHopMacAddress(cPacket *packet, Ipv4Address nextHopAddr, const NetworkInterface *destIE);
 
     virtual void sendPacketToNIC(Packet *packet);
 
@@ -235,8 +222,8 @@ class INET_API Ipv4 : public OperationalBase, public NetfilterBase, public INetw
     Ipv4();
     virtual ~Ipv4();
 
-    virtual void handleRegisterService(const Protocol& protocol, cGate *out, ServicePrimitive servicePrimitive) override;
-    virtual void handleRegisterProtocol(const Protocol& protocol, cGate *in, ServicePrimitive servicePrimitive) override;
+    virtual void handleRegisterService(const Protocol& protocol, cGate *gate, ServicePrimitive servicePrimitive) override;
+    virtual void handleRegisterProtocol(const Protocol& protocol, cGate *gate, ServicePrimitive servicePrimitive) override;
 
   protected:
     virtual int numInitStages() const override { return NUM_INIT_STAGES; }
@@ -297,9 +284,9 @@ class INET_API Ipv4 : public OperationalBase, public NetfilterBase, public INetw
     /**
      * ILifecycle methods
      */
-    virtual bool isInitializeStage(int stage) override { return stage == INITSTAGE_NETWORK_LAYER; }
-    virtual bool isModuleStartStage(int stage) override { return stage == ModuleStartOperation::STAGE_NETWORK_LAYER; }
-    virtual bool isModuleStopStage(int stage) override { return stage == ModuleStopOperation::STAGE_NETWORK_LAYER; }
+    virtual bool isInitializeStage(int stage) const override { return stage == INITSTAGE_NETWORK_LAYER; }
+    virtual bool isModuleStartStage(int stage) const override { return stage == ModuleStartOperation::STAGE_NETWORK_LAYER; }
+    virtual bool isModuleStopStage(int stage) const override { return stage == ModuleStopOperation::STAGE_NETWORK_LAYER; }
     virtual void handleStartOperation(LifecycleOperation *operation) override;
     virtual void handleStopOperation(LifecycleOperation *operation) override;
     virtual void handleCrashOperation(LifecycleOperation *operation) override;
@@ -315,5 +302,5 @@ class INET_API Ipv4 : public OperationalBase, public NetfilterBase, public INetw
 
 } // namespace inet
 
-#endif // ifndef __INET_IPV4_H
+#endif
 

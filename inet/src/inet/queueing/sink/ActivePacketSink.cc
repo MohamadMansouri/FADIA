@@ -1,22 +1,10 @@
 //
-// Copyright (C) OpenSim Ltd.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see http://www.gnu.org/licenses/.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-#include "inet/common/ModuleAccess.h"
-#include "inet/common/Simsignals.h"
+
 #include "inet/queueing/sink/ActivePacketSink.h"
 
 namespace inet {
@@ -26,22 +14,30 @@ Define_Module(ActivePacketSink);
 
 void ActivePacketSink::initialize(int stage)
 {
-    PacketSinkBase::initialize(stage);
+    ClockUserModuleMixin::initialize(stage);
     if (stage == INITSTAGE_LOCAL) {
-        inputGate = gate("in");
-        provider = findConnectedModule<IPassivePacketSource>(inputGate);
         collectionIntervalParameter = &par("collectionInterval");
-        collectionTimer = new cMessage("CollectionTimer");
+        collectionTimer = new ClockEvent("CollectionTimer");
+        scheduleForAbsoluteTime = par("scheduleForAbsoluteTime");
     }
-    else if (stage == INITSTAGE_QUEUEING)
-        checkPopPacketSupport(inputGate);
+    else if (stage == INITSTAGE_QUEUEING) {
+        if (!collectionTimer->isScheduled() && provider->canPullSomePacket(inputGate->getPathStartGate())) {
+            double offset = par("initialCollectionOffset");
+            if (offset != 0)
+                scheduleCollectionTimer(offset);
+            else {
+                scheduleCollectionTimer(collectionIntervalParameter->doubleValue());
+                collectPacket();
+            }
+        }
+    }
 }
 
 void ActivePacketSink::handleMessage(cMessage *message)
 {
     if (message == collectionTimer) {
-        if (provider->canPopSomePacket(inputGate->getPathStartGate())) {
-            scheduleCollectionTimer();
+        if (provider->canPullSomePacket(inputGate->getPathStartGate())) {
+            scheduleCollectionTimer(collectionIntervalParameter->doubleValue());
             collectPacket();
         }
     }
@@ -49,28 +45,43 @@ void ActivePacketSink::handleMessage(cMessage *message)
         throw cRuntimeError("Unknown message");
 }
 
-void ActivePacketSink::scheduleCollectionTimer()
+void ActivePacketSink::scheduleCollectionTimer(double delay)
 {
-    scheduleAt(simTime() + collectionIntervalParameter->doubleValue(), collectionTimer);
+    if (scheduleForAbsoluteTime)
+        scheduleClockEventAt(getClockTime() + delay, collectionTimer);
+    else
+        scheduleClockEventAfter(delay, collectionTimer);
 }
 
 void ActivePacketSink::collectPacket()
 {
-    auto packet = provider->popPacket(inputGate->getPathStartGate());
-    EV_INFO << "Collecting packet " << packet->getName() << "." << endl;
+    auto packet = provider->pullPacket(inputGate->getPathStartGate());
+    take(packet);
+    emit(packetPulledSignal, packet);
+    EV_INFO << "Collecting packet" << EV_FIELD(packet) << EV_ENDL;
     numProcessedPackets++;
     processedTotalLength += packet->getDataLength();
     updateDisplayString();
     dropPacket(packet, OTHER_PACKET_DROP);
 }
 
-void ActivePacketSink::handleCanPopPacket(cGate *gate)
+void ActivePacketSink::handleCanPullPacketChanged(cGate *gate)
 {
-    Enter_Method("handleCanPopPacket");
-    if (gate->getPathEndGate() == inputGate && !collectionTimer->isScheduled()) {
-        scheduleCollectionTimer();
-        collectPacket();
+    Enter_Method("handleCanPullPacketChanged");
+    if (!collectionTimer->isScheduled() && provider->canPullSomePacket(inputGate->getPathStartGate())) {
+        double offset = par("initialCollectionOffset");
+        if (offset != 0)
+            scheduleCollectionTimer(offset);
+        else {
+            scheduleCollectionTimer(collectionIntervalParameter->doubleValue());
+            collectPacket();
+        }
     }
+}
+
+void ActivePacketSink::handlePullPacketProcessed(Packet *packet, cGate *gate, bool successful)
+{
+    Enter_Method("handlePullPacketProcessed");
 }
 
 } // namespace queueing

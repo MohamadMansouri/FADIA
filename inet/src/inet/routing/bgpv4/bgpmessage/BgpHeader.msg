@@ -2,18 +2,7 @@
 // Copyright (C) 2010 Helene Lageber
 // Copyright (C) 2019 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
 import inet.common.INETDefs;
@@ -35,11 +24,11 @@ const B BGP_EMPTY_UPDATE_OCTETS = B(4); // UnfeasibleRoutesLength (2) + TotalPat
 //
 class BgpAsPathSegment extends cObject
 {
+    @packetData;
     BgpPathSegmentType type;
     uint8_t length;
     uint16_t asValue[];
 }
-
 
 //
 // BGPv4 message types
@@ -123,6 +112,7 @@ enum BgpUpdateAttributeTypeCode
 
 class BgpUpdatePathAttributes extends cObject
 {
+    @packetData;
     bool optionalBit = false;    // 1 bit, Optional bit. It defines whether the attribute is optional (if set to 1) or well-known (if set to 0).
     bool transitiveBit = false;    // 1 bit, Transitive bit. It defines whether an optional attribute is transitive (if set to 1) or non-transitive (if set to 0). Transitive bit MUST be set to 1 for well-known attributes
     bool partialBit = false;    // 1 bit, Partial bit. It defines whether the information contained in the optional transitive attribute is partial (if set to 1) or complete (if set to 0).  For well-known attributes and for optional non-transitive attributes, the Partial bit MUST be set to 0.
@@ -203,12 +193,14 @@ class BgpUpdatePathAttributesAggregator extends BgpUpdatePathAttributes
 
 struct BgpUpdateWithdrawnRoutes
 {
+    @packetData;
     unsigned char length; // 1 octet
     Ipv4Address prefix; // 4 octets
 }
 
 struct BgpUpdateNlri
 {
+    @packetData;
     // uint32_t pathIdentifier      // specified in RFC 7911, optional 4 octets, wireshark detect existing of this field with heuristical algorithm
     uint8_t length = 0; // length of prefix in bits, 1 octet
     Ipv4Address prefix; // 1-4 octets, based on length ((length + 7) / 8)
@@ -246,4 +238,3 @@ class BgpUpdateMessage extends BgpHeader
     BgpUpdatePathAttributes* pathAttributes[] @owned @allowReplace;
     BgpUpdateNlri NLRI[];
 }
-

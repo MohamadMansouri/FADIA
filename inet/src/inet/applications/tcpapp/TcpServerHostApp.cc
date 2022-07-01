@@ -1,23 +1,15 @@
 //
-// Copyright (C) 2004 Andras Varga
+// Copyright (C) 2004 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
+
 #include "inet/applications/tcpapp/TcpServerHostApp.h"
+
 #include "inet/common/INETUtils.h"
 #include "inet/common/ModuleAccess.h"
+#include "inet/common/stlutils.h"
 #include "inet/common/lifecycle/ModuleOperations.h"
 #include "inet/networklayer/common/L3AddressResolver.h"
 
@@ -43,7 +35,7 @@ void TcpServerHostApp::handleStartOperation(LifecycleOperation *operation)
 
 void TcpServerHostApp::handleStopOperation(LifecycleOperation *operation)
 {
-    for (auto thread: threadSet)
+    for (auto thread : threadSet)
         thread->getSocket()->close();
     serverSocket.close();
     delayActiveOperationFinish(par("stopOperationTimeout"));
@@ -54,11 +46,11 @@ void TcpServerHostApp::handleCrashOperation(LifecycleOperation *operation)
     // remove and delete threads
     while (!threadSet.empty()) {
         auto thread = *threadSet.begin();
-        // TODO: destroy!!!
+        // TODO destroy!!!
         thread->getSocket()->close();
         removeThread(thread);
     }
-    // TODO: always?
+    // TODO always?
     if (operation->getRootModule() != getContainingNode(this))
         serverSocket.destroy();
 }
@@ -76,18 +68,18 @@ void TcpServerHostApp::handleMessageWhenUp(cMessage *msg)
 {
     if (msg->isSelfMessage()) {
         TcpServerThreadBase *thread = (TcpServerThreadBase *)msg->getContextPointer();
-        if (threadSet.find(thread) == threadSet.end())
+        if (!contains(threadSet, thread))
             throw cRuntimeError("Invalid thread pointer in the timer (msg->contextPointer is invalid)");
         thread->timerExpired(msg);
     }
     else {
-        TcpSocket *socket = check_and_cast_nullable<TcpSocket*>(socketMap.findSocketFor(msg));
+        TcpSocket *socket = check_and_cast_nullable<TcpSocket *>(socketMap.findSocketFor(msg));
         if (socket)
             socket->processMessage(msg);
         else if (serverSocket.belongsToSocket(msg))
             serverSocket.processMessage(msg);
         else {
-            // throw cRuntimeError("Unknown incoming message: '%s'", msg->getName());
+//            throw cRuntimeError("Unknown incoming message: '%s'", msg->getName());
             EV_ERROR << "message " << msg->getFullName() << "(" << msg->getClassName() << ") arrived for unknown socket \n";
             delete msg;
         }
@@ -150,6 +142,14 @@ void TcpServerHostApp::threadClosed(TcpServerThreadBase *thread)
 
     // remove thread object
     thread->deleteModule();
+}
+
+void TcpServerThreadBase::socketDeleted(TcpSocket *socket)
+{
+    if (socket == sock) {
+        sock = nullptr;
+        hostmod->socketDeleted(socket);
+    }
 }
 
 void TcpServerThreadBase::refreshDisplay() const

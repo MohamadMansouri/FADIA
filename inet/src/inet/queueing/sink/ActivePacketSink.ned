@@ -1,35 +1,28 @@
 //
-// Copyright (C) OpenSim Ltd.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see http://www.gnu.org/licenses/.
-//
+
 
 package inet.queueing.sink;
 
-import inet.queueing.base.PacketSinkBase;
+import inet.queueing.base.ActivePacketSinkBase;
 import inet.queueing.contract.IActivePacketSink;
 
 //
-// This module is an active packet sink which pops packets from the connected
-// packet provider. All popped packets are counted and deleted.
+// This module is an active packet sink which pulls packets from the connected
+// packet provider. All pulled packets are counted and deleted.
 //
-simple ActivePacketSink extends PacketSinkBase like IActivePacketSink
+simple ActivePacketSink extends ActivePacketSinkBase like IActivePacketSink
 {
     parameters:
-        volatile double collectionInterval @unit(s); // elapsed time between subsequent packets popped from the connected packet provider
+        string clockModule = default(""); // relative path of a module that implements IClock; optional
+        double initialCollectionOffset @unit(s) = default(0s);
+        volatile double collectionInterval @unit(s); // elapsed time between subsequent packets pulled from the connected packet provider
+        bool scheduleForAbsoluteTime = default(true); // when a clock is used relative means that setting the clock will not affect the simulation time of the event
         @class(ActivePacketSink);
     gates:
-        input in @labels(pop);
+        input in @labels(pull);
 }
 

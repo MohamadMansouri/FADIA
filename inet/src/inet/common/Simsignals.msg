@@ -1,5 +1,7 @@
 //
-// This program is property of its copyright holder. All rights reserved.
+// Copyright (C) 2020 OpenSim Ltd.
+//
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
 import inet.common.INETDefs;
@@ -13,17 +15,18 @@ enum PacketDropReason
     HOP_LIMIT_REACHED         = 2;
     INCORRECTLY_RECEIVED      = 3;
     INTERFACE_DOWN            = 4;
-    NO_INTERFACE_FOUND        = 5;
-    NO_ROUTE_FOUND            = 6;
-    NOT_ADDRESSED_TO_US       = 7;
-    QUEUE_OVERFLOW            = 8;
-    RETRY_LIMIT_REACHED       = 9;
-    LIFETIME_EXPIRED          = 10;
-    CONGESTION                = 11;
-    NO_PROTOCOL_FOUND         = 12;
-    NO_PORT_FOUND             = 13;
-    DUPLICATE_DETECTED        = 14;
-    OTHER_PACKET_DROP         = 99;
+    NO_CARRIER                = 5;
+    NO_INTERFACE_FOUND        = 6;
+    NO_ROUTE_FOUND            = 7;
+    NOT_ADDRESSED_TO_US       = 8;
+    QUEUE_OVERFLOW            = 9;
+    RETRY_LIMIT_REACHED       = 10;
+    LIFETIME_EXPIRED          = 11;
+    CONGESTION                = 12;
+    NO_PROTOCOL_FOUND         = 13;
+    NO_PORT_FOUND             = 14;
+    DUPLICATE_DETECTED        = 15;
+    OTHER_PACKET_DROP         = -1;
 }
 
 class PacketDropDetails extends cObject

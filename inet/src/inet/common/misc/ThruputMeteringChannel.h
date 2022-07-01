@@ -1,19 +1,9 @@
 //
-// Copyright (C) 2005 Andras Varga
+// Copyright (C) 2005 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 #ifndef __INET_THRUPUTMETERINGCHANNEL_H
 #define __INET_THRUPUTMETERINGCHANNEL_H
@@ -50,15 +40,15 @@ class INET_API ThruputMeteringChannel : public cDatarateChannel
   protected:
     // configuration
     bool displayAsTooltip;
-    const char *fmt;    // display format
-    unsigned int batchSize;    // number of packets in a batch
-    simtime_t maxInterval;    // max length of measurement interval (measurement ends
-                              // if either batchSize or maxInterval is reached, whichever
-                              // is reached first)
+    const char *fmt; // display format
+    unsigned int batchSize; // number of packets in a batch
+    simtime_t maxInterval; // max length of measurement interval (measurement ends
+                           // if either batchSize or maxInterval is reached, whichever
+                           // is reached first)
 
     // global statistics
     long numPackets;
-    double numBits;    // double to avoid overflow
+    double numBits; // double to avoid overflow
 
     // current measurement interval
     simtime_t intvlStartTime;
@@ -99,7 +89,7 @@ class INET_API ThruputMeteringChannel : public cDatarateChannel
      * Creates and returns an exact copy of this object.
      * See cObject for more details.
      */
-//    virtual ThruputMeteringChannel *dup() const {return new ThruputMeteringChannel(*this);}
+//    virtual ThruputMeteringChannel *dup() const { return new ThruputMeteringChannel(*this); }
 
     /**
      * Add parameters and initialize the stat variables
@@ -109,10 +99,10 @@ class INET_API ThruputMeteringChannel : public cDatarateChannel
     /**
      * Adds statistics and live display to the channel.
      */
-    virtual void processMessage(cMessage *msg, simtime_t t, result_t& result) override;
+    virtual cChannel::Result processMessage(cMessage *msg, const SendOptions& options, simtime_t t) override;
 };
 
 } // namespace inet
 
-#endif // ifndef __INET_THRUPUTMETERINGCHANNEL_H
+#endif
 

@@ -1,46 +1,35 @@
 //
-// Copyright (C) 2010 Zoltan Bojthe
+// Copyright (C) 2010 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
 
-#include "inet/applications/common/SocketTag_m.h"
+#include "inet/transportlayer/tcp_lwip/TcpLwipConnection.h"
+
 #include "inet/common/INETUtils.h"
 #include "inet/common/ProtocolTag_m.h"
 #include "inet/common/checksum/TcpIpChecksum.h"
 #include "inet/common/packet/Message.h"
+#include "inet/common/socket/SocketTag_m.h"
 #include "inet/transportlayer/contract/tcp/TcpCommand_m.h"
 #include "inet/transportlayer/tcp_common/TcpHeader.h"
 #include "inet/transportlayer/tcp_common/headers/tcphdr.h"
-#include "lwip/lwip_tcp.h"
 #include "inet/transportlayer/tcp_lwip/TcpLwip.h"
-#include "inet/transportlayer/tcp_lwip/TcpLwipConnection.h"
 #include "inet/transportlayer/tcp_lwip/queues/TcpLwipQueues.h"
+#include "lwip/lwip_tcp.h"
 
 namespace inet {
 namespace tcp {
 
 Define_Module(TcpLwipConnection);
 
-simsignal_t TcpLwipConnection::sndWndSignal = registerSignal("sndWnd");    // snd_wnd
-simsignal_t TcpLwipConnection::sndNxtSignal = registerSignal("sndNxt");    // sent seqNo
-simsignal_t TcpLwipConnection::sndAckSignal = registerSignal("sndAck");    // sent ackNo
-simsignal_t TcpLwipConnection::rcvWndSignal = registerSignal("rcvWnd");    // rcv_wnd
-simsignal_t TcpLwipConnection::rcvSeqSignal = registerSignal("rcvSeq");    // received seqNo
-simsignal_t TcpLwipConnection::rcvAckSignal = registerSignal("rcvAck");    // received ackNo (=snd_una)
+simsignal_t TcpLwipConnection::sndWndSignal = registerSignal("sndWnd"); // snd_wnd
+simsignal_t TcpLwipConnection::sndNxtSignal = registerSignal("sndNxt"); // sent seqNo
+simsignal_t TcpLwipConnection::sndAckSignal = registerSignal("sndAck"); // sent ackNo
+simsignal_t TcpLwipConnection::rcvWndSignal = registerSignal("rcvWnd"); // rcv_wnd
+simsignal_t TcpLwipConnection::rcvSeqSignal = registerSignal("rcvSeq"); // received seqNo
+simsignal_t TcpLwipConnection::rcvAckSignal = registerSignal("rcvAck"); // received ackNo (=snd_una)
 
 void TcpLwipConnection::recordSend(const TcpHeader& tcpsegP)
 {
@@ -70,7 +59,7 @@ void TcpLwipConnection::initConnection(TcpLwip& tcpLwipP, int connIdP)
     isListenerM = false;
     onCloseM = false;
     ASSERT(!pcbM);
-    pcbM = tcpLwipM->getLwipTcpLayer()->tcp_new();       //FIXME memory leak
+    pcbM = tcpLwipM->getLwipTcpLayer()->tcp_new(); // FIXME memory leak
     ASSERT(pcbM);
     pcbM->callback_arg = this;
     sendQueueM->setConnection(this);
@@ -95,9 +84,14 @@ void TcpLwipConnection::initConnection(TcpLwipConnection& connP, int connIdP, Lw
 
 TcpLwipConnection::~TcpLwipConnection()
 {
-    ASSERT(!pcbM);
     delete receiveQueueM;
     delete sendQueueM;
+    if (pcbM) {
+        pcbM->callback_arg = nullptr;
+        tcpLwipM->getLwipTcpLayer()->tcp_pcb_purge(pcbM);
+        memp_free(MEMP_TCP_PCB, pcbM);
+        pcbM = nullptr;
+    }
 }
 
 void TcpLwipConnection::sendAvailableIndicationToApp(int listenConnId)
@@ -117,7 +111,7 @@ void TcpLwipConnection::sendAvailableIndicationToApp(int listenConnId)
     indication->addTag<TransportProtocolInd>()->setProtocol(&Protocol::tcp);
     indication->addTag<SocketInd>()->setSocketId(listenConnId);
     tcpLwipM->send(indication, "appOut");
-    //TODO shouldn't read from lwip until accept arrived
+    // TODO shouldn't read from lwip until accept arrived
 }
 
 void TcpLwipConnection::sendEstablishedMsg()
@@ -139,14 +133,14 @@ void TcpLwipConnection::sendEstablishedMsg()
     tcpLwipM->send(indication, "appOut");
     sendUpEnabled = true;
     do_SEND();
-    //TODO now can read from lwip
+    // TODO now can read from lwip
     sendUpData();
 }
 
 const char *TcpLwipConnection::indicationName(int code)
 {
 #define CASE(x)    case x: \
-        s = #x + 6; break
+        s = #x; s += 6; break
     const char *s = "unknown";
 
     switch (code) {
@@ -180,8 +174,8 @@ void TcpLwipConnection::sendIndicationToApp(int code)
 
 void TcpLwipConnection::fillStatusInfo(TcpStatusInfo& statusInfo)
 {
-//TODO    statusInfo.setState(fsm.getState());
-//TODO    statusInfo.setStateName(stateName(fsm.getState()));
+    // TODO    statusInfo.setState(fsm.getState());
+    // TODO    statusInfo.setStateName(stateName(fsm.getState()));
 
     statusInfo.setLocalAddr((pcbM->local_ip.addr));
     statusInfo.setLocalPort(pcbM->local_port);
@@ -189,19 +183,19 @@ void TcpLwipConnection::fillStatusInfo(TcpStatusInfo& statusInfo)
     statusInfo.setRemotePort(pcbM->remote_port);
 
     statusInfo.setSnd_mss(pcbM->mss);
-//TODO    statusInfo.setSnd_una(pcbM->snd_una);
+    // TODO    statusInfo.setSnd_una(pcbM->snd_una);
     statusInfo.setSnd_nxt(pcbM->snd_nxt);
-//TODO    statusInfo.setSnd_max(pcbM->snd_max);
+    // TODO    statusInfo.setSnd_max(pcbM->snd_max);
     statusInfo.setSnd_wnd(pcbM->snd_wnd);
-//TODO    statusInfo.setSnd_up(pcbM->snd_up);
+    // TODO    statusInfo.setSnd_up(pcbM->snd_up);
     statusInfo.setSnd_wl1(pcbM->snd_wl1);
     statusInfo.setSnd_wl2(pcbM->snd_wl2);
-//TODO    statusInfo.setIss(pcbM->iss);
+    // TODO    statusInfo.setIss(pcbM->iss);
     statusInfo.setRcv_nxt(pcbM->rcv_nxt);
     statusInfo.setRcv_wnd(pcbM->rcv_wnd);
-//TODO    statusInfo.setRcv_up(pcbM->rcv_up);
-//TODO    statusInfo.setIrs(pcbM->irs);
-//TODO    statusInfo.setFin_ack_rcvd(pcbM->fin_ack_rcvd);
+    // TODO    statusInfo.setRcv_up(pcbM->rcv_up);
+    // TODO    statusInfo.setIrs(pcbM->irs);
+    // TODO    statusInfo.setFin_ack_rcvd(pcbM->fin_ack_rcvd);
 }
 
 void TcpLwipConnection::listen(const L3Address& localAddr, unsigned short localPort)
@@ -212,7 +206,7 @@ void TcpLwipConnection::listen(const L3Address& localAddr, unsigned short localP
     // it works; does it actually accept a connection as well? It
     // shouldn't, as there is a tcp_accept
     LwipTcpLayer::tcp_pcb *pcb = pcbM;
-    pcbM = nullptr;    // unlink old pcb from this, otherwise lwip_free_pcb_event destroy this conn.
+    pcbM = nullptr; // unlink old pcb from this, otherwise lwip_free_pcb_event destroy this conn.
     pcbM = tcpLwipM->getLwipTcpLayer()->tcp_listen(pcb);
     totalSentM = 0;
 }
@@ -291,8 +285,7 @@ int TcpLwipConnection::send_data(void *data, int datalen)
             if (datalen < snd_buf)
                 break;
 
-            error = tcpLwipM->getLwipTcpLayer()->tcp_write(
-                        pcbM, ((const char *)data) + written, snd_buf, 1);
+            error = tcpLwipM->getLwipTcpLayer()->tcp_write(pcbM, ((const char *)data) + written, snd_buf, 1);
 
             if (error != ERR_OK)
                 break;
@@ -363,6 +356,126 @@ void TcpLwipConnection::sendUpData()
 //            }
         }
     }
+}
+
+void TcpLwipConnection::processAppCommand(cMessage *msgP)
+{
+    // first do actions
+    TcpCommand *tcpCommand = check_and_cast_nullable<TcpCommand *>(msgP->removeControlInfo());
+
+    switch (msgP->getKind()) {
+        case TCP_C_OPEN_ACTIVE:
+            process_OPEN_ACTIVE(check_and_cast<TcpOpenCommand *>(tcpCommand), msgP);
+            break;
+
+        case TCP_C_OPEN_PASSIVE:
+            process_OPEN_PASSIVE(check_and_cast<TcpOpenCommand *>(tcpCommand), msgP);
+            break;
+
+        case TCP_C_ACCEPT:
+            process_ACCEPT(check_and_cast<TcpAcceptCommand *>(tcpCommand), msgP);
+            break;
+
+        case TCP_C_SEND:
+            process_SEND(check_and_cast<Packet *>(msgP));
+            break;
+
+        case TCP_C_CLOSE:
+            ASSERT(tcpCommand);
+            process_CLOSE(tcpCommand, msgP);
+            break;
+
+        case TCP_C_ABORT:
+            ASSERT(tcpCommand);
+            process_ABORT(tcpCommand, msgP);
+            break;
+
+        case TCP_C_STATUS:
+            ASSERT(tcpCommand);
+            process_STATUS(tcpCommand, msgP);
+            break;
+
+        default:
+            throw cRuntimeError("Wrong command from app: %d", msgP->getKind());
+    }
+}
+
+void TcpLwipConnection::process_OPEN_ACTIVE(TcpOpenCommand *tcpCommandP, cMessage *msgP)
+{
+    ASSERT(tcpLwipM->getLwipTcpLayer());
+
+    if (tcpCommandP->getRemoteAddr().isUnspecified() || tcpCommandP->getRemotePort() == -1)
+        throw cRuntimeError("Error processing command OPEN_ACTIVE: remote address and port must be specified");
+
+    int localPort = tcpCommandP->getLocalPort();
+    if (localPort == -1)
+        localPort = 0;
+
+    EV_INFO << this << ": OPEN: "
+            << tcpCommandP->getLocalAddr() << ":" << localPort << " --> "
+            << tcpCommandP->getRemoteAddr() << ":" << tcpCommandP->getRemotePort() << "\n";
+    connect(tcpCommandP->getLocalAddr(), localPort,
+            tcpCommandP->getRemoteAddr(), tcpCommandP->getRemotePort());
+    delete tcpCommandP;
+    delete msgP;
+}
+
+void TcpLwipConnection::process_OPEN_PASSIVE(TcpOpenCommand *tcpCommandP,
+        cMessage *msgP)
+{
+    ASSERT(tcpLwipM->getLwipTcpLayer());
+
+    if (tcpCommandP->getFork() == false)
+        throw cRuntimeError("Error processing command OPEN_PASSIVE: non-forking listening connections are not supported yet");
+
+    if (tcpCommandP->getLocalPort() == -1)
+        throw cRuntimeError("Error processing command OPEN_PASSIVE: local port must be specified");
+
+    EV_INFO << this << "Starting to listen on: " << tcpCommandP->getLocalAddr() << ":"
+            << tcpCommandP->getLocalPort() << "\n";
+    listen(tcpCommandP->getLocalAddr(), tcpCommandP->getLocalPort());
+    delete tcpCommandP;
+    delete msgP;
+}
+
+void TcpLwipConnection::process_ACCEPT(TcpAcceptCommand *tcpCommand, cMessage *msg)
+{
+    accept();
+    delete tcpCommand;
+    delete msg;
+}
+
+void TcpLwipConnection::process_SEND(Packet *msgP)
+{
+    EV_INFO << this << ": processing SEND command, len=" << msgP->getByteLength() << endl;
+    send(msgP);
+}
+
+void TcpLwipConnection::process_CLOSE(TcpCommand *tcpCommandP, cMessage *msgP)
+{
+    EV_INFO << this << ": processing CLOSE(" << connIdM << ") command\n";
+    delete tcpCommandP;
+    delete msgP;
+    close();
+}
+
+void TcpLwipConnection::process_ABORT(TcpCommand *tcpCommandP, cMessage *msgP)
+{
+    EV_INFO << this << ": processing ABORT(" << connIdM << ") command\n";
+    delete tcpCommandP;
+    delete msgP;
+    abort();
+}
+
+void TcpLwipConnection::process_STATUS(TcpCommand *tcpCommandP, cMessage *msgP)
+{
+    EV_INFO << this << ": processing STATUS(" << connIdM << ") command\n";
+    delete tcpCommandP; // but we'll reuse msg for reply
+    TcpStatusInfo *statusInfo = new TcpStatusInfo();
+    fillStatusInfo(*statusInfo);
+    msgP->setControlInfo(statusInfo);
+    msgP->setKind(TCP_I_STATUS);
+    tcpLwipM->send(msgP, "appOut");
 }
 
 } // namespace tcp

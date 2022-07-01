@@ -2,28 +2,21 @@
 // Copyright (C) 2005-2010 Irene Ruengeler
 // Copyright (C) 2009-2015 Thomas Dreibholz
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
+
+#include "inet/transportlayer/sctp/SctpAssociation.h"
 
 #include <assert.h>
-#include <sstream>
 #include <string.h>
 
+#include <sstream>
+
+#include "inet/common/stlutils.h"
 #include "inet/transportlayer/contract/sctp/SctpCommand_m.h"
 #include "inet/transportlayer/sctp/Sctp.h"
 #include "inet/transportlayer/sctp/SctpAlgorithm.h"
-#include "inet/transportlayer/sctp/SctpAssociation.h"
 #include "inet/transportlayer/sctp/SctpQueue.h"
 
 namespace inet {
@@ -38,7 +31,7 @@ SctpPathVariables::SctpPathVariables(const L3Address& addr, SctpAssociation *ass
     confirmed = false;
     primaryPathCandidate = false;
     pathErrorCount = 0;
-    const InterfaceEntry *rtie;
+    const NetworkInterface *rtie;
     pathErrorThreshold = assoc->getSctpMain()->getPathMaxRetrans();
 
     if (!pathErrorThreshold) {
@@ -80,13 +73,13 @@ SctpPathVariables::SctpPathVariables(const L3Address& addr, SctpAssociation *ass
 
     cmtCCGroup = 0;
     lastTransmission = simTime();
-    sendAllRandomizer = RNGCONTEXT uniform(0, (1 << 31));
+    sendAllRandomizer = RNGCONTEXT uniform(0, (1u << 31));
     pseudoCumAck = 0;
     newPseudoCumAck = false;
-    findPseudoCumAck = true;    // Set findPseudoCumAck to TRUE for new destination.
+    findPseudoCumAck = true; // Set findPseudoCumAck to TRUE for new destination.
     rtxPseudoCumAck = 0;
     newRTXPseudoCumAck = false;
-    findRTXPseudoCumAck = true;    // Set findRTXPseudoCumAck to TRUE for new destination.
+    findRTXPseudoCumAck = true; // Set findRTXPseudoCumAck to TRUE for new destination.
     oldestChunkTsn = 0;
     oldestChunkSendTime = simTime();
     highestNewAckInSack = 0;
@@ -504,23 +497,19 @@ SctpStateVariables::~SctpStateVariables()
         delete initChunk;
 }
 
-bool SctpStateVariables::findRequestNum(uint32 num)
+bool SctpStateVariables::findRequestNum(uint32_t num)
 {
-    if (requests.find(num) != requests.end())
-        return true;
-    return false;
+    return containsKey(requests, num);
 }
 
-bool SctpStateVariables::findPeerRequestNum(uint32 num)
+bool SctpStateVariables::findPeerRequestNum(uint32_t num)
 {
-    if (peerRequests.find(num) != peerRequests.end())
-        return true;
-    return false;
+    return containsKey(peerRequests, num);
 }
 
-bool SctpStateVariables::findPeerStreamToReset(uint16 num)
+bool SctpStateVariables::findPeerStreamToReset(uint16_t num)
 {
-    std::list<uint16>::iterator it;
+    std::list<uint16_t>::iterator it;
     for (it = peerStreamsToReset.begin(); it != peerStreamsToReset.end(); it++) {
         if ((*it) == num)
             return true;
@@ -528,9 +517,9 @@ bool SctpStateVariables::findPeerStreamToReset(uint16 num)
     return false;
 }
 
-bool SctpStateVariables::findMatch(uint16 num)
+bool SctpStateVariables::findMatch(uint16_t num)
 {
-    std::list<uint16>::iterator it;
+    std::list<uint16_t>::iterator it;
     for (it = resetOutStreams.begin(); it != resetOutStreams.end(); it++) {
         if ((*it) == num)
             return true;
@@ -538,9 +527,9 @@ bool SctpStateVariables::findMatch(uint16 num)
     return false;
 }
 
-SctpStateVariables::RequestData* SctpStateVariables::findTypeInRequests(uint16 type)
+SctpStateVariables::RequestData *SctpStateVariables::findTypeInRequests(uint16_t type)
 {
-    for (auto & elem : requests) {
+    for (auto& elem : requests) {
         if (elem.second.type == type) {
             return &(elem.second);
         }
@@ -548,10 +537,10 @@ SctpStateVariables::RequestData* SctpStateVariables::findTypeInRequests(uint16 t
     return nullptr;
 }
 
-uint16 SctpStateVariables::getNumRequestsNotPerformed()
+uint16_t SctpStateVariables::getNumRequestsNotPerformed()
 {
-    uint16 count = 0;
-    for (auto & elem : requests) {
+    uint16_t count = 0;
+    for (auto& elem : requests) {
         if (elem.second.result != PERFORMED && elem.second.result != DEFERRED) {
             count++;
         }
@@ -563,7 +552,7 @@ uint16 SctpStateVariables::getNumRequestsNotPerformed()
 // FSM framework, SCTP FSM
 //
 
-SctpAssociation::SctpAssociation(Sctp *_module, int32 _appGateIndex, int32 _assocId, IRoutingTable *_rt, IInterfaceTable *_ift)
+SctpAssociation::SctpAssociation(Sctp *_module, int32_t _appGateIndex, int32_t _assocId, IRoutingTable *_rt, IInterfaceTable *_ift)
 {
     // ====== Initialize variables ===========================================
     rt = _rt;
@@ -934,11 +923,11 @@ bool SctpAssociation::processTimer(cMessage *msg)
         (this->*ccFunctions.ccUpdateAfterCwndTimeout)(path);
     }
     else if (strcmp(msg->getName(), "StartTesting") == 0) {
-        //if (sctpMain->testing == false)
-        //{
-        //sctpMain->testing = true;
+//        if (sctpMain->testing == false)
+//        {
+//            sctpMain->testing = true;
         EV_DEBUG << "set testing to true\n";
-        //}
+//        }
         // todo: testing was removed.
     }
     else if (path != nullptr && msg == path->ResetTimer) {
@@ -976,7 +965,7 @@ bool SctpAssociation::processTimer(cMessage *msg)
     return performStateTransition(event);
 }
 
-//bool SctpAssociation::processSctpMessage(const Ptr<const SctpHeader>& sctpmsg,
+// bool SctpAssociation::processSctpMessage(const Ptr<const SctpHeader>& sctpmsg,
 bool SctpAssociation::processSctpMessage(SctpHeader *sctpmsg,
         const L3Address& msgSrcAddr,
         const L3Address& msgDestAddr)
@@ -989,7 +978,7 @@ bool SctpAssociation::processSctpMessage(SctpHeader *sctpmsg,
 
     if (fsm->getState() == SCTP_S_ESTABLISHED) {
         bool found = false;
-        for (auto & elem : state->localAddresses) {
+        for (auto& elem : state->localAddresses) {
             if ((elem) == msgDestAddr) {
                 found = true;
                 break;
@@ -1004,7 +993,7 @@ bool SctpAssociation::processSctpMessage(SctpHeader *sctpmsg,
     return process_RCV_Message(sctpmsg, msgSrcAddr, msgDestAddr);
 }
 
-SctpEventCode SctpAssociation::preanalyseAppCommandEvent(int32 commandCode)
+SctpEventCode SctpAssociation::preanalyseAppCommandEvent(int32_t commandCode)
 {
     switch (commandCode) {
         case SCTP_C_ASSOCIATE:
@@ -1056,7 +1045,7 @@ SctpEventCode SctpAssociation::preanalyseAppCommandEvent(int32 commandCode)
             return SCTP_E_ADD_STREAMS;
 
         case SCTP_C_SEND_ASCONF:
-            return SCTP_E_SEND_ASCONF;    // Needed for multihomed NAT
+            return SCTP_E_SEND_ASCONF; // Needed for multihomed NAT
 
         case SCTP_C_SET_STREAM_PRIO:
             return SCTP_E_SET_STREAM_PRIO;
@@ -1076,7 +1065,7 @@ SctpEventCode SctpAssociation::preanalyseAppCommandEvent(int32 commandCode)
     }
 }
 
-bool SctpAssociation::processAppCommand(cMessage *msg, SctpCommandReq* sctpCommand)
+bool SctpAssociation::processAppCommand(cMessage *msg, SctpCommandReq *sctpCommand)
 {
     printAssocBrief();
 
@@ -1144,7 +1133,7 @@ bool SctpAssociation::processAppCommand(cMessage *msg, SctpCommandReq* sctpComma
             state->stopReading = true;
             /* fall through */
 
-        case SCTP_E_SHUTDOWN:    /*sendShutdown*/
+        case SCTP_E_SHUTDOWN: /*sendShutdown*/
             EV_INFO << "SCTP_E_SHUTDOWN in state " << stateName(fsm->getState()) << "\n";
 
             if (fsm->getState() == SCTP_S_SHUTDOWN_RECEIVED) {
@@ -1179,7 +1168,7 @@ bool SctpAssociation::processAppCommand(cMessage *msg, SctpCommandReq* sctpComma
             throw cRuntimeError("Wrong event code");
     }
 
-   // delete sctpCommand;
+//    delete sctpCommand;
     // then state transitions
     return performStateTransition(event);
 }
@@ -1188,13 +1177,13 @@ bool SctpAssociation::performStateTransition(const SctpEventCode& event)
 {
     EV_TRACE << "performStateTransition\n";
 
-    if (event == SCTP_E_IGNORE) {    // e.g. discarded segment
+    if (event == SCTP_E_IGNORE) { // e.g. discarded segment
         EV_DETAIL << "Staying in state: " << stateName(fsm->getState()) << " (no FSM event)\n";
         return true;
     }
 
     // state machine
-    int32 oldState = fsm->getState();
+    int32_t oldState = fsm->getState();
 
     switch (fsm->getState()) {
         case SCTP_S_CLOSED:
@@ -1267,7 +1256,7 @@ bool SctpAssociation::performStateTransition(const SctpEventCode& event)
 
                 case SCTP_E_RCV_COOKIE_ACK:
                     FSM_Goto((*fsm), SCTP_S_ESTABLISHED);
-                   // sendEstabIndicationToApp();
+//                    sendEstabIndicationToApp();
                     break;
 
                 default:
@@ -1426,7 +1415,7 @@ bool SctpAssociation::performStateTransition(const SctpEventCode& event)
         return true;
 }
 
-void SctpAssociation::stateEntered(int32 status)
+void SctpAssociation::stateEntered(int32_t status)
 {
     switch (status) {
         case SCTP_S_COOKIE_WAIT:
@@ -1445,14 +1434,14 @@ void SctpAssociation::stateEntered(int32 status)
             state->enableHeartbeats = sctpMain->getEnableHeartbeats();
             state->sendHeartbeatsOnActivePaths = sctpMain->par("sendHeartbeatsOnActivePaths");
             state->numGapReports = sctpMain->par("numGapReports");
-            state->maxBurst = (uint32)sctpMain->getMaxBurst();
+            state->maxBurst = (uint32_t)sctpMain->getMaxBurst();
             state->rtxMethod = sctpMain->par("RTXMethod");
             state->nrSack = sctpMain->par("nrSack");
             state->disableReneging = sctpMain->par("disableReneging");
             state->checkSackSeqNumber = sctpMain->par("checkSackSeqNumber");
             state->outgoingSackSeqNum = 0;
             state->incomingSackSeqNum = 0;
-            state->fragPoint = (uint32)sctpMain->getFragPoint();
+            state->fragPoint = (uint32_t)sctpMain->getFragPoint();
             state->highSpeedCC = sctpMain->par("highSpeedCC");
             state->initialWindow = sctpMain->par("initialWindow");
             const char *maxBurstVariantPar = sctpMain->par("maxBurstVariant").stringValue();
@@ -1621,13 +1610,13 @@ void SctpAssociation::stateEntered(int32 status)
                 state->cmtCCVariant = SctpStateVariables::CCCV_CMT;
                 state->allowCMT = true;
             }
-            else if(strcmp(sctpMain->par("cmtCCVariant").stringValue(), "lia") == 0){
-               state->cmtCCVariant = SctpStateVariables::CCCV_CMT_LIA;
-               state->allowCMT     = true;
+            else if (strcmp(sctpMain->par("cmtCCVariant").stringValue(), "lia") == 0) {
+                state->cmtCCVariant = SctpStateVariables::CCCV_CMT_LIA;
+                state->allowCMT = true;
             }
-            else if(strcmp(sctpMain->par("cmtCCVariant").stringValue(), "olia") == 0){
-               state->cmtCCVariant = SctpStateVariables::CCCV_CMT_OLIA;
-               state->allowCMT     = true;
+            else if (strcmp(sctpMain->par("cmtCCVariant").stringValue(), "olia") == 0) {
+                state->cmtCCVariant = SctpStateVariables::CCCV_CMT_OLIA;
+                state->allowCMT = true;
             }
             else if ((strcmp(cmtCCVariantPar, "cmtrp") == 0) ||
                      (strcmp(cmtCCVariantPar, "cmtrpv1") == 0))
@@ -1744,9 +1733,10 @@ void SctpAssociation::stateEntered(int32 status)
             state->sendQueueLimit = sctpMain->par("sendQueueLimit");
             EV_INFO << "stateEntered: Established socketId= " << assocId << endl;
             if (isToBeAccepted()) {
-            EV_INFO << "Listening socket can accept now\n";
+                EV_INFO << "Listening socket can accept now\n";
                 sendAvailableIndicationToApp();
-            } else {
+            }
+            else {
                 sendEstabIndicationToApp();
             }
             if (sctpMain->hasPar("addIP")) {

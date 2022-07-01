@@ -1,20 +1,9 @@
 //
-// Copyright (C) 2006-2012 Opensim Ltd
-//  Author: Andras Varga
+// Copyright (C) 2006-2012 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 // NOTE: This file is a near copy of the similar file in OMNeT++ 4.2, but under LGPL.
 // Added here until the same functionality becomes available in OMNeT++ as public API.
@@ -23,6 +12,7 @@
 #define __INET_PATTERNMATCHER_H
 
 #include <stdio.h>
+
 #include <string>
 #include <vector>
 
@@ -82,27 +72,26 @@ class INET_API PatternMatcher
     enum ElemType {
         LITERALSTRING = 0,
         ANYCHAR,
-        COMMONCHAR,    // any char except "."
+        COMMONCHAR, // any char except "."
         SET,
         NEGSET,
         NUMRANGE,
-        ANYSEQ,    // "**": sequence of any chars
-        COMMONSEQ,    // "*": seq of any chars except "."
+        ANYSEQ, // "**": sequence of any chars
+        COMMONSEQ, // "*": seq of any chars except "."
         END
     };
 
-    struct Elem
-    {
+    struct Elem {
         ElemType type = END;
-        std::string literalstring;    // if type==LITERALSTRING
-        std::string setchars;    // SET/NEGSET: character pairs (0,1),(2,3) etc denote char ranges
-        long fromnum = -1, tonum = -1;    // NUMRANGE; -1 means "unset"
+        std::string literalstring; // if type==LITERALSTRING
+        std::string setchars; // SET/NEGSET: character pairs (0,1),(2,3) etc denote char ranges
+        long fromnum = -1, tonum = -1; // NUMRANGE; -1 means "unset"
     };
 
     std::vector<Elem> pattern;
     bool iscasesensitive = false;
 
-    std::string rest;    // used to pass return value from doMatch() to patternPrefixMatches()
+    std::string rest; // used to pass return value from doMatch() to patternPrefixMatches()
 
   private:
     void parseSet(const char *& s, Elem& e);
@@ -110,9 +99,9 @@ class INET_API PatternMatcher
     void parseLiteralString(const char *& s, Elem& e);
     bool parseNumRange(const char *& str, char closingchar, long& lo, long& up);
     std::string debugStrFrom(int from);
-    bool isInSet(char c, const char *set);
+    bool isInSet(char c, const char *set) const;
     // match line from pattern[patternpos]; with last string literal, ignore last suffixlen of pattern
-    bool doMatch(const char *line, int patternpos, int suffixlen);
+    bool doMatch(const char *line, int patternpos, int suffixlen) const;
 
   public:
     /**
@@ -141,7 +130,7 @@ class INET_API PatternMatcher
      * Returns true if the line matches the pattern with the given settings.
      * See setPattern().
      */
-    bool matches(const char *line);
+    bool matches(const char *line) const;
 
     /**
      * Similar to matches(): it returns non-nullptr iif (1) the pattern ends in
@@ -187,5 +176,5 @@ class INET_API PatternMatcher
 
 } // namespace inet
 
-#endif // ifndef __INET_PATTERNMATCHER_H
+#endif
 

@@ -1,20 +1,9 @@
 //
-// Copyright (C) 2004 Andras Varga
+// Copyright (C) 2004 OpenSim Ltd.
 // Copyright (C) 2009-2010 Thomas Reschka
-// Copyright (C) 2010 Zoltan Bojthe
+// Copyright (C) 2010 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
 package inet.transportlayer.tcp;
@@ -208,14 +197,18 @@ simple Tcp like ITcp
         int msl @unit(s) = default(120s);   // Maximum Segment Lifetime
         string tcpAlgorithmClass @enum("TcpVegas", "TcpWestwood", "TcpNewReno", "TcpReno", "TcpTahoe", "TcpNoCongestionControl") = default("TcpReno");
         bool useDataNotification = default(false); // turn the notifications for arrived data on or off
+        int dupthresh = default(3); // used for TcpTahoe, TcpReno and SACK (RFC 3517) DO NOT change unless you really know what you are doing
+        int initialSsthresh = default(0xFFFFFFFF); // initial value for Slow Start threshold used in TahoeRenoFamily. The initial value of ssthresh SHOULD be set arbitrarily high (e.g.,to the size of the largest possible advertised window) Without user interaction there is no limit...
         double stopOperationExtraTime @unit(s) = default(0s);    // extra time after lifecycle stop operation finished
         double stopOperationTimeout @unit(s) = default(2s);    // timeout value for lifecycle stop operation
-        bool ecnWillingness = default(false);	// true if willing to use ECN
+        bool ecnWillingness = default(false); // true if willing to use ECN
+        double dctcpGamma = default(0.0625); // A fixed estimation gain for calculating dctcp_alpha (RFC 8257 4.2)
         @display("i=block/wheelbarrow");
         @signal[tcpConnectionAdded];
         @signal[tcpConnectionRemoved];
         @signal[packetReceivedFromUpper](type=cPacket);
         @signal[packetReceivedFromLower](type=cPacket);
+        @signal[packetDropped](type=inet::Packet);
     gates:
         input appIn @labels(TcpCommand/down) @messageKinds(inet::TcpCommandCode);
         input ipIn @labels(TcpHeader,Ipv4ControlInfo/up,Ipv6ControlInfo/up);

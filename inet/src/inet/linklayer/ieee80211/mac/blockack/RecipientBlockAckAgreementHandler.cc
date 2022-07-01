@@ -1,22 +1,13 @@
 //
 // Copyright (C) 2016 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see http://www.gnu.org/licenses/.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-#include "inet/linklayer/ieee80211/mac/blockack/RecipientBlockAckAgreement.h"
+
 #include "inet/linklayer/ieee80211/mac/blockack/RecipientBlockAckAgreementHandler.h"
+
+#include "inet/linklayer/ieee80211/mac/blockack/RecipientBlockAckAgreement.h"
 
 namespace inet {
 namespace ieee80211 {
@@ -31,7 +22,7 @@ simtime_t RecipientBlockAckAgreementHandler::computeEarliestExpirationTime()
     return earliestTime;
 }
 
-void RecipientBlockAckAgreementHandler::scheduleInactivityTimer(IBlockAckAgreementHandlerCallback* callback)
+void RecipientBlockAckAgreementHandler::scheduleInactivityTimer(IBlockAckAgreementHandlerCallback *callback)
 {
     simtime_t earliestExpirationTime = computeEarliestExpirationTime();
     if (earliestExpirationTime != SIMTIME_MAX)
@@ -44,7 +35,7 @@ void RecipientBlockAckAgreementHandler::scheduleInactivityTimer(IBlockAckAgreeme
 //
 void RecipientBlockAckAgreementHandler::qosFrameReceived(const Ptr<const Ieee80211DataHeader>& qosHeader, IBlockAckAgreementHandlerCallback *callback)
 {
-    if (qosHeader->getAckPolicy() == AckPolicy::BLOCK_ACK) { // TODO: + Implicit Block Ack
+    if (qosHeader->getAckPolicy() == AckPolicy::BLOCK_ACK) { // TODO + Implicit Block Ack
         Tid tid = qosHeader->getTid();
         MacAddress originatorAddr = qosHeader->getTransmitterAddress();
         auto agreement = getAgreement(tid, originatorAddr);
@@ -80,7 +71,7 @@ void RecipientBlockAckAgreementHandler::blockAckAgreementExpired(IProcedureCallb
 // bits. If the intended recipient STA is capable of participating, the originator sends an ADDBA Request frame
 // indicating the TID for which the Block Ack is being set up.
 //
-RecipientBlockAckAgreement* RecipientBlockAckAgreementHandler::addAgreement(const Ptr<const Ieee80211AddbaRequest>& addbaReq)
+RecipientBlockAckAgreement *RecipientBlockAckAgreementHandler::addAgreement(const Ptr<const Ieee80211AddbaRequest>& addbaReq)
 {
     MacAddress originatorAddr = addbaReq->getTransmitterAddress();
     auto id = std::make_pair(originatorAddr, addbaReq->getTid());
@@ -92,7 +83,7 @@ RecipientBlockAckAgreement* RecipientBlockAckAgreementHandler::addAgreement(cons
         return agreement;
     }
     else
-        // TODO: update?
+        // TODO update?
         return it->second;
 }
 
@@ -148,7 +139,7 @@ void RecipientBlockAckAgreementHandler::terminateAgreement(MacAddress originator
     }
 }
 
-RecipientBlockAckAgreement* RecipientBlockAckAgreementHandler::getAgreement(Tid tid, MacAddress originatorAddr)
+RecipientBlockAckAgreement *RecipientBlockAckAgreementHandler::getAgreement(Tid tid, MacAddress originatorAddr)
 {
     auto agreementId = std::make_pair(originatorAddr, tid);
     auto it = blockAckAgreements.find(agreementId);
@@ -180,7 +171,7 @@ void RecipientBlockAckAgreementHandler::processTransmittedDelba(const Ptr<const 
     terminateAgreement(delba->getReceiverAddress(), delba->getTid());
 }
 
-void RecipientBlockAckAgreementHandler::processReceivedDelba(const Ptr<const Ieee80211Delba>& delba, IRecipientBlockAckAgreementPolicy* blockAckAgreementPolicy)
+void RecipientBlockAckAgreementHandler::processReceivedDelba(const Ptr<const Ieee80211Delba>& delba, IRecipientBlockAckAgreementPolicy *blockAckAgreementPolicy)
 {
     if (blockAckAgreementPolicy->isDelbaAccepted(delba))
         terminateAgreement(delba->getReceiverAddress(), delba->getTid());
@@ -194,3 +185,4 @@ RecipientBlockAckAgreementHandler::~RecipientBlockAckAgreementHandler()
 
 } // namespace ieee80211
 } // namespace inet
+

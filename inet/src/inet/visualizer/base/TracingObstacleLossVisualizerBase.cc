@@ -1,24 +1,15 @@
 //
-// Copyright (C) OpenSim Ltd.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
+
+#include "inet/visualizer/base/TracingObstacleLossVisualizerBase.h"
 
 #include <algorithm>
 
 #include "inet/common/ModuleAccess.h"
-#include "inet/visualizer/base/TracingObstacleLossVisualizerBase.h"
 
 namespace inet {
 
@@ -27,10 +18,12 @@ namespace visualizer {
 using namespace inet::physicalenvironment;
 using namespace inet::physicallayer;
 
-TracingObstacleLossVisualizerBase::~TracingObstacleLossVisualizerBase()
+void TracingObstacleLossVisualizerBase::preDelete(cComponent *root)
 {
-    if (displayIntersections)
+    if (displayIntersections) {
         unsubscribe();
+        removeAllObstacleLossVisualizations();
+    }
 }
 
 void TracingObstacleLossVisualizerBase::initialize(int stage)
@@ -87,14 +80,15 @@ void TracingObstacleLossVisualizerBase::subscribe()
 void TracingObstacleLossVisualizerBase::unsubscribe()
 {
     // NOTE: lookup the module again because it may have been deleted first
-    auto visualizationSubjectModule = getModuleFromPar<cModule>(par("visualizationSubjectModule"), this, false);
+    auto visualizationSubjectModule = findModuleFromPar<cModule>(par("visualizationSubjectModule"), this);
     if (visualizationSubjectModule != nullptr)
         visualizationSubjectModule->unsubscribe(ITracingObstacleLoss::obstaclePenetratedSignal, this);
 }
 
 void TracingObstacleLossVisualizerBase::receiveSignal(cComponent *source, simsignal_t signal, cObject *object, cObject *details)
 {
-    Enter_Method_Silent();
+    Enter_Method("%s", cComponent::getSignalName(signal));
+
     if (signal == ITracingObstacleLoss::obstaclePenetratedSignal) {
         if (displayIntersections || displayFaceNormalVectors) {
             auto event = static_cast<ITracingObstacleLoss::ObstaclePenetratedEvent *>(object);
@@ -127,7 +121,7 @@ void TracingObstacleLossVisualizerBase::removeAllObstacleLossVisualizations()
     }
 }
 
-
 } // namespace visualizer
 
-}// namespace inet
+} // namespace inet
+

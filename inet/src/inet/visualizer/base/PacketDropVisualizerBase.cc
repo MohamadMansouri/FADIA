@@ -1,31 +1,23 @@
 //
-// Copyright (C) OpenSim Ltd.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
+
+#include "inet/visualizer/base/PacketDropVisualizerBase.h"
+
 #include <algorithm>
+
 #include "inet/common/LayeredProtocolBase.h"
 #include "inet/common/ModuleAccess.h"
 #include "inet/mobility/contract/IMobility.h"
-#include "inet/visualizer/base/PacketDropVisualizerBase.h"
 
 namespace inet {
 
 namespace visualizer {
 
-PacketDrop::PacketDrop(PacketDropReason reason, const cPacket* packet, const int moduleId, const Coord& position) :
+PacketDrop::PacketDrop(PacketDropReason reason, const cPacket *packet, const int moduleId, const Coord& position) :
     packet(packet),
     moduleId(moduleId),
     position(position)
@@ -38,7 +30,7 @@ PacketDrop::~PacketDrop()
     delete packet;
 }
 
-const cModule* PacketDrop::getModule() const
+const cModule *PacketDrop::getModule() const
 {
     return check_and_cast<cModule *>(cSimulation::getActiveSimulation()->getComponent(moduleId));
 }
@@ -49,13 +41,13 @@ const cModule *PacketDrop::getNetworkNode() const
     return module != nullptr ? findContainingNode(module) : nullptr;
 }
 
-const InterfaceEntry *PacketDrop::getNetworkInterface() const
+const NetworkInterface *PacketDrop::getNetworkInterface() const
 {
     auto module = getModule();
     return module != nullptr ? findContainingNicModule(module) : nullptr;
 }
 
-PacketDropVisualizerBase::PacketDropVisualization::PacketDropVisualization(const PacketDrop* packetDrop) :
+PacketDropVisualizerBase::PacketDropVisualization::PacketDropVisualization(const PacketDrop *packetDrop) :
     packetDrop(packetDrop)
 {
 }
@@ -65,8 +57,8 @@ PacketDropVisualizerBase::PacketDropVisualization::~PacketDropVisualization()
     delete packetDrop;
 }
 
-PacketDropVisualizerBase::DirectiveResolver::DirectiveResolver(const PacketDrop* packetDrop) :
-        packetDrop(packetDrop)
+PacketDropVisualizerBase::DirectiveResolver::DirectiveResolver(const PacketDrop *packetDrop) :
+    packetDrop(packetDrop)
 {
 }
 
@@ -89,7 +81,7 @@ const char *PacketDropVisualizerBase::DirectiveResolver::resolveDirective(char d
     return result.c_str();
 }
 
-void PacketDropVisualizerBase::DetailsFilter::setPattern(const char* pattern)
+void PacketDropVisualizerBase::DetailsFilter::setPattern(const char *pattern)
 {
     matchExpression.setPattern(pattern, true, true, true);
 }
@@ -97,16 +89,15 @@ void PacketDropVisualizerBase::DetailsFilter::setPattern(const char* pattern)
 bool PacketDropVisualizerBase::DetailsFilter::matches(const PacketDropDetails *details) const
 {
     MatchableObject matchableObject(MatchableObject::ATTRIBUTE_FULLNAME, details);
-    // TODO: eliminate const_cast when cMatchExpression::matches becomes const
-    return const_cast<DetailsFilter *>(this)->matchExpression.matches(&matchableObject);
+    return matchExpression.matches(&matchableObject);
 }
 
-PacketDropVisualizerBase::~PacketDropVisualizerBase()
+void PacketDropVisualizerBase::preDelete(cComponent *root)
 {
-    for (auto packetDropVisualization : packetDropVisualizations)
-        delete packetDropVisualization;
-    if (displayPacketDrops)
+    if (displayPacketDrops) {
         unsubscribe();
+        removeAllPacketDropVisualizations();
+    }
 }
 
 void PacketDropVisualizerBase::initialize(int stage)
@@ -117,7 +108,7 @@ void PacketDropVisualizerBase::initialize(int stage)
         displayPacketDrops = par("displayPacketDrops");
         nodeFilter.setPattern(par("nodeFilter"));
         interfaceFilter.setPattern(par("interfaceFilter"));
-        packetFilter.setPattern(par("packetFilter"), par("packetDataFilter"));
+        packetFilter.setExpression(par("packetFilter").objectValue());
         detailsFilter.setPattern(par("detailsFilter"));
         icon = par("icon");
         iconTintAmount = par("iconTintAmount");
@@ -142,7 +133,7 @@ void PacketDropVisualizerBase::handleParameterChange(const char *name)
         else if (!strcmp(name, "interfaceFilter"))
             interfaceFilter.setPattern(par("interfaceFilter"));
         else if (!strcmp(name, "packetFilter"))
-            packetFilter.setPattern(par("packetFilter"), par("packetDataFilter"));
+            packetFilter.setExpression(par("packetFilter").objectValue());
         else if (!strcmp(name, "detailsFilter"))
             detailsFilter.setPattern(par("detailsFilter"));
         else if (!strcmp(name, "labelFormat"))
@@ -185,21 +176,22 @@ void PacketDropVisualizerBase::subscribe()
 void PacketDropVisualizerBase::unsubscribe()
 {
     // NOTE: lookup the module again because it may have been deleted first
-    auto visualizationSubjectModule = getModuleFromPar<cModule>(par("visualizationSubjectModule"), this, false);
+    auto visualizationSubjectModule = findModuleFromPar<cModule>(par("visualizationSubjectModule"), this);
     if (visualizationSubjectModule != nullptr)
         visualizationSubjectModule->unsubscribe(packetDroppedSignal, this);
 }
 
 void PacketDropVisualizerBase::receiveSignal(cComponent *source, simsignal_t signal, cObject *object, cObject *details)
 {
-    Enter_Method_Silent();
+    Enter_Method("%s", cComponent::getSignalName(signal));
+
     if (signal == packetDroppedSignal) {
         auto module = check_and_cast<cModule *>(source);
         auto packet = check_and_cast<cPacket *>(object);
         auto packetDropDetails = check_and_cast<PacketDropDetails *>(details);
         auto networkNode = findContainingNode(module);
-        auto interfaceEntry = findContainingNicModule(module);
-        if ((networkNode == nullptr || nodeFilter.matches(networkNode)) && (interfaceEntry == nullptr || interfaceFilter.matches(interfaceEntry)) &&
+        auto networkInterface = findContainingNicModule(module);
+        if ((networkNode == nullptr || nodeFilter.matches(networkNode)) && (networkInterface == nullptr || interfaceFilter.matches(networkInterface)) &&
             packetFilter.matches(packet) && detailsFilter.matches(packetDropDetails))
         {
             auto position = networkNode != nullptr ? getPosition(networkNode) : Coord::NIL;

@@ -1,18 +1,7 @@
 //
 // Copyright (C) 2010 Helene Lageber
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
 #ifndef __INET_BGPROUTINGTABLEENTRY_H
@@ -27,7 +16,7 @@ namespace bgp {
 
 class INET_API BgpRoutingTableEntry : public Ipv4Route
 {
-private:
+  private:
     typedef unsigned char RoutingPathType;
     // destinationID is RoutingEntry::host
     // addressMask is RoutingEntry::netmask
@@ -50,7 +39,7 @@ private:
     int getLocalPreference(void) const { return localPreference; }
     void setLocalPreference(int l) { localPreference = l; }
     bool isIBgpLearned(void) { return IBGP_learned; }
-    void setIBgpLearned(bool i) { IBGP_learned = i;}
+    void setIBgpLearned(bool i) { IBGP_learned = i; }
     virtual std::string str() const;
 };
 
@@ -74,11 +63,11 @@ inline BgpRoutingTableEntry::BgpRoutingTableEntry(const Ipv4Route *entry)
 
 inline const std::string BgpRoutingTableEntry::getPathTypeString(RoutingPathType type)
 {
-    if(type == IGP)
+    if (type == IGP)
         return "IGP";
-    else if(type == EGP)
+    else if (type == EGP)
         return "EGP";
-    else if(type == INCOMPLETE)
+    else if (type == INCOMPLETE)
         return "INCOMPLETE";
 
     return "Unknown";
@@ -99,7 +88,7 @@ inline std::ostream& operator<<(std::ostream& out, BgpRoutingTableEntry& entry)
         << " cost: " << entry.getMetric()
         << " if: " << entry.getInterfaceName()
         << " origin: " << BgpRoutingTableEntry::getPathTypeString(entry.getPathType());
-    if(entry.isIBgpLearned())
+    if (entry.isIBgpLearned())
         out << " localPref: " << entry.getLocalPreference();
     out << " ASlist: ";
     for (uint32_t i = 0; i < entry.getASCount(); i++)
@@ -127,7 +116,7 @@ inline std::string BgpRoutingTableEntry::str() const
         out << "*  ";
     else
         out << getGateway() << "  ";
-    if(getRoutingTable() && getRoutingTable()->isAdminDistEnabled())
+    if (getRoutingTable() && getRoutingTable()->isAdminDistEnabled())
         out << "AD:" << getAdminDist() << "  ";
     out << "metric:" << getMetric() << "  ";
     out << "if:";
@@ -137,10 +126,10 @@ inline std::string BgpRoutingTableEntry::str() const
         out << getInterfaceName();
 
     out << " origin: " << BgpRoutingTableEntry::getPathTypeString(_pathType);
-    if(IBGP_learned)
+    if (IBGP_learned)
         out << " localPref: " << getLocalPreference();
     out << " ASlist: ";
-    for (auto &element : _ASList)
+    for (auto& element : _ASList)
         out << element << ' ';
 
     return out.str();
@@ -150,5 +139,5 @@ inline std::string BgpRoutingTableEntry::str() const
 
 } // namespace inet
 
-#endif // ifndef __INET_BGPROUTINGTABLEENTRY_H
+#endif
 

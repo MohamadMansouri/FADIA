@@ -1,19 +1,9 @@
 //
 // Copyright (C) 2016 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see http://www.gnu.org/licenses/.
-//
+
 
 #include "inet/linklayer/ieee80211/mac/aggregation/MsduDeaggregation.h"
 
@@ -26,25 +16,21 @@ void MsduDeaggregation::setExplodedFrameAddress(const Ptr<Ieee80211DataHeader>& 
 {
     bool toDS = aMsduHeader->getToDS();
     bool fromDS = aMsduHeader->getFromDS();
-    if (fromDS == 0 && toDS == 0) // STA to STA
-    {
+    if (fromDS == 0 && toDS == 0) { // STA to STA
         header->setTransmitterAddress(aMsduHeader->getTransmitterAddress());
         header->setReceiverAddress(aMsduHeader->getReceiverAddress());
     }
-    else if (fromDS == 1 && toDS == 0) // AP to STA
-    {
+    else if (fromDS == 1 && toDS == 0) { // AP to STA
         header->setTransmitterAddress(aMsduHeader->getTransmitterAddress());
         header->setReceiverAddress(subframeHeader->getDa());
         header->setAddress3(subframeHeader->getSa());
     }
-    else if (fromDS == 0 && toDS == 1) // STA to AP
-    {
+    else if (fromDS == 0 && toDS == 1) { // STA to AP
         header->setTransmitterAddress(subframeHeader->getSa());
         header->setReceiverAddress(aMsduHeader->getReceiverAddress());
         header->setAddress3(subframeHeader->getDa());
     }
-    else if (fromDS == 1 && toDS == 1) // AP to AP
-    {
+    else if (fromDS == 1 && toDS == 1) { // AP to AP
         header->setReceiverAddress(aMsduHeader->getReceiverAddress());
         header->setTransmitterAddress(aMsduHeader->getTransmitterAddress());
         header->setAddress3(subframeHeader->getDa());
@@ -63,8 +49,7 @@ std::vector<Packet *> *MsduDeaggregation::deaggregateFrame(Packet *aggregatedFra
     int tid = amsduHeader->getTid();
     int paddingLength = 0;
     cStringTokenizer tokenizer(aggregatedFrame->getName(), "+");
-    while (aggregatedFrame->getDataLength() > b(0))
-    {
+    while (aggregatedFrame->getDataLength() > b(0)) {
         aggregatedFrame->setFrontOffset(aggregatedFrame->getFrontOffset() + B(paddingLength == 4 ? 0 : paddingLength));
         const auto& msduSubframeHeader = aggregatedFrame->popAtFront<Ieee80211MsduSubframeHeader>();
         const auto& msdu = aggregatedFrame->peekDataAt(b(0), B(msduSubframeHeader->getLength()));
@@ -73,13 +58,14 @@ std::vector<Packet *> *MsduDeaggregation::deaggregateFrame(Packet *aggregatedFra
         auto frame = new Packet();
         frame->setName(tokenizer.nextToken());
         frame->insertAtBack(msdu);
+        frame->getRegionTags().copyTags(aggregatedFrame->getRegionTags(), aggregatedFrame->getFrontOffset() - frame->getDataLength(), frame->getFrontOffset(), frame->getDataLength());
         auto header = makeShared<Ieee80211DataHeader>();
         header->setType(ST_DATA_WITH_QOS);
         header->addChunkLength(QOSCONTROL_PART_LENGTH);
         header->setToDS(amsduHeader->getToDS());
         header->setFromDS(amsduHeader->getFromDS());
         header->setTid(tid);
-        header->setSequenceNumber(0);
+        header->setSequenceNumber(SequenceNumberCyclic(0));
         setExplodedFrameAddress(header, msduSubframeHeader, amsduHeader);
         frame->insertAtFront(header);
         frame->insertAtBack(makeShared<Ieee80211MacTrailer>());

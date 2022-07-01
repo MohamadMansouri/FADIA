@@ -1,3 +1,7 @@
+//
+// SPDX-License-Identifier: LGPL-3.0-or-later
+//
+//
 /* -*- mode:c++ -*- ********************************************************
  * file:        Posture.cc
  *
@@ -10,13 +14,6 @@
  *              Eindhoven University of Technology (TU/e), the Netherlands.
  *
  *
- *              This program is free software; you can redistribute it
- *              and/or modify it under the terms of the GNU General Public
- *              License as published by the Free Software Foundation; either
- *              version 2 of the License, or (at your option) any later
- *              version.
- *              For further information see file COPYING
- *              in the top level directory
  ***************************************************************************
  * part of:    MoBAN (Mobility Model for wireless Body Area Networks)
  * description:     A class to store the specification of a posture
@@ -64,19 +61,19 @@ Posture::Posture(unsigned int ID, unsigned int num)
 
 Posture::~Posture()
 {
-    delete [] nodePs;
-    delete [] nodeRadius;
-    delete [] nodeSpeed;
+    delete[] nodePs;
+    delete[] nodeRadius;
+    delete[] nodeSpeed;
 
     for (unsigned int i = 0; i < numNodes; ++i)
-        delete [] alphaMean[i];
-    delete [] alphaMean;
+        delete[] alphaMean[i];
+    delete[] alphaMean;
 
     for (unsigned int i = 0; i < numNodes; ++i)
-        delete [] alphaSD[i];
-    delete [] alphaSD;
+        delete[] alphaSD[i];
+    delete[] alphaSD;
 
-    delete [] posture_name;
+    delete[] posture_name;
 }
 
 bool Posture::setPs(unsigned int i, Coord ps)
@@ -90,7 +87,7 @@ bool Posture::setPs(unsigned int i, Coord ps)
 
 bool Posture::setPostureName(char *str)
 {
-    delete [] posture_name;
+    delete[] posture_name;
     posture_name = opp_strdup(str);
     return true;
 }

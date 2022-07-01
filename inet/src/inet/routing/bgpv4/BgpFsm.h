@@ -1,18 +1,7 @@
 //
 // Copyright (C) 2010 Helene Lageber
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
 #ifndef __INET_BGPFSM_H
@@ -20,7 +9,6 @@
 
 #include <iostream>
 
-#include "inet/common/INETDefs.h"
 #include "inet/common/Macho.h"
 
 namespace inet {
@@ -36,8 +24,7 @@ namespace fsm {
 
 // Machine's top state
 TOPSTATE(TopState) {
-    struct Box
-    {
+    struct Box {
         Box() : _mod(0) {}
         Box(BgpSession& session) : _mod(&session) {}
         BgpSession& getModule() { return *_mod; }
@@ -58,7 +45,7 @@ TOPSTATE(TopState) {
     /*Event 2: ManualStop
        Definition: Local system administrator manually stops the peer connection.
        Status:     Mandatory*/
-    //virtual void event2() {}
+//     virtual void event2() {}
 
     // RFC 4271, 8.1.3.  Timer Events
     // -------------------------------------
@@ -76,7 +63,7 @@ TOPSTATE(TopState) {
        Status:     Mandatory*/
     virtual void KeepaliveTimer_Expires() {}
 
-    //RFC 4271, 8.1.4.  TCP Connection-Based Events
+    // RFC 4271, 8.1.4.  TCP Connection-Based Events
     // -------------------------------------
     /*Event 16: Tcp_CR_Acked
        Definition: Event indicating the local system's request to
@@ -84,7 +71,7 @@ TOPSTATE(TopState) {
                  The local system's TCP connection sent a TCP SYN,
                  received a TCP SYN/ACK message, and sent a TCP ACK.
        Status:     Mandatory*/
-    //virtual void Tcp_CR_Acked() {}
+//     virtual void Tcp_CR_Acked() {}
     /*Event 17: TcpConnectionConfirmed
        Definition: Event indicating that the local system has received
                  a confirmation that the TCP connection has been
@@ -105,7 +92,7 @@ TOPSTATE(TopState) {
        Status:     Mandatory*/
     virtual void TcpConnectionFails() {}
 
-    //RFC 4271, 8.1.5.  BGP Message-Based Events
+    // RFC 4271, 8.1.5.  BGP Message-Based Events
     // -------------------------------------
     /*Event 19: OpenMsgEvent
        Definition: An event is generated when a valid OPEN message has been received.
@@ -227,5 +214,5 @@ SUBSTATE(Established, TopState) {
 
 } // namespace inet
 
-#endif // ifndef __INET_BGPFSM_H
+#endif
 

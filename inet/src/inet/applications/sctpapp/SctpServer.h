@@ -2,24 +2,13 @@
 // Copyright (C) 2008 Irene Ruengeler
 // Copyright (C) 2009-2015 Thomas Dreibholz
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 #ifndef __INET_SCTPSERVER_H
 #define __INET_SCTPSERVER_H
 
-#include "inet/common/INETDefs.h"
 #include "inet/common/lifecycle/LifecycleUnsupported.h"
 #include "inet/common/packet/Message.h"
 #include "inet/transportlayer/contract/sctp/SctpSocket.h"
@@ -33,8 +22,7 @@ namespace inet {
 class INET_API SctpServer : public cSimpleModule, public LifecycleUnsupported
 {
   protected:
-    struct ServerAssocStat
-    {
+    struct ServerAssocStat {
         simtime_t start;
         simtime_t stop;
         simtime_t lifeTime;
@@ -79,7 +67,7 @@ class INET_API SctpServer : public cSimpleModule, public LifecycleUnsupported
     unsigned long int bytesSent;
     unsigned long int packetsSent;
     unsigned long int packetsRcvd;
-    unsigned long int numRequestsToSend;    // requests to send in this session
+    unsigned long int numRequestsToSend; // requests to send in this session
     BytesPerAssoc bytesPerAssoc;
     ServerAssocStatMap serverAssocStatMap;
 
@@ -93,7 +81,7 @@ class INET_API SctpServer : public cSimpleModule, public LifecycleUnsupported
     void sendOrSchedule(Message *msg);
     void sendOrSchedule(Packet *pkt);
 
-    Message *makeAbortNotification(SctpCommandReq *msg);
+    Message *makeAbortNotification(const SctpCommandReq *msg);
     Message *makeReceiveRequest(cMessage *msg);
     Message *makeDefaultReceive();
     void generateAndSend();
@@ -105,5 +93,5 @@ class INET_API SctpServer : public cSimpleModule, public LifecycleUnsupported
 
 } // namespace inet
 
-#endif // ifndef __INET_SCTPSERVER_H
+#endif
 

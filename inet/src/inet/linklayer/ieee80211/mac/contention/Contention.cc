@@ -1,24 +1,15 @@
 //
 // Copyright (C) 2016 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see http://www.gnu.org/licenses/.
-//
+
+
+#include "inet/linklayer/ieee80211/mac/contention/Contention.h"
 
 #include "inet/common/FSMA.h"
 #include "inet/common/ModuleAccess.h"
 #include "inet/linklayer/ieee80211/mac/Ieee80211Frame_m.h"
-#include "inet/linklayer/ieee80211/mac/contention/Contention.h"
 
 namespace inet {
 namespace ieee80211 {
@@ -29,8 +20,7 @@ simsignal_t Contention::stateChangedSignal = registerSignal("stateChanged");
 Register_Enum(Contention::State,
         (Contention::IDLE,
          Contention::DEFER,
-         Contention::IFS_AND_BACKOFF)
-         );
+         Contention::IFS_AND_BACKOFF));
 
 Define_Module(Contention);
 
@@ -42,7 +32,7 @@ void Contention::initialize(int stage)
         mac = check_and_cast<Ieee80211Mac *>(getContainingNicModule(this)->getSubmodule("mac"));
         startTxEvent = new cMessage("startTx");
         startTxEvent->setSchedulingPriority(1000); // low priority, i.e. processed later than most events for the same time
-        // KLUDGE:
+        // KLUDGE
         // The callback->channelAccessGranted() call should be the last
         // event at a simulation time in order to handle internal collisions
         // properly.
@@ -81,7 +71,7 @@ void Contention::startContention(int cw, simtime_t ifs, simtime_t eifs, simtime_
 {
     startTime = simTime();
     ASSERT(ifs >= 0 && eifs >= 0 && slotTime >= 0 && cw >= 0);
-    Enter_Method_Silent("startContention");
+    Enter_Method("startContention");
     cancelEvent(channelGrantedEvent);
     ASSERT(fsm.getState() == IDLE);
     this->ifs = ifs;
@@ -154,7 +144,7 @@ void Contention::handleWithFSM(EventType event)
     }
     emit(stateChangedSignal, fsm.getState());
     if (finallyReportChannelAccessGranted)
-        scheduleAt(simTime(), channelGrantedEvent);
+        scheduleAfter(SIMTIME_ZERO, channelGrantedEvent);
     if (hasGUI()) {
         if (startTxEvent->isScheduled())
             updateDisplayString(startTxEvent->getArrivalTime());
@@ -165,7 +155,7 @@ void Contention::handleWithFSM(EventType event)
 
 void Contention::mediumStateChanged(bool mediumFree)
 {
-    Enter_Method_Silent(mediumFree ? "medium FREE" : "medium BUSY");
+    Enter_Method(mediumFree ? "medium FREE" : "medium BUSY");
     this->mediumFree = mediumFree;
     lastChannelBusyTime = simTime();
     handleWithFSM(MEDIUM_STATE_CHANGED);
@@ -189,7 +179,7 @@ void Contention::handleMessage(cMessage *msg)
 
 void Contention::corruptedFrameReceived()
 {
-    Enter_Method_Silent("corruptedFrameReceived");
+    Enter_Method("corruptedFrameReceived");
     handleWithFSM(CORRUPTED_FRAME_RECEIVED);
 }
 
@@ -228,7 +218,7 @@ void Contention::scheduleTransmissionRequest()
             waitInterval -= backoffOptimizationDelta;
     }
     scheduledTransmissionTime = now + waitInterval;
-    EV_INFO << ", waitInterval = " <<  waitInterval << ".\n";
+    EV_INFO << ", waitInterval = " << waitInterval << ".\n";
     scheduleTransmissionRequestFor(scheduledTransmissionTime);
 }
 
@@ -248,7 +238,7 @@ void Contention::computeRemainingBackoffSlots()
         backoffSlots = remainingSlots;
 }
 
-// TODO: we should call it when internal collision occurs after backoff optimization
+// TODO we should call it when internal collision occurs after backoff optimization
 void Contention::revokeBackoffOptimization()
 {
     EV_DEBUG << "Revoking backoff optimization: backoffOptimizationDelta = " << backoffOptimizationDelta << std::endl;
@@ -272,10 +262,11 @@ const char *Contention::getEventName(EventType event)
 #undef CASE
 }
 
-void Contention::updateDisplayString(simtime_t expectedChannelAccess)
+void Contention::updateDisplayString(simtime_t expectedChannelAccess) const
 {
     getDisplayString().setTagArg("t", 0, fsm.getStateName());
 }
 
 } // namespace ieee80211
 } // namespace inet
+

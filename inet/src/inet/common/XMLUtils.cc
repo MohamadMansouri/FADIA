@@ -1,5 +1,5 @@
-
 #include "inet/common/XMLUtils.h"
+
 #include "inet/networklayer/common/L3AddressResolver.h"
 
 namespace inet {

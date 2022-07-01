@@ -1,26 +1,18 @@
 //
-// (C) 2005 Vojtech Janota
+// Copyright (C) 2005 Vojtech Janota
 //
-// This library is free software, you can redistribute it
-// and/or modify
-// it under  the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation;
-// either version 2 of the License, or any later version.
-// The library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-// See the GNU Lesser General Public License for more details.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-#ifndef __INET_RSVP_H
-#define __INET_RSVP_H
+#ifndef __INET_RSVPTE_H
+#define __INET_RSVPTE_H
 
 #include <vector>
 
-#include "inet/common/INETDefs.h"
+#include "inet/common/ModuleRefByPar.h"
 #include "inet/common/scenario/IScriptable.h"
-#include "inet/networklayer/rsvpte/IntServ_m.h"
 #include "inet/networklayer/rsvpte/IRsvpClassifier.h"
+#include "inet/networklayer/rsvpte/IntServ_m.h"
 #include "inet/networklayer/rsvpte/RsvpHelloMsg_m.h"
 #include "inet/networklayer/rsvpte/RsvpPathMsg_m.h"
 #include "inet/networklayer/rsvpte/RsvpResvMsg_m.h"
@@ -42,8 +34,7 @@ class INET_API RsvpTe : public RoutingProtocolBase, public IScriptable
 {
   protected:
 
-    struct traffic_path_t
-    {
+    struct traffic_path_t {
         SenderTemplateObj sender;
         SenderTspecObj tspec;
 
@@ -55,8 +46,7 @@ class INET_API RsvpTe : public RoutingProtocolBase, public IScriptable
         int color;
     };
 
-    struct traffic_session_t
-    {
+    struct traffic_session_t {
         SessionObj sobj;
 
         std::vector<traffic_path_t> paths;
@@ -67,8 +57,7 @@ class INET_API RsvpTe : public RoutingProtocolBase, public IScriptable
     /**
      * Path State Block (PSB) structure
      */
-    struct PathStateBlock
-    {
+    struct PathStateBlock {
         // SESSION object structure
         SessionObj Session_Object;
 
@@ -82,7 +71,7 @@ class INET_API RsvpTe : public RoutingProtocolBase, public IScriptable
         Ipv4Address Previous_Hop_Address;
 
         // Logical Interface Handle from PHOP object
-        //Ipv4Address LIH;
+//        Ipv4Address LIH;
 
         // List of outgoing Interfaces for this (sender, destination) single entry for unicast case
         Ipv4Address OutInterface;
@@ -93,7 +82,7 @@ class INET_API RsvpTe : public RoutingProtocolBase, public IScriptable
         // PSB unique identifier
         int id;
 
-        // XXX nam colors
+        // TODO nam colors
         int color;
 
         // timer/timeout routines
@@ -109,8 +98,7 @@ class INET_API RsvpTe : public RoutingProtocolBase, public IScriptable
     /**
      * Reservation State Block (RSB) structure
      */
-    struct ResvStateBlock
-    {
+    struct ResvStateBlock {
         // SESSION object structure
         SessionObj Session_Object;
 
@@ -126,8 +114,8 @@ class INET_API RsvpTe : public RoutingProtocolBase, public IScriptable
         // input labels we have currently installed in the database
         std::vector<int> inLabelVector;
 
-        //we always use shared explicit
-        //int style;
+        // we always use shared explicit
+//        int style;
 
         // FLOWSPEC structure
         FlowSpecObj Flowspec_Object;
@@ -146,8 +134,7 @@ class INET_API RsvpTe : public RoutingProtocolBase, public IScriptable
     /**
      * RSVP Hello State structure
      */
-    struct HelloState
-    {
+    struct HelloState {
         Ipv4Address peer;
 
         int srcInstance;
@@ -171,12 +158,11 @@ class INET_API RsvpTe : public RoutingProtocolBase, public IScriptable
     simtime_t retryInterval;
 
   protected:
-    Ted *tedmod = nullptr;
-    IIpv4RoutingTable *rt = nullptr;
-    IInterfaceTable *ift = nullptr;
-    LibTable *lt = nullptr;
-
-    IRsvpClassifier *rpct = nullptr;
+    ModuleRefByPar<Ted> tedmod;
+    ModuleRefByPar<IIpv4RoutingTable> rt;
+    ModuleRefByPar<IInterfaceTable> ift;
+    ModuleRefByPar<LibTable> lt;
+    ModuleRefByPar<IRsvpClassifier> rpct;
 
     int maxPsbId = 0;
     int maxRsbId = 0;
@@ -310,5 +296,5 @@ std::ostream& operator<<(std::ostream& os, const FlowSpecObj& a);
 
 } // namespace inet
 
-#endif // ifndef __INET_RSVP_H
+#endif
 

@@ -1,24 +1,13 @@
-/***************************************************************************
-                       RTP.h  -  description
-                             -------------------
-    begin            : Fri Aug 2 2007
-    copyright        : (C) 2007 by Matthias Oppitz,  Ahmed Ayadi
-    email            : <Matthias.Oppitz@gmx.de> <ahmed.ayadi@sophia.inria.fr>
-***************************************************************************/
-
-/***************************************************************************
-*                                                                         *
-*   This program is free software; you can redistribute it and/or modify  *
-*   it under the terms of the GNU General Public License as published by  *
-*   the Free Software Foundation; either version 2 of the License, or     *
-*   (at your option) any later version.                                   *
-*                                                                         *
-***************************************************************************/
+//
+// Copyright (C) 2001 Matthias Oppitz <Matthias.Oppitz@gmx.de>
+// Copyright (C) 2007 Ahmed Ayadi <ahmed.ayadi@sophia.inria.fr>
+//
+// SPDX-License-Identifier: LGPL-3.0-or-later
+//
 
 #ifndef __INET_RTP_H
 #define __INET_RTP_H
 
-#include "inet/common/INETDefs.h"
 #include "inet/common/lifecycle/LifecycleUnsupported.h"
 #include "inet/networklayer/common/L3Address.h"
 #include "inet/transportlayer/contract/udp/UdpSocket.h"
@@ -205,5 +194,5 @@ class INET_API Rtp : public cSimpleModule, public LifecycleUnsupported
 } // namespace rtp
 } // namespace inet
 
-#endif // ifndef __INET_RTP_H
+#endif
 

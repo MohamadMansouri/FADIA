@@ -1,18 +1,7 @@
 //
 // Copyright (C) 2010 Helene Lageber
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
 package inet.examples.bgpv4.BgpUpdate;
@@ -21,6 +10,7 @@ import inet.common.MessageDispatcher;
 import inet.common.misc.MessageChecker;
 import inet.linklayer.contract.IEthernetInterface;
 import inet.linklayer.contract.IPppInterface;
+import inet.linklayer.ethernet.contract.IEthernetLayer;
 import inet.networklayer.common.InterfaceTable;
 import inet.networklayer.ipv4.Ipv4NetworkLayer;
 import inet.routing.bgpv4.Bgp;
@@ -39,8 +29,9 @@ module BGPRouterEx
         @display("i=abstract/router");
         bool forwarding = true;
         bool multicastForwarding = default(false);
-        *.forwarding = forwarding;
-        *.multicastForwarding = multicastForwarding;
+        ethernet.registerProtocol = default(true);
+        *.forwarding = this.forwarding;
+        *.multicastForwarding = this.multicastForwarding;
         *.interfaceTableModule = default(absPath(".interfaceTable"));
         *.routingTableModule = default(absPath(".ipv4.routingTable"));
     gates:
@@ -53,24 +44,24 @@ module BGPRouterEx
         }
         ospf: Ospfv2 {
             parameters:
-                @display("p=400,400,row;i=block/network2");
+                @display("p=400,240,row;i=block/network2");
         }
         bgp: Bgp {
             parameters:
                 ospfRoutingModule = "^.ospf";
-                @display("p=325,80;i=block/network");
+                @display("p=250,80;i=block/network");
         }
         snifferIn: MessageChecker {
             parameters:
-                @display("i=block/uparrow_s;p=250,160");
+                @display("i=block/uparrow_s;p=175,160");
         }
         snifferOut: MessageChecker {
             parameters:
-                @display("i=block/downarrow_s;p=400,160");
+                @display("i=block/downarrow_s;p=325,160");
         }
         tcp: <default(firstAvailable("Tcp","TcpLwip","TcpNsc"))> like ITcp {
             parameters:
-                @display("p=325,240;i=block/transport");
+                @display("p=250,240;i=block/transport");
         }
         tn: MessageDispatcher {
             parameters:
@@ -85,13 +76,20 @@ module BGPRouterEx
             parameters:
                 @display("b=400,5,,,,1;p=325,480");
         }
+        ethernet: <default("EthernetEncapsulation")> like IEthernetLayer if typename != "" {
+            @display("p=250,560");
+        }
+        li: MessageDispatcher {
+            parameters:
+                @display("b=400,5,,,,1;p=325,640");
+        }
         ppp[sizeof(pppg)]: <default("PppInterface")> like IPppInterface {
             parameters:
-                @display("p=250,560,row,110;q=l2queue;i=block/ifcard");
+                @display("p=250,720,row,110;q=l2queue;i=block/ifcard");
         }
         eth[sizeof(ethg)]: <default("EthernetInterface")> like IEthernetInterface {
             parameters:
-                @display("p=400,560,row,110;q=l2queue;i=block/ifcard");
+                @display("p=400,720,row,110;q=l2queue;i=block/ifcard");
         }
     connections allowunconnected:
         bgp.socketOut --> { @display("m=s"); } --> snifferOut.in;
@@ -111,17 +109,25 @@ module BGPRouterEx
         ipv4.ifOut --> { @display("m=s"); } --> nl.in++;
         ipv4.ifIn <-- { @display("m=s"); } <-- nl.out++;
 
+        nl.out++ --> li.in++;
+        li.out++ --> nl.in++;
+
+        nl.out++ --> ethernet.upperLayerIn if exists(ethernet);
+        ethernet.upperLayerOut --> nl.in++ if exists(ethernet);
+        ethernet.lowerLayerOut --> li.in++ if exists(ethernet);
+        li.out++ --> ethernet.lowerLayerIn if exists(ethernet);
+
         // connections to network outside
         for i=0..sizeof(pppg)-1 {
             pppg[i] <--> ppp[i].phys;
-            ppp[i].upperLayerOut --> nl.in++;
-            ppp[i].upperLayerIn <-- nl.out++;
+            ppp[i].upperLayerOut --> li.in++;
+            ppp[i].upperLayerIn <-- li.out++;
         }
 
         for i=0..sizeof(ethg)-1 {
             ethg[i] <--> eth[i].phys;
-            eth[i].upperLayerOut --> nl.in++;
-            eth[i].upperLayerIn <-- nl.out++;
+            eth[i].upperLayerOut --> li.in++;
+            eth[i].upperLayerIn <-- li.out++;
         }
 }
 

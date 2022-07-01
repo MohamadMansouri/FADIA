@@ -1,30 +1,16 @@
-/*
- * Copyright (C) 2003 Andras Varga; CTIE, Monash University, Australia
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program; if not, see <http://www.gnu.org/licenses/>.
- */
+//
+// Copyright (C) 2003 Andras Varga; CTIE, Monash University, Australia
+//
+// SPDX-License-Identifier: LGPL-3.0-or-later
+//
+
+#include "inet/linklayer/common/MacAddress.h"
 
 #include <ctype.h>
 
-#include "inet/linklayer/common/MacAddress.h"
 #include "inet/networklayer/common/InterfaceToken.h"
-#include "inet/networklayer/contract/ipv4/Ipv4Address.h"
 
 namespace inet {
-
-unsigned int MacAddress::autoAddressCtr;
-bool MacAddress::simulationLifecycleListenerAdded;
 
 const MacAddress MacAddress::UNSPECIFIED_ADDRESS;
 const MacAddress MacAddress::BROADCAST_ADDRESS("ff:ff:ff:ff:ff:ff");
@@ -47,7 +33,7 @@ void MacAddress::setAddressByte(unsigned int k, unsigned char addrbyte)
     if (k >= MAC_ADDRESS_SIZE)
         throw cRuntimeError("Array of size 6 indexed with %d", k);
     int offset = (MAC_ADDRESS_SIZE - k - 1) * 8;
-    address = (address & (~(((uint64)0xff) << offset))) | (((uint64)addrbyte) << offset);
+    address = (address & (~(((uint64_t)0xff) << offset))) | (((uint64_t)addrbyte) << offset);
 }
 
 bool MacAddress::tryParse(const char *hexstr)
@@ -69,7 +55,7 @@ bool MacAddress::tryParse(const char *hexstr)
     // Converts hex string into the address
     // if hext string is shorter, address is filled with zeros;
     // Non-hex characters are discarded before conversion.
-    address = 0;    // clear top 16 bits too that setAddressByte() calls skip
+    address = 0; // clear top 16 bits too that setAddressByte() calls skip
     int k = 0;
     const char *s = hexstr;
     for (int pos = 0; pos < MAC_ADDRESS_SIZE; pos++) {
@@ -117,7 +103,7 @@ void MacAddress::getAddressBytes(unsigned char *addrbytes) const
 
 void MacAddress::setAddressBytes(unsigned char *addrbytes)
 {
-    address = 0;    // clear top 16 bits too that setAddressByte() calls skip
+    address = 0; // clear top 16 bits too that setAddressByte() calls skip
     for (int i = 0; i < MAC_ADDRESS_SIZE; i++)
         setAddressByte(i, addrbytes[i]);
 }
@@ -134,44 +120,21 @@ std::string MacAddress::str() const
 
 int MacAddress::compareTo(const MacAddress& other) const
 {
-    return (address < other.address) ? -1 : (address == other.address) ? 0 : 1;    // note: "return address-other.address" is not OK because 64-bit result does not fit into the return type
+    return (address < other.address) ? -1 : (address == other.address) ? 0 : 1; // note: "return address-other.address" is not OK because 64-bit result does not fit into the return type
 }
 
 InterfaceToken MacAddress::formInterfaceIdentifier() const
 {
-    uint32 high = ((address >> 16) | 0xff) ^ 0x02000000;
-    uint32 low = (0xfe << 24) | (address & 0xffffff);
+    uint32_t high = ((address >> 16) | 0xff) ^ 0x02000000;
+    uint32_t low = (0xfe << 24) | (address & 0xffffff);
     return InterfaceToken(low, high, 64);
 }
 
 MacAddress MacAddress::generateAutoAddress()
 {
-    if (!simulationLifecycleListenerAdded) {
-        // NOTE: EXECUTE_ON_STARTUP is too early and would add the listener to StaticEnv
-        getEnvir()->addLifecycleListener(new MacAddress::SimulationLifecycleListener());
-        simulationLifecycleListenerAdded = true;
-    }
-    ++autoAddressCtr;
-
-    uint64 intAddr = 0x0AAA00000000ULL + (autoAddressCtr & 0xffffffffUL);
-    MacAddress addr(intAddr);
-    return addr;
-}
-
-// see  RFC 1112, section 6.4
-MacAddress MacAddress::makeMulticastAddress(Ipv4Address addr)
-{
-    ASSERT(addr.isMulticast());
-
-    MacAddress macAddr;
-    macAddr.setAddressByte(0, 0x01);
-    macAddr.setAddressByte(1, 0x00);
-    macAddr.setAddressByte(2, 0x5e);
-    macAddr.setAddressByte(3, addr.getDByte(1) & 0x7f);
-    macAddr.setAddressByte(4, addr.getDByte(2));
-    macAddr.setAddressByte(5, addr.getDByte(3));
-    return macAddr;
+    static SimulationRunUniqueNumberGenerator<uint64_t> counter;
+    uint64_t raw = 0x0AAA00000000ULL + (counter.getNextValue() & 0xffffffffUL) + getEnvir()->getParsimProcId() * 0x000100000000ULL;
+    return MacAddress(raw);
 }
 
 } // namespace inet
-

@@ -1,47 +1,38 @@
 //
-// Copyright (C) 2004 Andras Varga
+// Copyright (C) 2004 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 #ifndef __INET_PPP_H
 #define __INET_PPP_H
 
-#include "inet/common/INETDefs.h"
-#include "inet/queueing/contract/IPacketQueue.h"
 #include "inet/common/lifecycle/ILifecycle.h"
 #include "inet/common/lifecycle/NodeStatus.h"
 #include "inet/common/packet/Packet.h"
 #include "inet/linklayer/base/MacProtocolBase.h"
 #include "inet/linklayer/ppp/PppFrame_m.h"
+#include "inet/queueing/contract/IActivePacketSink.h"
+#include "inet/queueing/contract/IPacketQueue.h"
 
 namespace inet {
-
-class InterfaceEntry;
 
 /**
  * PPP implementation.
  */
-class INET_API Ppp : public MacProtocolBase
+class INET_API Ppp : public MacProtocolBase, public queueing::IActivePacketSink
 {
   protected:
     const char *displayStringTextFormat = nullptr;
     bool sendRawBytes = false;
     cGate *physOutGate = nullptr;
-    cChannel *datarateChannel = nullptr;    // nullptr if we're not connected
+    cChannel *datarateChannel = nullptr; // nullptr if we're not connected
 
     cMessage *endTransmissionEvent = nullptr;
+
+    // saved current transmission
+    Packet *curTxPacket = nullptr;
 
     std::string oldConnColor;
 
@@ -65,7 +56,7 @@ class INET_API Ppp : public MacProtocolBase
     virtual void receiveSignal(cComponent *source, simsignal_t signalID, cObject *obj, cObject *details) override;
 
     // MacBase functions
-    virtual void configureInterfaceEntry() override;
+    virtual void configureNetworkInterface() override;
 
   public:
     virtual ~Ppp();
@@ -78,9 +69,17 @@ class INET_API Ppp : public MacProtocolBase
     virtual void handleUpperPacket(Packet *packet) override;
     virtual void handleLowerPacket(Packet *packet) override;
     virtual void handleStopOperation(LifecycleOperation *operation) override;
+
+    virtual void processUpperPacket();
+
+  public:
+    // IActivePacketSink:
+    virtual queueing::IPassivePacketSource *getProvider(cGate *gate) override;
+    virtual void handleCanPullPacketChanged(cGate *gate) override;
+    virtual void handlePullPacketProcessed(Packet *packet, cGate *gate, bool successful) override;
 };
 
 } // namespace inet
 
-#endif // ifndef __INET_PPP_H
+#endif
 

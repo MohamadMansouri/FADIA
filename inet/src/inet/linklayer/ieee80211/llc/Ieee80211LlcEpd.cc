@@ -1,26 +1,16 @@
 //
 // Copyright (C) 2018 Raphael Riebl, TH Ingolstadt
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
+#include "inet/linklayer/ieee80211/llc/Ieee80211LlcEpd.h"
 
 #include "inet/common/ProtocolGroup.h"
 #include "inet/common/ProtocolTag_m.h"
 #include "inet/common/Simsignals.h"
 #include "inet/common/Simsignals_m.h"
-#include "inet/linklayer/ieee80211/llc/Ieee80211LlcEpd.h"
-#include "inet/linklayer/ieee80211/llc/Ieee80211EtherTypeHeader_m.h"
+#include "inet/linklayer/ieee802/Ieee802EpdHeader_m.h"
 #include "inet/linklayer/ieee80211/llc/LlcProtocolTag_m.h"
 
 namespace inet {
@@ -58,28 +48,28 @@ void Ieee80211LlcEpd::handleMessage(cMessage *message)
 
 void Ieee80211LlcEpd::encapsulate(Packet *frame)
 {
-    const Protocol* protocol = frame->getTag<PacketProtocolTag>()->getProtocol();
+    const Protocol *protocol = frame->getTag<PacketProtocolTag>()->getProtocol();
     int ethType = ProtocolGroup::ethertype.findProtocolNumber(protocol);
     if (ethType == -1)
         throw cRuntimeError("EtherType not found for protocol %s", protocol ? protocol->getName() : "(nullptr)");
-    const auto& llcHeader = makeShared<Ieee80211EtherTypeHeader>();
+    const auto& llcHeader = makeShared<Ieee802EpdHeader>();
     llcHeader->setEtherType(ethType);
     frame->insertAtFront(llcHeader);
-    frame->addTagIfAbsent<PacketProtocolTag>()->setProtocol(&Protocol::ieee80211EtherType);
-    frame->addTagIfAbsent<LlcProtocolTag>()->setProtocol(&Protocol::ieee80211EtherType);
+    frame->addTagIfAbsent<PacketProtocolTag>()->setProtocol(&Protocol::ieee802epd);
+    frame->addTagIfAbsent<LlcProtocolTag>()->setProtocol(&Protocol::ieee802epd);
 }
 
 void Ieee80211LlcEpd::decapsulate(Packet *frame)
 {
-    const auto& llcHeader = frame->popAtFront<Ieee80211EtherTypeHeader>();
-    const Protocol *payloadProtocol = llcHeader->getProtocol();
+    const auto& epdHeader = frame->popAtFront<Ieee802EpdHeader>();
+    auto payloadProtocol = ProtocolGroup::ethertype.findProtocol(epdHeader->getEtherType());
     frame->addTagIfAbsent<DispatchProtocolReq>()->setProtocol(payloadProtocol);
     frame->addTagIfAbsent<PacketProtocolTag>()->setProtocol(payloadProtocol);
 }
 
 const Protocol *Ieee80211LlcEpd::getProtocol() const
 {
-    return &Protocol::ieee80211EtherType;
+    return &Protocol::ieee802epd;
 }
 
 } // namespace ieee80211

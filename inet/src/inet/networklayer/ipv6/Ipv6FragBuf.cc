@@ -1,28 +1,18 @@
 //
-// Copyright (C) 2005 Andras Varga
+// Copyright (C) 2005 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
+
+#include "inet/networklayer/ipv6/Ipv6FragBuf.h"
 
 #include <stdlib.h>
 #include <string.h>
 
-#include "inet/common/INETDefs.h"
 #include "inet/networklayer/icmpv6/Icmpv6.h"
 #include "inet/networklayer/icmpv6/Icmpv6Header_m.h"
 #include "inet/networklayer/ipv6/Ipv6ExtensionHeaders_m.h"
-#include "inet/networklayer/ipv6/Ipv6FragBuf.h"
 #include "inet/networklayer/ipv6/Ipv6Header.h"
 
 namespace inet {
@@ -34,7 +24,7 @@ Ipv6FragBuf::Ipv6FragBuf()
 
 Ipv6FragBuf::~Ipv6FragBuf()
 {
-    for (auto & elem : bufs) {
+    for (auto& elem : bufs) {
         delete elem.second.packet;
     }
 }
@@ -66,7 +56,7 @@ Packet *Ipv6FragBuf::addFragment(Packet *pk, const Ipv6Header *ipv6Header, const
         buf = &(i->second);
     }
 
-    int fragmentLength = pk->getByteLength() - B(ipv6Header->getChunkLength()).get(); //datagram->calculateFragmentLength();
+    int fragmentLength = pk->getByteLength() - B(ipv6Header->getChunkLength()).get(); // datagram->calculateFragmentLength();
     unsigned short offset = fh->getFragmentOffset();
     bool moreFragments = fh->getMoreFragments();
 
@@ -78,7 +68,8 @@ Packet *Ipv6FragBuf::addFragment(Packet *pk, const Ipv6Header *ipv6Header, const
     // source of the fragment, pointing to the Payload Length field of
     // the fragment packet.
     if (moreFragments && (fragmentLength % 8) != 0) {
-        icmpModule->sendErrorMessage(pk, ICMPv6_PARAMETER_PROBLEM, ERROREOUS_HDR_FIELD);    // TODO set pointer
+        icmpModule->sendErrorMessage(pk, ICMPv6_PARAMETER_PROBLEM, ERROREOUS_HDR_FIELD); // TODO set pointer
+        delete pk;
         return nullptr;
     }
 
@@ -90,7 +81,8 @@ Packet *Ipv6FragBuf::addFragment(Packet *pk, const Ipv6Header *ipv6Header, const
     // the fragment, pointing to the Fragment Offset field of the
     // fragment packet.
     if (offset + fragmentLength > 65535) {
-        icmpModule->sendErrorMessage(pk, ICMPv6_PARAMETER_PROBLEM, ERROREOUS_HDR_FIELD);    // TODO set pointer
+        icmpModule->sendErrorMessage(pk, ICMPv6_PARAMETER_PROBLEM, ERROREOUS_HDR_FIELD); // TODO set pointer
+        delete pk;
         return nullptr;
     }
 
@@ -155,7 +147,7 @@ void Ipv6FragBuf::purgeStaleFragments(simtime_t lastupdate)
 
     ASSERT(icmpModule);
 
-    for (auto i = bufs.begin(); i != bufs.end(); ) {
+    for (auto i = bufs.begin(); i != bufs.end();) {
         // if too old, remove it
         DatagramBuffer& buf = i->second;
         if (buf.createdAt < lastupdate) {
@@ -163,6 +155,7 @@ void Ipv6FragBuf::purgeStaleFragments(simtime_t lastupdate)
                 // send ICMP error
                 EV_INFO << "datagram fragment timed out in reassembly buffer, sending ICMP_TIME_EXCEEDED\n";
                 icmpModule->sendErrorMessage(buf.packet, ICMPv6_TIME_EXCEEDED, 0);
+                delete buf.packet;
             }
 
             // delete

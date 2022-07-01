@@ -1,4 +1,6 @@
-src
 examples
-tutorials
 showcases
+src
+tests/validation
+tests/networks
+tutorials

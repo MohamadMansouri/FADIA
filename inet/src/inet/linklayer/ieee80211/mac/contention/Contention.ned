@@ -1,19 +1,9 @@
 //
 // Copyright (C) 2016 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see http://www.gnu.org/licenses/.
-//
+
 
 package inet.linklayer.ieee80211.mac.contention;
 
@@ -32,10 +22,11 @@ simple Contention like IContention
         @signal[backoffStarted](type=simtime_t);
         @signal[backoffStopped](type=simtime_t);
         @signal[channelAccessGranted];
-        @signal[stateChanged](type=long); // TODO: enum=inet::ieee80211::Contention::State
+        @signal[stateChanged](type=long; enum=inet::ieee80211::Contention::State);
         @statistic[backoffPeriodGenerated](title="backoff periods"; record=vector; interpolationmode=none);
-        @statistic[backoffActive](title="backoff active"; source=count(backoffStarted)-count(backoffStopped); record=vector; interpolationmode=sample-hold);
+        @statistic[backoffActive](title="backoff active"; source=warmup(count(backoffStarted)-count(backoffStopped)); record=vector; interpolationmode=sample-hold; autoWarmupFilter=false);
         @statistic[channelAccessGranted](title="channel access granted"; record=count,vector?);
-        @statistic[stateChanged](title="contention state changed"; record=count,vector?; interpolationmode=none);
+        @statistic[stateChanged](title="contention state changed"; type=enum; enum=IDLE, DEFER, IFS_AND_BACKOFF; record=count,vector; interpolationmode=none);
+        @defaultStatistic(stateChanged:vector);
 }
 

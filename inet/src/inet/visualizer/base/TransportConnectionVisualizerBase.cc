@@ -1,27 +1,17 @@
 //
-// Copyright (C) OpenSim Ltd.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 #include <algorithm>
 
 #include "inet/common/ModuleAccess.h"
 #include "inet/networklayer/common/L3AddressResolver.h"
-#ifdef WITH_TCP_INET
+#ifdef INET_WITH_TCP_INET
 #include "inet/transportlayer/tcp/Tcp.h"
-#endif // WITH_TCP_INET
+#endif // INET_WITH_TCP_INET
 #include "inet/visualizer/base/TransportConnectionVisualizerBase.h"
 
 namespace inet {
@@ -35,10 +25,12 @@ TransportConnectionVisualizerBase::TransportConnectionVisualization::TransportCo
 {
 }
 
-TransportConnectionVisualizerBase::~TransportConnectionVisualizerBase()
+void TransportConnectionVisualizerBase::preDelete(cComponent *root)
 {
-    if (displayTransportConnections)
+    if (displayTransportConnections) {
         unsubscribe();
+        removeAllConnectionVisualizations();
+    }
 }
 
 void TransportConnectionVisualizerBase::initialize(int stage)
@@ -80,19 +72,19 @@ void TransportConnectionVisualizerBase::handleParameterChange(const char *name)
 
 void TransportConnectionVisualizerBase::subscribe()
 {
-#ifdef WITH_TCP_INET
+#ifdef INET_WITH_TCP_INET
     visualizationSubjectModule->subscribe(inet::tcp::Tcp::tcpConnectionAddedSignal, this);
-#endif // WITH_TCP_INET
+#endif // INET_WITH_TCP_INET
 }
 
 void TransportConnectionVisualizerBase::unsubscribe()
 {
-#ifdef WITH_TCP_INET
+#ifdef INET_WITH_TCP_INET
     // NOTE: lookup the module again because it may have been deleted first
-    auto visualizationSubjectModule = getModuleFromPar<cModule>(par("visualizationSubjectModule"), this, false);
+    auto visualizationSubjectModule = findModuleFromPar<cModule>(par("visualizationSubjectModule"), this);
     if (visualizationSubjectModule != nullptr)
         visualizationSubjectModule->unsubscribe(inet::tcp::Tcp::tcpConnectionAddedSignal, this);
-#endif // WITH_TCP_INET
+#endif // INET_WITH_TCP_INET
 }
 
 void TransportConnectionVisualizerBase::addConnectionVisualization(const TransportConnectionVisualization *connection)
@@ -118,8 +110,9 @@ void TransportConnectionVisualizerBase::removeAllConnectionVisualizations()
 
 void TransportConnectionVisualizerBase::receiveSignal(cComponent *source, simsignal_t signal, cObject *object, cObject *details)
 {
-#ifdef WITH_TCP_INET
-    Enter_Method_Silent();
+#ifdef INET_WITH_TCP_INET
+    Enter_Method("%s", cComponent::getSignalName(signal));
+
     if (signal == inet::tcp::Tcp::tcpConnectionAddedSignal) {
         auto tcpConnection = check_and_cast<inet::tcp::TcpConnection *>(object);
         L3AddressResolver resolver;
@@ -135,7 +128,7 @@ void TransportConnectionVisualizerBase::receiveSignal(cComponent *source, simsig
     }
     else
         throw cRuntimeError("Unknown signal");
-#endif // WITH_TCP_INET
+#endif // INET_WITH_TCP_INET
 }
 
 } // namespace visualizer

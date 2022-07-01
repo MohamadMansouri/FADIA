@@ -1,16 +1,8 @@
 //
-// (C) 2005 Vojtech Janota
-// (C) 2003 Xuan Thang Nguyen
+// Copyright (C) 2005 Vojtech Janota
+// Copyright (C) 2003 Xuan Thang Nguyen
 //
-// This library is free software, you can redistribute it
-// and/or modify
-// it under  the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation;
-// either version 2 of the License, or any later version.
-// The library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-// See the GNU Lesser General Public License for more details.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
 #ifndef __INET_LIBTABLE_H
@@ -19,15 +11,13 @@
 #include <string>
 #include <vector>
 
-#include "inet/common/INETDefs.h"
 #include "inet/networklayer/contract/ipv4/Ipv4Address.h"
 #include "inet/networklayer/ipv4/Ipv4Header_m.h"
 #include "inet/networklayer/mpls/ConstType.h"
 
 namespace inet {
 
-enum LabelOpCode
-{
+enum LabelOpCode {
     PUSH_OPER,
     SWAP_OPER,
     POP_OPER
@@ -47,8 +37,7 @@ typedef std::vector<LabelOp> LabelOpVector;
 class INET_API LibTable : public cSimpleModule
 {
   public:
-    struct LibEntry
-    {
+    struct LibEntry {
         int inLabel;
         std::string inInterface;
 
@@ -92,5 +81,5 @@ std::ostream& operator<<(std::ostream& os, const LabelOpVector& label);
 
 } // namespace inet
 
-#endif // ifndef __INET_LIBTABLE_H
+#endif
 

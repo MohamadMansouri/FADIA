@@ -1,27 +1,17 @@
 //
-// Copyright (C) 2004 Andras Varga
+// Copyright (C) 2004 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 #include "inet/applications/tcpapp/TcpBasicClientApp.h"
 
 #include "inet/applications/tcpapp/GenericAppMsg_m.h"
 #include "inet/common/ModuleAccess.h"
+#include "inet/common/TimeTag_m.h"
 #include "inet/common/lifecycle/ModuleOperations.h"
 #include "inet/common/packet/Packet.h"
-#include "inet/common/TimeTag_m.h"
 
 namespace inet {
 
@@ -40,7 +30,7 @@ void TcpBasicClientApp::initialize(int stage)
     TcpAppBase::initialize(stage);
     if (stage == INITSTAGE_LOCAL) {
         numRequestsToSend = 0;
-        earlySend = false;    // TBD make it parameter
+        earlySend = false; // TODO make it parameter
         WATCH(numRequestsToSend);
         WATCH(earlySend);
 
@@ -103,7 +93,7 @@ void TcpBasicClientApp::handleTimer(cMessage *msg)
 {
     switch (msg->getKind()) {
         case MSGKIND_CONNECT:
-            connect();    // active OPEN
+            connect(); // active OPEN
 
             // significance of earlySend: if true, data will be sent already
             // in the ACK of SYN, otherwise only in a separate packet (but still
@@ -140,16 +130,14 @@ void TcpBasicClientApp::socketEstablished(TcpSocket *socket)
     numRequestsToSend--;
 }
 
-void TcpBasicClientApp::rescheduleOrDeleteTimer(simtime_t d, short int msgKind)
+void TcpBasicClientApp::rescheduleAfterOrDeleteTimer(simtime_t d, short int msgKind)
 {
-    cancelEvent(timeoutMsg);
-
     if (stopTime < SIMTIME_ZERO || d < stopTime) {
         timeoutMsg->setKind(msgKind);
-        scheduleAt(d, timeoutMsg);
+        rescheduleAfter(d, timeoutMsg);
     }
     else {
-        delete timeoutMsg;
+        cancelAndDelete(timeoutMsg);
         timeoutMsg = nullptr;
     }
 }
@@ -162,8 +150,8 @@ void TcpBasicClientApp::socketDataArrived(TcpSocket *socket, Packet *msg, bool u
         EV_INFO << "reply arrived\n";
 
         if (timeoutMsg) {
-            simtime_t d = simTime() + par("thinkTime");
-            rescheduleOrDeleteTimer(d, MSGKIND_SEND);
+            simtime_t d = par("thinkTime");
+            rescheduleAfterOrDeleteTimer(d, MSGKIND_SEND);
         }
     }
     else if (socket->getState() != TcpSocket::LOCALLY_CLOSED) {
@@ -184,8 +172,8 @@ void TcpBasicClientApp::socketClosed(TcpSocket *socket)
 
     // start another session after a delay
     if (timeoutMsg) {
-        simtime_t d = simTime() + par("idleInterval");
-        rescheduleOrDeleteTimer(d, MSGKIND_CONNECT);
+        simtime_t d = par("idleInterval");
+        rescheduleAfterOrDeleteTimer(d, MSGKIND_CONNECT);
     }
 }
 
@@ -195,8 +183,8 @@ void TcpBasicClientApp::socketFailure(TcpSocket *socket, int code)
 
     // reconnect after a delay
     if (timeoutMsg) {
-        simtime_t d = simTime() + par("reconnectInterval");
-        rescheduleOrDeleteTimer(d, MSGKIND_CONNECT);
+        simtime_t d = par("reconnectInterval");
+        rescheduleAfterOrDeleteTimer(d, MSGKIND_CONNECT);
     }
 }
 

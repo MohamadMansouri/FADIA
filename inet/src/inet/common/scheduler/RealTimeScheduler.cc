@@ -4,35 +4,26 @@
 //                         Irene Ruengeler,
 //                         Michael Tuexen
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 // This file is based on the cSocketRTScheduler.cc of OMNeT++ written by
 // Andras Varga.
 
+#include "inet/common/scheduler/RealTimeScheduler.h"
+
 #include "inet/common/packet/Packet.h"
 #include "inet/common/packet/chunk/BytesChunk.h"
-#include "inet/common/scheduler/RealTimeScheduler.h"
 
 #if defined(_WIN32) || defined(__WIN32__) || defined(WIN32) || defined(__CYGWIN__) || defined(_WIN64)
 #include <ws2tcpip.h>
 #endif // if defined(_WIN32) || defined(__WIN32__) || defined(WIN32) || defined(__CYGWIN__) || defined(_WIN64)
 
 #ifdef __linux__
-#define UI_REFRESH_TIME 100000 /* refresh time of the UI in us */
+#define UI_REFRESH_TIME    100000000
 #else
-#define UI_REFRESH_TIME 500
+#define UI_REFRESH_TIME    500000
 #endif
 
 namespace inet {
@@ -58,7 +49,7 @@ void RealTimeScheduler::addCallback(int fd, ICallback *callback)
 
 void RealTimeScheduler::removeCallback(int fd, ICallback *callback)
 {
-    for (auto it = callbackEntries.begin(); it != callbackEntries.end(); ) {
+    for (auto it = callbackEntries.begin(); it != callbackEntries.end();) {
         if (fd == it->fd && callback == it->callback)
             it = callbackEntries.erase(it);
         else
@@ -69,11 +60,6 @@ void RealTimeScheduler::removeCallback(int fd, ICallback *callback)
 void RealTimeScheduler::startRun()
 {
     baseTime = opp_get_monotonic_clock_nsecs();
-    // TODO: delete eventually
-#if OMNETPP_VERSION <= 0x0505 && OMNETPP_BUILDNUM <= 1022
-    // this event prevents Qtenv fast forwarding to the first event
-    sim->getFES()->insert(new BeginSimulationEvent("BeginSimulation"));
-#endif
 }
 
 void RealTimeScheduler::endRun()
@@ -96,28 +82,28 @@ void RealTimeScheduler::advanceSimTime()
     sim->setSimTime(t);
 }
 
-bool RealTimeScheduler::receiveWithTimeout(long usec)
+bool RealTimeScheduler::receiveWithTimeout(int64_t timeout)
 {
 #ifdef __linux__
     bool found = false;
-    timeval timeout;
-    timeout.tv_sec = 0;
-    timeout.tv_usec = usec;
+    timeval tv;
+    tv.tv_sec = 0;
+    tv.tv_usec = timeout / 1000;
 
-    int32 fdVec[FD_SETSIZE], maxfd;
+    int32_t fdVec[FD_SETSIZE], maxfd;
     fd_set rdfds;
     FD_ZERO(&rdfds);
     maxfd = -1;
-    for (uint16 i = 0; i < callbackEntries.size(); i++) {
+    for (uint16_t i = 0; i < callbackEntries.size(); i++) {
         fdVec[i] = callbackEntries.at(i).fd;
         if (fdVec[i] > maxfd)
             maxfd = fdVec[i];
         FD_SET(fdVec[i], &rdfds);
     }
-    if (select(maxfd + 1, &rdfds, nullptr, nullptr, &timeout) < 0)
+    if (select(maxfd + 1, &rdfds, nullptr, nullptr, &tv) < 0)
         return found;
     advanceSimTime();
-    for (uint16 i = 0; i < callbackEntries.size(); i++) {
+    for (uint16_t i = 0; i < callbackEntries.size(); i++) {
         if (!(FD_ISSET(fdVec[i], &rdfds)))
             continue;
         if (callbackEntries.at(i).callback->notify(fdVec[i]))
@@ -126,16 +112,16 @@ bool RealTimeScheduler::receiveWithTimeout(long usec)
     return found;
 #else
     bool found = false;
-    timeval timeout;
-    timeout.tv_sec = 0;
-    timeout.tv_usec = usec;
+    timeval tv;
+    tv.tv_sec = 0;
+    tv.tv_usec = timeout / 1000;
     advanceSimTime();
-    for (uint16 i = 0; i < callbackEntries.size(); i++) {
+    for (uint16_t i = 0; i < callbackEntries.size(); i++) {
         if (callbackEntries.at(i).callback->notify(callbackEntries.at(i).fd))
             found = true;
     }
     if (!found)
-        select(0, nullptr, nullptr, nullptr, &timeout);
+        select(0, nullptr, nullptr, nullptr, &tv);
     return found;
 #endif
 }
@@ -146,8 +132,7 @@ int RealTimeScheduler::receiveUntil(int64_t targetTime)
     // in order to keep UI responsiveness by invoking getEnvir()->idle()
     int64_t curTime = opp_get_monotonic_clock_nsecs();
 
-    while ((targetTime - curTime) >= 2000000 || (targetTime - curTime) >= 2*UI_REFRESH_TIME)
-    {
+    while ((targetTime - curTime) >= 2 * UI_REFRESH_TIME) {
         if (receiveWithTimeout(UI_REFRESH_TIME))
             return 1;
         if (getEnvir()->idle())
@@ -187,8 +172,7 @@ cEvent *RealTimeScheduler::takeNextEvent()
     // if needed, wait until that time arrives
     int64_t curTime = opp_get_monotonic_clock_nsecs();
 
-    if (targetTime > curTime)
-    {
+    if (targetTime > curTime) {
         int status = receiveUntil(targetTime);
         if (status == -1)
             return nullptr; // interrupted by user
@@ -199,7 +183,7 @@ cEvent *RealTimeScheduler::takeNextEvent()
         // we're behind -- customized versions of this class may
         // alert if we're too much behind, whatever that means
         int64_t diffTime = curTime - targetTime;
-        EV << "We are behind: " << diffTime * 1e-9 << " seconds\n";
+        EV_TRACE << "We are behind: " << diffTime * 1e-9 << " seconds\n";
     }
     cEvent *tmp = sim->getFES()->removeFirst();
     ASSERT(tmp == event);

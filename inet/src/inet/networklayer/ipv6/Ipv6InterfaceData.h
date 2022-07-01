@@ -1,19 +1,8 @@
 //
-// Copyright (C) 2005 Andras Varga
+// Copyright (C) 2005 OpenSim Ltd.
 // Copyright (C) 2005 Wei Yang, Ng
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public
-// License along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
 #ifndef __INET_IPV6INTERFACEDATA_H
@@ -23,44 +12,44 @@
 
 #include "inet/common/INETDefs.h"
 
-#ifndef WITH_IPv6
+#ifndef INET_WITH_IPv6
 #error "IPv6 feature disabled"
 #endif
 
-#include "inet/networklayer/common/InterfaceEntry.h"
+#include "inet/networklayer/common/NetworkInterface.h"
 #include "inet/networklayer/contract/ipv6/Ipv6Address.h"
 
 namespace inet {
 
-//Forward declarations:
-#ifdef WITH_xMIPv6
+// Forward declarations:
+#ifdef INET_WITH_xMIPv6
 class Ipv6RoutingTable;
-#endif /* WITH_xMIPv6 */
+#endif /* INET_WITH_xMIPv6 */
 
 #define IPv6_DEFAULT_DUPADDRDETECTTRANSMITS     1   // send NS once (RFC2462:Section 5.1)
 
 #define IPv6_MIN_MTU                            1280 // octets
 #define IPv6_DEFAULT_ADVCURHOPLIMIT             30
 
-#define IPv6_DEFAULT_MAX_RTR_ADV_INT            600 //seconds-decrease to enable more periodic RAs
+#define IPv6_DEFAULT_MAX_RTR_ADV_INT            600 // seconds-decrease to enable more periodic RAs
 #define IPv6_DEFAULT_ADV_REACHABLE_TIME         3600 // seconds
 #define IPv6_DEFAULT_ADV_RETRANS_TIMER          1   // seconds
 #define IPv6__INET_DEFAULT_ROUTER_HOPLIMIT      64
 
 /**************RFC 2461: Section 10 Protocol Constants*************************/
-//Router Constants
+// Router Constants
 #define IPv6_MAX_INITIAL_RTR_ADVERT_INTERVAL    16  // seconds
 #define IPv6_MAX_INITIAL_RTR_ADVERTISEMENTS     3  // transmissions
 #define IPv6_MAX_FINAL_RTR_ADVERTISEMENTS       3  // transmissions
 #define IPv6_MIN_DELAY_BETWEEN_RAS              3  // seconds
 #define IPv6_MAX_RA_DELAY_TIME                  .5  // seconds
 
-//Host Constants
+// Host Constants
 #define IPv6_MAX_RTR_SOLICITATION_DELAY         1  // seconds
 #define IPv6_RTR_SOLICITATION_INTERVAL          4  // seconds
 #define IPv6_MAX_RTR_SOLICITATIONS              3  // transmissions
 
-//Node Constants
+// Node Constants
 #define IPv6_MAX_MULTICAST_SOLICIT              3  // transmissions
 #define IPv6_MAX_UNICAST_SOLICIT                3  // transmissions
 #define IPv6_MAX_ANYCAST_DELAY_TIME             1  // seconds
@@ -72,7 +61,7 @@ class Ipv6RoutingTable;
 #define IPv6_MAX_RANDOM_FACTOR                  1.5
 /***************END of RFC 2461 Protocol Constants*****************************/
 
-#ifdef WITH_xMIPv6
+#ifdef INET_WITH_xMIPv6
 /***************RFC 3775: Section 12 Protocol Constants************************/
 #define MIPv6_DHAAD_RETRIES                    4 // retransmissions
 #define MIPv6_INITIAL_BINDACK_TIMEOUT          1 // second
@@ -89,21 +78,21 @@ class Ipv6RoutingTable;
 #define MIPv6_MAX_RR_BINDING_LIFETIME          420 // seconds
 #define MIPv6_MAX_HA_BINDING_LIFETIME          3600 // seconds (1 hour)
 /***************END of RFC 3775 Protocol Constants*****************************/
-#endif /* WITH_xMIPv6 */
+#endif /* INET_WITH_xMIPv6 */
 
 /*
  * Info for ipv6MulticastGroupJoinedSignal and ipv6MulticastGroupLeftSignal notifications
  */
 struct INET_API Ipv6MulticastGroupInfo : public cObject
 {
-    Ipv6MulticastGroupInfo(InterfaceEntry *const ie, const Ipv6Address& groupAddress)
+    Ipv6MulticastGroupInfo(NetworkInterface *const ie, const Ipv6Address& groupAddress)
         : ie(ie), groupAddress(groupAddress) {}
-    InterfaceEntry *ie;
+    NetworkInterface *ie;
     Ipv6Address groupAddress;
 };
 
 /**
- * Ipv6-specific data for InterfaceEntry. Most of this comes from
+ * Ipv6-specific data for NetworkInterface. Most of this comes from
  * section 6.2.1 of RFC 2461 (Ipv6 Neighbor Discovery, Router Configuration
  * Variables).
  */
@@ -113,11 +102,10 @@ class INET_API Ipv6InterfaceData : public InterfaceProtocolData
     typedef std::vector<Ipv6Address> Ipv6AddressVector;
 
     // field ids for change notifications
-    enum { F_IP_ADDRESS, F_MULTICAST_ADDRESSES, F_MULTICAST_LISTENERS };    //FIXME missed field IDs and missed notifications in setter functions
+    enum { F_IP_ADDRESS, F_MULTICAST_ADDRESSES, F_MULTICAST_LISTENERS }; // FIXME missed field IDs and missed notifications in setter functions
 
   protected:
-    struct HostMulticastData
-    {
+    struct HostMulticastData {
         Ipv6AddressVector joinedMulticastGroups;
         std::vector<int> refCounts;
 
@@ -125,9 +113,8 @@ class INET_API Ipv6InterfaceData : public InterfaceProtocolData
         std::string detailedInfo();
     };
 
-    struct RouterMulticastData
-    {
-        Ipv6AddressVector reportedMulticastGroups;    ///< multicast groups that have listeners on the link connected to this interface
+    struct RouterMulticastData {
+        Ipv6AddressVector reportedMulticastGroups; ///< multicast groups that have listeners on the link connected to this interface
 
         std::string str();
         std::string detailedInfo();
@@ -145,38 +132,36 @@ class INET_API Ipv6InterfaceData : public InterfaceProtocolData
      *     - <0 means lifetime (delta)
      *     - 0 means infinite lifetime
      */
-    struct AdvPrefix
-    {
+    struct AdvPrefix {
         short prefixLength;
-        bool advOnLinkFlag;    //L-flag
-        bool advAutonomousFlag;    //A-flag
+        bool advOnLinkFlag; // L-flag
+        bool advAutonomousFlag; // A-flag
 
-#ifdef WITH_xMIPv6
-        bool advRtrAddr;    //R-flag (Zarrar Yousaf 09.07.07)
-#endif /* WITH_xMIPv6 */
+#ifdef INET_WITH_xMIPv6
+        bool advRtrAddr; // R-flag (Zarrar Yousaf 09.07.07)
+#endif /* INET_WITH_xMIPv6 */
 
-        simtime_t advValidLifetime;    // see comment above
-        simtime_t advPreferredLifetime;    // see comment above
+        simtime_t advValidLifetime; // see comment above
+        simtime_t advPreferredLifetime; // see comment above
         Ipv6Address prefix;
-#ifdef WITH_xMIPv6
-        Ipv6Address rtrAddress;    //global scope, present when advRtrAddr is true (Zarrar Yousaf 09.07.07)
-#endif /* WITH_xMIPv6 */
+#ifdef INET_WITH_xMIPv6
+        Ipv6Address rtrAddress; // global scope, present when advRtrAddr is true (Zarrar Yousaf 09.07.07)
+#endif /* INET_WITH_xMIPv6 */
 
         AdvPrefix() {}
         AdvPrefix(const Ipv6Address& addr, short preflength)
             : prefixLength(preflength),
               advOnLinkFlag(false), advAutonomousFlag(false),
-#ifdef WITH_xMIPv6
+#ifdef INET_WITH_xMIPv6
               advRtrAddr(false),
-#endif /* WITH_xMIPv6 */
+#endif /* INET_WITH_xMIPv6 */
               prefix(addr)
         {
         }
     };
 
     /*************RFC 2461: Section 10 Protocol Constants**********************/
-    struct RouterConstants
-    {
+    struct RouterConstants {
         simtime_t maxInitialRtrAdvertInterval;
         uint maxInitialRtrAdvertisements;
         uint maxFinalRtrAdvertisements;
@@ -185,25 +170,23 @@ class INET_API Ipv6InterfaceData : public InterfaceProtocolData
     };
     RouterConstants routerConstants;
 
-    struct HostConstants
-    {
+    struct HostConstants {
         simtime_t maxRtrSolicitationDelay;
         simtime_t rtrSolicitationInterval;
         int maxRtrSolicitations;
 
-#ifdef WITH_xMIPv6
-        uint initialBindAckTimeout;    //MIPv6: added by Zarrar Yousaf @ CNI UniDo 17.06.07
-        uint maxBindAckTimeout;    //MIPv6: added by Zarrar Yousaf @ CNI UniDo 17.06.07
-        simtime_t initialBindAckTimeoutFirst;    //MIPv6: 12.9.07 - CB
-        uint maxRRBindingLifeTime;    // 14.9.07 - CB
-        uint maxHABindingLifeTime;    // 14.9.07 - CB
-        uint maxTokenLifeTime;    // 10.07.08 - CB
-#endif /* WITH_xMIPv6 */
+#ifdef INET_WITH_xMIPv6
+        uint initialBindAckTimeout; // MIPv6: added by Zarrar Yousaf @ CNI UniDo 17.06.07
+        uint maxBindAckTimeout; // MIPv6: added by Zarrar Yousaf @ CNI UniDo 17.06.07
+        simtime_t initialBindAckTimeoutFirst; // MIPv6: 12.9.07 - CB
+        uint maxRRBindingLifeTime; // 14.9.07 - CB
+        uint maxHABindingLifeTime; // 14.9.07 - CB
+        uint maxTokenLifeTime; // 10.07.08 - CB
+#endif /* INET_WITH_xMIPv6 */
     };
     HostConstants hostConstants;
 
-    struct NodeConstants
-    {
+    struct NodeConstants {
         uint maxMulticastSolicit;
         uint maxUnicastSolicit;
         simtime_t maxAnycastDelayTime;
@@ -217,13 +200,13 @@ class INET_API Ipv6InterfaceData : public InterfaceProtocolData
     NodeConstants nodeConstants;
     /***************END of RFC 2461 Protocol Constants*************************/
 
-#ifdef WITH_xMIPv6
+#ifdef INET_WITH_xMIPv6
     /**
      * The enum AddressType defined below and the new member of the struct AddressData {AddressType addrType} is
      * relevant for MN(s) only as the address(es) configured on the MN interface needs to be tagged as either HoA
      * or CoA, based upon the status of the H-Flag recieved in the RA. This is
      */
-    enum AddressType { HoA, CoA };    // to tag a MN's address as Home-Address or Care-of-Address. Zarrar Yousaf 20.07.07
+    enum AddressType { HoA, CoA }; // to tag a MN's address as Home-Address or Care-of-Address. Zarrar Yousaf 20.07.07
 
   protected:
     /**
@@ -236,11 +219,10 @@ class INET_API Ipv6InterfaceData : public InterfaceProtocolData
      * belong to different home networks. Therefore it is necessary to maintain home network info on a per
      * interface basis
      */
-    struct HomeNetworkInfo
-    {
-        Ipv6Address HoA;    // Home Address of the MN, configured while in the home network
+    struct HomeNetworkInfo {
+        Ipv6Address HoA; // Home Address of the MN, configured while in the home network
         Ipv6Address homeAgentAddr;
-        //Ipv6NdPrefixInformation prefix;
+//        Ipv6NdPrefixInformation prefix;
         Ipv6Address prefix;
     };
     friend std::ostream& operator<<(std::ostream& os, const HomeNetworkInfo& homeNetInfo);
@@ -249,32 +231,30 @@ class INET_API Ipv6InterfaceData : public InterfaceProtocolData
 
   public:
     bool isDadInProgress() { return dadInProgress; };
-    void setDadInProgress(bool val) { dadInProgress = val; };
-#endif /* WITH_xMIPv6 */
+    void setDadInProgress(bool val) { dadInProgress = val; }
+#endif /* INET_WITH_xMIPv6 */
 
   protected:
     // addresses
-    struct AddressData
-    {
-        Ipv6Address address;    // address itself
-        bool tentative;    // true if currently undergoing Duplicate Address Detection
-        simtime_t expiryTime;    // end of valid lifetime; 0 means infinity
-        simtime_t prefExpiryTime;    // end of preferred lifetime; 0 means infinity
+    struct AddressData {
+        Ipv6Address address; // address itself
+        bool tentative; // true if currently undergoing Duplicate Address Detection
+        simtime_t expiryTime; // end of valid lifetime; 0 means infinity
+        simtime_t prefExpiryTime; // end of preferred lifetime; 0 means infinity
 
-#ifdef WITH_xMIPv6
-        AddressType addrType;    //HoA or CoA: Zarrar 20.07.07
-#endif /* WITH_xMIPv6 */
+#ifdef INET_WITH_xMIPv6
+        AddressType addrType; // HoA or CoA: Zarrar 20.07.07
+#endif /* INET_WITH_xMIPv6 */
     };
     typedef std::vector<AddressData> AddressDataVector;
-    // TBD should be std::map, so that isLocalAddress() is faster?
+    // TODO should be std::map, so that isLocalAddress() is faster?
 
-    AddressDataVector addresses;    // interface addresses
-    Ipv6Address preferredAddr;    // cached result of preferred address selection
+    AddressDataVector addresses; // interface addresses
+    Ipv6Address preferredAddr; // cached result of preferred address selection
     simtime_t preferredAddrExpiryTime;
 
     /***************RFC 2462: Section 5.1 Node Configuration Variables*********/
-    struct NodeVariables
-    {
+    struct NodeVariables {
         /**
          *  The number of consecutive Neighbor Solicitation messages sent while
          *  performing Duplicate Address Detection on a tentative address. A
@@ -300,8 +280,7 @@ class INET_API Ipv6InterfaceData : public InterfaceProtocolData
     /***************END of RFC 2461 Node Configuration Variables***************/
 
     /***************RFC 2461: Section 6.3.2 Host Variables*********************/
-    struct HostVariables
-    {
+    struct HostVariables {
         /**
          *  The MTU of the link.
          *  Default: The valued defined in the specific document that describes
@@ -341,8 +320,7 @@ class INET_API Ipv6InterfaceData : public InterfaceProtocolData
 
     /***************RFC 2461: Section 6.2.1 Router Configuration Variables*****/
     typedef std::vector<AdvPrefix> AdvPrefixList;
-    struct RouterVariables
-    {
+    struct RouterVariables {
         /**
          *  A flag indicating whether or not the router sends periodic Router
          *  Advertisements and responds to Router Solicitations.
@@ -379,17 +357,17 @@ class INET_API Ipv6InterfaceData : public InterfaceProtocolData
          *
          *  Default: FALSE
          */
-        bool advOtherConfigFlag;    // also false as not disseminating other config info from routers
+        bool advOtherConfigFlag; // also false as not disseminating other config info from routers
 
-#ifdef WITH_xMIPv6
+#ifdef INET_WITH_xMIPv6
         /**
          *  The TRUE/FALSE value to be placed in the "Home Agent"
          *  flag field in the Router Advertisement. See [ADDRCONF].
          *
          *  Default: FALSE
          */
-        bool advHomeAgentFlag;    // also false as not disseminating other config info from routers
-#endif /* WITH_xMIPv6 */
+        bool advHomeAgentFlag; // also false as not disseminating other config info from routers
+#endif /* INET_WITH_xMIPv6 */
 
         /**
          *  The value to be placed in MTU options sent by the router. A value of
@@ -406,7 +384,7 @@ class INET_API Ipv6InterfaceData : public InterfaceProtocolData
          *
          *  Default: 0
          */
-        int advReachableTime;    // host BaseReachableTime?
+        int advReachableTime; // host BaseReachableTime?
         /**
          *  The value to be placed in the Retrans Timer field in the Router
          *  Advertisement messages sent by the router.  The value zero means
@@ -414,7 +392,7 @@ class INET_API Ipv6InterfaceData : public InterfaceProtocolData
          *
          *  Default: 0
          */
-        int advRetransTimer;    // host RetransTimer?
+        int advRetransTimer; // host RetransTimer?
         /**
          *  The default value to be placed in the Cur Hop Limit field in the
          *  Router Advertisement messages sent by the router. The value should be
@@ -424,7 +402,7 @@ class INET_API Ipv6InterfaceData : public InterfaceProtocolData
          *  Default:  The value specified in the "Assigned Numbers" RFC [ASSIGNED]
          *  that was in effect at the time of implementation.
          */
-        short advCurHopLimit;    // host CurHopLimit
+        short advCurHopLimit; // host CurHopLimit
         /**
          *  The value to be placed in the Router Lifetime field of Router
          *  Advertisements sent from the interface, in seconds.  MUST be either
@@ -433,10 +411,10 @@ class INET_API Ipv6InterfaceData : public InterfaceProtocolData
          *
          *  Default: 3 * MaxRtrAdvInterval
          */
-        simtime_t advDefaultLifetime;    // integer seconds in ND rfc but for MIPv6 really need better granularity
-        //bool fastRA;
-        //uint maxFastRAS;
-        //mutable uint fastRACounter;
+        simtime_t advDefaultLifetime; // integer seconds in ND rfc but for MIPv6 really need better granularity
+//        bool fastRA;
+//        uint maxFastRAS;
+//        mutable uint fastRACounter;
 
         // These are either learned from routers or configured manually(router)
         AdvPrefixList advPrefixList;
@@ -459,29 +437,29 @@ class INET_API Ipv6InterfaceData : public InterfaceProtocolData
     Ipv6InterfaceData();
     virtual ~Ipv6InterfaceData();
     std::string str() const override;
-    std::string detailedInfo() const OMNETPP5_CODE(override);
+    std::string detailedInfo() const;
 
     /** @name Addresses */
     //@{
-#ifndef WITH_xMIPv6
+#ifndef INET_WITH_xMIPv6
     /**
      * Assigns the given address to the interface.
      */
     virtual void assignAddress(const Ipv6Address& addr, bool tentative,
             simtime_t expiryTime, simtime_t prefExpiryTime);
-#else /* WITH_xMIPv6 */
+#else /* INET_WITH_xMIPv6 */
     /**
      * Assigns the given address to the interface.
      *
-     * WITH_xMIPv6:
+     * INET_WITH_xMIPv6:
      * Also takes into account the status of the H-Flag in the recieved RA.
      * Called from  Ipv6NeighbourDiscovery::processRAPrefixInfoForAddrAutoConf(
-     *                      Ipv6NdPrefixInformation& prefixInfo, InterfaceEntry* ie, bool hFlag).
+     *                      Ipv6NdPrefixInformation& prefixInfo, NetworkInterface* ie, bool hFlag).
      * Relevant only when MIPv6 is supported. (Zarrar Yousaf 20.07.07)
      */
     virtual void assignAddress(const Ipv6Address& addr, bool tentative,
             simtime_t expiryTime, simtime_t prefExpiryTime, bool hFlag = false);
-#endif /* WITH_xMIPv6 */
+#endif /* INET_WITH_xMIPv6 */
 
     /**
      * Update expiry times of addresses. Expiry times possibly come from
@@ -510,7 +488,7 @@ class INET_API Ipv6InterfaceData : public InterfaceProtocolData
      */
     bool isTentativeAddress(int i) const;
 
-#ifdef WITH_xMIPv6
+#ifdef INET_WITH_xMIPv6
     /**
      * Returns the address type (HoA, CoA) of the ith address of the interface.
      * 4.9.07 - CB
@@ -522,7 +500,7 @@ class INET_API Ipv6InterfaceData : public InterfaceProtocolData
      * 27.9.07 - CB
      */
     AddressType getAddressType(const Ipv6Address& addr) const;
-#endif /* WITH_xMIPv6 */
+#endif /* INET_WITH_xMIPv6 */
 
 // FIXME address validity check missing. introduce hasValidAddress(addr, now) which would compare lifetimes too?
 
@@ -559,13 +537,13 @@ class INET_API Ipv6InterfaceData : public InterfaceProtocolData
     virtual void addMulticastListener(const Ipv6Address& multicastAddress);
     virtual void removeMulticastListener(const Ipv6Address& multicastAddress);
 
-#ifdef WITH_xMIPv6
+#ifdef INET_WITH_xMIPv6
     /**
      * Sets the "tentative" flag of of the ith address of the interface.
      * 28.09.07 - CB
      */
     void tentativelyAssign(int i);
-#endif /* WITH_xMIPv6 */
+#endif /* INET_WITH_xMIPv6 */
 
     /**
      * Chooses a preferred address for the interface and returns it.
@@ -578,7 +556,7 @@ class INET_API Ipv6InterfaceData : public InterfaceProtocolData
      *
      * FIXME turn into preferredGLOBALAddress()!
      */
-    const Ipv6Address& getPreferredAddress() const { return preferredAddr; }    // FIXME TBD check expiry time!
+    const Ipv6Address& getPreferredAddress() const { return preferredAddr; } // FIXME TODO check expiry time!
 
     /**
      * Returns the first valid link-local address of the interface,
@@ -622,28 +600,28 @@ class INET_API Ipv6InterfaceData : public InterfaceProtocolData
     simtime_t _getRtrSolicitationInterval() const { return hostConstants.rtrSolicitationInterval; }
     uint _getMaxRtrSolicitations() const { return hostConstants.maxRtrSolicitations; }
 
-#ifdef WITH_xMIPv6
-    simtime_t _getInitialBindAckTimeout() const { return hostConstants.initialBindAckTimeout; }    //MIPv6: added by Zarrar Yousaf @ CNI UniDo 17.06.07
-    simtime_t _getMaxBindAckTimeout() const { return hostConstants.maxBindAckTimeout; }    //MIPv6: added by Zarrar Yousaf @ CNI UniDo 17.06.07
-    simtime_t _getInitialBindAckTimeoutFirst() const { return hostConstants.initialBindAckTimeoutFirst; }    //MIPv6, 12.9.07 - CB
-    uint _getMaxRrBindingLifeTime() const { return hostConstants.maxRRBindingLifeTime; }    //MIPv6, 14.9.07 - CB
-    uint _getMaxHaBindingLifeTime() const { return hostConstants.maxHABindingLifeTime; }    //MIPv6, 14.9.07 - CB
-    uint _getMaxTokenLifeTime() const { return hostConstants.maxTokenLifeTime; }    //MIPv6, 10.07.08 - CB
-#endif /* WITH_xMIPv6 */
+#ifdef INET_WITH_xMIPv6
+    simtime_t _getInitialBindAckTimeout() const { return hostConstants.initialBindAckTimeout; } // MIPv6: added by Zarrar Yousaf @ CNI UniDo 17.06.07
+    simtime_t _getMaxBindAckTimeout() const { return hostConstants.maxBindAckTimeout; } // MIPv6: added by Zarrar Yousaf @ CNI UniDo 17.06.07
+    simtime_t _getInitialBindAckTimeoutFirst() const { return hostConstants.initialBindAckTimeoutFirst; } // MIPv6, 12.9.07 - CB
+    uint _getMaxRrBindingLifeTime() const { return hostConstants.maxRRBindingLifeTime; } // MIPv6, 14.9.07 - CB
+    uint _getMaxHaBindingLifeTime() const { return hostConstants.maxHABindingLifeTime; } // MIPv6, 14.9.07 - CB
+    uint _getMaxTokenLifeTime() const { return hostConstants.maxTokenLifeTime; } // MIPv6, 10.07.08 - CB
+#endif /* INET_WITH_xMIPv6 */
 
     /************Setters for Host Protocol Constants***************************/
     virtual void _setMaxRtrSolicitationDelay(simtime_t d) { hostConstants.maxRtrSolicitationDelay = d; }
     virtual void _setRtrSolicitationInterval(simtime_t d) { hostConstants.rtrSolicitationInterval = d; }
     virtual void _setMaxRtrSolicitations(uint d) { hostConstants.maxRtrSolicitations = d; }
 
-#ifdef WITH_xMIPv6
+#ifdef INET_WITH_xMIPv6
     virtual void _setInitialBindAckTimeout(simtime_t d) { hostConstants.initialBindAckTimeout = SIMTIME_DBL(d); }
     virtual void _setMaxBindAckTimeout(simtime_t d) { hostConstants.maxBindAckTimeout = SIMTIME_DBL(d); }
     virtual void _setInitialBindAckTimeoutFirst(simtime_t d) { hostConstants.initialBindAckTimeoutFirst = d; }
     virtual void _setMaxRrBindingLifeTime(uint d) { hostConstants.maxRRBindingLifeTime = d; }
     virtual void _setMaxHaBindingLifeTime(uint d) { hostConstants.maxHABindingLifeTime = d; }
     virtual void _setMaxTokenLifeTime(uint d) { hostConstants.maxTokenLifeTime = d; }
-#endif /* WITH_xMIPv6 */
+#endif /* INET_WITH_xMIPv6 */
     /************End of Host Protocol Constant getters and setters*************/
 
     /************Getters for Node Protocol Constants***************************/
@@ -695,9 +673,9 @@ class INET_API Ipv6InterfaceData : public InterfaceProtocolData
     bool getAdvManagedFlag() const { return rtrVars.advManagedFlag; }
     bool getAdvOtherConfigFlag() const { return rtrVars.advOtherConfigFlag; }
 
-#ifdef WITH_xMIPv6
+#ifdef INET_WITH_xMIPv6
     bool getAdvHomeAgentFlag() const { return rtrVars.advHomeAgentFlag; }
-#endif /* WITH_xMIPv6 */
+#endif /* INET_WITH_xMIPv6 */
 
     int getAdvLinkMtu() const { return rtrVars.advLinkMTU; }
     int getAdvReachableTime() const { return rtrVars.advReachableTime; }
@@ -711,9 +689,9 @@ class INET_API Ipv6InterfaceData : public InterfaceProtocolData
     virtual void setAdvManagedFlag(bool d) { rtrVars.advManagedFlag = d; }
     virtual void setAdvOtherConfigFlag(bool d) { rtrVars.advOtherConfigFlag = d; }
 
-#ifdef WITH_xMIPv6
+#ifdef INET_WITH_xMIPv6
     virtual void setAdvHomeAgentFlag(bool d) { rtrVars.advHomeAgentFlag = d; }
-#endif /* WITH_xMIPv6 */
+#endif /* INET_WITH_xMIPv6 */
 
     virtual void setAdvLinkMtu(int d) { rtrVars.advLinkMTU = d; }
     virtual void setAdvReachableTime(int d) { rtrVars.advReachableTime = d; }
@@ -763,13 +741,13 @@ class INET_API Ipv6InterfaceData : public InterfaceProtocolData
      */
     virtual simtime_t generateReachableTime();
 
-#ifdef WITH_xMIPv6
+#ifdef INET_WITH_xMIPv6
 //############## Additional Function defined by Zarrar YOusaf @ CNI, Uni Dortmund  #########
     /**
      * Returns the first valid global address of the interface,
      * or UNSPECIFIED_ADDRESS if there's none.
      */
-    const Ipv6Address& getGlobalAddress(AddressType type = HoA) const;    // 24.9.07 - CB
+    const Ipv6Address& getGlobalAddress(AddressType type = HoA) const; // 24.9.07 - CB
 
     /**
      * This function autoconfigures a global scope address for the router only,
@@ -777,7 +755,7 @@ class INET_API Ipv6InterfaceData : public InterfaceProtocolData
      * Ipv6FlatNetworkConfigurator assigning prefixes to routers interfaces during
      * initialization.
      */
-    const Ipv6Address autoConfRouterGlobalScopeAddress(int i);    // // removed return-by-reference - CB
+    const Ipv6Address autoConfRouterGlobalScopeAddress(int i); // removed return-by-reference - CB
 
     void autoConfRouterGlobalScopeAddress(AdvPrefix& p);
 
@@ -790,21 +768,21 @@ class INET_API Ipv6InterfaceData : public InterfaceProtocolData
      */
     void updateHomeNetworkInfo(const Ipv6Address& hoa, const Ipv6Address& ha, const Ipv6Address& prefix, const int prefixLength);
 
-    const Ipv6Address& getHomeAgentAddress() const { return homeInfo.homeAgentAddr; }    // Zarrar 03.09.07
-    const Ipv6Address& getMNHomeAddress() const { return homeInfo.HoA; }    // Zarrar 03.09.07
-    const Ipv6Address& getMnPrefix() const { return homeInfo.prefix    /*.prefix()*/; }    // Zarrar 03.09.07
+    const Ipv6Address& getHomeAgentAddress() const { return homeInfo.homeAgentAddr; } // Zarrar 03.09.07
+    const Ipv6Address& getMNHomeAddress() const { return homeInfo.HoA; } // Zarrar 03.09.07
+    const Ipv6Address& getMnPrefix() const { return homeInfo.prefix /*.prefix()*/; } // Zarrar 03.09.07
 
     /**
      * Removes a CoA address from the interface if one exists.
      */
-    Ipv6Address removeAddress(Ipv6InterfaceData::AddressType type);    // update 06.08.08 - CB
+    Ipv6Address removeAddress(Ipv6InterfaceData::AddressType type); // update 06.08.08 - CB
 
   protected:
-    Ipv6RoutingTable *rt6 = nullptr;    // A pointer variable, specifically used to access the type of node (MN, HA, Router, CN). Used in info(). (Zarrar Yousaf 20.07.07)
-#endif /* WITH_xMIPv6 */
+    Ipv6RoutingTable *rt6 = nullptr; // A pointer variable, specifically used to access the type of node (MN, HA, Router, CN). Used in info(). (Zarrar Yousaf 20.07.07)
+#endif /* INET_WITH_xMIPv6 */
 };
 
 } // namespace inet
 
-#endif // ifndef __INET_IPV6INTERFACEDATA_H
+#endif
 

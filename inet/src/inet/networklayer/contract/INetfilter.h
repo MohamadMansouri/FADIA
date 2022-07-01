@@ -1,27 +1,16 @@
 //
-// Copyright (C) 2012 Andras Varga
+// Copyright (C) 2012 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 #ifndef __INET_INETFILTER_H
 #define __INET_INETFILTER_H
 
-#include "inet/common/INETDefs.h"
 #include "inet/common/packet/Packet.h"
 #include "inet/common/stlutils.h"
-#include "inet/networklayer/common/InterfaceEntry.h"
+#include "inet/networklayer/common/NetworkInterface.h"
 #include "inet/networklayer/contract/NetworkHeaderBase_m.h"
 
 namespace inet {
@@ -37,8 +26,7 @@ class INET_API INetfilter
     /**
      * This interface is used by the network protocol during processing datagrams.
      */
-    class INET_API IHook
-    {
+    class INET_API IHook {
       public:
         enum Type {
             PREROUTING,
@@ -55,12 +43,12 @@ class INET_API INetfilter
             STOLEN  ///< doesn't allow datagram to pass to next hook, but won't be deleted
         };
 
-        virtual ~IHook() {};
+        virtual ~IHook() {}
 
         /**
          * This is the first hook called by the network protocol before it routes
          * a datagram that was received from the lower layer. The nextHopAddress
-         * is ignored when the outputInterfaceEntry is nullptr.
+         * is ignored when the outputNetworkInterface is nullptr.
          */
         virtual Result datagramPreRoutingHook(Packet *datagram) = 0;
 
@@ -87,7 +75,7 @@ class INET_API INetfilter
         /**
          * This is the first hook called by the network protocol before it routes
          * a datagram that was received from the upper layer. The nextHopAddress
-         * is ignored when the outputInterfaceEntry is a nullptr. After this is done
+         * is ignored when the outputNetworkInterface is a nullptr. After this is done
          */
         virtual Result datagramLocalOutHook(Packet *datagram) = 0;
     };
@@ -120,10 +108,11 @@ class INET_API INetfilter
     virtual void reinjectQueuedDatagram(const Packet *datagram) = 0;
 };
 
-class INET_API NetfilterBase : public INetfilter {
+class INET_API NetfilterBase : public INetfilter
+{
   public:
     class INET_API HookBase : public INetfilter::IHook {
-      friend class NetfilterBase;
+        friend class NetfilterBase;
 
       protected:
         std::vector<INetfilter *> netfilters;
@@ -141,7 +130,7 @@ class INET_API NetfilterBase : public INetfilter {
 
   public:
     virtual ~NetfilterBase() {
-        for (auto hook: hooks)
+        for (auto hook : hooks)
             check_and_cast<HookBase *>(hook.second)->unregisteredFrom(this);
     }
 
@@ -163,5 +152,5 @@ class INET_API NetfilterBase : public INetfilter {
 
 } // namespace inet
 
-#endif // ifndef __INET_INETFILTER_H
+#endif
 

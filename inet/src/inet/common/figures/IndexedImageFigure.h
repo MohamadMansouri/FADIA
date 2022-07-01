@@ -1,24 +1,13 @@
 //
-// Copyright (C) 2016 OpenSim Ltd
+// Copyright (C) 2016 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 #ifndef __INET_INDEXEDIMAGEFIGURE_H
 #define __INET_INDEXEDIMAGEFIGURE_H
 
-#include "inet/common/INETDefs.h"
 #include "inet/common/INETMath.h"
 #include "inet/common/figures/IIndicatorFigure.h"
 
@@ -40,7 +29,7 @@ class INET_API IndexedImageFigure : public cGroupFigure, public inet::IIndicator
 
   public:
     IndexedImageFigure(const char *name = nullptr);
-    virtual ~IndexedImageFigure() {};
+    virtual ~IndexedImageFigure() {}
 
     virtual void setValue(int series, simtime_t timestamp, double value) override;
 
@@ -80,7 +69,6 @@ class INET_API IndexedImageFigure : public cGroupFigure, public inet::IIndicator
 
     Anchor getAnchor() const;
     void setAnchor(Anchor anchor);
-
 };
 
 } // namespace inet

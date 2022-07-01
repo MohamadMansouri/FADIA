@@ -1,3 +1,7 @@
+//
+// SPDX-License-Identifier: LGPL-3.0-or-later
+//
+//
 /***************************************************************************
  * file:        WiseRoute.h
  *
@@ -7,13 +11,6 @@
  *
  * description: Implementation of the routing protocol of WiseStack.
  *
- *              This program is free software; you can redistribute it
- *              and/or modify it under the terms of the GNU General Public
- *              License as published by the Free Software Foundation; either
- *              version 2 of the License, or (at your option) any later
- *              version.
- *              For further information see file COPYING
- *              in the top level directory
  *
  * Funding: This work was partially financed by the European Commission under the
  * Framework 6 IST Project "Wirelessly Accessible Sensor Populations"
@@ -73,15 +70,13 @@ class INET_API WiseRoute : public NetworkProtocolBase, public INetworkProtocol
     const Protocol& getProtocol() const override { return Protocol::wiseRoute; }
 
     // OperationalBase:
-    virtual void handleStartOperation(LifecycleOperation *operation) override {}    //TODO implementation
-    virtual void handleStopOperation(LifecycleOperation *operation) override {}    //TODO implementation
-    virtual void handleCrashOperation(LifecycleOperation *operation) override {}    //TODO implementation
+    virtual void handleStartOperation(LifecycleOperation *operation) override {} // TODO implementation
+    virtual void handleStopOperation(LifecycleOperation *operation) override {} // TODO implementation
+    virtual void handleCrashOperation(LifecycleOperation *operation) override {} // TODO implementation
 
   protected:
-    enum messagesTypes {
-        DATA,
-        ROUTE_FLOOD,
-        SEND_ROUTE_FLOOD_TIMER
+    enum messageKinds {
+        SEND_ROUTE_FLOOD_TIMER = 101
     };
 
     typedef enum floodTypes {
@@ -91,8 +86,7 @@ class INET_API WiseRoute : public NetworkProtocolBase, public INetworkProtocol
         DUPLICATE
     } floodTypes;
 
-    typedef struct tRouteTableEntry
-    {
+    typedef struct tRouteTableEntry {
         L3Address nextHop;
         double rssi;
     } tRouteTableEntry;
@@ -103,7 +97,7 @@ class INET_API WiseRoute : public NetworkProtocolBase, public INetworkProtocol
     tRouteTable routeTable;
     tFloodTable floodTable;
 
-    IArp *arp = nullptr;
+    ModuleRefByPar<IArp> arp;
 
     /**
      * @brief Length of the NetwPkt header
@@ -207,5 +201,5 @@ class INET_API WiseRoute : public NetworkProtocolBase, public INetworkProtocol
 
 } // namespace inet
 
-#endif // ifndef __INET_WISEROUTE_H
+#endif
 

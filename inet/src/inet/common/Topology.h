@@ -1,19 +1,9 @@
 //
-// Copyright (C) 1992-2012 Andras Varga
+// Copyright (C) 1992-2012 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 #ifndef __INET_TOPOLOGY_H
 #define __INET_TOPOLOGY_H
@@ -49,27 +39,24 @@ namespace inet {
  * just as module gates are.
  *
  * @ingroup SimSupport
- * @see Topology::Node, Topology::Link, Topology::LinkIn, Topology::LinkOut
+ * @see Topology::Node, Topology::Link
  */
 
-//TODO doucument: graph may be modified by hand; graph nodes/links may or may not correspond to modules/gates
-//TODO add notes: manually added nodes/links may not have cModule*/cGate* pointers (getModule() etc may be nullptr)
-//TODO make more methods virtual
-//TODO inconsistency: Node takes cModule* in ctor, but Link's srcGate/destGate are set in addLink()!!!
-//TODO weight: how to compute automatically from link datarate?
+// TODO doucument: graph may be modified by hand; graph nodes/links may or may not correspond to modules/gates
+// TODO add notes: manually added nodes/links may not have cModule*/cGate* pointers (getModule() etc may be nullptr)
+// TODO make more methods virtual
+// TODO inconsistency: Node takes cModule* in ctor, but Link's srcGate/destGate are set in addLink()!!!
+// TODO weight: how to compute automatically from link datarate?
 
 class INET_API Topology : public cOwnedObject
 {
   public:
     class Link;
-    class LinkIn;
-    class LinkOut;
 
     /**
      * Supporting class for Topology, represents a node in the graph.
      */
-    class INET_API Node
-    {
+    class INET_API Node {
         friend class Topology;
 
       protected:
@@ -83,7 +70,7 @@ class INET_API Topology : public cOwnedObject
 
         // variables used by the shortest-path algorithms
         double dist;
-        Link *outPath;
+        std::vector<Link *> outPaths;
 
       public:
         /**
@@ -96,8 +83,8 @@ class INET_API Topology : public cOwnedObject
             visited = false;
             networkId = 0;
             dist = INFINITY;
-            outPath = nullptr;
         }
+
         virtual ~Node() {}
 
         /** @name Node attributes: weight, enabled state, correspondence to modules. */
@@ -177,7 +164,7 @@ class INET_API Topology : public cOwnedObject
         /**
          * Returns ith incoming link of graph node.
          */
-        LinkIn *getLinkIn(int i);
+        Link *getLinkIn(int i) const;
 
         /**
          * Returns the number of outgoing links from this graph node.
@@ -187,7 +174,7 @@ class INET_API Topology : public cOwnedObject
         /**
          * Returns ith outgoing link of graph node.
          */
-        LinkOut *getLinkOut(int i);
+        Link *getLinkOut(int i) const;
         //@}
 
         /** @name Result of shortest path extraction. */
@@ -202,22 +189,21 @@ class INET_API Topology : public cOwnedObject
          * Returns the number of shortest paths towards the target node.
          * (There may be several paths with the same length.)
          */
-        int getNumPaths() const { return outPath ? 1 : 0; }
+        int getNumPaths() const { return outPaths.size(); }
 
         /**
          * Returns the next link in the ith shortest paths towards the
          * target node. (There may be several paths with the same
          * length.)
          */
-        LinkOut *getPath(int) const { return (LinkOut *)outPath; }      //FIXME check_and_cast?
+        Link *getPath(int i) const { return outPaths.at(i); }
         //@}
     };
 
     /**
      * Supporting class for Topology, represents a link in the graph.
      */
-    class INET_API Link
-    {
+    class INET_API Link {
         friend class Topology;
 
       protected:
@@ -264,90 +250,66 @@ class INET_API Topology : public cOwnedObject
          * finder methods of Topology.
          */
         void disable() { enabled = false; }
-    };
 
-    /**
-     * Supporting class for Topology.
-     *
-     * While navigating the graph stored in a Topology, Node's methods return
-     * LinkIn and LinkOut objects, which are 'aliases' to Link objects.
-     * LinkIn and LinkOut provide convenience functions that return the
-     * 'local' and 'remote' end of the connection when traversing the topology.
-     */
-    class INET_API LinkIn : public Link
-    {
-      public:
         /**
          * Returns the node at the remote end of this connection.
          */
-        Node *getRemoteNode() const { return srcNode; }
+        Node *getLinkInRemoteNode() const { return srcNode; }
 
         /**
          * Returns the node at the local end of this connection.
          */
-        Node *getLocalNode() const { return destNode; }
+        Node *getLinkInLocalNode() const { return destNode; }
 
         /**
          * Returns the gate ID at the remote end of this connection.
          */
-        int getRemoteGateId() const { return srcGateId; }
+        int getLinkInRemoteGateId() const { return srcGateId; }
 
         /**
          * Returns the gate ID at the local end of this connection.
          */
-        int getLocalGateId() const { return destGateId; }
+        int getLinkInLocalGateId() const { return destGateId; }
 
         /**
          * Returns the gate at the remote end of this connection.
          */
-        cGate *getRemoteGate() const { return srcNode->getModule()->gate(srcGateId); }
+        cGate *getLinkInRemoteGate() const { return srcNode->getModule()->gate(srcGateId); }
 
         /**
          * Returns the gate at the local end of this connection.
          */
-        cGate *getLocalGate() const { return destNode->getModule()->gate(destGateId); }
-    };
+        cGate *getLinkInLocalGate() const { return destNode->getModule()->gate(destGateId); }
 
-    /**
-     * Supporting class for Topology.
-     *
-     * While navigating the graph stored in a Topology, Node's methods return
-     * LinkIn and LinkOut objects, which are 'aliases' to Link objects.
-     * LinkIn and LinkOut provide convenience functions that return the
-     * 'local' and 'remote' end of the connection when traversing the topology.
-     */
-    class INET_API LinkOut : public Link
-    {
-      public:
         /**
          * Returns the node at the remote end of this connection.
          */
-        Node *getRemoteNode() const { return destNode; }
+        Node *getLinkOutRemoteNode() const { return destNode; }
 
         /**
          * Returns the node at the local end of this connection.
          */
-        Node *getLocalNode() const { return srcNode; }
+        Node *getLinkOutLocalNode() const { return srcNode; }
 
         /**
          * Returns the gate ID at the remote end of this connection.
          */
-        int getRemoteGateId() const { return destGateId; }
+        int getLinkOutRemoteGateId() const { return destGateId; }
 
         /**
          * Returns the gate ID at the local end of this connection.
          */
-        int getLocalGateId() const { return srcGateId; }
+        int getLinkOutLocalGateId() const { return srcGateId; }
 
         /**
          * Returns the gate at the remote end of this connection.
          */
-        cGate *getRemoteGate() const { return destNode->getModule()->gate(destGateId); }
+        cGate *getLinkOutRemoteGate() const { return destNode->getModule()->gate(destGateId); }
 
         /**
          * Returns the gate at the local end of this connection.
          */
-        cGate *getLocalGate() const { return srcNode->getModule()->gate(srcGateId); }
+        cGate *getLinkOutLocalGate() const { return srcNode->getModule()->gate(srcGateId); }
     };
 
     /**
@@ -355,8 +317,7 @@ class INET_API Topology : public cOwnedObject
      * Redefine the matches() method to return whether the given module
      * should be included in the extracted topology or not.
      */
-    class INET_API Predicate
-    {
+    class INET_API Predicate {
       public:
         virtual ~Predicate() {}
         virtual bool matches(cModule *module) = 0;
@@ -364,7 +325,6 @@ class INET_API Topology : public cOwnedObject
 
   protected:
     std::vector<Node *> nodes;
-    Node *target;
 
     // note: the purpose of the (unsigned int) cast is that nodes with moduleId==-1 are inserted at the end of the vector
     static bool lessByModuleId(Node *a, Node *b) { return (unsigned int)a->moduleId < (unsigned int)b->moduleId; }
@@ -559,7 +519,7 @@ class INET_API Topology : public cOwnedObject
      * Returns pointer to the ith node in the graph. Node's methods
      * can be used to further examine the node's connectivity, etc.
      */
-    Node *getNode(int i);
+    Node *getNode(int i) const;
 
     /**
      * Returns the graph node which corresponds to the given module in the
@@ -568,7 +528,7 @@ class INET_API Topology : public cOwnedObject
      * network, that is, it was probably created with one of the
      * extract...() functions.
      */
-    Node *getNodeFor(cModule *mod);
+    Node *getNodeFor(cModule *mod) const;
     //@}
 
     /** @name Algorithms to find shortest paths. */
@@ -583,20 +543,14 @@ class INET_API Topology : public cOwnedObject
      * Apply the Dijkstra algorithm to find all shortest paths to the given
      * graph node. The paths found can be extracted via Node's methods.
      */
-    void calculateUnweightedSingleShortestPathsTo(Node *target);
+    void calculateUnweightedSingleShortestPathsTo(Node *target) const;
 
     /**
      * Apply the Dijkstra algorithm to find all shortest paths to the given
      * graph node. The paths found can be extracted via Node's methods.
      * Uses weights in nodes and links.
      */
-    void calculateWeightedSingleShortestPathsTo(Node *target);
-
-    /**
-     * Returns the node that was passed to the most recently called
-     * shortest path finding function.
-     */
-    Node *getTargetNode() const { return target; }
+    void calculateWeightedSingleShortestPathsTo(Node *target) const;
     //@}
 
   protected:
@@ -613,5 +567,5 @@ class INET_API Topology : public cOwnedObject
 
 } // namespace inet
 
-#endif // ifndef __INET_TOPOLOGY_H
+#endif
 

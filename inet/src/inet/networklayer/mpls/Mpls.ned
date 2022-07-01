@@ -1,19 +1,14 @@
 //
-// (C) 2005 Vojtech Janota
-// (C) 2003 Xuan Thang Nguyen
+// Copyright (C) 2005 Vojtech Janota
+// Copyright (C) 2003 Xuan Thang Nguyen
 //
-// This library is free software, you can redistribute it
-// and/or modify
-// it under  the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation;
-// either version 2 of the License, or any later version.
-// The library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-// See the GNU Lesser General Public License for more details.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
 package inet.networklayer.mpls;
+
+import inet.protocolelement.contract.IProtocolLayer;
+
 
 //
 // Implements the MPLS protocol.
@@ -48,7 +43,7 @@ package inet.networklayer.mpls;
 // inherit the L2's QoS. This implementation follows a generic approach; it
 // assumes no information of QoS from the link layer.
 //
-simple Mpls
+simple Mpls like IProtocolLayer
 {
     parameters:
         string interfaceTableModule;   // The path to the InterfaceTable module
@@ -56,9 +51,9 @@ simple Mpls
         string classifierModule; // The path to the module which implements the IIngressClassifier C++ interface
         @display("i=block/switch");
     gates:
-        input netwIn @labels(Ipv4Header);
-        output netwOut @labels(Ipv4Header);
-        input ifIn @labels(MplsPacket,Ipv4Header);
-        output ifOut @labels(MplsPacket,Ipv4Header);
+        input upperLayerIn;
+        output upperLayerOut;
+        input lowerLayerIn;
+        output lowerLayerOut;
 }
 

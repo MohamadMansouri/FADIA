@@ -1,22 +1,13 @@
 //
 // Copyright (C) 2016 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see http://www.gnu.org/licenses/.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-#include "inet/linklayer/ieee80211/mac/blockack/OriginatorBlockAckAgreement.h"
+
 #include "inet/linklayer/ieee80211/mac/blockack/OriginatorBlockAckAgreementHandler.h"
+
+#include "inet/linklayer/ieee80211/mac/blockack/OriginatorBlockAckAgreement.h"
 
 namespace inet {
 namespace ieee80211 {
@@ -62,7 +53,7 @@ void OriginatorBlockAckAgreementHandler::blockAckAgreementExpired(IProcedureCall
     scheduleInactivityTimer(agreementHandlerCallback);
 }
 
-const Ptr<Ieee80211AddbaRequest> OriginatorBlockAckAgreementHandler::buildAddbaRequest(MacAddress receiverAddr, Tid tid, SequenceNumber startingSequenceNumber, IOriginatorBlockAckAgreementPolicy* blockAckAgreementPolicy)
+const Ptr<Ieee80211AddbaRequest> OriginatorBlockAckAgreementHandler::buildAddbaRequest(MacAddress receiverAddr, Tid tid, SequenceNumberCyclic startingSequenceNumber, IOriginatorBlockAckAgreementPolicy *blockAckAgreementPolicy)
 {
     auto addbaRequest = makeShared<Ieee80211AddbaRequest>();
     addbaRequest->setReceiverAddress(receiverAddr);
@@ -94,14 +85,14 @@ void OriginatorBlockAckAgreementHandler::processReceivedBlockAck(const Ptr<const
         throw cRuntimeError("Unsupported BlockAck");
 }
 
-void OriginatorBlockAckAgreementHandler::scheduleInactivityTimer(IBlockAckAgreementHandlerCallback* callback)
+void OriginatorBlockAckAgreementHandler::scheduleInactivityTimer(IBlockAckAgreementHandlerCallback *callback)
 {
     simtime_t earliestExpirationTime = computeEarliestExpirationTime();
     if (earliestExpirationTime != SIMTIME_MAX)
         callback->scheduleInactivityTimer(earliestExpirationTime);
 }
 
-OriginatorBlockAckAgreement* OriginatorBlockAckAgreementHandler::getAgreement(MacAddress receiverAddr, Tid tid)
+OriginatorBlockAckAgreement *OriginatorBlockAckAgreementHandler::getAgreement(MacAddress receiverAddr, Tid tid)
 {
     auto agreementId = std::make_pair(receiverAddr, tid);
     auto it = blockAckAgreements.find(agreementId);
@@ -130,7 +121,7 @@ void OriginatorBlockAckAgreementHandler::terminateAgreement(MacAddress originato
     }
 }
 
-void OriginatorBlockAckAgreementHandler::processTransmittedDataFrame(Packet *packet, const Ptr<const Ieee80211DataHeader>& dataHeader, IOriginatorBlockAckAgreementPolicy* blockAckAgreementPolicy, IProcedureCallback* callback)
+void OriginatorBlockAckAgreementHandler::processTransmittedDataFrame(Packet *packet, const Ptr<const Ieee80211DataHeader>& dataHeader, IOriginatorBlockAckAgreementPolicy *blockAckAgreementPolicy, IProcedureCallback *callback)
 {
     auto agreement = getAgreement(dataHeader->getReceiverAddress(), dataHeader->getTid());
     if (blockAckAgreementPolicy->isAddbaReqNeeded(packet, dataHeader) && agreement == nullptr) {
@@ -141,7 +132,7 @@ void OriginatorBlockAckAgreementHandler::processTransmittedDataFrame(Packet *pac
     }
 }
 
-void OriginatorBlockAckAgreementHandler::processReceivedAddbaResp(const Ptr<const Ieee80211AddbaResponse>& addbaResp, IOriginatorBlockAckAgreementPolicy* blockAckAgreementPolicy, IBlockAckAgreementHandlerCallback *callback)
+void OriginatorBlockAckAgreementHandler::processReceivedAddbaResp(const Ptr<const Ieee80211AddbaResponse>& addbaResp, IOriginatorBlockAckAgreementPolicy *blockAckAgreementPolicy, IBlockAckAgreementHandlerCallback *callback)
 {
     auto agreement = getAgreement(addbaResp->getTransmitterAddress(), addbaResp->getTid());
     if (blockAckAgreementPolicy->isAddbaReqAccepted(addbaResp, agreement)) {
@@ -149,11 +140,11 @@ void OriginatorBlockAckAgreementHandler::processReceivedAddbaResp(const Ptr<cons
         scheduleInactivityTimer(callback);
     }
     else {
-        // TODO: send a new one?
+        // TODO send a new one?
     }
 }
 
-void OriginatorBlockAckAgreementHandler::updateAgreement(OriginatorBlockAckAgreement* agreement, const Ptr<const Ieee80211AddbaResponse>& addbaResp)
+void OriginatorBlockAckAgreementHandler::updateAgreement(OriginatorBlockAckAgreement *agreement, const Ptr<const Ieee80211AddbaResponse>& addbaResp)
 {
     agreement->setIsAddbaResponseReceived(true);
     agreement->setBufferSize(addbaResp->getBufferSize());
@@ -175,7 +166,7 @@ void OriginatorBlockAckAgreementHandler::processTransmittedDelba(const Ptr<const
     terminateAgreement(delba->getReceiverAddress(), delba->getTid());
 }
 
-void OriginatorBlockAckAgreementHandler::processReceivedDelba(const Ptr<const Ieee80211Delba>& delba, IOriginatorBlockAckAgreementPolicy* blockAckAgreementPolicy)
+void OriginatorBlockAckAgreementHandler::processReceivedDelba(const Ptr<const Ieee80211Delba>& delba, IOriginatorBlockAckAgreementPolicy *blockAckAgreementPolicy)
 {
     if (blockAckAgreementPolicy->isDelbaAccepted(delba))
         terminateAgreement(delba->getTransmitterAddress(), delba->getTid());
@@ -189,3 +180,4 @@ OriginatorBlockAckAgreementHandler::~OriginatorBlockAckAgreementHandler()
 
 } // namespace ieee80211
 } // namespace inet
+

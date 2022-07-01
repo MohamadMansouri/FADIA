@@ -1,25 +1,14 @@
 //
-// Copyright (C) 2004 Andras Varga
+// Copyright (C) 2004 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 #ifndef __INET_MODULEACCESS_H
 #define __INET_MODULEACCESS_H
 
 #include "inet/common/INETDefs.h"
-#include "inet/networklayer/contract/IInterfaceTable.h"
 
 namespace inet {
 
@@ -63,19 +52,13 @@ INET_API cModule *findModuleUnderContainingNode(const cModule *from);
  * or type mismatch.
  */
 template<typename T>
-INET_API T *findModuleFromPar(cPar& par, const cModule *from, bool required = true);
-
-template<typename T>
-T *findModuleFromPar(cPar& par, const cModule *from, bool required)
+T *findModuleFromPar(cPar& par, const cModule *from)
 {
     const char *path = par;
     if (path && *path) {
-        cModule *mod = from->getModuleByPath(path);
+        cModule *mod = from->findModuleByPath(path);
         if (!mod) {
-            if (required)
-                throw cRuntimeError("Module not found on path '%s' defined by par '%s'", path, par.getFullPath().c_str());
-            else
-                return nullptr;
+            return nullptr;
         }
         T *m = dynamic_cast<T *>(mod);
         if (!m)
@@ -92,18 +75,12 @@ T *findModuleFromPar(cPar& par, const cModule *from, bool required)
  * or type mismatch.
  */
 template<typename T>
-INET_API T *getModuleFromPar(cPar& par, const cModule *from, bool required = true);
-
-template<typename T>
-T *getModuleFromPar(cPar& par, const cModule *from, bool required)
+T *getModuleFromPar(cPar& par, const cModule *from)
 {
     const char *path = par;
-    cModule *mod = from->getModuleByPath(path);
+    cModule *mod = from->findModuleByPath(path);
     if (!mod) {
-        if (required)
-            throw cRuntimeError("Module not found on path '%s' defined by par '%s'", path, par.getFullPath().c_str());
-        else
-            return nullptr;
+        throw cRuntimeError("Module not found on path '%s' defined by par '%s'", path, par.getFullPath().c_str());
     }
     T *m = dynamic_cast<T *>(mod);
     if (!m)
@@ -112,42 +89,32 @@ T *getModuleFromPar(cPar& par, const cModule *from, bool required)
 }
 
 /**
- * Find the nic module (inside the networkNode) containing the given module.
- * Returns nullptr, if no containing nic module.
- */
-INET_API InterfaceEntry *findContainingNicModule(const cModule *from);
-
-/**
- * Find the nic module (inside the networkNode) containing the given module.
- * throws error if no containing nic module.
- */
-INET_API InterfaceEntry *getContainingNicModule(const cModule *from);
-
-/**
  * Returns a gate of a module with type T that is on the path starting at the given gate.
  * Returns nullptr if no such module is found along the path.
  */
 template<typename T>
-INET_API cGate *findConnectedGate(cGate *gate, int direction = 0)
+cGate *findConnectedGate(cGate *gate, int direction = 0)
 {
-    if (!gate->isConnectedOutside())
-        return nullptr;
-    else {
-        if (direction < 0 || gate->getType() == cGate::INPUT) {
-            for (auto g = gate; g != nullptr; g = g->getPreviousGate())
-                if (dynamic_cast<T *>(g->getOwnerModule()) && g->getType() == cGate::OUTPUT)
-                    return g;
-            return nullptr;
+    if (direction < 0 || (direction == 0 && gate->getType() == cGate::INPUT)) {
+        auto g = gate->getPreviousGate();
+        while (g != nullptr) {
+            if (dynamic_cast<T *>(g->getOwnerModule()))
+                break;
+            g = g->getPreviousGate();
         }
-        else if (direction > 0 || gate->getType() == cGate::OUTPUT) {
-            for (auto g = gate; g != nullptr; g = g->getNextGate())
-                if (dynamic_cast<T *>(g->getOwnerModule()) && g->getType() == cGate::INPUT)
-                    return g;
-            return nullptr;
-        }
-        else
-            throw cRuntimeError("Unknown gate type");
+        return g;
     }
+    else if (direction > 0 || (direction == 0 && gate->getType() == cGate::OUTPUT)) {
+        auto g = gate->getNextGate();
+        while (g != nullptr) {
+            if (dynamic_cast<T *>(g->getOwnerModule()))
+                break;
+            g = g->getNextGate();
+        }
+        return g;
+    }
+    else
+        throw cRuntimeError("Unknown gate type");
 }
 
 /**
@@ -155,7 +122,7 @@ INET_API cGate *findConnectedGate(cGate *gate, int direction = 0)
  * Throws an error if no such module is found along the path.
  */
 template<typename T>
-INET_API cGate *getConnectedGate(cGate *gate, int direction = 0)
+cGate *getConnectedGate(cGate *gate, int direction = 0)
 {
     auto connectedGate = findConnectedGate<T>(gate, direction);
     if (connectedGate == nullptr)
@@ -168,7 +135,7 @@ INET_API cGate *getConnectedGate(cGate *gate, int direction = 0)
  * Returns nullptr if no such module is found along the path.
  */
 template<typename T>
-INET_API T *findConnectedModule(cGate *gate, int direction = 0)
+T *findConnectedModule(cGate *gate, int direction = 0)
 {
     auto connectedGate = findConnectedGate<T>(gate, direction);
     return connectedGate != nullptr ? check_and_cast<T *>(connectedGate->getOwnerModule()) : nullptr;
@@ -179,7 +146,7 @@ INET_API T *findConnectedModule(cGate *gate, int direction = 0)
  * Throws an error if no such module is found along the path.
  */
 template<typename T>
-INET_API T *getConnectedModule(cGate *gate, int direction = 0)
+T *getConnectedModule(cGate *gate, int direction = 0)
 {
     auto module = findConnectedModule<T>(gate, direction);
     if (module == nullptr)
@@ -189,5 +156,5 @@ INET_API T *getConnectedModule(cGate *gate, int direction = 0)
 
 } // namespace inet
 
-#endif // ifndef __INET_MODULEACCESS_H
+#endif
 

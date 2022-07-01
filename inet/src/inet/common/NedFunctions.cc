@@ -1,20 +1,10 @@
 //
-// Copyright (C) 1992-2004 Andras Varga
+// Copyright (C) 1992-2004 OpenSim Ltd.
 // Copyright (C) 2014 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 #include "inet/common/INETDefs.h"
 
@@ -22,24 +12,9 @@ namespace inet {
 
 namespace utils {
 
-cNEDValue nedf_hasVisualizer(cComponent *context, cNEDValue argv[], int argc)
-{
-#ifdef WITH_VISUALIZERS
-    return true;
-#else
-    return false;
-#endif
-}
-
-Define_NED_Function2(nedf_hasVisualizer,
-        "bool hasVisualizer()",
-        "",
-        "Returns true if the visualizer feature is available"
-        );
-
 cNEDValue nedf_hasModule(cComponent *context, cNEDValue argv[], int argc)
 {
-    cRegistrationList *types = componentTypes.getInstance();
+    cRegistrationList *types = omnetpp::internal::componentTypes.getInstance();
     if (argv[0].getType() != cNEDValue::STRING)
         throw cRuntimeError("hasModule(): string arguments expected");
     const char *name = argv[0].stringValue();
@@ -61,7 +36,7 @@ Define_NED_Function2(nedf_hasModule,
 
 cNEDValue nedf_haveClass(cComponent *context, cNEDValue argv[], int argc)
 {
-    return classes.getInstance()->lookup(argv[0].stringValue()) != nullptr;
+    return omnetpp::internal::classes.getInstance()->lookup(argv[0].stringValue()) != nullptr;
 }
 
 Define_NED_Function2(nedf_haveClass,
@@ -130,7 +105,7 @@ cNEDValue nedf_select(cComponent *context, cNEDValue argv[], int argc)
     if (index < 0)
         throw cRuntimeError("select(): negative index %ld", index);
     if (index >= argc - 1)
-        throw cRuntimeError("select(): index=%ld is too large", index, argc - 1);
+        throw cRuntimeError("select(): index=%ld is too large, max value is %d", index, argc - 1);
     return argv[index + 1];
 }
 
@@ -165,9 +140,8 @@ Define_NED_Function2(nedf_absPath,
 
 cNEDValue nedf_firstAvailableOrEmpty(cComponent *context, cNEDValue argv[], int argc)
 {
-    cRegistrationList *types = componentTypes.getInstance();
-    for (int i=0; i<argc; i++)
-    {
+    cRegistrationList *types = omnetpp::internal::componentTypes.getInstance();
+    for (int i = 0; i < argc; i++) {
         if (argv[i].getType() != cNEDValue::STRING)
             throw cRuntimeError("firstAvailable(): string arguments expected");
         const char *name = argv[i].stringValue();
@@ -192,7 +166,7 @@ Define_NED_Function2(nedf_firstAvailableOrEmpty,
 
 cNEDValue nedf_nanToZero(cComponent *context, cNEDValue argv[], int argc)
 {
-    double x = argv[0].doubleValue();
+    double x = argv[0].doubleValueRaw();
     const char *unit = argv[0].getUnit();
     return std::isnan(x) ? cNEDValue(0.0, unit) : argv[0];
 }
@@ -207,14 +181,14 @@ static cNedValue nedf_intWithUnit(cComponent *contextComponent, cNedValue argv[]
 {
     switch (argv[0].getType()) {
         case cNedValue::BOOL:
-            return (OMNETPP5_CODE(intpar_t) OMNETPP6_CODE(intval_t))( argv[0].boolValue() ? 1 : 0 );
+            return (intval_t)(argv[0].boolValue() ? 1 : 0);
         case cNedValue::INT:
             return argv[0];
         case cNedValue::DOUBLE:
-            return cNedValue(checked_int_cast<OMNETPP5_CODE(intpar_t) OMNETPP6_CODE(intval_t)>(floor(argv[0].doubleValue())), argv[0].getUnit());
+            return cNedValue(checked_int_cast<intval_t>(floor(argv[0].doubleValueRaw())), argv[0].getUnit());
         case cNedValue::STRING:
             throw cRuntimeError("intWithUnit(): Cannot convert string to int");
-        case OMNETPP5_CODE(cNedValue::XML) OMNETPP6_CODE(cNedValue::OBJECT) :
+        case cNedValue::OBJECT:
             throw cRuntimeError("intWithUnit(): Cannot convert cObject to int");
         default:
             throw cRuntimeError("Internal error: Invalid cNedValue type");
@@ -228,7 +202,7 @@ Define_NED_Function2(nedf_intWithUnit,
 
 cNedValue nedf_xmlattr(cComponent *contextComponent, cNedValue argv[], int argc)
 {
-    if (argv[0].getType() != OMNETPP5_CODE(cNedValue::XML) OMNETPP6_CODE(cNedValue::OBJECT))
+    if (argv[0].getType() != cNedValue::OBJECT)
         throw cRuntimeError("xmlattr(): xmlNode argument must be an xml node");
     if (argv[1].getType() != cNEDValue::STRING)
         throw cRuntimeError("xmlattr(): attributeName argument must be a string");
@@ -248,6 +222,36 @@ Define_NED_Function2(nedf_xmlattr,
         "Returns the value of the specified XML attribute of xmlNode. "
         "It returns the defaultValue (or throws an error) if the attribute does not exists."
         )
+
+cNEDValue nedf_findArrayObjectElement(cComponent *context, cNEDValue argv[], int argc)
+{
+    cValueArray *array = check_and_cast<cValueArray *>(argv[0].objectValue());
+    for (int index = 0; index < array->size(); index++) {
+        cValueMap *map = check_and_cast<cValueMap *>(array->get(index).objectValue());
+        for (int i = 1; i < argc; i += 2)
+            if (map->get(argv[i].stringValue()).intValue() != argv[i + 1].intValue())
+                goto next;
+        return map;
+        next:;
+    }
+    return cNEDValue((cObject *)nullptr);
+}
+
+Define_NED_Function2(nedf_findArrayObjectElement,
+        "bool findArrayObjectElement(any array, string key, any value, ...)",
+        "misc",
+        "Returns the first object from the array that matches the given set of key-value pairs"
+        );
+
+cValue nedf_getId(cComponent *contextComponent, cValue argv[], int argc)
+{
+    return contextComponent->getId();
+}
+
+Define_NED_Function2(nedf_getId,
+    "int getId()",
+    "ned",
+    "Returns the id of the module or channel in context.")
 
 } // namespace utils
 

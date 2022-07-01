@@ -1,19 +1,9 @@
 //
-// Copyright (C) OpenSim Ltd.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 package inet.visualizer.base;
 
@@ -33,7 +23,7 @@ simple RadioVisualizerBase extends VisualizerBase
         bool displayTransmissionState = default(true);
         bool displayAntennaLobes = default(false);
 
-        string radioFilter = default("**"); // which radios are considered, matches all radios by default
+        string radioFilter @mutable = default("**"); // which radios are considered, matches all radios by default
 
         string radioModeImages = default("block/process_vs block/timer_vs block/wrx_vs block/wtx_vs block/wrxtx_vs block/cogwheel_vs");
         string receptionStateImages = default("- - misc/receiving misc/receiving");
@@ -43,8 +33,8 @@ simple RadioVisualizerBase extends VisualizerBase
         string placementHint = default("bottomRight"); // annotation placement hint, space separated list of any, top, bottom, left, right, topLeft, topCenter, topRight, etc.
         double placementPriority = default(0); // determines the order of annotation positioning
 
-		bool antennaLobeNormalize = default(false); // true means maximum gain, false means 0dB is displayed at the given antennaLobeRadius
-		bool antennaLobeRelativeLabels = default(false); // determines whether gain labels are relative or absolute (if true, maximum gain label is 0dB)
+        bool antennaLobeNormalize = default(false); // true means maximum gain, false means 0dB is displayed at the given antennaLobeRadius
+        bool antennaLobeRelativeLabels = default(false); // determines whether gain labels are relative or absolute (if true, maximum gain label is 0dB)
         bool antennaLobePlaneGlobal = default(true); // compute antenna lobe relative to the global or antenna local coordinate systems, global by default
         string antennaLobePlane @enum("view", "xy", "xz", "yz") = default("view"); // compute antenna lobe in this plane, view by default
         string antennaLobeMode @enum("logarithmic", "linear") = default("logarithmic");

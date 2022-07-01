@@ -1,56 +1,20 @@
 //
-// Copyright (C) 2013 Maria Fernandez, Carlos Calafate, Juan-Carlos Cano and
-// Pietro Manzoni
+// Copyright (C) 2013 Maria Fernandez, Carlos Calafate, Juan-Carlos Cano and Pietro Manzoni
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-#include <algorithm>    // min,max
+#include "inet/transportlayer/tcp/flavours/TcpVegas.h"
+
+#include <algorithm> // min,max
 
 #include "inet/transportlayer/tcp/Tcp.h"
-#include "inet/transportlayer/tcp/flavours/TcpVegas.h"
 
 namespace inet {
 
 namespace tcp {
 
 Register_Class(TcpVegas);
-
-TcpVegasStateVariables::TcpVegasStateVariables()
-{
-    ssthresh = 65535;
-    v_recoverypoint = 0;
-    v_cwnd_changed = 0;
-
-    v_baseRTT = SIMTIME_MAX;
-
-    v_inc_flag = true;
-    v_incr_ss = false;
-    v_incr = 0;
-
-    v_worried = 0;
-
-    v_begseq = 0;
-    v_begtime = 0;
-    v_cntRTT = 0;
-    v_sumRTT = 0.0;
-    v_rtt_timeout = 1000.0;
-}
-
-TcpVegasStateVariables::~TcpVegasStateVariables()
-{
-}
 
 std::string TcpVegasStateVariables::str() const
 {
@@ -89,13 +53,13 @@ void TcpVegas::recalculateSlowStartThreshold()
 
     // set ssthresh to flight size/2, but at least 2 SMSS
     // (the formula below practically amounts to ssthresh=cwnd/2 most of the time)
-    uint32 flight_size = std::min(state->snd_cwnd, state->snd_wnd);    // FIXME TODO - Does this formula computes the amount of outstanding data?
-    // uint32 flight_size = state->snd_max - state->snd_una;
+    uint32_t flight_size = std::min(state->snd_cwnd, state->snd_wnd); // FIXME - Does this formula computes the amount of outstanding data?
+//    uint32_t flight_size = state->snd_max - state->snd_una;
     state->ssthresh = std::max(flight_size / 2, 2 * state->snd_mss);
     conn->emit(ssthreshSignal, state->ssthresh);
 }
 
-//Process rexmit timer
+// Process rexmit timer
 void TcpVegas::processRexmitTimer(TcpEventCode& event)
 {
     TcpBaseAlg::processRexmitTimer(event);
@@ -111,14 +75,14 @@ void TcpVegas::processRexmitTimer(TcpEventCode& event)
     EV_DETAIL << "RXT Timeout in Vegas: resetting cwnd to " << state->snd_cwnd << "\n"
               << ", ssthresh=" << state->ssthresh << "\n";
 
-    state->v_cwnd_changed = simTime();    // Save time when cwnd changes due to rtx
+    state->v_cwnd_changed = simTime(); // Save time when cwnd changes due to rtx
 
     state->afterRto = true;
 
-    conn->retransmitOneSegment(true);    //retransmit one segment from snd_una
+    conn->retransmitOneSegment(true); // retransmit one segment from snd_una
 }
 
-void TcpVegas::receivedDataAck(uint32 firstSeqAcked)
+void TcpVegas::receivedDataAck(uint32_t firstSeqAcked)
 {
     TcpBaseAlg::receivedDataAck(firstSeqAcked);
 
@@ -128,8 +92,8 @@ void TcpVegas::receivedDataAck(uint32 firstSeqAcked)
         simtime_t tSent = found->getFirstSentTime();
         int num_transmits = found->getTransmitCount();
 
-        //TODO: When should do it: when received first ACK, or when received ACK of 1st sent packet???
-        if (firstSeqAcked == state->iss + 1) {    // Initialization
+        // TODO When should do it: when received first ACK, or when received ACK of 1st sent packet???
+        if (firstSeqAcked == state->iss + 1) { // Initialization
             state->v_baseRTT = currentTime - tSent;
             state->v_sa = state->v_baseRTT * 8;
             state->v_sd = state->v_baseRTT;
@@ -154,30 +118,30 @@ void TcpVegas::receivedDataAck(uint32 firstSeqAcked)
             // decide if incr/decr cwnd
             if (newRTT > 0) {
                 // rttLen: bytes transmitted since a segment is sent and its ACK is received
-                uint32 rttLen = state->snd_nxt - state->v_begseq;
+                uint32_t rttLen = state->snd_nxt - state->v_begseq;
 
                 // If only one packet in transit: update baseRTT
                 if (rttLen <= state->snd_mss)
                     state->v_baseRTT = newRTT;
 
                 // actual = rttLen/(current_rtt)
-                uint32 actual = rttLen / newRTT;
+                uint32_t actual = rttLen / newRTT;
 
                 // expected = (current window size)/baseRTT
-                uint32 expected;
-                uint32 acked = state->snd_una - firstSeqAcked;
-                expected = (uint32)((state->snd_nxt - firstSeqAcked) + std::min(state->snd_mss - acked, (uint32)0)) / state->v_baseRTT;
+                uint32_t expected;
+                uint32_t acked = state->snd_una - firstSeqAcked;
+                expected = (uint32_t)((state->snd_nxt - firstSeqAcked) + std::min(state->snd_mss - acked, (uint32_t)0)) / state->v_baseRTT;
 
                 // diff = expected - actual
-                uint32 diff = (uint32)((expected - actual) * SIMTIME_DBL(state->v_baseRTT) + 0.5);
+                uint32_t diff = (uint32_t)((expected - actual) * SIMTIME_DBL(state->v_baseRTT) + 0.5);
 
                 EV_DETAIL << "Vegas: expected: " << expected << "\n"
                           << ", actual =" << actual << "\n"
                           << ", diff =" << diff << "\n";
 
                 // Slow start
-                state->v_incr_ss = false;    // reset
-                if (state->snd_cwnd < state->ssthresh) {    //Slow start
+                state->v_incr_ss = false; // reset
+                if (state->snd_cwnd < state->ssthresh) { // Slow start
                     EV_DETAIL << "Vegas: Slow Start: " << "\n";
 
                     // cwnd modification during slow-start only every 2 rtt
@@ -186,11 +150,11 @@ void TcpVegas::receivedDataAck(uint32 firstSeqAcked)
                         state->v_incr = 0;
                     }
                     else {
-                        if (diff > 1 * state->snd_mss) {    // gamma
+                        if (diff > 1 * state->snd_mss) { // gamma
                             /* When actual rate falls below expected rate a certain value (gamma threshold)
                                Vegas changes from slow start to linear incr/decr */
 
-                            recalculateSlowStartThreshold();    // to enter again in cong. avoidance
+                            recalculateSlowStartThreshold(); // to enter again in cong. avoidance
                             state->snd_cwnd -= (state->snd_cwnd / 8);
 
                             if (state->snd_cwnd < 2 * state->snd_mss)
@@ -201,29 +165,29 @@ void TcpVegas::receivedDataAck(uint32 firstSeqAcked)
                             conn->emit(cwndSignal, state->snd_cwnd);
                         }
                         else {
-                            state->v_incr = state->snd_mss;    //incr 1 segment
+                            state->v_incr = state->snd_mss; // incr 1 segment
                             state->v_incr_ss = true;
                         }
                     }
-                }    // end slow start
+                } // end slow start
                 else {
                     // Cong. avoidance
                     EV_DETAIL << "Vegas: Congestion avoidance: " << "\n";
 
-                    if (diff > 4 * state->snd_mss) {    // beta
+                    if (diff > 4 * state->snd_mss) { // beta
                         state->v_incr = -state->snd_mss;
                     }
-                    else if (diff < 2 * state->snd_mss) {    // alpha
+                    else if (diff < 2 * state->snd_mss) { // alpha
                         state->v_incr = state->snd_mss;
                     }
                     else
                         state->v_incr = 0;
-                }    // end cong. avoidance
+                } // end cong. avoidance
             }
             // register beqseq and begtime values for next rtt
             state->v_begtime = currentTime;
             state->v_begseq = state->snd_nxt;
-        }    // end 'once per rtt' section
+        } // end 'once per rtt' section
 
         // if cwnd > ssthresh, no incr
         if (state->v_incr_ss && state->snd_cwnd >= state->ssthresh) {
@@ -231,7 +195,7 @@ void TcpVegas::receivedDataAck(uint32 firstSeqAcked)
             EV_DETAIL << "Vegas: surpass ssthresh during slow-start: no cwnd incr. " << "\n";
         }
 
-        //incr/decr cwnd
+        // incr/decr cwnd
         if (state->v_incr > 0) {
             state->snd_cwnd += state->v_incr;
 
@@ -272,24 +236,24 @@ void TcpVegas::receivedDataAck(uint32 firstSeqAcked)
         if (state->v_worried > 0) {
             state->v_worried -= state->snd_mss;
             const TcpSegmentTransmitInfoList::Item *unaFound = state->regions.get(state->snd_una);
-            //bool expired = unaFound && ((currentTime - unaFound->getLastSentTime()) >= state->v_rtt_timeout);
+//            bool expired = unaFound && ((currentTime - unaFound->getLastSentTime()) >= state->v_rtt_timeout);
             bool expired = unaFound && ((currentTime - unaFound->getFirstSentTime()) >= state->v_rtt_timeout);
 
             // added comprobation to check that received ACK do not acks all outstanding data. If not,
             // TcpConnection::retransmitOneSegment will fail: ASSERT(bytes!=0), line 839), because bytes = snd_max-snd_una
             if (expired && (state->snd_max - state->snd_una > 0)) {
-                state->dupacks = DUPTHRESH;
+                state->dupacks = state->dupthresh;
                 EV_DETAIL << "Vegas: retransmission (v_rtt_timeout) " << "\n";
-                conn->retransmitOneSegment(false);    //retransmit one segment from snd_una
+                conn->retransmitOneSegment(false); // retransmit one segment from snd_una
             }
             else
                 state->v_worried = 0;
         }
-    }    // Closes if v_sendtime != nullptr
+    } // Closes if v_sendtime != nullptr
 
     state->regions.clearTo(state->snd_una);
 
-    //Try to send more data
+    // Try to send more data
     sendData(false);
 }
 
@@ -311,9 +275,9 @@ void TcpVegas::receivedDuplicateAck()
     bool expired = found && ((currentTime - tSent) >= state->v_rtt_timeout);
 
     // rtx if Vegas timeout || 3 dupacks
-    if (expired || state->dupacks == DUPTHRESH) {    //DUPTHRESH = 3
-        uint32 win = std::min(state->snd_cwnd, state->snd_wnd);
-        state->v_worried = std::min((uint32)2 * state->snd_mss, state->snd_nxt - state->snd_una);
+    if (expired || state->dupacks == state->dupthresh) {
+        uint32_t win = std::min(state->snd_cwnd, state->snd_wnd);
+        state->v_worried = std::min((uint32_t)2 * state->snd_mss, state->snd_nxt - state->snd_una);
 
         if (found) {
             if (num_transmits > 1)
@@ -327,7 +291,7 @@ void TcpVegas::receivedDuplicateAck()
                 if (win <= 3)
                     win = 2;
                 else if (num_transmits > 1)
-                    win = win / 2; //win <<= 1
+                    win = win / 2; // win <<= 1
                 else
                     win -= win / 4; // win -= (win >>2)
 
@@ -345,10 +309,10 @@ void TcpVegas::receivedDuplicateAck()
         conn->retransmitOneSegment(false);
 
         if (found && num_transmits == 1)
-            state->dupacks = DUPTHRESH;
+            state->dupacks = state->dupthresh;
     }
-    //else if dupacks > duphtresh, cwnd+1
-    else if (state->dupacks > DUPTHRESH) {    // DUPTHRESH = 3
+    // else if dupacks > duphtresh, cwnd+1
+    else if (state->dupacks > state->dupthresh) {
         state->snd_cwnd += state->snd_mss;
         conn->emit(cwndSignal, state->snd_cwnd);
     }
@@ -357,7 +321,7 @@ void TcpVegas::receivedDuplicateAck()
     sendData(false);
 }
 
-void TcpVegas::dataSent(uint32 fromseq)
+void TcpVegas::dataSent(uint32_t fromseq)
 {
     TcpBaseAlg::dataSent(fromseq);
 
@@ -371,7 +335,7 @@ void TcpVegas::dataSent(uint32 fromseq)
     state->regions.set(fromseq, state->snd_max, simTime());
 }
 
-void TcpVegas::segmentRetransmitted(uint32 fromseq, uint32 toseq)
+void TcpVegas::segmentRetransmitted(uint32_t fromseq, uint32_t toseq)
 {
     TcpBaseAlg::segmentRetransmitted(fromseq, toseq);
 

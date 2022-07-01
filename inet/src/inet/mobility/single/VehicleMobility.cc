@@ -1,26 +1,17 @@
 //
 // Copyright (C) 2015 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
+
+#include "inet/mobility/single/VehicleMobility.h"
 
 #include <fstream>
 #include <iostream>
 
 #include "inet/common/geometry/common/GeographicCoordinateSystem.h"
 #include "inet/common/geometry/common/Quaternion.h"
-#include "inet/mobility/single/VehicleMobility.h"
 
 namespace inet {
 
@@ -58,7 +49,7 @@ void VehicleMobility::setInitialPosition()
 
 void VehicleMobility::readWaypointsFromFile(const char *fileName)
 {
-    auto coordinateSystem = getModuleFromPar<IGeographicCoordinateSystem>(par("coordinateSystemModule"), this, false);
+    auto coordinateSystem = findModuleFromPar<IGeographicCoordinateSystem>(par("coordinateSystemModule"), this);
     char line[256];
     std::ifstream inputFile(fileName);
     while (true) {
@@ -94,7 +85,7 @@ void VehicleMobility::move()
     Waypoint target = waypoints[targetPointIndex];
     double dx = target.x - lastPosition.x;
     double dy = target.y - lastPosition.y;
-    if (dx * dx + dy * dy < waypointProximity * waypointProximity)  // reached so change to next (within the predefined proximity of the waypoint)
+    if (dx * dx + dy * dy < waypointProximity * waypointProximity) // reached so change to next (within the predefined proximity of the waypoint)
         targetPointIndex = (targetPointIndex + 1) % waypoints.size();
     double targetDirection = atan2(dy, dx) / M_PI * 180;
     double diff = targetDirection - heading;
@@ -140,7 +131,7 @@ void VehicleMobility::orient()
             angle = std::acos(dp);
         else
             // correcting for the case where the angle should be over 90 degrees (or under -90):
-            angle = 2*M_PI - std::acos(dp);
+            angle = 2 * M_PI - std::acos(dp);
 
         // and finally rotating around the now-ground-orthogonal local Z
         quat *= Quaternion(Coord(0, 0, 1), angle);

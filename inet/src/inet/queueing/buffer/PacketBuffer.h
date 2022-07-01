@@ -1,19 +1,9 @@
 //
-// Copyright (C) OpenSim Ltd.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see http://www.gnu.org/licenses/.
-//
+
 
 #ifndef __INET_PACKETBUFFER_H
 #define __INET_PACKETBUFFER_H
@@ -26,7 +16,7 @@
 namespace inet {
 namespace queueing {
 
-class INET_API PacketBuffer : public PacketBufferBase, public IPacketBuffer
+class INET_API PacketBuffer : public PacketBufferBase, public virtual IPacketBuffer
 {
   protected:
     int packetCapacity = -1;
@@ -42,6 +32,8 @@ class INET_API PacketBuffer : public PacketBufferBase, public IPacketBuffer
     virtual bool isOverloaded() const;
 
   public:
+    virtual ~PacketBuffer() { delete packetDropperFunction; }
+
     virtual int getMaxNumPackets() const override { return packetCapacity; }
     virtual int getNumPackets() const override { return packets.size(); }
 
@@ -53,13 +45,14 @@ class INET_API PacketBuffer : public PacketBufferBase, public IPacketBuffer
 
     virtual void addPacket(Packet *packet) override;
     virtual void removePacket(Packet *packet) override;
+    virtual void removeAllPackets() override;
 
-    virtual bool supportsPushPacket(cGate *gate) const override { return false; }
-    virtual bool supportsPopPacket(cGate *gate) const override { return false; }
+    virtual bool supportsPacketPushing(cGate *gate) const override { return false; }
+    virtual bool supportsPacketPulling(cGate *gate) const override { return false; }
 };
 
 } // namespace queueing
 } // namespace inet
 
-#endif // ifndef __INET_PACKETBUFFER_H
+#endif
 

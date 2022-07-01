@@ -1,24 +1,15 @@
 //
 // Copyright (C) 2016 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see http://www.gnu.org/licenses/.
-//
+
+
+#include "inet/linklayer/ieee80211/mac/Rx.h"
 
 #include "inet/common/ModuleAccess.h"
 #include "inet/common/checksum/EthernetCRC.h"
 #include "inet/linklayer/ieee80211/mac/Ieee80211Mac.h"
-#include "inet/linklayer/ieee80211/mac/Rx.h"
 #include "inet/linklayer/ieee80211/mac/contract/IContention.h"
 #include "inet/linklayer/ieee80211/mac/contract/ITx.h"
 
@@ -50,9 +41,9 @@ void Rx::initialize(int stage)
         WATCH(receivedPart);
         WATCH(mediumFree);
     }
-    // TODO: INITSTAGE
+    // TODO INITSTAGE
     else if (stage == INITSTAGE_NETWORK_INTERFACE_CONFIGURATION) {
-        address = check_and_cast<Ieee80211Mac*>(getContainingNicModule(this)->getSubmodule("mac"))->getAddress();
+        address = check_and_cast<Ieee80211Mac *>(getContainingNicModule(this)->getSubmodule("mac"))->getAddress();
         recomputeMediumFree();
     }
 }
@@ -70,7 +61,7 @@ void Rx::handleMessage(cMessage *msg)
 
 bool Rx::lowerFrameReceived(Packet *packet)
 {
-    Enter_Method_Silent("lowerFrameReceived(\"%s\")", packet->getName());
+    Enter_Method("lowerFrameReceived(\"%s\")", packet->getName());
     take(packet);
 
     bool isFrameOk = isFcsOk(packet);
@@ -95,7 +86,7 @@ bool Rx::lowerFrameReceived(Packet *packet)
 
 void Rx::frameTransmitted(simtime_t durationField)
 {
-    Enter_Method_Silent();
+    Enter_Method("frameTransmitted");
     // the txIndex that transmitted the frame should already own the TXOP, so
     // it has no need to (and should not) check the NAV.
     setOrExtendNav(durationField);
@@ -124,7 +115,7 @@ bool Rx::isFcsOk(Packet *packet) const
                 auto buffer = new uint8_t[bufferLength];
                 fcsBytes->copyToBuffer(buffer, bufferLength);
                 auto computedFcs = ethernetCRC(buffer, bufferLength);
-                delete [] buffer;
+                delete[] buffer;
                 return computedFcs == trailer->getFcs();
             }
             default:
@@ -146,21 +137,21 @@ void Rx::recomputeMediumFree()
 
 void Rx::receptionStateChanged(IRadio::ReceptionState state)
 {
-    Enter_Method_Silent();
+    Enter_Method("receptionStateChanged");
     receptionState = state;
     recomputeMediumFree();
 }
 
 void Rx::receivedSignalPartChanged(IRadioSignal::SignalPart part)
 {
-    Enter_Method_Silent();
+    Enter_Method("receivedSignalPartChanged");
     receivedPart = part;
     recomputeMediumFree();
 }
 
 void Rx::transmissionStateChanged(IRadio::TransmissionState state)
 {
-    Enter_Method_Silent();
+    Enter_Method("transmissionStateChanged");
     transmissionState = state;
     recomputeMediumFree();
 }
@@ -173,7 +164,7 @@ void Rx::setOrExtendNav(simtime_t navInterval)
         if (endNavTimer->isScheduled()) {
             simtime_t oldEndNav = endNavTimer->getArrivalTime();
             if (endNav < oldEndNav)
-                return;    // never decrease NAV
+                return; // never decrease NAV
             emit(navChangedSignal, endNavTimer->getArrivalTime() - simTime());
             cancelEvent(endNavTimer);
         }
@@ -219,7 +210,7 @@ void Rx::refreshDisplay() const
     }
 }
 
-void Rx::registerContention(IContention* contention)
+void Rx::registerContention(IContention *contention)
 {
     contention->mediumStateChanged(mediumFree);
     contentions.push_back(contention);
@@ -227,3 +218,4 @@ void Rx::registerContention(IContention* contention)
 
 } // namespace ieee80211
 } // namespace inet
+

@@ -1,24 +1,13 @@
 //
-// Copyright (C) 2004 Andras Varga
+// Copyright (C) 2004 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 #ifndef __INET_TCPSOCKET_H
 #define __INET_TCPSOCKET_H
 
-#include "inet/common/INETDefs.h"
 #include "inet/common/packet/ChunkQueue.h"
 #include "inet/common/packet/Message.h"
 #include "inet/common/packet/Packet.h"
@@ -82,7 +71,7 @@ class TcpStatusInfo;
  *
  * void MyModule::handleMessage(cMessage *msg) {
  *     if (socket.belongsToSocket(msg))
- *         socket.processMessage(msg); // dispatch to socketXXXX() methods
+ *         socket.processMessage(msg); // dispatch to socketTODOX() methods
  *     else
  *         ...
  * }
@@ -134,8 +123,7 @@ class INET_API TcpSocket : public ISocket
      * classes may have both this class and cSimpleModule as base class,
      * and cSimpleModule is already a cObject.
      */
-    class INET_API ICallback
-    {
+    class INET_API ICallback {
       public:
         virtual ~ICallback() {}
         /**
@@ -151,8 +139,7 @@ class INET_API TcpSocket : public ISocket
         virtual void socketDeleted(TcpSocket *socket) = 0;
     };
 
-    class INET_API ReceiveQueueBasedCallback : public ICallback
-    {
+    class INET_API ReceiveQueueBasedCallback : public ICallback {
       public:
         virtual void socketDataArrived(TcpSocket *socket) = 0;
 
@@ -235,7 +222,7 @@ class INET_API TcpSocket : public ISocket
      */
     static const char *stateName(TcpSocket::State state);
 
-    void setState(TcpSocket::State state) { sockstate = state; };
+    void setState(TcpSocket::State state) { sockstate = state; }
 
     /** @name Getter functions */
     //@{
@@ -311,7 +298,7 @@ class INET_API TcpSocket : public ISocket
     /**
      * Sends data packet.
      */
-    void send(Packet *msg);
+    virtual void send(Packet *msg) override;
 
     /**
      * Sends command.
@@ -430,5 +417,5 @@ class INET_API TcpSocket : public ISocket
 
 } // namespace inet
 
-#endif // ifndef __INET_TCPSOCKET_H
+#endif
 

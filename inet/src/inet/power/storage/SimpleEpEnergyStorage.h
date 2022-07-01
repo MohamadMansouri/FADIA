@@ -1,23 +1,14 @@
 //
-// Copyright (C) OpenSim Ltd.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 #ifndef __INET_SIMPLEEPENERGYSTORAGE_H
 #define __INET_SIMPLEEPENERGYSTORAGE_H
 
+#include "inet/common/StringFormat.h"
 #include "inet/common/lifecycle/LifecycleController.h"
 #include "inet/common/lifecycle/NodeStatus.h"
 #include "inet/power/base/EpEnergyStorageBase.h"
@@ -37,9 +28,8 @@ namespace power {
  *
  * See the corresponding NED file for more details.
  *
- * @author Levente Meszaros
  */
-class INET_API SimpleEpEnergyStorage : public EpEnergyStorageBase
+class INET_API SimpleEpEnergyStorage : public EpEnergyStorageBase, public StringFormat::IDirectiveResolver, public LifecycleController
 {
   protected:
     /**
@@ -83,21 +73,18 @@ class INET_API SimpleEpEnergyStorage : public EpEnergyStorageBase
      */
     NodeStatus *nodeStatus = nullptr;
 
-    /**
-     * LifecycleController.
-     */
-    LifecycleController lifecycleController;
-
   protected:
     virtual void initialize(int stage) override;
     virtual void handleMessage(cMessage *message) override;
     virtual void refreshDisplay() const override;
     virtual void updateDisplayString() const;
+    virtual const char *resolveDirective(char directive) const override;
 
     virtual void updateTotalPowerConsumption() override;
     virtual void updateTotalPowerGeneration() override;
 
     virtual void executeNodeOperation(J newResidualCapacity);
+    virtual void setResidualCapacity(J newResidualCapacity);
 
     virtual void scheduleTimer();
 
@@ -106,12 +93,11 @@ class INET_API SimpleEpEnergyStorage : public EpEnergyStorageBase
     virtual void updateResidualCapacity();
     virtual J getNominalEnergyCapacity() const override { return nominalCapacity; }
     virtual J getResidualEnergyCapacity() const override;
-    virtual void setResidualCapacity(J newResidualCapacity);
 };
 
 } // namespace power
 
 } // namespace inet
 
-#endif // ifndef __INET_SIMPLEEPENERGYSTORAGE_H
+#endif
 

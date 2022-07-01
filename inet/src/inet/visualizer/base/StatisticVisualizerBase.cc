@@ -1,30 +1,20 @@
 //
-// Copyright (C) OpenSim Ltd.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-#include "omnetpp/cstatisticbuilder.h"
+
+#include "inet/visualizer/base/StatisticVisualizerBase.h"
 
 #include "inet/common/ModuleAccess.h"
-#include "inet/visualizer/base/StatisticVisualizerBase.h"
+#include "omnetpp/cstatisticbuilder.h"
 
 namespace inet {
 
 namespace visualizer {
 
-Register_ResultRecorder("statisticVisualizer", StatisticVisualizerBase::LastValueRecorder);
+Register_ResultRecorder("statisticVisualizerLastValueRecorder", StatisticVisualizerBase::LastValueRecorder);
 
 StatisticVisualizerBase::StatisticVisualization::StatisticVisualization(int moduleId, simsignal_t signal, const char *unit) :
     moduleId(moduleId),
@@ -33,10 +23,12 @@ StatisticVisualizerBase::StatisticVisualization::StatisticVisualization(int modu
 {
 }
 
-StatisticVisualizerBase::~StatisticVisualizerBase()
+void StatisticVisualizerBase::preDelete(cComponent *root)
 {
-    if (displayStatistics)
+    if (displayStatistics) {
         unsubscribe();
+        removeAllStatisticVisualizations();
+    }
 }
 
 const char *StatisticVisualizerBase::DirectiveResolver::resolveDirective(char directive) const
@@ -114,7 +106,7 @@ void StatisticVisualizerBase::subscribe()
 void StatisticVisualizerBase::unsubscribe()
 {
     // NOTE: lookup the module again because it may have been deleted first
-    auto visualizationSubjectModule = getModuleFromPar<cModule>(par("visualizationSubjectModule"), this, false);
+    auto visualizationSubjectModule = findModuleFromPar<cModule>(par("visualizationSubjectModule"), this);
     if (visualizationSubjectModule != nullptr) {
         if (*signalName != '\0')
             visualizationSubjectModule->unsubscribe(registerSignal(signalName), this);
@@ -125,13 +117,9 @@ void StatisticVisualizerBase::addResultRecorder(cComponent *source, simsignal_t 
 {
     cStatisticBuilder statisticBuilder(getEnvir()->getConfig());
     cProperty statisticTemplateProperty;
-    std::string record;
-    if (*statisticExpression == '\0')
-        record = "statisticVisualizer";
-    else
-        record = std::string("statisticVisualizer(") + statisticExpression + std::string(")");
+    auto recordingMode = getRecordingMode();
     statisticTemplateProperty.addKey("record");
-    statisticTemplateProperty.setValue("record", 0, record.c_str());
+    statisticTemplateProperty.setValue("record", 0, recordingMode.c_str());
     statisticBuilder.addResultRecorders(source, signal, statisticName, &statisticTemplateProperty);
 }
 
@@ -150,8 +138,12 @@ StatisticVisualizerBase::LastValueRecorder *StatisticVisualizerBase::getResultRe
 
 StatisticVisualizerBase::LastValueRecorder *StatisticVisualizerBase::findResultRecorder(cResultListener *resultListener)
 {
-    if (auto resultRecorder = dynamic_cast<StatisticVisualizerBase::LastValueRecorder *>(resultListener))
-        return resultRecorder;
+    if (auto resultRecorder = dynamic_cast<StatisticVisualizerBase::LastValueRecorder *>(resultListener)) {
+        if (getRecordingMode() == resultRecorder->getRecordingMode() && !strcmp(statisticName, resultRecorder->getStatisticName()))
+            return resultRecorder;
+        else
+            return nullptr;
+    }
     else if (auto resultFilter = dynamic_cast<cResultFilter *>(resultListener)) {
         auto delegates = resultFilter->getDelegates();
         for (auto delegate : delegates) {
@@ -183,14 +175,19 @@ const char *StatisticVisualizerBase::getUnit(cComponent *source)
     return statisticUnit;
 }
 
+std::string StatisticVisualizerBase::getRecordingMode()
+{
+    if (*statisticExpression == '\0')
+        return "statisticVisualizerLastValueRecorder";
+    else
+        return std::string("statisticVisualizerLastValueRecorder(") + statisticExpression + std::string(")");
+}
+
 const StatisticVisualizerBase::StatisticVisualization *StatisticVisualizerBase::getStatisticVisualization(cComponent *source, simsignal_t signal)
 {
     auto key = std::pair<int, simsignal_t>(source->getId(), signal);
     auto it = statisticVisualizations.find(key);
-    if (it == statisticVisualizations.end())
-        return nullptr;
-    else
-        return it->second;
+    return (it == statisticVisualizations.end()) ? nullptr : it->second;
 }
 
 void StatisticVisualizerBase::addStatisticVisualization(const StatisticVisualization *statisticVisualization)
@@ -216,7 +213,7 @@ void StatisticVisualizerBase::removeAllStatisticVisualizations()
     }
 }
 
-void StatisticVisualizerBase::processSignal(cComponent *source, simsignal_t signal, std::function<void (cIListener *)> receiveSignal)
+void StatisticVisualizerBase::processSignal(cComponent *source, simsignal_t signal, std::function<void(cIListener *)> receiveSignal)
 {
     auto statisticVisualization = getStatisticVisualization(source, signal);
     if (statisticVisualization != nullptr)

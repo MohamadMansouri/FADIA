@@ -1,28 +1,21 @@
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program.  If not, see http://www.gnu.org/licenses/.
-//
+
+
+#include "inet/emulation/transportlayer/udp/ExtLowerUdp.h"
 
 #include <omnetpp/platdep/sockets.h>
 
-#include "inet/applications/common/SocketTag_m.h"
+#include "inet/common/IProtocolRegistrationListener.h"
 #include "inet/common/NetworkNamespaceContext.h"
 #include "inet/common/Simsignals.h"
-#include "inet/common/packet/chunk/BytesChunk.h"
 #include "inet/common/packet/Message.h"
 #include "inet/common/packet/Packet.h"
-#include "inet/common/IProtocolRegistrationListener.h"
-#include "inet/emulation/transportlayer/udp/ExtLowerUdp.h"
+#include "inet/common/packet/chunk/BytesChunk.h"
+#include "inet/common/socket/SocketTag_m.h"
 #include "inet/networklayer/common/L3AddressTag_m.h"
 #include "inet/transportlayer/common/L4PortTag_m.h"
 #include "inet/transportlayer/contract/udp/UdpControlInfo.h"
@@ -48,8 +41,7 @@ void ExtLowerUdp::initialize(int stage)
         }
     }
     else if (stage == INITSTAGE_TRANSPORT_LAYER) {
-        registerService(Protocol::udp, gate("appIn"), nullptr);
-        registerProtocol(Protocol::udp, nullptr, gate("appOut"));
+        registerService(Protocol::udp, gate("appIn"), gate("appOut"));
     }
 }
 
@@ -115,35 +107,35 @@ void ExtLowerUdp::handleMessage(cMessage *message)
 //                leaveMulticastGroups(sd, addresses);
 //            }
 //            else if (auto cmd = dynamic_cast<UdpBlockMulticastSourcesCommand *>(ctrl)) {
-//                InterfaceEntry *ie = ift->getInterfaceById(cmd->getInterfaceId());
+//                NetworkInterface *ie = ift->getInterfaceById(cmd->getInterfaceId());
 //                std::vector<L3Address> sourceList;
 //                for (size_t i = 0; i < cmd->getSourceListArraySize(); i++)
 //                    sourceList.push_back(cmd->getSourceList(i));
 //                blockMulticastSources(sd, ie, cmd->getMulticastAddr(), sourceList);
 //            }
 //            else if (auto cmd = dynamic_cast<UdpUnblockMulticastSourcesCommand *>(ctrl)) {
-//                InterfaceEntry *ie = ift->getInterfaceById(cmd->getInterfaceId());
+//                NetworkInterface *ie = ift->getInterfaceById(cmd->getInterfaceId());
 //                std::vector<L3Address> sourceList;
 //                for (size_t i = 0; i < cmd->getSourceListArraySize(); i++)
 //                    sourceList.push_back(cmd->getSourceList(i));
 //                leaveMulticastSources(sd, ie, cmd->getMulticastAddr(), sourceList);
 //            }
 //            else if (auto cmd = dynamic_cast<UdpJoinMulticastSourcesCommand *>(ctrl)) {
-//                InterfaceEntry *ie = ift->getInterfaceById(cmd->getInterfaceId());
+//                NetworkInterface *ie = ift->getInterfaceById(cmd->getInterfaceId());
 //                std::vector<L3Address> sourceList;
 //                for (size_t i = 0; i < cmd->getSourceListArraySize(); i++)
 //                    sourceList.push_back(cmd->getSourceList(i));
 //                joinMulticastSources(sd, ie, cmd->getMulticastAddr(), sourceList);
 //            }
 //            else if (auto cmd = dynamic_cast<UdpLeaveMulticastSourcesCommand *>(ctrl)) {
-//               InterfaceEntry *ie = ift->getInterfaceById(cmd->getInterfaceId());
+//               NetworkInterface *ie = ift->getInterfaceById(cmd->getInterfaceId());
 //                std::vector<L3Address> sourceList;
 //                for (size_t i = 0; i < cmd->getSourceListArraySize(); i++)
 //                    sourceList.push_back(cmd->getSourceList(i));
 //                leaveMulticastSources(sd, ie, cmd->getMulticastAddr(), sourceList);
 //            }
 //            else if (auto cmd = dynamic_cast<UdpSetMulticastSourceFilterCommand *>(ctrl)) {
-//                InterfaceEntry *ie = ift->getInterfaceById(cmd->getInterfaceId());
+//                NetworkInterface *ie = ift->getInterfaceById(cmd->getInterfaceId());
 //                std::vector<L3Address> sourceList;
 //                for (unsigned int i = 0; i < cmd->getSourceListArraySize(); i++)
 //                    sourceList.push_back(cmd->getSourceList(i));
@@ -162,7 +154,8 @@ void ExtLowerUdp::handleMessage(cMessage *message)
 
 bool ExtLowerUdp::handleOperationStage(LifecycleOperation *operation, IDoneCallback *doneCallback)
 {
-    // TODO:
+    Enter_Method("handleOperationStage");
+    // TODO
     return true;
 }
 
@@ -189,7 +182,7 @@ ExtLowerUdp::Socket *ExtLowerUdp::open(int socketId)
     // Setting this option makes it possible to kill the simulations
     // and restart them right away using the same port numbers.
     int enable = 1;
-    if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (const char*)&enable, sizeof(int)) < 0)
+    if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (const char *)&enable, sizeof(int)) < 0)
         throw cRuntimeError("ExtLowerUdp: cannot set socket option");
 
     socket->fd = fd;
@@ -212,11 +205,11 @@ void ExtLowerUdp::bind(int socketId, const L3Address& localAddress, int localPor
     sockaddr.sin_port = htons(localPort);
     sockaddr.sin_addr.s_addr = htonl(localAddress.toIpv4().getInt());
 #if !defined(linux) && !defined(__linux) && !defined(_WIN32)
-        sockaddr.sin_len = sizeof(struct sockaddr_in);
+    sockaddr.sin_len = sizeof(struct sockaddr_in);
 #endif
     int n = ::bind(socket->fd, (struct sockaddr *)&sockaddr, sizeof(sockaddr));
     if (n < 0)
-        throw cRuntimeError("Cannot bind socket: %d", n);
+        throw cRuntimeError("Cannot bind socket: %d", sock_errno());
 }
 
 void ExtLowerUdp::connect(int socketId, const L3Address& remoteAddress, int remotePort)
@@ -291,7 +284,7 @@ void ExtLowerUdp::processPacketFromUpper(Packet *packet)
 
 void ExtLowerUdp::processPacketFromLower(int fd)
 {
-    Enter_Method_Silent();
+    Enter_Method("processPacketFromLower");
     auto it = fdToSocketMap.find(fd);
     if (it == fdToSocketMap.end())
         throw cRuntimeError("Unknown socket");
@@ -301,7 +294,7 @@ void ExtLowerUdp::processPacketFromLower(int fd)
         struct sockaddr_in sockaddr;
         socklen_t socklen = sizeof(sockaddr);
         // type of buffer in recvfrom(): win: char *, linux: void *
-        int n = ::recvfrom(fd, (char *)buffer, sizeof(buffer), 0, (struct sockaddr*)&sockaddr, &socklen);
+        int n = ::recvfrom(fd, (char *)buffer, sizeof(buffer), 0, (struct sockaddr *)&sockaddr, &socklen);
         if (n < 0)
             throw cRuntimeError("Calling recv failed: %d", n);
         auto data = makeShared<BytesChunk>(static_cast<const uint8_t *>(buffer), n);

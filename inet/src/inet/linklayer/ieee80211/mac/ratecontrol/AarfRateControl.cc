@@ -1,19 +1,9 @@
 //
 // Copyright (C) 2016 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see http://www.gnu.org/licenses/.
-//
+
 
 #include "inet/linklayer/ieee80211/mac/ratecontrol/AarfRateControl.h"
 
@@ -46,12 +36,12 @@ void AarfRateControl::initialize(int stage)
     }
 }
 
-void AarfRateControl::handleMessage(cMessage* msg)
+void AarfRateControl::handleMessage(cMessage *msg)
 {
     throw cRuntimeError("This module doesn't handle self messages");
 }
 
-void AarfRateControl::updateDisplayString()
+void AarfRateControl::updateDisplayString() const
 {
     getDisplayString().setTagArg("t", 0, currentMode->getName());
 }
@@ -60,8 +50,7 @@ void AarfRateControl::frameTransmitted(Packet *frame, int retryCount, bool isSuc
 {
     increaseRateIfTimerIsExpired();
 
-    if (!isSuccessful && probing) // probing packet failed
-    {
+    if (!isSuccessful && probing) { // probing packet failed
         numberOfConsSuccTransmissions = 0;
         currentMode = decreaseRateIfPossible(currentMode);
         emitDatarateChangedSignal();
@@ -70,8 +59,7 @@ void AarfRateControl::frameTransmitted(Packet *frame, int retryCount, bool isSuc
         multiplyIncreaseThreshold(factor);
         resetTimer();
     }
-    else if (!isSuccessful && retryCount >= decreaseThreshold - 1) // decreaseThreshold consecutive failed transmissions
-    {
+    else if (!isSuccessful && retryCount >= decreaseThreshold - 1) { // decreaseThreshold consecutive failed transmissions
         numberOfConsSuccTransmissions = 0;
         currentMode = decreaseRateIfPossible(currentMode);
         emitDatarateChangedSignal();
@@ -83,8 +71,7 @@ void AarfRateControl::frameTransmitted(Packet *frame, int retryCount, bool isSuc
     else if (isSuccessful && retryCount == 0)
         numberOfConsSuccTransmissions++;
 
-    if (numberOfConsSuccTransmissions == increaseThreshold)
-    {
+    if (numberOfConsSuccTransmissions == increaseThreshold) {
         numberOfConsSuccTransmissions = 0;
         currentMode = increaseRateIfPossible(currentMode);
         emitDatarateChangedSignal();
@@ -116,8 +103,7 @@ void AarfRateControl::resetTimer()
 
 void AarfRateControl::increaseRateIfTimerIsExpired()
 {
-    if (simTime() - timer >= interval)
-    {
+    if (simTime() - timer >= interval) {
         currentMode = increaseRateIfPossible(currentMode);
         emitDatarateChangedSignal();
         updateDisplayString();
@@ -130,14 +116,14 @@ void AarfRateControl::frameReceived(Packet *frame)
 {
 }
 
-const IIeee80211Mode* AarfRateControl::getRate()
+const IIeee80211Mode *AarfRateControl::getRate()
 {
-    Enter_Method_Silent("getRate");
+    Enter_Method("getRate");
     increaseRateIfTimerIsExpired();
     EV_INFO << "The current mode is " << currentMode << " the net bitrate is " << currentMode->getDataMode()->getNetBitrate() << std::endl;
     return currentMode;
 }
 
-
 } /* namespace ieee80211 */
 } /* namespace inet */
+

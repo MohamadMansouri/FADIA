@@ -10,11 +10,12 @@
  * 2WAY_RECEIVED - no change
  */
 
+#include "inet/routing/ospfv3/neighbor/Ospfv3NeighborStateFull.h"
+
 #include "inet/routing/ospfv3/neighbor/Ospfv3Neighbor.h"
 #include "inet/routing/ospfv3/neighbor/Ospfv3NeighborState2Way.h"
 #include "inet/routing/ospfv3/neighbor/Ospfv3NeighborStateDown.h"
 #include "inet/routing/ospfv3/neighbor/Ospfv3NeighborStateExStart.h"
-#include "inet/routing/ospfv3/neighbor/Ospfv3NeighborStateFull.h"
 #include "inet/routing/ospfv3/neighbor/Ospfv3NeighborStateInit.h"
 
 namespace inet {
@@ -59,8 +60,7 @@ void Ospfv3NeighborStateFull::processEvent(Ospfv3Neighbor *neighbor, Ospfv3Neigh
     }
     if (event == Ospfv3Neighbor::UPDATE_RETRANSMISSION_TIMER) {
         EV_DEBUG << "Ospfv3Neighbor::UPDATE_RETRANSMISSION_TIMER caught in FullState\n";
-        if (!neighbor->isRetransmissionListEmpty())
-        {
+        if (!neighbor->isRetransmissionListEmpty()) {
             neighbor->retransmitUpdatePacket();
             neighbor->startUpdateRetransmissionTimer();
             EV_DEBUG << "retransmission done, Timer active again\n";
@@ -78,5 +78,5 @@ void Ospfv3NeighborStateFull::processEvent(Ospfv3Neighbor *neighbor, Ospfv3Neigh
 }
 
 } // namespace ospfv3
-}//namespace inet
+} // namespace inet
 

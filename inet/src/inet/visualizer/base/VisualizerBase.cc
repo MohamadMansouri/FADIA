@@ -1,19 +1,11 @@
 //
-// Copyright (C) OpenSim Ltd.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
+
+#include "inet/visualizer/base/VisualizerBase.h"
 
 #include "inet/common/ModuleAccess.h"
 #include "inet/common/geometry/object/LineSegment.h"
@@ -23,7 +15,6 @@
 #include "inet/common/packet/chunk/SliceChunk.h"
 #include "inet/mobility/contract/IMobility.h"
 #include "inet/networklayer/common/L3AddressResolver.h"
-#include "inet/visualizer/base/VisualizerBase.h"
 
 namespace inet {
 
@@ -96,16 +87,16 @@ Quaternion VisualizerBase::getOrientation(const cModule *networkNode) const
         return check_and_cast<IMobility *>(mobility)->getCurrentAngularPosition();
 }
 
-void VisualizerBase::mapChunkIds(const Ptr<const Chunk>& chunk, const std::function<void(int)>& thunk) const
+void VisualizerBase::mapChunks(const Ptr<const Chunk>& chunk, const std::function<void(const Ptr<const Chunk>&, int)>& thunk) const
 {
     if (chunk->getChunkType() == Chunk::CT_SEQUENCE) {
         for (const auto& elementChunk : staticPtrCast<const SequenceChunk>(chunk)->getChunks())
-            mapChunkIds(elementChunk, thunk);
+            mapChunks(elementChunk, thunk);
     }
     else if (chunk->getChunkType() == Chunk::CT_SLICE)
-        thunk(staticPtrCast<const SliceChunk>(chunk)->getChunk()->getChunkId());
+        thunk(chunk, staticPtrCast<const SliceChunk>(chunk)->getChunk()->getChunkId());
     else
-        thunk(chunk->getChunkId());
+        thunk(chunk, chunk->getChunkId());
 }
 
 } // namespace visualizer

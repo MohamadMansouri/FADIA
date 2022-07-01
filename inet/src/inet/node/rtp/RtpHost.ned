@@ -1,3 +1,5 @@
+//
+// Copyright (C) 2020 OpenSim Ltd.
 // the original file was included in the ~Udp sockets example
 
 package inet.node.rtp;
@@ -23,12 +25,12 @@ module RtpHost extends StandardHost
     submodules:
         rtpApp: RtpApplication {
             parameters:
-                profileName = profileName;
-                destinationAddress = destinationAddress;
-                portNumber = portNumber;
-                bandwidth = bandwidth;
-                fileName = fileName;
-                payloadType = payloadType;
+                profileName = parent.profileName;
+                destinationAddress = parent.destinationAddress;
+                portNumber = parent.portNumber;
+                bandwidth = parent.bandwidth;
+                fileName = parent.fileName;
+                payloadType = parent.payloadType;
                 @display("p=825,76");
         }
         rtp: Rtp {

@@ -5,11 +5,11 @@ import inet.node.ethernet.Eth100M;
 import inet.node.inet.SensorNode;
 import inet.node.inet.StandardHost;
 import inet.node.inet.WirelessHost;
-import inet.physicallayer.apskradio.packetlevel.ApskScalarRadioMedium;
-import inet.physicallayer.ieee802154.bitlevel.Ieee802154UwbIrRadioMedium;
-import inet.physicallayer.ieee802154.packetlevel.Ieee802154NarrowbandScalarRadioMedium;
-import inet.visualizer.integrated.IntegratedMultiVisualizer;
-import inet.visualizer.integrated.IntegratedVisualizer;
+import inet.physicallayer.wireless.apsk.packetlevel.ApskScalarRadioMedium;
+import inet.physicallayer.wireless.ieee802154.bitlevel.Ieee802154UwbIrRadioMedium;
+import inet.physicallayer.wireless.ieee802154.packetlevel.Ieee802154NarrowbandScalarRadioMedium;
+import inet.visualizer.common.IntegratedMultiVisualizer;
+import inet.visualizer.common.IntegratedVisualizer;
 
 
 network Ieee802154Showcase

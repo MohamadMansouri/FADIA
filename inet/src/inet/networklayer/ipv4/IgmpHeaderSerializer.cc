@@ -1,26 +1,16 @@
 //
 // Copyright (C) 2005 Christian Dankbar, Irene Ruengeler, Michael Tuexen, Andras Varga
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-#include "inet/common/packet/serializer/ChunkSerializerRegistry.h"
 #include "inet/networklayer/ipv4/IgmpHeaderSerializer.h"
+
+#include "inet/common/packet/serializer/ChunkSerializerRegistry.h"
 #include "inet/networklayer/ipv4/IgmpMessage_m.h"
 
 #if !defined(_WIN32) && !defined(__WIN32__) && !defined(WIN32) && !defined(__CYGWIN__) && !defined(_WIN64)
-#include <netinet/in.h>    // htonl, ntohl, ...
+#include <netinet/in.h> // htonl, ntohl, ...
 #endif // if !defined(_WIN32) && !defined(__WIN32__) && !defined(WIN32) && !defined(__CYGWIN__) && !defined(_WIN64)
 
 namespace inet {
@@ -47,7 +37,7 @@ void IgmpHeaderSerializer::serialize(MemoryOutputStream& stream, const Ptr<const
             else if (auto igmpv2Query = dynamicPtrCast<const Igmpv2Query>(igmpMessage))
                 stream.writeByte(igmpv2Query->getMaxRespTimeCode());
             stream.writeUint16Be(igmpMessage->getCrc());
-            stream.writeIpv4Address(check_and_cast<const IgmpQuery*>(igmpMessage.get())->getGroupAddress());
+            stream.writeIpv4Address(check_and_cast<const IgmpQuery *>(igmpMessage.get())->getGroupAddress());
             if (auto igmpv3Query = dynamicPtrCast<const Igmpv3Query>(igmpMessage)) {
                 ASSERT(igmpv3Query->getRobustnessVariable() <= 7);
                 stream.writeNBitsOfUint64Be(igmpv3Query->getResv(), 4);
@@ -83,7 +73,7 @@ void IgmpHeaderSerializer::serialize(MemoryOutputStream& stream, const Ptr<const
             break;
         }
         case IGMPV3_MEMBERSHIP_REPORT: {
-            const Igmpv3Report* igmpv3Report = check_and_cast<const Igmpv3Report*>(igmpMessage.get());
+            const Igmpv3Report *igmpv3Report = check_and_cast<const Igmpv3Report *>(igmpMessage.get());
             stream.writeByte(igmpv3Report->getResv1());
             stream.writeUint16Be(igmpv3Report->getCrc());
             stream.writeUint16Be(igmpv3Report->getResv2());
@@ -95,7 +85,7 @@ void IgmpHeaderSerializer::serialize(MemoryOutputStream& stream, const Ptr<const
                 stream.writeByte(groupRecord.getAuxDataArraySize());
                 stream.writeUint16Be(groupRecord.getSourceList().size());
                 stream.writeIpv4Address(groupRecord.getGroupAddress());
-                for (auto src: groupRecord.getSourceList()) {
+                for (auto src : groupRecord.getSourceList()) {
                     stream.writeIpv4Address(src);
                 }
                 for (size_t i = 0; i < groupRecord.getAuxDataArraySize(); ++i) {
@@ -126,7 +116,7 @@ const Ptr<Chunk> IgmpHeaderSerializer::deserialize(MemoryInputStream& stream) co
                     igmpv1Query->setGroupAddress(stream.readIpv4Address());
                     return igmpv1Query;
                 }
-                else  {
+                else {
                     auto igmpv2Query = makeShared<Igmpv2Query>();
                     igmpv2Query->setMaxRespTimeCode(code);
                     igmpv2Query->setCrc(chksum);
@@ -153,56 +143,56 @@ const Ptr<Chunk> IgmpHeaderSerializer::deserialize(MemoryInputStream& stream) co
             }
         }
         case IGMPV1_MEMBERSHIP_REPORT:  {
-                auto igmpv1Report = makeShared<Igmpv1Report>();
-                igmpv1Report->setUnused(code);
-                igmpv1Report->setCrc(chksum);
-                igmpv1Report->setCrcMode(CRC_COMPUTED);
-                igmpv1Report->setGroupAddress(stream.readIpv4Address());
-                return igmpv1Report;
+            auto igmpv1Report = makeShared<Igmpv1Report>();
+            igmpv1Report->setUnused(code);
+            igmpv1Report->setCrc(chksum);
+            igmpv1Report->setCrcMode(CRC_COMPUTED);
+            igmpv1Report->setGroupAddress(stream.readIpv4Address());
+            return igmpv1Report;
         }
         case IGMPV2_MEMBERSHIP_REPORT: {
-                auto igmpv2Report = makeShared<Igmpv2Report>();
-                igmpv2Report->setMaxRespTime(code);
-                igmpv2Report->setCrc(chksum);
-                igmpv2Report->setCrcMode(CRC_COMPUTED);
-                igmpv2Report->setGroupAddress(stream.readIpv4Address());
-                return igmpv2Report;
+            auto igmpv2Report = makeShared<Igmpv2Report>();
+            igmpv2Report->setMaxRespTime(code);
+            igmpv2Report->setCrc(chksum);
+            igmpv2Report->setCrcMode(CRC_COMPUTED);
+            igmpv2Report->setGroupAddress(stream.readIpv4Address());
+            return igmpv2Report;
         }
         case IGMPV2_LEAVE_GROUP: {
-                auto igmpv2Leave = makeShared<Igmpv2Leave>();
-                igmpv2Leave->setMaxRespTime(code);
-                igmpv2Leave->setCrc(chksum);
-                igmpv2Leave->setCrcMode(CRC_COMPUTED);
-                igmpv2Leave->setGroupAddress(stream.readIpv4Address());
-                return igmpv2Leave;
+            auto igmpv2Leave = makeShared<Igmpv2Leave>();
+            igmpv2Leave->setMaxRespTime(code);
+            igmpv2Leave->setCrc(chksum);
+            igmpv2Leave->setCrcMode(CRC_COMPUTED);
+            igmpv2Leave->setGroupAddress(stream.readIpv4Address());
+            return igmpv2Leave;
         }
         case IGMPV3_MEMBERSHIP_REPORT: {
-                auto igmpv3Report = makeShared<Igmpv3Report>();
-                igmpv3Report->setResv1(code);
-                igmpv3Report->setChunkLength(start);
-                igmpv3Report->setCrc(chksum);
-                igmpv3Report->setCrcMode(CRC_COMPUTED);
-                igmpv3Report->setResv2(stream.readUint16Be());
-                uint8_t numOfRecords = stream.readUint16Be();
-                igmpv3Report->setGroupRecordArraySize(numOfRecords);
-                for (uint16_t i = 0; i < numOfRecords; ++i) {
-                    GroupRecord groupRecord;
-                    groupRecord.setRecordType(stream.readByte());
-                    uint8_t auxDataLen = stream.readByte();
-                    groupRecord.setAuxDataArraySize(auxDataLen);
-                    uint8_t numOfSources = stream.readUint16Be();
-                    groupRecord.setGroupAddress(stream.readIpv4Address());
-                    for (uint8_t j = 0; j < numOfSources; j++) {
-                        groupRecord.getSourceListForUpdate().push_back(stream.readIpv4Address());
-                    }
-                    for (size_t k = 0; k < auxDataLen; ++k) {
-                        groupRecord.setAuxData(k, stream.readUint32Be());
-                    }
-                    igmpv3Report->setGroupRecord(i, groupRecord);
+            auto igmpv3Report = makeShared<Igmpv3Report>();
+            igmpv3Report->setResv1(code);
+            igmpv3Report->setChunkLength(start);
+            igmpv3Report->setCrc(chksum);
+            igmpv3Report->setCrcMode(CRC_COMPUTED);
+            igmpv3Report->setResv2(stream.readUint16Be());
+            uint8_t numOfRecords = stream.readUint16Be();
+            igmpv3Report->setGroupRecordArraySize(numOfRecords);
+            for (uint16_t i = 0; i < numOfRecords; ++i) {
+                GroupRecord groupRecord;
+                groupRecord.setRecordType(stream.readByte());
+                uint8_t auxDataLen = stream.readByte();
+                groupRecord.setAuxDataArraySize(auxDataLen);
+                uint8_t numOfSources = stream.readUint16Be();
+                groupRecord.setGroupAddress(stream.readIpv4Address());
+                for (uint8_t j = 0; j < numOfSources; j++) {
+                    groupRecord.getSourceListForUpdate().push_back(stream.readIpv4Address());
                 }
-                while (stream.getRemainingLength() > B(0))
-                    stream.readByte();
-                return igmpv3Report;
+                for (size_t k = 0; k < auxDataLen; ++k) {
+                    groupRecord.setAuxData(k, stream.readUint32Be());
+                }
+                igmpv3Report->setGroupRecord(i, groupRecord);
+            }
+            while (stream.getRemainingLength() > B(0))
+                stream.readByte();
+            return igmpv3Report;
         }
         default: {
             EV_ERROR << "IGMPSerializer: can not create IGMP packet: type " << type << " not supported\n";

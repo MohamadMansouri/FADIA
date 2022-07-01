@@ -1,3 +1,7 @@
+//
+// SPDX-License-Identifier: LGPL-3.0-or-later
+//
+//
 /* -*- mode:c++ -*- ********************************************************
  * file:        Ieee802154Mac.h
  *
@@ -9,13 +13,6 @@
  *                (C) 2004 Telecommunication Networks Group (TKN) at
  *              Technische Universitaet Berlin, Germany.
  *
- *              This program is free software; you can redistribute it
- *              and/or modify it under the terms of the GNU General Public
- *              License as published by the Free Software Foundation; either
- *              version 2 of the License, or (at your option) any later
- *              version.
- *              For further information see file COPYING
- *              in the top level directory
  *
  * Funding: This work was partially financed by the European Commission under the
  * Framework 6 IST Project "Wirelessly Accessible Sensor Populations"
@@ -27,11 +24,12 @@
 #ifndef __INET_IEEE802154MAC_H
 #define __INET_IEEE802154MAC_H
 
-#include "inet/queueing/contract/IPacketQueue.h"
 #include "inet/linklayer/base/MacProtocolBase.h"
 #include "inet/linklayer/common/MacAddress.h"
 #include "inet/linklayer/contract/IMacProtocol.h"
-#include "inet/physicallayer/contract/packetlevel/IRadio.h"
+#include "inet/physicallayer/wireless/common/contract/packetlevel/IRadio.h"
+#include "inet/queueing/contract/IActivePacketSink.h"
+#include "inet/queueing/contract/IPacketQueue.h"
 
 namespace inet {
 
@@ -46,7 +44,7 @@ namespace inet {
  *
  * \image html csmaFSM.png "CSMA Mac-Layer - finite state machine"
  */
-class INET_API Ieee802154Mac : public MacProtocolBase, public IMacProtocol
+class INET_API Ieee802154Mac : public MacProtocolBase, public IMacProtocol, public queueing::IActivePacketSink
 {
   public:
     Ieee802154Mac()
@@ -63,7 +61,6 @@ class INET_API Ieee802154Mac : public MacProtocolBase, public IMacProtocol
         , backoffTimer(nullptr), ccaTimer(nullptr), sifsTimer(nullptr), rxAckTimer(nullptr)
         , macState(IDLE_1)
         , status(STATUS_OK)
-        , radio(nullptr)
         , transmissionState(physicallayer::IRadio::TRANSMISSION_STATE_UNDEFINED)
         , sifs()
         , macAckWaitDuration()
@@ -109,6 +106,11 @@ class INET_API Ieee802154Mac : public MacProtocolBase, public IMacProtocol
 
     /** @brief Handle control messages from lower layer */
     virtual void receiveSignal(cComponent *source, simsignal_t signalID, intval_t value, cObject *details) override;
+
+    // IActivePacketSink:
+    virtual queueing::IPassivePacketSource *getProvider(cGate *gate) override;
+    virtual void handleCanPullPacketChanged(cGate *gate) override;
+    virtual void handlePullPacketProcessed(Packet *packet, cGate *gate, bool successful) override;
 
   protected:
     /** @name Different tracked statistics.*/
@@ -158,15 +160,15 @@ class INET_API Ieee802154Mac : public MacProtocolBase, public IMacProtocol
     /** @brief MAC state machine events.
      * See state diagram.*/
     enum t_mac_event {
-        EV_SEND_REQUEST = 1,    // 1, 11, 20, 21, 22
-        EV_TIMER_BACKOFF,    // 2, 7, 14, 15
-        EV_FRAME_TRANSMITTED,    // 4, 19
-        EV_ACK_RECEIVED,    // 5
-        EV_ACK_TIMEOUT,    // 12
-        EV_FRAME_RECEIVED,    // 15, 26
+        EV_SEND_REQUEST = 1, // 1, 11, 20, 21, 22
+        EV_TIMER_BACKOFF, // 2, 7, 14, 15
+        EV_FRAME_TRANSMITTED, // 4, 19
+        EV_ACK_RECEIVED, // 5
+        EV_ACK_TIMEOUT, // 12
+        EV_FRAME_RECEIVED, // 15, 26
         EV_DUPLICATE_RECEIVED,
-        EV_TIMER_SIFS,    // 17
-        EV_BROADCAST_RECEIVED,    // 23, 24
+        EV_TIMER_SIFS, // 17
+        EV_BROADCAST_RECEIVED, // 23, 24
         EV_TIMER_CCA
     };
 
@@ -206,7 +208,7 @@ class INET_API Ieee802154Mac : public MacProtocolBase, public IMacProtocol
     t_mac_status status;
 
     /** @brief The radio. */
-    physicallayer::IRadio *radio;
+    ModuleRefByPar<physicallayer::IRadio> radio;
     physicallayer::IRadio::TransmissionState transmissionState;
 
     /** @brief Maximum time between a packet and its ACK
@@ -276,7 +278,7 @@ class INET_API Ieee802154Mac : public MacProtocolBase, public IMacProtocol
 
   protected:
     /** @brief Generate new interface address*/
-    virtual void configureInterfaceEntry() override;
+    virtual void configureNetworkInterface() override;
     virtual void handleCommand(cMessage *msg) {}
 
     // FSM functions
@@ -299,16 +301,23 @@ class INET_API Ieee802154Mac : public MacProtocolBase, public IMacProtocol
 
     virtual simtime_t scheduleBackoff();
 
+    virtual void encapsulate(Packet *packet);
     virtual void decapsulate(Packet *packet);
+
+    // OperationalBase:
+    virtual void handleStartOperation(LifecycleOperation *operation) override;
+    virtual void handleStopOperation(LifecycleOperation *operation) override;
+    virtual void handleCrashOperation(LifecycleOperation *operation) override;
+    virtual void refreshDisplay() const override;
 
     Packet *ackMessage;
 
-    //sequence number for sending, map for the general case with more senders
-    //also in initialisation phase multiple potential parents
-    std::map<MacAddress, unsigned long> SeqNrParent;    //parent -> sequence number
+    // sequence number for sending, map for the general case with more senders
+    // also in initialisation phase multiple potential parents
+    std::map<MacAddress, unsigned long> SeqNrParent; // parent -> sequence number
 
-    //sequence numbers for receiving
-    std::map<MacAddress, unsigned long> SeqNrChild;    //child -> sequence number
+    // sequence numbers for receiving
+    std::map<MacAddress, unsigned long> SeqNrChild; // child -> sequence number
 
   private:
     /** @brief Copy constructor is not allowed.
@@ -321,5 +330,5 @@ class INET_API Ieee802154Mac : public MacProtocolBase, public IMacProtocol
 
 } // namespace inet
 
-#endif // ifndef __INET_IEEE802154MAC_H
+#endif
 

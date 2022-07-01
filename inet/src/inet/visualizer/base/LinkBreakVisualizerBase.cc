@@ -1,27 +1,18 @@
 //
-// Copyright (C) OpenSim Ltd.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 #include <algorithm>
 
 #include "inet/common/ModuleAccess.h"
 #include "inet/common/Simsignals.h"
-#ifdef WITH_IEEE80211
+#include "inet/networklayer/contract/IInterfaceTable.h"
+#ifdef INET_WITH_IEEE80211
 #include "inet/linklayer/ieee80211/mac/Ieee80211Frame_m.h"
-#endif // WITH_IEEE80211
+#endif // INET_WITH_IEEE80211
 #include "inet/mobility/contract/IMobility.h"
 #include "inet/networklayer/common/L3AddressResolver.h"
 #include "inet/visualizer/base/LinkBreakVisualizerBase.h"
@@ -36,10 +27,12 @@ LinkBreakVisualizerBase::LinkBreakVisualization::LinkBreakVisualization(int tran
 {
 }
 
-LinkBreakVisualizerBase::~LinkBreakVisualizerBase()
+void LinkBreakVisualizerBase::preDelete(cComponent *root)
 {
-    if (displayLinkBreaks)
+    if (displayLinkBreaks) {
         unsubscribe();
+        removeAllLinkBreakVisualizations();
+    }
 }
 
 void LinkBreakVisualizerBase::initialize(int stage)
@@ -50,7 +43,7 @@ void LinkBreakVisualizerBase::initialize(int stage)
         displayLinkBreaks = par("displayLinkBreaks");
         nodeFilter.setPattern(par("nodeFilter"));
         interfaceFilter.setPattern(par("interfaceFilter"));
-        packetFilter.setPattern(par("packetFilter"), par("packetDataFilter"));
+        packetFilter.setExpression(par("packetFilter").objectValue());
         icon = par("icon");
         iconTintAmount = par("iconTintAmount");
         if (iconTintAmount != 0)
@@ -72,7 +65,7 @@ void LinkBreakVisualizerBase::handleParameterChange(const char *name)
         else if (!strcmp(name, "interfaceFilter"))
             interfaceFilter.setPattern(par("interfaceFilter"));
         else if (!strcmp(name, "packetFilter"))
-            packetFilter.setPattern(par("packetFilter"), par("packetDataFilter"));
+            packetFilter.setExpression(par("packetFilter").objectValue());
         removeAllLinkBreakVisualizations();
     }
 }
@@ -111,28 +104,29 @@ void LinkBreakVisualizerBase::subscribe()
 void LinkBreakVisualizerBase::unsubscribe()
 {
     // NOTE: lookup the module again because it may have been deleted first
-    auto visualizationSubjectModule = getModuleFromPar<cModule>(par("visualizationSubjectModule"), this, false);
+    auto visualizationSubjectModule = findModuleFromPar<cModule>(par("visualizationSubjectModule"), this);
     if (visualizationSubjectModule != nullptr)
         visualizationSubjectModule->unsubscribe(linkBrokenSignal, this);
 }
 
 void LinkBreakVisualizerBase::receiveSignal(cComponent *source, simsignal_t signal, cObject *object, cObject *details)
 {
-    Enter_Method_Silent();
+    Enter_Method("%s", cComponent::getSignalName(signal));
+
     if (signal == linkBrokenSignal) {
         MacAddress transmitterAddress;
         MacAddress receiverAddress;
-        // TODO: revive
+        // TODO revive
 //        if (auto frame = dynamic_cast<IMACFrame *>(object)) {
 //            transmitterAddress = frame->getTransmitterAddress();
 //            receiverAddress = frame->getReceiverAddress();
 //        }
-#ifdef WITH_IEEE80211
+#ifdef INET_WITH_IEEE80211
         if (auto frame = dynamic_cast<ieee80211::Ieee80211TwoAddressHeader *>(object)) {
             transmitterAddress = frame->getTransmitterAddress();
             receiverAddress = frame->getReceiverAddress();
         }
-#endif // WITH_IEEE80211
+#endif // INET_WITH_IEEE80211
         auto transmitter = findNode(transmitterAddress);
         auto receiver = findNode(receiverAddress);
         if (nodeFilter.matches(transmitter) && nodeFilter.matches(receiver)) {
@@ -163,7 +157,7 @@ void LinkBreakVisualizerBase::removeLinkBreakVisualization(const LinkBreakVisual
     linkBreakVisualizations.erase(it);
 }
 
-// TODO: inefficient, create L2AddressResolver?
+// TODO inefficient, create L2AddressResolver?
 cModule *LinkBreakVisualizerBase::findNode(MacAddress address)
 {
     L3AddressResolver addressResolver;

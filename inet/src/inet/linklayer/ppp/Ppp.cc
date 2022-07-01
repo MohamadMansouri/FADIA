@@ -1,24 +1,15 @@
 //
-// Copyright (C) 2004 Andras Varga
+// Copyright (C) 2004 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
+
+#include "inet/linklayer/ppp/Ppp.h"
 
 #include <stdio.h>
 #include <string.h>
 
-#include "inet/common/INETDefs.h"
 #include "inet/common/INETUtils.h"
 #include "inet/common/ModuleAccess.h"
 #include "inet/common/ProtocolGroup.h"
@@ -27,7 +18,6 @@
 #include "inet/common/StringFormat.h"
 #include "inet/common/lifecycle/ModuleOperations.h"
 #include "inet/linklayer/common/InterfaceTag_m.h"
-#include "inet/linklayer/ppp/Ppp.h"
 #include "inet/networklayer/contract/IInterfaceTable.h"
 
 namespace inet {
@@ -40,6 +30,7 @@ simsignal_t Ppp::rxPkOkSignal = registerSignal("rxPkOk");
 Ppp::~Ppp()
 {
     cancelAndDelete(endTransmissionEvent);
+    delete curTxPacket;
 }
 
 void Ppp::initialize(int stage)
@@ -55,6 +46,7 @@ void Ppp::initialize(int stage)
         physOutGate = gate("phys$o");
         lowerLayerOutGateId = physOutGate->getId();
 
+        setTxUpdateSupport(true);
         // we're connected if other end of connection path is an input gate
         bool connected = physOutGate->getPathEndGate()->getType() == cGate::INPUT;
         // if we're connected, get the gate with transmission rate
@@ -66,59 +58,70 @@ void Ppp::initialize(int stage)
         WATCH(numDroppedBitErr);
         WATCH(numDroppedIfaceDown);
 
+        subscribe(PRE_MODEL_CHANGE, this);
         subscribe(POST_MODEL_CHANGE, this);
         emit(transmissionStateChangedSignal, 0L);
 
-        txQueue = check_and_cast<queueing::IPacketQueue *>(getSubmodule("queue"));
+        txQueue = getQueue(gate(upperLayerInGateId));
     }
 }
 
-void Ppp::configureInterfaceEntry()
+void Ppp::configureNetworkInterface()
 {
     // data rate
     bool connected = datarateChannel != nullptr;
     double datarate = connected ? datarateChannel->getNominalDatarate() : 0;
-    interfaceEntry->setDatarate(datarate);
-    interfaceEntry->setCarrier(connected);
+    networkInterface->setDatarate(datarate);
+    networkInterface->setCarrier(connected);
 
     // generate a link-layer address to be used as interface token for IPv6
     InterfaceToken token(0, getSimulation()->getUniqueNumber(), 64);
-    interfaceEntry->setInterfaceToken(token);
+    networkInterface->setInterfaceToken(token);
 
     // MTU: typical values are 576 (Internet de facto), 1500 (Ethernet-friendly),
     // 4000 (on some point-to-point links), 4470 (Cisco routers default, FDDI compatible)
-    interfaceEntry->setMtu(par("mtu"));
+    networkInterface->setMtu(par("mtu"));
 
     // capabilities
-    interfaceEntry->setMulticast(true);
-    interfaceEntry->setPointToPoint(true);
+    networkInterface->setMulticast(true);
+    networkInterface->setPointToPoint(true);
 }
 
 void Ppp::receiveSignal(cComponent *source, simsignal_t signalID, cObject *obj, cObject *details)
 {
+    Enter_Method("%s", cComponent::getSignalName(signalID));
+
     MacProtocolBase::receiveSignal(source, signalID, obj, details);
 
-    if (signalID != POST_MODEL_CHANGE)
+    if (getSimulation()->getSimulationStage() == CTX_CLEANUP)
         return;
 
-    if (auto gcobj = dynamic_cast<cPostPathCreateNotification *>(obj)) {
-        if (physOutGate == gcobj->pathStartGate)
-            refreshOutGateConnection(true);
+    if (signalID == POST_MODEL_CHANGE) {
+        if (auto gcobj = dynamic_cast<cPostPathCreateNotification *>(obj)) {
+            if (physOutGate == gcobj->pathStartGate)
+                refreshOutGateConnection(true);
+        }
+        else if (auto gcobj = dynamic_cast<cPostPathCutNotification *>(obj)) {
+            if (physOutGate == gcobj->pathStartGate)
+                refreshOutGateConnection(false);
+        }
+        else if (datarateChannel && dynamic_cast<cPostParameterChangeNotification *>(obj)) {
+            cPostParameterChangeNotification *gcobj = static_cast<cPostParameterChangeNotification *>(obj);
+            if (datarateChannel == gcobj->par->getOwner() && !strcmp("datarate", gcobj->par->getName()))
+                refreshOutGateConnection(true);
+        }
     }
-    else if (auto gcobj = dynamic_cast<cPostPathCutNotification *>(obj)) {
-        if (physOutGate == gcobj->pathStartGate)
-            refreshOutGateConnection(false);
-    }
-    else if (datarateChannel && dynamic_cast<cPostParameterChangeNotification *>(obj)) {
-        cPostParameterChangeNotification *gcobj = static_cast<cPostParameterChangeNotification *>(obj);
-        if (datarateChannel == gcobj->par->getOwner() && !strcmp("datarate", gcobj->par->getName()))
-            refreshOutGateConnection(true);
+    else if (signalID == PRE_MODEL_CHANGE) {
+        if (auto gcobj = dynamic_cast<cPrePathCutNotification *>(obj)) {
+            if (physOutGate == gcobj->pathStartGate)
+                refreshOutGateConnection(false);
+        }
     }
 }
 
 void Ppp::refreshOutGateConnection(bool connected)
 {
-    Enter_Method_Silent();
+    Enter_Method("refreshOutGateConnection");
 
     // we're connected if other end of connection path is an input gate
     if (connected)
@@ -126,14 +129,20 @@ void Ppp::refreshOutGateConnection(bool connected)
 
     if (!connected) {
         if (endTransmissionEvent->isScheduled()) {
+            ASSERT(curTxPacket != nullptr);
+            simtime_t startTransmissionTime = endTransmissionEvent->getSendingTime();
+            simtime_t sentDuration = simTime() - startTransmissionTime;
+            double sentPart = sentDuration / (endTransmissionEvent->getArrivalTime() - startTransmissionTime);
+            b newLength = b(floor(curTxPacket->getBitLength() * sentPart));
+            curTxPacket->removeAtBack(curTxPacket->getDataLength() - newLength);
+            curTxPacket->setBitError(true);
+            send(curTxPacket, SendOptions().finishTx(curTxPacket->getId()).duration(sentDuration), physOutGate);
+            curTxPacket = nullptr;
             cancelEvent(endTransmissionEvent);
-
-            if (datarateChannel)
-                datarateChannel->forceTransmissionFinishTime(SIMTIME_ZERO);
         }
 
         PacketDropDetails details;
-        details.setReason(INTERFACE_DOWN);      //TODO choose a correct PacketDropReason value
+        details.setReason(INTERFACE_DOWN); // TODO choose a correct PacketDropReason value
         flushQueue(details);
     }
 
@@ -146,14 +155,14 @@ void Ppp::refreshOutGateConnection(bool connected)
         datarateChannel->subscribe(POST_MODEL_CHANGE, this);
 
     // update interface state if it is in use
-    if (interfaceEntry) {
-        interfaceEntry->setCarrier(connected);
-        interfaceEntry->setDatarate(datarate);
+    if (networkInterface) {
+        networkInterface->setCarrier(connected);
+        networkInterface->setDatarate(datarate);
     }
 
-    if (connected && !endTransmissionEvent->isScheduled() && !txQueue->isEmpty()) {
-        popTxQueue();
-        startTransmitting();
+    if (connected && currentTxFrame == nullptr && canDequeuePacket()) {
+        ASSERT(!endTransmissionEvent->isScheduled());
+        processUpperPacket();
     }
 }
 
@@ -167,21 +176,19 @@ void Ppp::startTransmitting()
     EV_INFO << "Transmission of " << pppFrame << " started.\n";
     emit(transmissionStateChangedSignal, 1L);
     emit(packetSentToLowerSignal, pppFrame);
-    auto oldPacketProtocolTag = pppFrame->removeTag<PacketProtocolTag>();
+    auto& oldPacketProtocolTag = pppFrame->removeTag<PacketProtocolTag>();
     pppFrame->clearTags();
     auto newPacketProtocolTag = pppFrame->addTag<PacketProtocolTag>();
     *newPacketProtocolTag = *oldPacketProtocolTag;
-    delete oldPacketProtocolTag;
     if (sendRawBytes) {
-        auto rawFrame = new Packet(pppFrame->getName(), pppFrame->peekAllAsBytes());
-        rawFrame->copyTags(*pppFrame);
-        send(rawFrame, physOutGate);
-        delete pppFrame;
+        auto bytes = pppFrame->peekDataAsBytes();
+        pppFrame->eraseAll();
+        pppFrame->insertAtFront(bytes);
     }
-    else
-        send(pppFrame, physOutGate);
+    curTxPacket = pppFrame->dup();
+    send(pppFrame, SendOptions().transmissionId(curTxPacket->getId()), physOutGate);
 
-    ASSERT(datarateChannel == physOutGate->getTransmissionChannel());    //FIXME reread datarateChannel when changed
+    ASSERT(datarateChannel == physOutGate->getTransmissionChannel()); // FIXME reread datarateChannel when changed
 
     // schedule an event for the time when last bit will leave the gate.
     simtime_t endTransmissionTime = datarateChannel->getTransmissionFinishTime();
@@ -194,8 +201,8 @@ void Ppp::handleMessageWhenUp(cMessage *message)
     MacProtocolBase::handleMessageWhenUp(message);
     if (operationalState == State::STOPPING_OPERATION) {
         if (txQueue->isEmpty()) {
-            interfaceEntry->setCarrier(false);
-            interfaceEntry->setState(InterfaceEntry::State::DOWN);
+            networkInterface->setCarrier(false);
+            networkInterface->setState(NetworkInterface::State::DOWN);
             startActiveOperationExtraTimeOrFinish(par("stopOperationExtraTime"));
         }
     }
@@ -205,13 +212,13 @@ void Ppp::handleSelfMessage(cMessage *message)
 {
     if (message == endTransmissionEvent) {
         deleteCurrentTxFrame();
+        delete curTxPacket;
+        curTxPacket = nullptr;
         // Transmission finished, we can start next one.
         EV_INFO << "Transmission successfully completed.\n";
         emit(transmissionStateChangedSignal, 0L);
-        if (!txQueue->isEmpty()) {
-            popTxQueue();
-            startTransmitting();
-        }
+        if (canDequeuePacket())
+            processUpperPacket();
     }
     else
         throw cRuntimeError("Unknown self message");
@@ -229,16 +236,15 @@ void Ppp::handleUpperPacket(Packet *packet)
         delete packet;
         return;
     }
-    txQueue->pushPacket(packet);
-    if (!endTransmissionEvent->isScheduled() && !txQueue->isEmpty()) {
-        popTxQueue();
-        startTransmitting();
-    }
+    if (currentTxFrame != nullptr)
+        throw cRuntimeError("PPP already in transmit state when packet arrived from upper layer");
+    currentTxFrame = packet;
+    startTransmitting();
 }
 
 void Ppp::handleLowerPacket(Packet *packet)
 {
-    //TODO: if incoming gate is not connected now, then the link has been deleted
+    // TODO if incoming gate is not connected now, then the link has been deleted
     // during packet transmission --> discard incomplete packet.
     EV_INFO << "Received " << packet << " from network.\n";
     packet->addTagIfAbsent<PacketProtocolTag>()->setProtocol(&Protocol::ppp);
@@ -271,44 +277,46 @@ void Ppp::refreshDisplay() const
 {
     MacProtocolBase::refreshDisplay();
 
-    auto text = StringFormat::formatString(displayStringTextFormat, [&] (char directive) {
-        static std::string result;
-        switch (directive) {
-            case 's':
-                result = std::to_string(numSent);
-                break;
-            case 'r':
-                result = std::to_string(numRcvdOK);
-                break;
-            case 'd':
-                result = std::to_string(numDroppedIfaceDown + numDroppedBitErr);
-                break;
-            case 'q':
-                result = std::to_string(txQueue->getNumPackets());
-                break;
-            case 'b':
-                if (datarateChannel == nullptr)
-                    result = "not connected";
-                else {
-                    char datarateText[40];
-                    double datarate = datarateChannel->getNominalDatarate();
-                    if (datarate >= 1e9)
-                        sprintf(datarateText, "%gGbps", datarate / 1e9);
-                    else if (datarate >= 1e6)
-                        sprintf(datarateText, "%gMbps", datarate / 1e6);
-                    else if (datarate >= 1e3)
-                        sprintf(datarateText, "%gkbps", datarate / 1e3);
-                    else
-                        sprintf(datarateText, "%gbps", datarate);
-                    result = datarateText;
-                }
-                break;
-            default:
-                throw cRuntimeError("Unknown directive: %c", directive);
-        }
-        return result.c_str();
-    });
-    getDisplayString().setTagArg("t", 0, text);
+    if (displayStringTextFormat != nullptr) {
+        auto text = StringFormat::formatString(displayStringTextFormat, [&] (char directive) {
+            static std::string result;
+            switch (directive) {
+                case 's':
+                    result = std::to_string(numSent);
+                    break;
+                case 'r':
+                    result = std::to_string(numRcvdOK);
+                    break;
+                case 'd':
+                    result = std::to_string(numDroppedIfaceDown + numDroppedBitErr);
+                    break;
+                case 'q':
+                    result = std::to_string(txQueue->getNumPackets());
+                    break;
+                case 'b':
+                    if (datarateChannel == nullptr)
+                        result = "not connected";
+                    else {
+                        char datarateText[40];
+                        double datarate = datarateChannel->getNominalDatarate();
+                        if (datarate >= 1e9)
+                            sprintf(datarateText, "%gGbps", datarate / 1e9);
+                        else if (datarate >= 1e6)
+                            sprintf(datarateText, "%gMbps", datarate / 1e6);
+                        else if (datarate >= 1e3)
+                            sprintf(datarateText, "%gkbps", datarate / 1e3);
+                        else
+                            sprintf(datarateText, "%gbps", datarate);
+                        result = datarateText;
+                    }
+                    break;
+                default:
+                    throw cRuntimeError("Unknown directive: %c", directive);
+            }
+            return result.c_str();
+        });
+        getDisplayString().setTagArg("t", 0, text);
+    }
 
     const char *color = "";
     if (datarateChannel != nullptr) {
@@ -336,8 +344,8 @@ void Ppp::decapsulate(Packet *packet)
     const auto& pppTrailer = packet->popAtBack<PppTrailer>(PPP_TRAILER_LENGTH);
     if (pppHeader == nullptr || pppTrailer == nullptr)
         throw cRuntimeError("Invalid PPP packet: PPP header or Trailer is missing");
-    //TODO check CRC
-    packet->addTagIfAbsent<InterfaceInd>()->setInterfaceId(interfaceEntry->getInterfaceId());
+    // TODO check CRC
+    packet->addTagIfAbsent<InterfaceInd>()->setInterfaceId(networkInterface->getInterfaceId());
 
     auto payloadProtocol = ProtocolGroup::pppprotocol.getProtocol(pppHeader->getProtocol());
     packet->addTagIfAbsent<DispatchProtocolReq>()->setProtocol(payloadProtocol);
@@ -347,14 +355,39 @@ void Ppp::decapsulate(Packet *packet)
 void Ppp::handleStopOperation(LifecycleOperation *operation)
 {
     if (!txQueue->isEmpty()) {
-        interfaceEntry->setState(InterfaceEntry::State::GOING_DOWN);
+        networkInterface->setState(NetworkInterface::State::GOING_DOWN);
         delayActiveOperationFinish(par("stopOperationTimeout"));
     }
     else {
-        interfaceEntry->setCarrier(false);
-        interfaceEntry->setState(InterfaceEntry::State::DOWN);
+        networkInterface->setCarrier(false);
+        networkInterface->setState(NetworkInterface::State::DOWN);
         startActiveOperationExtraTimeOrFinish(par("stopOperationExtraTime"));
     }
 }
 
+queueing::IPassivePacketSource *Ppp::getProvider(cGate *gate)
+{
+    return (gate->getId() == upperLayerInGateId) ? txQueue.get() : nullptr;
+}
+
+void Ppp::handleCanPullPacketChanged(cGate *gate)
+{
+    Enter_Method("handleCanPullPacketChanged");
+    while (currentTxFrame == nullptr && canDequeuePacket())
+        processUpperPacket();
+}
+
+void Ppp::handlePullPacketProcessed(Packet *packet, cGate *gate, bool successful)
+{
+    Enter_Method("handlePullPacketProcessed");
+    throw cRuntimeError("Not supported callback");
+}
+
+void Ppp::processUpperPacket()
+{
+    auto packet = dequeuePacket();
+    handleUpperPacket(packet);
+}
+
 } // namespace inet
+

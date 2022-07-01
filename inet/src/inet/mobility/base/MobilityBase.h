@@ -1,23 +1,7 @@
-/* -*- mode:c++ -*- ********************************************************
- * file:        MobilityBase.h
- *
- * author:      Daniel Willkomm, Andras Varga
- *
- * copyright:   (C) 2004 Telecommunication Networks Group (TKN) at
- *              Technische Universitaet Berlin, Germany.
- *
- *              (C) 2005 Andras Varga
- *
- *              This program is free software; you can redistribute it
- *              and/or modify it under the terms of the GNU General Public
- *              License as published by the Free Software Foundation; either
- *              version 2 of the License, or (at your option) any later
- *              version.
- *              For further information see file COPYING
- *              in the top level directory
- ***************************************************************************
- * part of:     framework implementation developed by tkn
- **************************************************************************/
+//
+// SPDX-License-Identifier: LGPL-3.0-or-later
+//
+//
 
 #ifndef __INET_MOBILITYBASE_H
 #define __INET_MOBILITYBASE_H
@@ -49,7 +33,6 @@ namespace inet {
  *
  * @ingroup mobility
  * @ingroup basicModules
- * @author Daniel Willkomm, Andras Varga
  */
 class INET_API MobilityBase : public cSimpleModule, public IMobility
 {
@@ -59,7 +42,7 @@ class INET_API MobilityBase : public cSimpleModule, public IMobility
         IMobility *mobility = nullptr;
 
       public:
-        DirectiveResolver(IMobility *mobility) : mobility(mobility) { }
+        DirectiveResolver(IMobility *mobility) : mobility(mobility) {}
 
         virtual const char *resolveDirective(char directive) const override;
     };
@@ -70,10 +53,10 @@ class INET_API MobilityBase : public cSimpleModule, public IMobility
      * @see handleIfOutside()
      */
     enum BorderPolicy {
-        REFLECT,    ///< reflect off the wall
-        WRAP,    ///< reappear at the opposite edge (torus)
-        PLACERANDOMLY,    ///< placed at a randomly chosen position within the constraint area
-        RAISEERROR    ///< stop the simulation with error
+        REFLECT, ///< reflect off the wall
+        WRAP, ///< reappear at the opposite edge (torus)
+        PLACERANDOMLY, ///< placed at a randomly chosen position within the constraint area
+        RAISEERROR ///< stop the simulation with error
     };
 
   protected:
@@ -96,6 +79,8 @@ class INET_API MobilityBase : public cSimpleModule, public IMobility
 
   protected:
     MobilityBase();
+
+    virtual int getId() const override { return cSimpleModule::getId(); }
 
     /** @brief Returns the required number of initialize stages. */
     virtual int numInitStages() const override { return NUM_INIT_STAGES; }
@@ -180,11 +165,11 @@ class INET_API MobilityBase : public cSimpleModule, public IMobility
   public:
     virtual double getMaxSpeed() const override { return NaN; }
 
-    virtual Coord getConstraintAreaMax() const override { return constraintAreaMax; }
-    virtual Coord getConstraintAreaMin() const override { return constraintAreaMin; }
+    virtual const Coord& getConstraintAreaMax() const override { return constraintAreaMax; }
+    virtual const Coord& getConstraintAreaMin() const override { return constraintAreaMin; }
 };
 
 } // namespace inet
 
-#endif // ifndef __INET_MOBILITYBASE_H
+#endif
 

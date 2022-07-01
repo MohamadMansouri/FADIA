@@ -1,29 +1,18 @@
 //
 // Copyright (C) 2014 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 #include "inet/environment/ground/OsgEarthGround.h"
 
-#if defined(WITH_OSGEARTH) && defined(WITH_VISUALIZERS)
-//TODO the visualizers needed only for get the map from SceneOsgEarthVisualizer
+#if defined(WITH_OSGEARTH) && defined(INET_WITH_VISUALIZATIONOSG)
+// TODO the visualizers needed only for get the map from SceneOsgEarthVisualizer
 
 #include "inet/common/ModuleAccess.h"
 #include "inet/common/geometry/common/GeographicCoordinateSystem.h"
-#include "inet/visualizer/scene/SceneOsgEarthVisualizer.h"
-
+#include "inet/visualizer/osg/scene/SceneOsgEarthVisualizer.h"
 
 namespace inet {
 
@@ -35,13 +24,13 @@ Define_Module(OsgEarthGround);
 
 void OsgEarthGround::initialize()
 {
-    auto sceneVisualizer = getModuleFromPar<SceneOsgEarthVisualizer>(par("osgEarthSceneVisualizerModule"), this, true);
+    auto sceneVisualizer = getModuleFromPar<SceneOsgEarthVisualizer>(par("osgEarthSceneVisualizerModule"), this);
     map = sceneVisualizer->getMapNode()->getMap();
     elevationQuery = new osgEarth::ElevationQuery(map);
-    coordinateSystem = getModuleFromPar<IGeographicCoordinateSystem>(par("coordinateSystemModule"), this);
+    coordinateSystem.reference(this, "coordinateSystemModule", true);
 }
 
-Coord OsgEarthGround::computeGroundProjection(const Coord &position) const
+Coord OsgEarthGround::computeGroundProjection(const Coord& position) const
 {
     double elevation = 0;
     auto geoCoord = coordinateSystem->computeGeographicCoordinate(position);
@@ -49,12 +38,12 @@ Coord OsgEarthGround::computeGroundProjection(const Coord &position) const
     if (success)
         geoCoord.altitude = m(elevation);
     else {
-        // TODO: throw cRuntimeError ?
+        // TODO throw cRuntimeError ?
     }
     return coordinateSystem->computeSceneCoordinate(geoCoord);
 }
 
-Coord OsgEarthGround::computeGroundNormal(const Coord &position) const
+Coord OsgEarthGround::computeGroundNormal(const Coord& position) const
 {
     // we take 3 samples, one at position, and 2 at a distance from it in different directions
     // then compute a cross product to get the normal
@@ -79,5 +68,5 @@ Coord OsgEarthGround::computeGroundNormal(const Coord &position) const
 
 } // namespace inet
 
-#endif // defined(WITH_OSGEARTH) && defined(WITH_VISUALIZERS)
+#endif // defined(WITH_OSGEARTH) && defined(INET_WITH_VISUALIZATIONOSG)
 

@@ -1,25 +1,13 @@
 //
-// Copyright (C) 2004 Andras Varga
+// Copyright (C) 2004 OpenSim Ltd.
 // Copyright (C) 2009-2010 Thomas Reschka
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
 #ifndef __INET_TCPALGORITHM_H
 #define __INET_TCPALGORITHM_H
 
-#include "inet/common/INETDefs.h"
 #include "inet/transportlayer/tcp/TcpConnection.h"
 #include "inet/transportlayer/tcp_common/TcpHeader.h"
 
@@ -35,8 +23,8 @@ namespace tcp {
 class INET_API TcpAlgorithm : public cObject
 {
   protected:
-    TcpConnection *conn;    // we belong to this connection
-    TcpStateVariables *state;    // our state variables
+    TcpConnection *conn; // we belong to this connection
+    TcpStateVariables *state; // our state variables
 
     /**
      * Create state block (TCB) used by this TCP variant. It is expected
@@ -136,7 +124,7 @@ class INET_API TcpAlgorithm : public cObject
      * (snd_una - firstSeqAcked). The dupack counter still reflects the old value
      * (needed for Reno and NewReno); it'll be reset to 0 after this call returns.
      */
-    virtual void receivedDataAck(uint32 firstSeqAcked) = 0;
+    virtual void receivedDataAck(uint32_t firstSeqAcked) = 0;
 
     /**
      * Called after we received a duplicate ACK (that is: ackNo == snd_una,
@@ -150,7 +138,7 @@ class INET_API TcpAlgorithm : public cObject
      * Called after we received an ACK for data not yet sent.
      * According to RFC 793 this function should send an ACK.
      */
-    virtual void receivedAckForDataNotYetSent(uint32 seq) = 0;
+    virtual void receivedAckForDataNotYetSent(uint32_t seq) = 0;
 
     /**
      * Called after we sent an ACK. This hook can be used to cancel
@@ -163,14 +151,14 @@ class INET_API TcpAlgorithm : public cObject
      * retransmission timer, to start round-trip time measurement, etc.
      * The argument is the seqno of the first byte sent.
      */
-    virtual void dataSent(uint32 fromseq) = 0;
+    virtual void dataSent(uint32_t fromseq) = 0;
 
     /**
      * Called after we retransmitted segment.
      * The argument fromseq is the seqno of the first byte sent.
      * The argument toseq is the seqno of the last byte sent+1.
      */
-    virtual void segmentRetransmitted(uint32 fromseq, uint32 toseq) = 0;
+    virtual void segmentRetransmitted(uint32_t fromseq, uint32_t toseq) = 0;
 
     /**
      * Restart REXMIT timer.
@@ -178,14 +166,25 @@ class INET_API TcpAlgorithm : public cObject
     virtual void restartRexmitTimer() = 0;
 
     /**
-     * Converting uint32 echoedTS to simtime_t and calling rttMeasurementComplete()
+     * Converting uint32_t echoedTS to simtime_t and calling rttMeasurementComplete()
      * to update state vars with new measured RTT value.
      */
-    virtual void rttMeasurementCompleteUsingTS(uint32 echoedTS) = 0;
+    virtual void rttMeasurementCompleteUsingTS(uint32_t echoedTS) = 0;
+
+    /**
+     * Called before sending ACK. Determines whether to set ECE bit.
+     */
+    virtual bool shouldMarkAck() = 0;
+
+    /**
+     * Called before processing segment in established state.
+     * This function process ECN marks.
+     */
+    virtual void processEcnInEstablished() = 0;
 };
 
 } // namespace tcp
 } // namespace inet
 
-#endif // ifndef __INET_TCPALGORITHM_H
+#endif
 

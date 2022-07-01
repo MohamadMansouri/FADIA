@@ -1,20 +1,12 @@
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program.  If not, see http://www.gnu.org/licenses/.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-#ifndef __INET_MEMORYOUTPUTSTREAM_H_
-#define __INET_MEMORYOUTPUTSTREAM_H_
+
+#ifndef __INET_MEMORYOUTPUTSTREAM_H
+#define __INET_MEMORYOUTPUTSTREAM_H
 
 #include "inet/common/Units.h"
 #include "inet/linklayer/common/MacAddress.h"
@@ -30,10 +22,11 @@ using namespace units::values;
  * provides a set of write functions that write data to the end of the stream.
  * Most functions are implemented in the header to allow inlining.
  */
-// TODO: allow arbitrary mixed bit/byte writes
-// TODO: add parameter checks
-// TODO: review efficiency
-class INET_API MemoryOutputStream {
+// TODO allow arbitrary mixed bit/byte writes
+// TODO add parameter checks
+// TODO review efficiency
+class INET_API MemoryOutputStream
+{
   protected:
     /**
      * This vector contains the bits that were written to this stream so far.
@@ -268,6 +261,32 @@ class INET_API MemoryOutputStream {
     }
 
     /**
+     * Writes a 48 bit unsigned integer to the end of the stream in big endian
+     * byte order and MSB to LSB bit order.
+     */
+    void writeUint48Be(uint64_t value) {
+        writeByte(static_cast<uint8_t>(value >> 40));
+        writeByte(static_cast<uint8_t>(value >> 32));
+        writeByte(static_cast<uint8_t>(value >> 24));
+        writeByte(static_cast<uint8_t>(value >> 16));
+        writeByte(static_cast<uint8_t>(value >> 8));
+        writeByte(static_cast<uint8_t>(value >> 0));
+    }
+
+    /**
+     * Writes a 48 bit unsigned integer to the end of the stream in little endian
+     * byte order and MSB to LSB bit order.
+     */
+    void writeUint48Le(uint64_t value) {
+        writeByte(static_cast<uint8_t>(value >> 0));
+        writeByte(static_cast<uint8_t>(value >> 8));
+        writeByte(static_cast<uint8_t>(value >> 16));
+        writeByte(static_cast<uint8_t>(value >> 24));
+        writeByte(static_cast<uint8_t>(value >> 32));
+        writeByte(static_cast<uint8_t>(value >> 40));
+    }
+
+    /**
      * Writes a 64 bit unsigned integer to the end of the stream in big endian
      * byte order and MSB to LSB bit order.
      */
@@ -344,7 +363,7 @@ class INET_API MemoryOutputStream {
     void writeNBitsOfUint64Be(uint64_t value, uint8_t n) {
         if (n == 0 || n > 64)
             throw cRuntimeError("Can not write 0 bit or more than 64 bits.");
-        uint64_t mul = 1 << (n-1);
+        uint64_t mul = 1 << (n - 1);
         for (int i = 0; i < n; ++i) {
             writeBit((value & mul) != 0);
             mul >>= 1;
@@ -355,5 +374,5 @@ class INET_API MemoryOutputStream {
 
 } // namespace inet
 
-#endif // #ifndef __INET_MEMORYOUTPUTSTREAM_H_
+#endif
 

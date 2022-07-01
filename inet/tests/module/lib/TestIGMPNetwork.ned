@@ -12,9 +12,9 @@ module IgmpTesterNic
     parameters:
         string interfaceTableModule;
         string routingTableModule;
-        *.interfaceTableModule = absPath(interfaceTableModule);
-        *.routingTableModule = absPath(routingTableModule);
-        @class(InterfaceEntry);
+        *.interfaceTableModule = absPath(this.interfaceTableModule);
+        *.routingTableModule = absPath(this.routingTableModule);
+        @class(NetworkInterface);
     gates:
         input upperLayerIn;
         output upperLayerOut;

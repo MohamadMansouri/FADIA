@@ -2,19 +2,9 @@
 // Copyright (C) 2005-2010 by Irene Ruengeler
 // Copyright (C) 2009-2015 by Thomas Dreibholz
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 #include <string.h>
 
@@ -39,8 +29,8 @@ void SctpAssociation::process_ASSOCIATE(SctpEventCode& event, SctpCommandReq *sc
     L3Address lAddr, rAddr;
     SctpOpenReq *openCmd = check_and_cast<SctpOpenReq *>(sctpCommand);
     auto request = check_and_cast<Request *>(msg);
-    auto& tags = getTags(request);
-    auto interfaceReq = tags.findTag<InterfaceReq>();
+    auto& tags = request->getTags();
+    const auto& interfaceReq = tags.findTag<InterfaceReq>();
     if (interfaceReq && interfaceReq->getInterfaceId() != -1) {
         sctpMain->setInterfaceId(interfaceReq->getInterfaceId());
     }
@@ -49,8 +39,8 @@ void SctpAssociation::process_ASSOCIATE(SctpEventCode& event, SctpCommandReq *sc
 
     switch (fsm->getState()) {
         case SCTP_S_CLOSED:
-            if (msg->getContextPointer() != NULL) {
-                sctpMain->setSocketOptions((SocketOptions*) (msg->getContextPointer()));
+            if (msg->getContextPointer() != nullptr) {
+                sctpMain->setSocketOptions((SocketOptions *)(msg->getContextPointer()));
             }
             initAssociation(openCmd);
             state->active = true;
@@ -93,7 +83,7 @@ void SctpAssociation::process_ASSOCIATE(SctpEventCode& event, SctpCommandReq *sc
 void SctpAssociation::process_OPEN_PASSIVE(SctpEventCode& event, SctpCommandReq *sctpCommand, cMessage *msg)
 {
     L3Address lAddr;
-    int16 localPort;
+    int16_t localPort;
 
     SctpOpenReq *openCmd = check_and_cast<SctpOpenReq *>(sctpCommand);
 
@@ -101,8 +91,8 @@ void SctpAssociation::process_OPEN_PASSIVE(SctpEventCode& event, SctpCommandReq 
 
     switch (fsm->getState()) {
         case SCTP_S_CLOSED:
-            if (msg->getContextPointer() != NULL)
-                sctpMain->setSocketOptions((SocketOptions*) (msg->getContextPointer()));
+            if (msg->getContextPointer() != nullptr)
+                sctpMain->setSocketOptions((SocketOptions *)(msg->getContextPointer()));
             initAssociation(openCmd);
             state->fork = openCmd->getFork();
             localAddressList = openCmd->getLocalAddresses();
@@ -145,13 +135,13 @@ void SctpAssociation::process_SEND(SctpEventCode& event, SctpCommandReq *sctpCom
     }
 
     EV_INFO << "process_SEND:"
-             << " assocId=" << assocId
-             << " localAddr=" << localAddr
-             << " remoteAddr=" << remoteAddr
-             << " cmdRemoteAddr=" << sendCommand->getRemoteAddr()
-             << " cmdPrimary=" << (sendCommand->getPrimary() ? "true" : "false")
-             << " appGateIndex=" << appGateIndex
-             << " streamId=" << sendCommand->getSid() << endl;
+            << " assocId=" << assocId
+            << " localAddr=" << localAddr
+            << " remoteAddr=" << remoteAddr
+            << " cmdRemoteAddr=" << sendCommand->getRemoteAddr()
+            << " cmdPrimary=" << (sendCommand->getPrimary() ? "true" : "false")
+            << " appGateIndex=" << appGateIndex
+            << " streamId=" << sendCommand->getSid() << endl;
 
     Packet *applicationPacket = check_and_cast<Packet *>(msg);
     const auto& applicationData = applicationPacket->peekDataAsBytes();
@@ -162,9 +152,9 @@ void SctpAssociation::process_SEND(SctpEventCode& event, SctpCommandReq *sctpCom
     iter->second.sentBytes += sendBytes;
 
     // ------ Prepare SctpDataMsg -----------------------------------------
-    const uint32 streamId = sendCommand->getSid();
-    const uint32 sendUnordered = sendCommand->getSendUnordered();
-    const uint32 ppid = sendCommand->getPpid();
+    const uint32_t streamId = sendCommand->getSid();
+    const uint32_t sendUnordered = sendCommand->getSendUnordered();
+    const uint32_t ppid = sendCommand->getPpid();
     SctpSendStream *stream = nullptr;
     auto associter = sendStreams.find(streamId);
     if (associter != sendStreams.end()) {
@@ -199,11 +189,11 @@ void SctpAssociation::process_SEND(SctpEventCode& event, SctpCommandReq *sctpCom
             break;
 
         case PR_RTX:
-            datMsg->setRtx((uint32)sendCommand->getPrValue());
+            datMsg->setRtx((uint32_t)sendCommand->getPrValue());
             break;
 
         case PR_PRIO:
-            datMsg->setPriority((uint32)sendCommand->getPrValue());
+            datMsg->setPriority((uint32_t)sendCommand->getPrValue());
             state->queuedDroppableBytes += PK(msg)->getByteLength();
             break;
     }
@@ -211,11 +201,11 @@ void SctpAssociation::process_SEND(SctpEventCode& event, SctpCommandReq *sctpCom
     if ((state->appSendAllowed) &&
         (state->sendQueueLimit > 0) &&
         (state->queuedDroppableBytes > 0) &&
-        ((uint64)state->sendBuffer >= state->sendQueueLimit))
+        ((uint64_t)state->sendBuffer >= state->sendQueueLimit))
     {
-        uint32 lowestPriority;
+        uint32_t lowestPriority;
         cQueue *strq;
-        int64 dropsize = state->sendBuffer - state->sendQueueLimit;
+        int64_t dropsize = state->sendBuffer - state->sendQueueLimit;
 
         if (sendUnordered)
             strq = stream->getUnorderedStreamQ();
@@ -291,7 +281,8 @@ void SctpAssociation::process_SEND(SctpEventCode& event, SctpCommandReq *sctpCom
     // ------ Send buffer full? -------------------------------------------
     if ((state->appSendAllowed) &&
         (state->sendQueueLimit > 0) &&
-        ((uint64)state->sendBuffer >= state->sendQueueLimit)) {
+        ((uint64_t)state->sendBuffer >= state->sendQueueLimit))
+    {
         // If there are not enough messages that could be dropped,
         // the buffer is really full and the app has to be notified.
         if (state->queuedDroppableBytes < state->sendBuffer - state->sendQueueLimit) {
@@ -305,8 +296,8 @@ void SctpAssociation::process_SEND(SctpEventCode& event, SctpCommandReq *sctpCom
         state->queueUpdate = false;
     }
     EV_INFO << "process_SEND:"
-             << " last=" << sendCommand->getLast()
-             << "    queueLimit=" << state->queueLimit << endl;
+            << " last=" << sendCommand->getLast()
+            << "    queueLimit=" << state->queueLimit << endl;
 
     // ------ Call sendCommandInvoked() to send message -------------------
     // sendCommandInvoked() itself will call sendOnAllPaths() ...
@@ -324,7 +315,7 @@ void SctpAssociation::process_RECEIVE_REQUEST(SctpEventCode& event, SctpCommandR
 {
     EV_INFO << "SctpAssociation::process_RECEIVE_REQUEST\n";
     SctpSendReq *sendCommand = check_and_cast<SctpSendReq *>(sctpCommand);
-    if ((uint32)sendCommand->getSid() > inboundStreams || sendCommand->getSid() < 0) {
+    if ((uint32_t)sendCommand->getSid() > inboundStreams || sendCommand->getSid() < 0) {
         EV_DEBUG << "Application tries to read from invalid stream id....\n";
     }
     state->numMsgsReq[sendCommand->getSid()] += sendCommand->getNumMsgs();
@@ -344,32 +335,39 @@ void SctpAssociation::process_STREAM_RESET(SctpCommandReq *sctpCommand)
     if (!(getPath(remoteAddr)->ResetTimer->isScheduled())) {
         if (rinfo->getRequestType() == ADD_BOTH) {
             sendAddInAndOutStreamsRequest(rinfo);
-        } else if (!state->fragInProgress && state->outstandingBytes == 0) {
+        }
+        else if (!state->fragInProgress && state->outstandingBytes == 0) {
             sendStreamResetRequest(rinfo);
             if (rinfo->getRequestType() == RESET_OUTGOING || rinfo->getRequestType() == RESET_BOTH ||
-                    rinfo->getRequestType() == SSN_TSN || rinfo->getRequestType() == ADD_INCOMING ||
-                    rinfo->getRequestType() == ADD_OUTGOING) {
+                rinfo->getRequestType() == SSN_TSN || rinfo->getRequestType() == ADD_INCOMING ||
+                rinfo->getRequestType() == ADD_OUTGOING)
+            {
                 state->resetPending = true;
             }
-        } else if (state->outstandingBytes > 0) {
+        }
+        else if (state->outstandingBytes > 0) {
             if (rinfo->getRequestType() == RESET_OUTGOING || rinfo->getRequestType() == RESET_INCOMING || rinfo->getRequestType() == RESET_BOTH) {
                 if (rinfo->getStreamsArraySize() > 0) {
-                    for (uint16 i = 0; i < rinfo->getStreamsArraySize(); i++) {
+                    for (uint16_t i = 0; i < rinfo->getStreamsArraySize(); i++) {
                         if ((getBytesInFlightOfStream(rinfo->getStreams(i)) > 0) ||
-                                getFragInProgressOfStream(rinfo->getStreams(i)) ||
-                                !orderedQueueEmptyOfStream(rinfo->getStreams(i)) ||
-                                !unorderedQueueEmptyOfStream(rinfo->getStreams(i))) {
+                            getFragInProgressOfStream(rinfo->getStreams(i)) ||
+                            !orderedQueueEmptyOfStream(rinfo->getStreams(i)) ||
+                            !unorderedQueueEmptyOfStream(rinfo->getStreams(i)))
+                        {
                             state->streamsPending.push_back(rinfo->getStreams(i));
-                        } else {
+                        }
+                        else {
                             state->streamsToReset.push_back(rinfo->getStreams(i));
                         }
                     }
-                } else {
+                }
+                else {
                     if (rinfo->getRequestType() == RESET_OUTGOING) {
-                        for (uint16 i = 0; i < outboundStreams; i++) {
+                        for (uint16_t i = 0; i < outboundStreams; i++) {
                             if ((getBytesInFlightOfStream(i) > 0) || getFragInProgressOfStream(i)) {
                                 state->streamsPending.push_back(i);
-                            } else {
+                            }
+                            else {
                                 state->streamsToReset.push_back(i);
                             }
                         }
@@ -381,15 +379,16 @@ void SctpAssociation::process_STREAM_RESET(SctpCommandReq *sctpCommand)
                 }
             }
             if ((rinfo->getRequestType() == SSN_TSN) ||
-                    (rinfo->getRequestType() == ADD_INCOMING) ||
-                    (rinfo->getRequestType() == ADD_OUTGOING)) {
+                (rinfo->getRequestType() == ADD_INCOMING) ||
+                (rinfo->getRequestType() == ADD_OUTGOING))
+            {
                 state->resetInfo = rinfo;
-               // state->resetInfo->setName("state-resetLater");
+//                state->resetInfo->setName("state-resetLater");
                 state->localRequestType = state->resetInfo->getRequestType();
             }
             if (!state->resetPending || state->streamsPending.size() > 0) {
                 state->resetInfo = rinfo->dup();
-               // state->resetInfo->setName("state-resetInfo");
+//                state->resetInfo->setName("state-resetInfo");
                 state->localRequestType = state->resetInfo->getRequestType();
             }
         }
@@ -440,8 +439,8 @@ void SctpAssociation::process_ABORT(SctpEventCode& event)
 
 void SctpAssociation::process_STATUS(SctpEventCode& event, SctpCommandReq *sctpCommand, cMessage *msg)
 {
-    auto& tags = getTags(msg);
-    SctpStatusReq *statusInfo = tags.addTagIfAbsent<SctpStatusReq>();
+    auto& tags = check_and_cast<ITaggedObject *>(msg)->getTags();
+    auto& statusInfo = tags.addTagIfAbsent<SctpStatusReq>();
     statusInfo->setState(fsm->getState());
     statusInfo->setStateName(stateName(fsm->getState()));
     statusInfo->setPathId(remoteAddr);

@@ -42,7 +42,7 @@ snapshot-file = "${resultdir}/${configname}-${runnumber}.sna"
 import inet.test.moduletest.lib.*;
 import inet.node.inet.AdhocHost;
 import inet.status.NodeStatus;
-import inet.physicallayer.ieee80211.packetlevel.Ieee80211ScalarRadioMedium;
+import inet.physicallayer.wireless.ieee80211.packetlevel.Ieee80211ScalarRadioMedium;
 import inet.common.scenario.ScenarioManager;
 
 network Test
@@ -67,8 +67,7 @@ Test.host starting up
 .*
 Test.host started
 %#--------------------------------------------------------------------------------------------------------------
-%not-contains: stdout
-undisposed object:
-%not-contains: stdout
--- check module destructor
+%postrun-command: grep "undisposed object:" test.out > test_undisposed.out || true
+%not-contains: test_undisposed.out
+undisposed object: (
 %#--------------------------------------------------------------------------------------------------------------

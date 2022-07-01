@@ -1,19 +1,9 @@
 //
-// Copyright (C) OpenSim Ltd.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 #ifndef __INET_SUPERPOSITIONINGMOBILITY_H
 #define __INET_SUPERPOSITIONINGMOBILITY_H
@@ -30,6 +20,7 @@ class INET_API SuperpositioningMobility : public MobilityBase, public cListener
         PC_ZERO,
         PC_SUM,
         PC_AVERAGE,
+        PC_ELEMENT,
     };
 
     enum class OrientationComposition {
@@ -37,12 +28,20 @@ class INET_API SuperpositioningMobility : public MobilityBase, public cListener
         OC_ZERO,
         OC_SUM,
         OC_AVERAGE,
-        OC_FACE_FORWARD
+        OC_FACE_FORWARD,
+        OC_ELEMENT,
     };
+
+    Coord lastVelocity;
+    Coord lastAcceleration;
+    Quaternion lastAngularVelocity;
+    Quaternion lastAngularAcceleration;
 
   protected:
     PositionComposition positionComposition = PositionComposition::PC_UNDEFINED;
     OrientationComposition orientationComposition = OrientationComposition::OC_UNDEFINED;
+    int positionElementIndex = -1;
+    int orientationElementIndex = -1;
     std::vector<IMobility *> elements;
 
   protected:
@@ -52,18 +51,18 @@ class INET_API SuperpositioningMobility : public MobilityBase, public cListener
     virtual void setInitialPosition() override;
 
   public:
-    virtual Coord getCurrentPosition() override;
-    virtual Coord getCurrentVelocity() override;
-    virtual Coord getCurrentAcceleration() override;
+    virtual const Coord& getCurrentPosition() override;
+    virtual const Coord& getCurrentVelocity() override;
+    virtual const Coord& getCurrentAcceleration() override;
 
-    virtual Quaternion getCurrentAngularPosition() override;
-    virtual Quaternion getCurrentAngularVelocity() override;
-    virtual Quaternion getCurrentAngularAcceleration() override;
+    virtual const Quaternion& getCurrentAngularPosition() override;
+    virtual const Quaternion& getCurrentAngularVelocity() override;
+    virtual const Quaternion& getCurrentAngularAcceleration() override;
 
     virtual void receiveSignal(cComponent *source, simsignal_t signal, cObject *object, cObject *details) override;
 };
 
 } // namespace inet
 
-#endif // ifndef __INET_SUPERPOSITIONINGMOBILITY_H
+#endif
 

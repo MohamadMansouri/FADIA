@@ -1,23 +1,14 @@
 //
 // Copyright (C) 2016 OpenSim Ltd.
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program.  If not, see http://www.gnu.org/licenses/.
-//
+
+
+#include "inet/linklayer/ieee80211/mac/framesequence/FrameSequenceHandler.h"
 
 #include "inet/common/INETUtils.h"
 #include "inet/linklayer/ieee80211/mac/framesequence/FrameSequenceContext.h"
-#include "inet/linklayer/ieee80211/mac/framesequence/FrameSequenceHandler.h"
 #include "inet/linklayer/ieee80211/mac/framesequence/FrameSequenceStep.h"
 
 namespace inet {
@@ -43,7 +34,7 @@ void FrameSequenceHandler::processResponse(Packet *frame)
     auto lastStep = context->getLastStep();
     switch (lastStep->getType()) {
         case IFrameSequenceStep::Type::RECEIVE: {
-            // TODO: check if not for us and abort
+            // TODO check if not for us and abort
             auto receiveStep = check_and_cast<IReceiveStep *>(context->getLastStep());
             receiveStep->setFrameToReceive(frame);
             finishFrameSequenceStep();
@@ -81,7 +72,6 @@ void FrameSequenceHandler::startFrameSequence(IFrameSequence *frameSequence, Fra
         throw cRuntimeError("Channel access granted while a frame sequence is running");
 }
 
-
 void FrameSequenceHandler::startFrameSequenceStep()
 {
     ASSERT(isSequenceRunning());
@@ -96,9 +86,9 @@ void FrameSequenceHandler::startFrameSequenceStep()
                 auto transmitStep = static_cast<TransmitStep *>(nextStep);
                 EV_INFO << "Transmitting, frame = " << transmitStep->getFrameToTransmit() << ".\n";
                 callback->transmitFrame(transmitStep->getFrameToTransmit(), transmitStep->getIfs());
-                // TODO: lifetime
-                // if (auto dataFrame = dynamic_cast<const Ptr<const Ieee80211DataHeader>& >(transmitStep->getFrameToTransmit()))
-                //    transmitLifetimeHandler->frameTransmitted(dataFrame);
+                // TODO lifetime
+//                if (auto dataFrame = dynamic_cast<const Ptr<const Ieee80211DataHeader>& >(transmitStep->getFrameToTransmit()))
+//                    transmitLifetimeHandler->frameTransmitted(dataFrame);
                 break;
             }
             case IFrameSequenceStep::Type::RECEIVE: {
@@ -146,19 +136,22 @@ void FrameSequenceHandler::finishFrameSequenceStep()
 void FrameSequenceHandler::finishFrameSequence()
 {
     EV_INFO << "Frame sequence finished.\n";
+    auto inProgressFrames = context->getInProgressFrames();
     callback->frameSequenceFinished();
     delete context;
     delete frameSequence;
     context = nullptr;
     frameSequence = nullptr;
     callback = nullptr;
+    inProgressFrames->clearDroppedFrames();
 }
 
 void FrameSequenceHandler::abortFrameSequence()
 {
     EV_INFO << "Frame sequence aborted.\n";
+    auto inProgressFrames = context->getInProgressFrames();
     auto step = context->getLastStep();
-    auto failedTxStep = check_and_cast<ITransmitStep*>(dynamic_cast<IReceiveStep*>(step) ? context->getStepBeforeLast() : step);
+    auto failedTxStep = check_and_cast<ITransmitStep *>(dynamic_cast<IReceiveStep *>(step) ? context->getStepBeforeLast() : step);
     auto frameToTransmit = failedTxStep->getFrameToTransmit();
     auto header = frameToTransmit->peekAtFront<Ieee80211MacHeader>();
     if (auto dataOrMgmtHeader = dynamicPtrCast<const Ieee80211DataOrMgmtHeader>(header))
@@ -173,6 +166,7 @@ void FrameSequenceHandler::abortFrameSequence()
     context = nullptr;
     frameSequence = nullptr;
     callback = nullptr;
+    inProgressFrames->clearDroppedFrames();
 }
 
 FrameSequenceHandler::~FrameSequenceHandler()
@@ -183,3 +177,4 @@ FrameSequenceHandler::~FrameSequenceHandler()
 
 } // namespace ieee80211
 } // namespace inet
+

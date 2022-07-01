@@ -1,19 +1,11 @@
 //
 // Copyright (C) 2016 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
+
+#include "inet/linklayer/csmaca/CsmaCaMac.h"
 
 #include "inet/common/ModuleAccess.h"
 #include "inet/common/ProtocolGroup.h"
@@ -24,7 +16,6 @@
 #include "inet/linklayer/common/MacAddressTag_m.h"
 #include "inet/linklayer/common/UserPriority.h"
 #include "inet/linklayer/common/UserPriorityTag_m.h"
-#include "inet/linklayer/csmaca/CsmaCaMac.h"
 
 namespace inet {
 
@@ -34,6 +25,8 @@ Define_Module(CsmaCaMac);
 
 CsmaCaMac::~CsmaCaMac()
 {
+    if (endSifs != nullptr)
+        delete static_cast<Packet *>(endSifs->getContextPointer());
     cancelAndDelete(endSifs);
     cancelAndDelete(endDifs);
     cancelAndDelete(endBackoff);
@@ -81,7 +74,7 @@ void CsmaCaMac::initialize(int stage)
         mediumStateChange = new cMessage("MediumStateChange");
 
         // set up internal queue
-        txQueue = check_and_cast<queueing::IPacketQueue *>(getSubmodule("queue"));
+        txQueue = getQueue(gate(upperLayerInGateId));
 
         // state variables
         fsm.setName("CsmaCaMac State Machine");
@@ -113,11 +106,10 @@ void CsmaCaMac::initialize(int stage)
     }
     else if (stage == INITSTAGE_LINK_LAYER) {
         // subscribe for the information of the carrier sense
-        cModule *radioModule = getModuleFromPar<cModule>(par("radioModule"), this);
+        radio.reference(this, "radioModule", true);
+        cModule *radioModule = check_and_cast<cModule *>(radio.get());
         radioModule->subscribe(IRadio::receptionStateChangedSignal, this);
         radioModule->subscribe(IRadio::transmissionStateChangedSignal, this);
-
-        radio = check_and_cast<IRadio *>(radioModule);
         radio->setRadioMode(IRadio::RADIO_MODE_RECEIVER);
     }
 }
@@ -134,22 +126,22 @@ void CsmaCaMac::finish()
     recordScalar("numReceivedBroadcast", numReceivedBroadcast);
 }
 
-void CsmaCaMac::configureInterfaceEntry()
+void CsmaCaMac::configureNetworkInterface()
 {
     MacAddress address = parseMacAddressParameter(par("address"));
 
     // data rate
-    interfaceEntry->setDatarate(bitrate);
+    networkInterface->setDatarate(bitrate);
 
     // generate a link-layer address to be used as interface token for IPv6
-    interfaceEntry->setMacAddress(address);
-    interfaceEntry->setInterfaceToken(address.formInterfaceIdentifier());
+    networkInterface->setMacAddress(address);
+    networkInterface->setInterfaceToken(address.formInterfaceIdentifier());
 
     // capabilities
-    interfaceEntry->setMtu(par("mtu"));
-    interfaceEntry->setMulticast(true);
-    interfaceEntry->setBroadcast(true);
-    interfaceEntry->setPointToPoint(false);
+    networkInterface->setMtu(par("mtu"));
+    networkInterface->setMulticast(true);
+    networkInterface->setBroadcast(true);
+    networkInterface->setPointToPoint(false);
 }
 
 /****************************************************************
@@ -163,18 +155,14 @@ void CsmaCaMac::handleSelfMessage(cMessage *msg)
 
 void CsmaCaMac::handleUpperPacket(Packet *packet)
 {
-    auto frame = check_and_cast<Packet *>(packet);
-    encapsulate(frame);
-    const auto& macHeader = frame->peekAtFront<CsmaCaMacHeader>();
-    EV << "frame " << frame << " received from higher layer, receiver = " << macHeader->getReceiverAddress() << endl;
-    ASSERT(!macHeader->getReceiverAddress().isUnspecified());
-    txQueue->pushPacket(frame);
-    if (fsm.getState() != IDLE)
-        EV << "deferring upper message transmission in " << fsm.getStateName() << " state\n";
-    else if (!txQueue->isEmpty()){
-        popTxQueue();
-        handleWithFsm(currentTxFrame);
-    }
+    auto destAddress = packet->getTag<MacAddressReq>()->getDestAddress();
+    ASSERT(!destAddress.isUnspecified());
+    EV << "frame " << packet << " received from higher layer, receiver = " << destAddress << endl;
+    encapsulate(packet);
+    if (currentTxFrame != nullptr)
+        throw cRuntimeError("Model error: incomplete transmission exists");
+    currentTxFrame = packet;
+    handleWithFsm(currentTxFrame);
 }
 
 void CsmaCaMac::handleLowerPacket(Packet *packet)
@@ -359,8 +347,7 @@ void CsmaCaMac::handleWithFsm(cMessage *msg)
         else if (currentTxFrame != nullptr)
             handleWithFsm(currentTxFrame);
         else if (!txQueue->isEmpty()) {
-            popTxQueue();
-            handleWithFsm(currentTxFrame);
+            processUpperPacket();
         }
     }
     if (isLowerMessage(msg) && frame->getOwner() == this && endSifs->getContextPointer() != frame)
@@ -370,7 +357,8 @@ void CsmaCaMac::handleWithFsm(cMessage *msg)
 
 void CsmaCaMac::receiveSignal(cComponent *source, simsignal_t signalID, intval_t value, cObject *details)
 {
-    Enter_Method_Silent();
+    Enter_Method("%s", cComponent::getSignalName(signalID));
+
     if (signalID == IRadio::receptionStateChangedSignal)
         handleWithFsm(mediumStateChange);
     else if (signalID == IRadio::transmissionStateChangedSignal) {
@@ -391,9 +379,9 @@ void CsmaCaMac::encapsulate(Packet *frame)
     auto transportProtocol = frame->getTag<PacketProtocolTag>()->getProtocol();
     auto networkProtocol = ProtocolGroup::ethertype.getProtocolNumber(transportProtocol);
     macHeader->setNetworkProtocol(networkProtocol);
-    macHeader->setTransmitterAddress(interfaceEntry->getMacAddress());
+    macHeader->setTransmitterAddress(networkInterface->getMacAddress());
     macHeader->setReceiverAddress(frame->getTag<MacAddressReq>()->getDestAddress());
-    auto userPriorityReq = frame->findTag<UserPriorityReq>();
+    const auto& userPriorityReq = frame->findTag<UserPriorityReq>();
     int userPriority = userPriorityReq == nullptr ? UP_BE : userPriorityReq->getUserPriority();
     macHeader->setPriority(userPriority == -1 ? UP_BE : userPriority);
     frame->insertAtFront(macHeader);
@@ -405,7 +393,7 @@ void CsmaCaMac::encapsulate(Packet *frame)
     auto macAddressInd = frame->addTagIfAbsent<MacAddressInd>();
     macAddressInd->setSrcAddress(macHeader->getTransmitterAddress());
     macAddressInd->setDestAddress(macHeader->getReceiverAddress());
-    frame->getTag<PacketProtocolTag>()->setProtocol(&Protocol::csmaCaMac);
+    frame->getTagForUpdate<PacketProtocolTag>()->setProtocol(&Protocol::csmaCaMac);
 }
 
 void CsmaCaMac::decapsulate(Packet *frame)
@@ -415,7 +403,7 @@ void CsmaCaMac::decapsulate(Packet *frame)
     auto addressInd = frame->addTagIfAbsent<MacAddressInd>();
     addressInd->setSrcAddress(macHeader->getTransmitterAddress());
     addressInd->setDestAddress(macHeader->getReceiverAddress());
-    frame->addTagIfAbsent<InterfaceInd>()->setInterfaceId(interfaceEntry->getInterfaceId());
+    frame->addTagIfAbsent<InterfaceInd>()->setInterfaceId(networkInterface->getInterfaceId());
     frame->addTagIfAbsent<UserPriorityInd>()->setUserPriority(macHeader->getPriority());
     auto networkProtocol = macHeader->getNetworkProtocol();
     auto transportProtocol = ProtocolGroup::ethertype.getProtocol(networkProtocol);
@@ -430,13 +418,13 @@ void CsmaCaMac::scheduleSifsTimer(Packet *frame)
 {
     EV << "scheduling SIFS timer\n";
     endSifs->setContextPointer(frame);
-    scheduleAt(simTime() + sifsTime, endSifs);
+    scheduleAfter(sifsTime, endSifs);
 }
 
 void CsmaCaMac::scheduleDifsTimer()
 {
     EV << "scheduling DIFS timer\n";
-    scheduleAt(simTime() + difsTime, endDifs);
+    scheduleAfter(difsTime, endDifs);
 }
 
 void CsmaCaMac::cancelDifsTimer()
@@ -448,7 +436,7 @@ void CsmaCaMac::cancelDifsTimer()
 void CsmaCaMac::scheduleAckTimeout(Packet *frameToSend)
 {
     EV << "scheduling ACK timeout\n";
-    scheduleAt(simTime() + ackTimeout, endAckTimeout);
+    scheduleAfter(ackTimeout, endAckTimeout);
 }
 
 void CsmaCaMac::cancelAckTimer()
@@ -496,7 +484,7 @@ void CsmaCaMac::scheduleBackoffTimer()
     EV << "scheduling backoff timer\n";
     if (isInvalidBackoffPeriod())
         generateBackoffPeriod();
-    scheduleAt(simTime() + backoffPeriod, endBackoff);
+    scheduleAfter(backoffPeriod, endBackoff);
 }
 
 void CsmaCaMac::cancelBackoffTimer()
@@ -612,7 +600,7 @@ bool CsmaCaMac::isBroadcast(Packet *frame)
 bool CsmaCaMac::isForUs(Packet *frame)
 {
     const auto& macHeader = frame->peekAtFront<CsmaCaMacHeader>();
-    return macHeader->getReceiverAddress() == interfaceEntry->getMacAddress();
+    return macHeader->getReceiverAddress() == networkInterface->getMacAddress();
 }
 
 bool CsmaCaMac::isFcsOk(Packet *frame)
@@ -632,7 +620,7 @@ bool CsmaCaMac::isFcsOk(Packet *frame)
                 auto buffer = new uint8_t[bufferLength];
                 fcsBytes->copyToBuffer(buffer, bufferLength);
                 auto computedFcs = ethernetCRC(buffer, bufferLength);
-                delete [] buffer;
+                delete[] buffer;
                 return computedFcs == trailer->getFcs();
             }
             default:
@@ -647,7 +635,7 @@ uint32_t CsmaCaMac::computeFcs(const Ptr<const BytesChunk>& bytes)
     auto buffer = new uint8_t[bufferLength];
     bytes->copyToBuffer(buffer, bufferLength);
     auto computedFcs = ethernetCRC(buffer, bufferLength);
-    delete [] buffer;
+    delete[] buffer;
     return computedFcs;
 }
 
@@ -663,4 +651,30 @@ void CsmaCaMac::handleCrashOperation(LifecycleOperation *operation)
     resetTransmissionVariables();
 }
 
+void CsmaCaMac::processUpperPacket()
+{
+    Packet *packet = dequeuePacket();
+    handleUpperPacket(packet);
+}
+
+queueing::IPassivePacketSource *CsmaCaMac::getProvider(cGate *gate)
+{
+    return (gate->getId() == upperLayerInGateId) ? txQueue.get() : nullptr;
+}
+
+void CsmaCaMac::handleCanPullPacketChanged(cGate *gate)
+{
+    Enter_Method("handleCanPullPacketChanged");
+    if (fsm.getState() == IDLE && !txQueue->isEmpty()) {
+        processUpperPacket();
+    }
+}
+
+void CsmaCaMac::handlePullPacketProcessed(Packet *packet, cGate *gate, bool successful)
+{
+    Enter_Method("handlePullPacketProcessed");
+    throw cRuntimeError("Not supported callback");
+}
+
 } // namespace inet
+

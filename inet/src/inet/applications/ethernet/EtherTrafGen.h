@@ -1,30 +1,19 @@
 //
 // Copyright (C) 2003 Andras Varga; CTIE, Monash University, Australia
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
 #ifndef __INET_ETHERTRAFGEN_H
 #define __INET_ETHERTRAFGEN_H
 
-#include "inet/common/INETDefs.h"
-
 #include "inet/applications/base/ApplicationBase.h"
+#include "inet/common/ModuleRefByPar.h"
 #include "inet/common/packet/Packet.h"
 #include "inet/linklayer/common/MacAddress.h"
 #include "inet/linklayer/ieee8022/Ieee8022LlcSocket.h"
 #include "inet/linklayer/ieee8022/Ieee8022LlcSocketCommand_m.h"
+#include "inet/networklayer/contract/IInterfaceTable.h"
 
 namespace inet {
 
@@ -36,6 +25,8 @@ class INET_API EtherTrafGen : public ApplicationBase
   protected:
     enum Kinds { START = 100, NEXT };
 
+    ModuleRefByPar<IInterfaceTable> interfaceTable;
+
     long seqNum = 0;
 
     // send parameters
@@ -45,6 +36,7 @@ class INET_API EtherTrafGen : public ApplicationBase
     int ssap = -1;
     int dsap = -1;
     MacAddress destMacAddress;
+    int outInterface = -1;
 
     Ieee8022LlcSocket llcSocket;
     // self messages
@@ -82,5 +74,5 @@ class INET_API EtherTrafGen : public ApplicationBase
 
 } // namespace inet
 
-#endif // ifndef __INET_ETHERTRAFGEN_H
+#endif
 

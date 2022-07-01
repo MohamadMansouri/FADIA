@@ -1,24 +1,15 @@
 //
-// Copyright (C) 2004-2005 Andras Varga
+// Copyright (C) 2004-2005 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-#include <algorithm>    // min,max
+
+#include "inet/transportlayer/tcp/flavours/TcpTahoe.h"
+
+#include <algorithm> // min,max
 
 #include "inet/transportlayer/tcp/Tcp.h"
-#include "inet/transportlayer/tcp/flavours/TcpTahoe.h"
 
 namespace inet {
 namespace tcp {
@@ -34,8 +25,8 @@ void TcpTahoe::recalculateSlowStartThreshold()
 {
     // set ssthresh to flight size / 2, but at least 2 MSS
     // (the formula below practically amounts to ssthresh = cwnd / 2 most of the time)
-    uint32 flight_size = std::min(state->snd_cwnd, state->snd_wnd);    // FIXME TODO - Does this formula computes the amount of outstanding data?
-    // uint32 flight_size = state->snd_max - state->snd_una;
+    uint32_t flight_size = std::min(state->snd_cwnd, state->snd_wnd); // FIXME - Does this formula computes the amount of outstanding data?
+//    uint32_t flight_size = state->snd_max - state->snd_una;
     state->ssthresh = std::max(flight_size / 2, 2 * state->snd_mss);
 
     conn->emit(ssthreshSignal, state->ssthresh);
@@ -63,7 +54,7 @@ void TcpTahoe::processRexmitTimer(TcpEventCode& event)
     conn->retransmitOneSegment(true);
 }
 
-void TcpTahoe::receivedDataAck(uint32 firstSeqAcked)
+void TcpTahoe::receivedDataAck(uint32_t firstSeqAcked)
 {
     TcpTahoeRenoFamily::receivedDataAck(firstSeqAcked);
 
@@ -82,8 +73,8 @@ void TcpTahoe::receivedDataAck(uint32 firstSeqAcked)
         // that arrive. This is called "Appropriate Byte Counting" (ABC) and is
         // described in RFC 3465 (experimental).
         //
-        // int bytesAcked = state->snd_una - firstSeqAcked;
-        // state->snd_cwnd += bytesAcked;
+//        int bytesAcked = state->snd_una - firstSeqAcked;
+//        state->snd_cwnd += bytesAcked;
 
         conn->emit(cwndSignal, state->snd_cwnd);
 
@@ -119,8 +110,8 @@ void TcpTahoe::receivedDuplicateAck()
 {
     TcpTahoeRenoFamily::receivedDuplicateAck();
 
-    if (state->dupacks == DUPTHRESH) {    // DUPTHRESH = 3
-        EV_DETAIL << "Tahoe on dupAcks == DUPTHRESH(=3): perform Fast Retransmit, and enter Slow Start:\n";
+    if (state->dupacks == state->dupthresh) {
+        EV_DETAIL << "Tahoe on dupAcks == DUPTHRESH(=" << state->dupthresh << ": perform Fast Retransmit, and enter Slow Start:\n";
 
         // enter Slow Start
         recalculateSlowStartThreshold();

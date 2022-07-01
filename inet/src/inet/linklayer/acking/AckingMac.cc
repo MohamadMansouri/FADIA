@@ -1,21 +1,11 @@
 //
-// Copyright (C) 2013 OpenSim Ltd
+// Copyright (C) 2013 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
-// author: Zoltan Bojthe
-//
+
+
+#include "inet/linklayer/acking/AckingMac.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -25,7 +15,6 @@
 #include "inet/common/ProtocolGroup.h"
 #include "inet/common/ProtocolTag_m.h"
 #include "inet/common/packet/Packet.h"
-#include "inet/linklayer/acking/AckingMac.h"
 #include "inet/linklayer/acking/AckingMacHeader_m.h"
 #include "inet/linklayer/common/InterfaceTag_m.h"
 #include "inet/linklayer/common/MacAddressTag_m.h"
@@ -62,52 +51,50 @@ void AckingMac::initialize(int stage)
         radio = check_and_cast<IRadio *>(radioModule);
         transmissionState = IRadio::TRANSMISSION_STATE_UNDEFINED;
 
-        txQueue = check_and_cast<queueing::IPacketQueue *>(getSubmodule("queue"));
+        txQueue = getQueue(gate(upperLayerInGateId));
     }
     else if (stage == INITSTAGE_LINK_LAYER) {
         radio->setRadioMode(fullDuplex ? IRadio::RADIO_MODE_TRANSCEIVER : IRadio::RADIO_MODE_RECEIVER);
+        transmissionState = radio->getTransmissionState();
         if (useAck)
             ackTimeoutMsg = new cMessage("link-break");
-        if (!txQueue->isEmpty()) {
-            popTxQueue();
-            startTransmitting();
-        }
     }
 }
 
-void AckingMac::configureInterfaceEntry()
+void AckingMac::configureNetworkInterface()
 {
     MacAddress address = parseMacAddressParameter(par("address"));
 
     // data rate
-    interfaceEntry->setDatarate(bitrate);
+    networkInterface->setDatarate(bitrate);
 
     // generate a link-layer address to be used as interface token for IPv6
-    interfaceEntry->setMacAddress(address);
-    interfaceEntry->setInterfaceToken(address.formInterfaceIdentifier());
+    networkInterface->setMacAddress(address);
+    networkInterface->setInterfaceToken(address.formInterfaceIdentifier());
 
     // MTU: typical values are 576 (Internet de facto), 1500 (Ethernet-friendly),
     // 4000 (on some point-to-point links), 4470 (Cisco routers default, FDDI compatible)
-    interfaceEntry->setMtu(par("mtu"));
+    networkInterface->setMtu(par("mtu"));
 
     // capabilities
-    interfaceEntry->setMulticast(true);
-    interfaceEntry->setBroadcast(true);
+    networkInterface->setMulticast(true);
+    networkInterface->setBroadcast(true);
 }
 
 void AckingMac::receiveSignal(cComponent *source, simsignal_t signalID, intval_t value, cObject *details)
 {
-    Enter_Method_Silent();
+    Enter_Method("%s", cComponent::getSignalName(signalID));
+
     if (signalID == IRadio::transmissionStateChangedSignal) {
         IRadio::TransmissionState newRadioTransmissionState = static_cast<IRadio::TransmissionState>(value);
         if (transmissionState == IRadio::TRANSMISSION_STATE_TRANSMITTING && newRadioTransmissionState == IRadio::TRANSMISSION_STATE_IDLE) {
             radio->setRadioMode(fullDuplex ? IRadio::RADIO_MODE_TRANSCEIVER : IRadio::RADIO_MODE_RECEIVER);
-            if (!currentTxFrame && !txQueue->isEmpty()) {
-                popTxQueue();
-                startTransmitting();
-            }
+            transmissionState = newRadioTransmissionState;
+            if (currentTxFrame == nullptr && canDequeuePacket())
+                processUpperPacket();
         }
-        transmissionState = newRadioTransmissionState;
+        else
+            transmissionState = newRadioTransmissionState;
     }
 }
 
@@ -116,9 +103,9 @@ void AckingMac::startTransmitting()
     // if there's any control info, remove it; then encapsulate the packet
     MacAddress dest = currentTxFrame->getTag<MacAddressReq>()->getDestAddress();
     Packet *msg = currentTxFrame;
-    if (useAck && !dest.isBroadcast() && !dest.isMulticast() && !dest.isUnspecified()) {    // unicast
+    if (useAck && !dest.isBroadcast() && !dest.isMulticast() && !dest.isUnspecified()) { // unicast
         msg = currentTxFrame->dup();
-        scheduleAt(simTime() + ackTimeout, ackTimeoutMsg);
+        scheduleAfter(ackTimeout, ackTimeoutMsg);
     }
     else
         currentTxFrame = nullptr;
@@ -134,13 +121,10 @@ void AckingMac::startTransmitting()
 void AckingMac::handleUpperPacket(Packet *packet)
 {
     EV << "Received " << packet << " for transmission\n";
-    txQueue->pushPacket(packet);
-    if (currentTxFrame || radio->getTransmissionState() == IRadio::TRANSMISSION_STATE_TRANSMITTING)
-        EV << "Delaying transmission of " << packet << ".\n";
-    else if (!txQueue->isEmpty()){
-        popTxQueue();
-        startTransmitting();
-    }
+    if (currentTxFrame != nullptr || radio->getTransmissionState() == IRadio::TRANSMISSION_STATE_TRANSMITTING)
+        throw cRuntimeError("AckingMac already in transmit state when packet arrived from upper layer");
+    currentTxFrame = packet;
+    startTransmitting();
 }
 
 void AckingMac::handleLowerPacket(Packet *packet)
@@ -182,10 +166,8 @@ void AckingMac::handleSelfMessage(cMessage *message)
         PacketDropDetails details;
         details.setReason(OTHER_PACKET_DROP);
         dropCurrentTxFrame(details);
-        if (!txQueue->isEmpty()) {
-            popTxQueue();
-            startTransmitting();
-        }
+        if (transmissionState != IRadio::TRANSMISSION_STATE_TRANSMITTING && canDequeuePacket())
+            processUpperPacket();
     }
     else {
         MacProtocolBase::handleSelfMessage(message);
@@ -194,7 +176,7 @@ void AckingMac::handleSelfMessage(cMessage *message)
 
 void AckingMac::acked(Packet *frame)
 {
-    Enter_Method_Silent();
+    Enter_Method("acked");
     ASSERT(useAck);
 
     if (currentTxFrame == nullptr)
@@ -202,11 +184,9 @@ void AckingMac::acked(Packet *frame)
 
     EV_DEBUG << "AckingMac::acked(" << frame->getFullName() << ") is accepted\n";
     cancelEvent(ackTimeoutMsg);
-        deleteCurrentTxFrame();
-        if (!txQueue->isEmpty()) {
-            popTxQueue();
-            startTransmitting();
-        }
+    deleteCurrentTxFrame();
+    if (transmissionState != IRadio::TRANSMISSION_STATE_TRANSMITTING && canDequeuePacket())
+        processUpperPacket();
 }
 
 void AckingMac::encapsulate(Packet *packet)
@@ -226,7 +206,7 @@ void AckingMac::encapsulate(Packet *packet)
     auto macAddressInd = packet->addTagIfAbsent<MacAddressInd>();
     macAddressInd->setSrcAddress(macHeader->getSrc());
     macAddressInd->setDestAddress(macHeader->getDest());
-    packet->getTag<PacketProtocolTag>()->setProtocol(&Protocol::ackingMac);
+    packet->getTagForUpdate<PacketProtocolTag>()->setProtocol(&Protocol::ackingMac);
 }
 
 bool AckingMac::dropFrameNotForUs(Packet *packet)
@@ -239,7 +219,7 @@ bool AckingMac::dropFrameNotForUs(Packet *packet)
     // All frames must be passed to the upper layer if the interface is
     // in promiscuous mode.
 
-    if (macHeader->getDest().equals(interfaceEntry->getMacAddress()))
+    if (macHeader->getDest().equals(networkInterface->getMacAddress()))
         return false;
 
     if (macHeader->getDest().isBroadcast())
@@ -262,10 +242,60 @@ void AckingMac::decapsulate(Packet *packet)
     auto macAddressInd = packet->addTagIfAbsent<MacAddressInd>();
     macAddressInd->setSrcAddress(macHeader->getSrc());
     macAddressInd->setDestAddress(macHeader->getDest());
-    packet->addTagIfAbsent<InterfaceInd>()->setInterfaceId(interfaceEntry->getInterfaceId());
+    packet->addTagIfAbsent<InterfaceInd>()->setInterfaceId(networkInterface->getInterfaceId());
     auto payloadProtocol = ProtocolGroup::ethertype.getProtocol(macHeader->getNetworkProtocol());
     packet->addTagIfAbsent<DispatchProtocolReq>()->setProtocol(payloadProtocol);
     packet->addTagIfAbsent<PacketProtocolTag>()->setProtocol(payloadProtocol);
+}
+
+queueing::IPassivePacketSource *AckingMac::getProvider(cGate *gate)
+{
+    return (gate->getId() == upperLayerInGateId) ? txQueue.get() : nullptr;
+}
+
+void AckingMac::handleCanPullPacketChanged(cGate *gate)
+{
+    Enter_Method("handleCanPullPacketChanged");
+    if (currentTxFrame == nullptr    // not an active transmission
+            && transmissionState != IRadio::TRANSMISSION_STATE_TRANSMITTING
+            && canDequeuePacket()
+            )
+        processUpperPacket();
+}
+
+void AckingMac::handlePullPacketProcessed(Packet *packet, cGate *gate, bool successful)
+{
+    Enter_Method("handlePullPacketProcessed");
+    throw cRuntimeError("Not supported callback");
+}
+
+void AckingMac::processUpperPacket()
+{
+    auto packet = dequeuePacket();
+    handleUpperPacket(packet);
+
+}
+
+void AckingMac::handleStartOperation(LifecycleOperation *operation)
+{
+    if (transmissionState != IRadio::TRANSMISSION_STATE_TRANSMITTING && canDequeuePacket())
+        processUpperPacket();
+}
+
+void AckingMac::handleStopOperation(LifecycleOperation *operation)
+{
+    MacProtocolBase::handleStopOperation(operation);
+    if (useAck) {
+        cancelEvent(ackTimeoutMsg);
+    }
+}
+
+void AckingMac::handleCrashOperation(LifecycleOperation *operation)
+{
+    MacProtocolBase::handleCrashOperation(operation);
+    if (useAck) {
+        cancelEvent(ackTimeoutMsg);
+    }
 }
 
 } // namespace inet

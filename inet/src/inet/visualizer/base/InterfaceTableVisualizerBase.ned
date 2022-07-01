@@ -1,19 +1,9 @@
 //
-// Copyright (C) OpenSim Ltd.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 package inet.visualizer.base;
 
@@ -23,7 +13,7 @@ package inet.visualizer.base;
 // interfaces are not displayed by default, see module parameters for how to
 // enable the visualization.
 //
-// This module subscribes for interfaceCreated, interfaceDeleted, 
+// This module subscribes for interfaceCreated, interfaceDeleted,
 // interfaceConfigChanged, and interfaceIpv4ConfigChanged on the
 // module determined by the visualizationSubjectModule parameter.
 //
@@ -37,9 +27,10 @@ package inet.visualizer.base;
 //  - %g generic address
 //  - %n network address
 //  - %t up or down state
-//  - %i InterfaceEntry::info()
-//  - %s InterfaceEntry::str()
+//  - %i NetworkInterface::info()
+//  - %s NetworkInterface::str()
 //  - %\ conditional newline for wired interfaces
+//  - %/ conditional / for network address
 //
 // @see ~InterfaceTableCanvasVisualizer, ~InterfaceTableOsgVisualizer, ~IInterfaceTableVisualizer, ~VisualizerBase
 //
@@ -52,10 +43,10 @@ simple InterfaceTableVisualizerBase extends VisualizerBase
         bool displayWiredInterfacesAtConnections = default(true); // specifies where wired interfaces are displayed
         bool displayBackground = default(false); // specifies whether the text should have a background or not
 
-        string nodeFilter = default("*"); // which nodes are considered, matches all nodes by default
-        string interfaceFilter = default("not(lo*)"); // which interfaces are considered, matches all non-local interfaces by default
+        string nodeFilter @mutable = default("*"); // which nodes are considered, matches all nodes by default
+        string interfaceFilter @mutable = default("not(lo*)"); // which interfaces are considered, matches all non-local interfaces by default
 
-        string format = default("%N %\\%a/%l"); // determines what interface data is displayed
+        string format @mutable = default("%N %\\%a%/%l"); // determines what interface data is displayed
         string placementHint = default("top"); // annotation placement hint, space separated list of any, top, bottom, left, right, topLeft, topCenter, topRight, etc.
         double placementPriority = default(0); // determines the order of annotation positioning
 

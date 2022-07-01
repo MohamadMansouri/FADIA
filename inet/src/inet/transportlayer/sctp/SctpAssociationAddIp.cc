@@ -2,19 +2,9 @@
 // Copyright (C) 2008-2010 Irene Ruengeler
 // Copyright (C) 2012 Thomas Dreibholz
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
 
 #include "inet/networklayer/common/L3AddressResolver.h"
 #include "inet/transportlayer/sctp/SctpAssociation.h"
@@ -27,7 +17,7 @@ void SctpAssociation::sendAsconf(const char *type, const bool remote)
     SctpAuthenticationChunk *authChunk = nullptr;
     bool nat = false;
     L3Address targetAddr = remoteAddr;
-    uint16 chunkLength = 0;
+    uint16_t chunkLength = 0;
 
     if (state->asconfOutstanding == false) {
         EV_DEBUG << "sendAsconf\n";
@@ -142,7 +132,7 @@ void SctpAssociation::sendAsconf(const char *type, const bool remote)
                 }
 
                 default:
-                    EV_INFO << "type " <<  atoi(token) << "not known\n";
+                    EV_INFO << "type " << atoi(token) << "not known\n";
                     break;
             }
         }
@@ -150,14 +140,14 @@ void SctpAssociation::sendAsconf(const char *type, const bool remote)
 
         if (state->auth && state->peerAuth) {
             authChunk = createAuthChunk();
-            sctpAsconf->insertSctpChunks(authChunk);
+            sctpAsconf->appendSctpChunks(authChunk);
             auto it = sctpMain->assocStatMap.find(assocId);
             it->second.numAuthChunksSent++;
         }
-        sctpAsconf->insertSctpChunks(asconfChunk);
+        sctpAsconf->appendSctpChunks(asconfChunk);
 
         state->asconfChunk = check_and_cast<SctpAsconfChunk *>(asconfChunk->dup());
-       // state->asconfChunk->setName("STATE-ASCONF");
+//        state->asconfChunk->setName("STATE-ASCONF");
 
         Packet *pkt = new Packet("ASCONF");
         sendToIP(pkt, sctpAsconf, targetAddr);
@@ -177,16 +167,16 @@ void SctpAssociation::retransmitAsconf()
 
     if (state->auth && state->peerAuth) {
         SctpAuthenticationChunk *authChunk = createAuthChunk();
-        sctpmsg->insertSctpChunks(authChunk);
+        sctpmsg->appendSctpChunks(authChunk);
         auto it = sctpMain->assocStatMap.find(assocId);
         it->second.numAuthChunksSent++;
     }
-    sctpmsg->insertSctpChunks(sctpasconf);
+    sctpmsg->appendSctpChunks(sctpasconf);
     Packet *pkt = new Packet("ASCONF");
     sendToIP(pkt, sctpmsg);
 }
 
-void SctpAssociation::sendAsconfAck(const uint32 serialNumber)
+void SctpAssociation::sendAsconfAck(const uint32_t serialNumber)
 {
     const auto& sctpAsconfAck = makeShared<SctpHeader>();
     sctpAsconfAck->setChunkLength(B(SCTP_COMMON_HEADER));
@@ -199,16 +189,16 @@ void SctpAssociation::sendAsconfAck(const uint32 serialNumber)
     asconfAckChunk->setByteLength(SCTP_ADD_IP_CHUNK_LENGTH);
     if (state->auth && state->peerAuth) {
         SctpAuthenticationChunk *authChunk = createAuthChunk();
-        sctpAsconfAck->insertSctpChunks(authChunk);
+        sctpAsconfAck->appendSctpChunks(authChunk);
         auto it = sctpMain->assocStatMap.find(assocId);
         it->second.numAuthChunksSent++;
     }
-    sctpAsconfAck->insertSctpChunks(asconfAckChunk);
+    sctpAsconfAck->appendSctpChunks(asconfAckChunk);
     Packet *pkt = new Packet("ASCONF");
     sendToIP(pkt, sctpAsconfAck, remoteAddr);
 }
 
-SctpAsconfAckChunk *SctpAssociation::createAsconfAckChunk(const uint32 serialNumber)
+SctpAsconfAckChunk *SctpAssociation::createAsconfAckChunk(const uint32_t serialNumber)
 {
     SctpAsconfAckChunk *asconfAckChunk = new SctpAsconfAckChunk();
     asconfAckChunk->setSctpChunkType(ASCONF_ACK);
@@ -226,7 +216,7 @@ SctpAuthenticationChunk *SctpAssociation::createAuthChunk()
     authChunk->setHMacIdentifier(1);
     authChunk->setHMacOk(true);
     authChunk->setHMACArraySize(SHA_LENGTH);
-    for (int32 i = 0; i < SHA_LENGTH; i++) {
+    for (int32_t i = 0; i < SHA_LENGTH; i++) {
         authChunk->setHMAC(i, 0);
     }
     authChunk->setByteLength(SCTP_AUTH_CHUNK_LENGTH + SHA_LENGTH);
@@ -235,7 +225,7 @@ SctpAuthenticationChunk *SctpAssociation::createAuthChunk()
 
 bool SctpAssociation::compareRandom()
 {
-    int32 i, sizeKeyVector, sizePeerKeyVector, size = 0;
+    int32_t i, sizeKeyVector, sizePeerKeyVector, size = 0;
 
     sizeKeyVector = state->sizeKeyVector;
     sizePeerKeyVector = state->sizePeerKeyVector;
@@ -271,22 +261,22 @@ void SctpAssociation::calculateAssocSharedKey()
 {
     const bool peerFirst = compareRandom();
     if (peerFirst == true) {
-        for (uint32 i = 0; i < state->sizeKeyVector; i++)
+        for (uint32_t i = 0; i < state->sizeKeyVector; i++)
             state->sharedKey[i] = state->keyVector[i];
-        for (uint32 i = 0; i < state->sizePeerKeyVector; i++)
+        for (uint32_t i = 0; i < state->sizePeerKeyVector; i++)
             state->sharedKey[i + state->sizeKeyVector] = state->peerKeyVector[i];
     }
     else {
-        for (uint32 i = 0; i < state->sizePeerKeyVector; i++)
+        for (uint32_t i = 0; i < state->sizePeerKeyVector; i++)
             state->sharedKey[i] = state->peerKeyVector[i];
-        for (uint32 i = 0; i < state->sizeKeyVector; i++)
+        for (uint32_t i = 0; i < state->sizeKeyVector; i++)
             state->sharedKey[i + state->sizePeerKeyVector] = state->keyVector[i];
     }
 }
 
-bool SctpAssociation::typeInChunkList(const uint16 type)
+bool SctpAssociation::typeInChunkList(const uint16_t type)
 {
-    for (auto & elem : state->peerChunkList) {
+    for (auto& elem : state->peerChunkList) {
         if ((elem) == type) {
             return true;
         }
@@ -294,9 +284,9 @@ bool SctpAssociation::typeInChunkList(const uint16 type)
     return false;
 }
 
-bool SctpAssociation::typeInOwnChunkList(const uint16 type)
+bool SctpAssociation::typeInOwnChunkList(const uint16_t type)
 {
-    for (auto & elem : state->chunkList) {
+    for (auto& elem : state->chunkList) {
         if ((elem) == type) {
             return true;
         }
@@ -304,7 +294,7 @@ bool SctpAssociation::typeInOwnChunkList(const uint16 type)
     return false;
 }
 
-SctpSuccessIndication *SctpAssociation::createSuccessIndication(const uint32 correlationId)
+SctpSuccessIndication *SctpAssociation::createSuccessIndication(const uint32_t correlationId)
 {
     SctpSuccessIndication *success = new SctpSuccessIndication();
 

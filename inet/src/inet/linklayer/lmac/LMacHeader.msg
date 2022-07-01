@@ -37,7 +37,7 @@ class LMacHeaderBase extends FieldsChunk
 
 //
 // Control Frame for ~LMac. Frame size is configurable
-// in the MAC layer. 
+// in the MAC layer.
 //
 class LMacControlFrame extends LMacHeaderBase
 {
@@ -45,10 +45,9 @@ class LMacControlFrame extends LMacHeaderBase
 
 //
 // Dataframe header for ~LMac. Frame size is configurable
-// in the MAC layer. 
+// in the MAC layer.
 //
 class LMacDataFrameHeader extends LMacHeaderBase
 {
     int        networkProtocol = -1;
 }
-

@@ -1,26 +1,16 @@
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program.  If not, see http://www.gnu.org/licenses/.
-//
+
 
 package inet.tutorials.configurator;
 
 import inet.networklayer.configurator.ipv4.Ipv4NetworkConfigurator;
 import inet.node.ethernet.Eth10M;
-import inet.node.ethernet.EtherSwitch;
+import inet.node.ethernet.EthernetSwitch;
 import inet.node.inet.Router;
 import inet.node.inet.StandardHost;
-import inet.visualizer.integrated.IntegratedCanvasVisualizer;
+import inet.visualizer.canvas.integrated.IntegratedCanvasVisualizer;
 
 
 network ConfiguratorB
@@ -36,7 +26,7 @@ network ConfiguratorB
         area1lan1host2: StandardHost {
             @display("p=865.26,147.345");
         }
-        area1switch1: EtherSwitch {
+        area1switch1: EthernetSwitch {
             @display("p=865.26,410.685");
         }
         area2lan1host1: StandardHost {
@@ -48,7 +38,7 @@ network ConfiguratorB
         area2lan1host3: StandardHost {
             @display("p=558.03,1840.245");
         }
-        area2switch1: EtherSwitch {
+        area2switch1: EthernetSwitch {
             @display("p=1119.1951,1514.205");
         }
         area3lan1host1: StandardHost {
@@ -60,7 +50,7 @@ network ConfiguratorB
         area3lan1host3: StandardHost {
             @display("p=2868.5251,1078.4401");
         }
-        area3switch1: EtherSwitch {
+        area3switch1: EthernetSwitch {
             @display("p=2385.735,1075.305");
         }
         area1lan2host1: StandardHost {
@@ -72,7 +62,7 @@ network ConfiguratorB
         area1lan2host3: StandardHost {
             @display("p=410.685,1583.175");
         }
-        area1switch2: EtherSwitch {
+        area1switch2: EthernetSwitch {
             @display("p=865.26,1094.115");
         }
         area2lan2host1: StandardHost {
@@ -84,7 +74,7 @@ network ConfiguratorB
         area2lan2host3: StandardHost {
             @display("p=1743.06,1840.245");
         }
-        area2switch2: EtherSwitch {
+        area2switch2: EthernetSwitch {
             @display("p=2094.18,1511.0701");
         }
         area3lan2host1: StandardHost {
@@ -96,7 +86,7 @@ network ConfiguratorB
         area3lan2host3: StandardHost {
             @display("p=2997.06,354.255");
         }
-        area3switch2: EtherSwitch {
+        area3switch2: EthernetSwitch {
             @display("p=2385.735,410.685");
         }
         area1router: Router {

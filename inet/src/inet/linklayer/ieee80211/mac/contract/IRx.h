@@ -1,19 +1,9 @@
 //
 // Copyright (C) 2016 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see http://www.gnu.org/licenses/.
-//
+
 
 #ifndef __INET_IRX_H
 #define __INET_IRX_H
@@ -21,7 +11,7 @@
 #include "inet/linklayer/common/MacAddress.h"
 #include "inet/linklayer/ieee80211/mac/Ieee80211Frame_m.h"
 #include "inet/linklayer/ieee80211/mac/contract/IContention.h"
-#include "inet/physicallayer/contract/packetlevel/IRadio.h"
+#include "inet/physicallayer/wireless/common/contract/packetlevel/IRadio.h"
 
 namespace inet {
 namespace ieee80211 {
@@ -38,26 +28,27 @@ namespace ieee80211 {
  */
 class INET_API IRx
 {
-    public:
-        virtual ~IRx() { }
+  public:
+    virtual ~IRx() {}
 
-        virtual bool isReceptionInProgress() const = 0;
+    virtual bool isReceptionInProgress() const = 0;
 
-        // from Contention
-        virtual bool isMediumFree() const = 0;
-        virtual void frameTransmitted(simtime_t durationField) = 0;
+    // from Contention
+    virtual bool isMediumFree() const = 0;
+    virtual void frameTransmitted(simtime_t durationField) = 0;
 
-        // from Coordination functions
-        virtual void registerContention(IContention *contention) = 0;
+    // from Coordination functions
+    virtual void registerContention(IContention *contention) = 0;
 
-        // events
-        virtual void receptionStateChanged(physicallayer::IRadio::ReceptionState state) = 0;
-        virtual void transmissionStateChanged(physicallayer::IRadio::TransmissionState state) = 0;
-        virtual void receivedSignalPartChanged(physicallayer::IRadioSignal::SignalPart part) = 0;
-        virtual bool lowerFrameReceived(Packet *packet) = 0;
+    // events
+    virtual void receptionStateChanged(physicallayer::IRadio::ReceptionState state) = 0;
+    virtual void transmissionStateChanged(physicallayer::IRadio::TransmissionState state) = 0;
+    virtual void receivedSignalPartChanged(physicallayer::IRadioSignal::SignalPart part) = 0;
+    virtual bool lowerFrameReceived(Packet *packet) = 0;
 };
 
 } // namespace ieee80211
 } // namespace inet
 
-#endif // #ifndef __INET_IRX_H
+#endif
+

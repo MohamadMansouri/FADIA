@@ -50,7 +50,7 @@ class INET_API EulerAngles
     rad getGamma() const { return gamma; }
     void setGamma(rad gamma) { this->gamma = gamma; }
 
-    std::string str() const;
+    inline std::string str() const;
 
     bool isNil() const
     {
@@ -74,7 +74,7 @@ class INET_API EulerAngles
 
     EulerAngles operator-(const EulerAngles a) const { return EulerAngles(alpha - a.alpha, beta - a.beta, gamma - a.gamma); }
 
-    EulerAngles operator*(float f) const { return EulerAngles(alpha * f, beta * f, gamma * f); }
+    EulerAngles operator*(double f) const { return EulerAngles(alpha * f, beta * f, gamma * f); }
 };
 
 inline std::ostream& operator<<(std::ostream& os, const EulerAngles& a)
@@ -91,5 +91,5 @@ inline std::string EulerAngles::str() const
 
 } // namespace inet
 
-#endif // ifndef __INET_EULERALNGLES_H
+#endif
 

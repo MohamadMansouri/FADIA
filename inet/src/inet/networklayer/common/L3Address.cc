@@ -1,22 +1,13 @@
 //
-// Copyright (C) 2005 Andras Varga
+// Copyright (C) 2005 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public
-// License along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-#include "inet/linklayer/common/MacAddressType.h"
+
 #include "inet/networklayer/common/L3Address.h"
+
+#include "inet/linklayer/common/MacAddressType.h"
 #include "inet/networklayer/common/ModuleIdAddressType.h"
 #include "inet/networklayer/common/ModulePathAddressType.h"
 #include "inet/networklayer/contract/clns/ClnsAddressType.h"
@@ -27,7 +18,7 @@ namespace inet {
 
 #define RESERVED_IPV6_ADDRESS_RANGE    0x8000 // IETF reserved address range 8000::/16 (extended)
 
-uint64 L3Address::get(AddressType type) const
+uint64_t L3Address::get(AddressType type) const
 {
     if (getType() == type)
         return lo;
@@ -35,17 +26,17 @@ uint64 L3Address::get(AddressType type) const
         throw cRuntimeError("Address is not of the given type");
 }
 
-void L3Address::set(AddressType type, uint64 lo)
+void L3Address::set(AddressType type, uint64_t lo)
 {
-    this->hi = ((uint64)RESERVED_IPV6_ADDRESS_RANGE << 48) + (uint64)type;
+    this->hi = ((uint64_t)RESERVED_IPV6_ADDRESS_RANGE << 48) + (uint64_t)type;
     this->lo = lo;
 }
 
 void L3Address::set(const Ipv6Address& addr)
 {
-    const uint32 *words = addr.words();
-    hi = ((uint64) * (words + 0) << 32) + *(words + 1);
-    lo = ((uint64) * (words + 2) << 32) + *(words + 3);
+    const uint32_t *words = addr.words();
+    hi = ((uint64_t)*(words + 0) << 32) + *(words + 1);
+    lo = ((uint64_t)*(words + 2) << 32) + *(words + 3);
     if (getType() != IPv6)
         throw cRuntimeError("Cannot set Ipv6 address");
 }
@@ -53,7 +44,7 @@ void L3Address::set(const Ipv6Address& addr)
 void L3Address::set(const ClnsAddress& addr)
 {
 
-    hi = ((uint64)RESERVED_IPV6_ADDRESS_RANGE << 48) | ((addr.getAreaId() & 0xFFFFFFFFL) << 16) | (uint64)addr.getNsel() << 8 | (uint64)L3Address::CLNS;
+    hi = ((uint64_t)RESERVED_IPV6_ADDRESS_RANGE << 48) | ((addr.getAreaId() & 0xFFFFFFFFL) << 16) | (uint64_t)addr.getNsel() << 8 | (uint64_t)L3Address::CLNS;
     lo = addr.getSystemId();
 }
 
@@ -87,7 +78,7 @@ IL3AddressType *L3Address::getAddressType() const
             return &ModulePathAddressType::INSTANCE;
 
         case L3Address::CLNS:
-                    return &CLNSAddressType::INSTANCE;
+            return &CLNSAddressType::INSTANCE;
 
         default:
             throw cRuntimeError("Unknown type");
@@ -177,13 +168,13 @@ bool L3Address::isUnicast() const
             throw cRuntimeError("Address contains no value");
 
         case L3Address::IPv4:
-            return !toIpv4().isMulticast() && !toIpv4().isLimitedBroadcastAddress();    // TODO: move to Ipv4Address
+            return !toIpv4().isMulticast() && !toIpv4().isLimitedBroadcastAddress(); // TODO move to Ipv4Address
 
         case L3Address::IPv6:
             return toIpv6().isUnicast();
 
         case L3Address::MAC:
-            return !toMac().isBroadcast() && !toMac().isMulticast();    // TODO: move to MacAddress
+            return !toMac().isBroadcast() && !toMac().isMulticast(); // TODO move to MacAddress
 
         case L3Address::MODULEID:
             return toModuleId().isUnicast();
@@ -234,7 +225,7 @@ bool L3Address::isBroadcast() const
         case L3Address::IPv6:
             return false;
 
-        //throw cRuntimeError("Ipv6 isBroadcast() unimplemented");
+//        throw cRuntimeError("Ipv6 isBroadcast() unimplemented");
         case L3Address::MAC:
             return toMac().isBroadcast();
 
@@ -350,7 +341,7 @@ bool L3Address::matches(const L3Address& other, int prefixLength) const
             throw cRuntimeError("Address contains no value");
 
         case L3Address::IPv4:
-            return Ipv4Address::maskedAddrAreEqual(toIpv4(), other.toIpv4(), Ipv4Address::makeNetmask(prefixLength));    //FIXME !!!!!
+            return Ipv4Address::maskedAddrAreEqual(toIpv4(), other.toIpv4(), Ipv4Address::makeNetmask(prefixLength)); // FIXME !!!!!
 
         case L3Address::IPv6:
             return toIpv6().matches(other.toIpv6(), prefixLength);
@@ -424,6 +415,47 @@ ClnsAddress L3Address::toClns() const
 
         default:
             throw cRuntimeError("Address is not of the given type");
+    }
+}
+
+MacAddress L3Address::mapToMulticastMacAddress() const
+{
+    ASSERT(isMulticast());
+
+    int id = 0;
+    switch (getType()) {
+        case L3Address::IPv4:
+            return toIpv4().mapToMulticastMacAddress();
+        case L3Address::IPv6:
+            return toIpv6().mapToMulticastMacAddress();
+        case L3Address::MAC:
+            return toMac();
+        case L3Address::MODULEID: {
+            ModuleIdAddress moduleIdAddress = toModuleId();
+            id = moduleIdAddress.getId();
+            MacAddress macAddress;
+            macAddress.setAddressByte(0, 0x01);
+            macAddress.setAddressByte(1, 0x00);
+            macAddress.setAddressByte(2, (id >> 24) & 0xFF);
+            macAddress.setAddressByte(3, (id >> 16) & 0xFF);
+            macAddress.setAddressByte(4, (id >> 8)  & 0xFF);
+            macAddress.setAddressByte(5, (id >> 0)  & 0xFF);
+            return macAddress;
+        }
+        case L3Address::MODULEPATH: {
+            ModulePathAddress modulePathAddress = toModulePath();
+            id = modulePathAddress.getId();
+            MacAddress macAddress;
+            macAddress.setAddressByte(0, 0x01);
+            macAddress.setAddressByte(1, 0x00);
+            macAddress.setAddressByte(2, (id >> 24) & 0xFF);
+            macAddress.setAddressByte(3, (id >> 16) & 0xFF);
+            macAddress.setAddressByte(4, (id >> 8)  & 0xFF);
+            macAddress.setAddressByte(5, (id >> 0)  & 0xFF);
+            return macAddress;
+        }
+        default:
+            throw cRuntimeError("Unknown address type");
     }
 }
 

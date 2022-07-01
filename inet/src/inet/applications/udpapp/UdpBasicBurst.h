@@ -1,30 +1,15 @@
 //
-// Copyright (C) 2004 Andras Varga
-// Copyright (C) 2000 Institut fuer Telematik, Universitaet Karlsruhe
-// Copyright (C) 2011 Zoltan Bojthe
+// Copyright (C) 2004 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-//
+
 
 #ifndef __INET_UDPBASICBURST_H
 #define __INET_UDPBASICBURST_H
 
 #include <map>
 #include <vector>
-
-#include "inet/common/INETDefs.h"
 
 #include "inet/applications/base/ApplicationBase.h"
 #include "inet/transportlayer/contract/udp/UdpSocket.h"
@@ -74,7 +59,7 @@ class INET_API UdpBasicBurst : public ApplicationBase, public UdpSocket::ICallba
     bool dontFragment = false;
 
     // statistics:
-    static int counter;    // counter for generating a global number for each packet
+    static int counter; // counter for generating a global number for each packet
 
     int numSent = 0;
     int numReceived = 0;
@@ -115,5 +100,5 @@ class INET_API UdpBasicBurst : public ApplicationBase, public UdpSocket::ICallba
 
 } // namespace inet
 
-#endif // ifndef __INET_UDPBASICBURST_H
+#endif
 

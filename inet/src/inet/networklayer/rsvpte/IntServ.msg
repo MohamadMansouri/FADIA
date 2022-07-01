@@ -1,18 +1,9 @@
 //
-// (C) 2005 Vojtech Janota
-// (C) 2003 Xuan Thang Nguyen
+// Copyright (C) 2005 Vojtech Janota
+// Copyright (C) 2003 Xuan Thang Nguyen
 //
-// This library is free software, you can redistribute it
-// and/or modify
-// it under  the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation;
-// either version 2 of the License, or any later version.
-// The library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-// See the GNU Lesser General Public License for more details.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-
 
 //
 // This file defines data structures used in IntServ services
@@ -28,7 +19,6 @@ typedef std::vector<struct EroObj> EroVector;
 typedef std::vector<struct FlowDescriptor_t> FlowDescriptorVector;
 }}
 
-
 class EroVector { @existingClass; }
 
 class FlowDescriptorVector { @existingClass; }
@@ -38,6 +28,7 @@ class FlowDescriptorVector { @existingClass; }
 //
 struct SessionObj
 {
+    @packetData;
     int Tunnel_Id;
     int Extended_Tunnel_Id;
     Ipv4Address DestAddress;
@@ -50,6 +41,7 @@ struct SessionObj
 //
 struct RsvpHopObj
 {
+    @packetData;
     Ipv4Address Next_Hop_Address;
     Ipv4Address Logical_Interface_Handle;
 }
@@ -59,16 +51,17 @@ struct RsvpHopObj
 //
 struct SenderTemplateObj
 {
+    @packetData;
     Ipv4Address SrcAddress;
     int Lsp_Id = -1;
 }
-
 
 //
 // Intserv/RSVP: Sender Tspec Structure
 //
 struct SenderTspecObj
 {
+    @packetData;
     double req_bandwidth = 0;
 }
 
@@ -91,6 +84,7 @@ struct FilterSpecObj extends SenderTemplateObj
 //
 struct LabelRequestObj
 {
+    @packetData;
     // request;
     int prot;
 }
@@ -100,6 +94,7 @@ struct LabelRequestObj
 //
 struct SenderDescriptor_t
 {
+    @packetData;
     SenderTemplateObj Sender_Template_Object;
     SenderTspecObj Sender_Tspec_Object;
 }
@@ -109,6 +104,7 @@ struct SenderDescriptor_t
 //
 struct EroObj
 {
+    @packetData;
     bool L = false;
     Ipv4Address node;
 }
@@ -118,6 +114,7 @@ struct EroObj
 //
 struct FlowDescriptor_t
 {
+    @packetData;
     FlowSpecObj Flowspec_Object;
     FilterSpecObj Filter_Spec_Object;
     Ipv4AddressVector RRO;

@@ -1,17 +1,9 @@
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program.  If not, see http://www.gnu.org/licenses/.
-//
+
 
 #ifndef __INET_ROTATINGMOBILITYBASE_H
 #define __INET_ROTATINGMOBILITYBASE_H
@@ -73,13 +65,13 @@ class INET_API RotatingMobilityBase : public MobilityBase
 
   public:
     /** @brief Returns the current angular position at the current simulation time. */
-    virtual Quaternion getCurrentAngularPosition() override;
+    virtual const Quaternion& getCurrentAngularPosition() override;
 
     /** @brief Returns the current angular velocity at the current simulation time. */
-    virtual Quaternion getCurrentAngularVelocity() override;
+    virtual const Quaternion& getCurrentAngularVelocity() override;
 };
 
 } // namespace inet
 
-#endif /* ROTATINGMOBILITYBASE_H_ */
+#endif
 

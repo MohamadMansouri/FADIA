@@ -1,20 +1,12 @@
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program.  If not, see http://www.gnu.org/licenses/.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-#ifndef __INET_MEMORYINPUTSTREAM_H_
-#define __INET_MEMORYINPUTSTREAM_H_
+
+#ifndef __INET_MEMORYINPUTSTREAM_H
+#define __INET_MEMORYINPUTSTREAM_H
 
 #include "inet/common/Units.h"
 #include "inet/linklayer/common/MacAddress.h"
@@ -30,10 +22,11 @@ using namespace units::values;
  * provides a set of read functions that read data at the current position of
  * the stream. Most functions are implemented in the header to allow inlining.
  */
-// TODO: allow arbitrary mixed bit/byte reads
-// TODO: add parameter checks
-// TODO: review efficiency
-class INET_API MemoryInputStream {
+// TODO allow arbitrary mixed bit/byte reads
+// TODO add parameter checks
+// TODO review efficiency
+class INET_API MemoryInputStream
+{
   protected:
     /**
      * This vector contains the bits that are read from this stream. The first
@@ -362,6 +355,36 @@ class INET_API MemoryInputStream {
     }
 
     /**
+     * Reads a 48 bit unsigned integer at the current position of the stream in
+     * big endian byte order and MSB to LSB bit order.
+     */
+    uint64_t readUint48Be() {
+        uint64_t value = 0;
+        value |= (static_cast<uint64_t>(readByte()) << 40);
+        value |= (static_cast<uint64_t>(readByte()) << 32);
+        value |= (static_cast<uint64_t>(readByte()) << 24);
+        value |= (static_cast<uint64_t>(readByte()) << 16);
+        value |= (static_cast<uint64_t>(readByte()) << 8);
+        value |= (static_cast<uint64_t>(readByte()) << 0);
+        return value;
+    }
+
+    /**
+     * Reads a 48 bit unsigned integer at the current position of the stream in
+     * little endian byte order and MSB to LSB bit order.
+     */
+    uint64_t readUint48Le() {
+        uint64_t value = 0;
+        value |= (static_cast<uint64_t>(readByte()) << 0);
+        value |= (static_cast<uint64_t>(readByte()) << 8);
+        value |= (static_cast<uint64_t>(readByte()) << 16);
+        value |= (static_cast<uint64_t>(readByte()) << 24);
+        value |= (static_cast<uint64_t>(readByte()) << 32);
+        value |= (static_cast<uint64_t>(readByte()) << 40);
+        return value;
+    }
+
+    /**
      * Reads a 64 bit unsigned integer at the current position of the stream in
      * big endian byte order and MSB to LSB bit order.
      */
@@ -423,7 +446,7 @@ class INET_API MemoryInputStream {
      */
     Ipv6Address readIpv6Address() {
         uint32_t d[4];
-        for (auto & element : d)
+        for (auto& element : d)
             element = readUint32Be();
         return Ipv6Address(d[0], d[1], d[2], d[3]);
     }
@@ -462,5 +485,5 @@ class INET_API MemoryInputStream {
 
 } // namespace inet
 
-#endif // #ifndef __INET_MEMORYINPUTSTREAM_H_
+#endif
 

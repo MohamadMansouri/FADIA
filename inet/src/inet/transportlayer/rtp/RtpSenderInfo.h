@@ -1,24 +1,13 @@
-/***************************************************************************
-                          RtpSenderInfo.h  -  description
-                             -------------------
-    begin                : Wed Dec 5 2001
-    copyright            : (C) 2001 by Matthias Oppitz
-    email                : Matthias.Oppitz@gmx.de
-***************************************************************************/
-
-/***************************************************************************
-*                                                                         *
-*   This program is free software; you can redistribute it and/or modify  *
-*   it under the terms of the GNU General Public License as published by  *
-*   the Free Software Foundation; either version 2 of the License, or     *
-*   (at your option) any later version.                                   *
-*                                                                         *
-***************************************************************************/
+//
+// Copyright (C) 2001 Matthias Oppitz <Matthias.Oppitz@gmx.de>
+// Copyright (C) 2010 OpenSim Ltd.
+//
+// SPDX-License-Identifier: LGPL-3.0-or-later
+//
 
 #ifndef __INET_RTPSENDERINFO_H
 #define __INET_RTPSENDERINFO_H
 
-#include "inet/common/INETDefs.h"
 #include "inet/transportlayer/rtp/RtpParticipantInfo.h"
 
 namespace inet {
@@ -34,7 +23,7 @@ class INET_API RtpSenderInfo : public RtpParticipantInfo
     /**
      * Default constructor.
      */
-    RtpSenderInfo(uint32 ssrc = 0);
+    RtpSenderInfo(uint32_t ssrc = 0);
 
     /**
      * Copy constructor.
@@ -88,12 +77,12 @@ class INET_API RtpSenderInfo : public RtpParticipantInfo
     /**
      * Sets the initial rtp time stamp.
      */
-    virtual void setTimeStampBase(uint32 timeStampBase);
+    virtual void setTimeStampBase(uint32_t timeStampBase);
 
     /**
      * Sets the initial sequence number.
      */
-    virtual void setSequenceNumberBase(uint16 sequenceNumberBase);
+    virtual void setSequenceNumberBase(uint16_t sequenceNumberBase);
 
   private:
     void copy(const RtpSenderInfo& other);
@@ -112,26 +101,26 @@ class INET_API RtpSenderInfo : public RtpParticipantInfo
     /**
      * The initial rtp time stamp.
      */
-    uint32 _timeStampBase;
+    uint32_t _timeStampBase;
 
     /**
      * The initial sequence number.
      */
-    uint16 _sequenceNumberBase;
+    uint16_t _sequenceNumberBase;
 
     /**
      * The number of rtp data packets this sender has sent.
      */
-    uint32 _packetsSent;
+    uint32_t _packetsSent;
 
     /**
      * The number of data bytes this sender has sent.
      */
-    uint32 _bytesSent;
+    uint32_t _bytesSent;
 };
 
 } // namespace rtp
 } // namespace inet
 
-#endif // ifndef __INET_RTPSENDERINFO_H
+#endif
 

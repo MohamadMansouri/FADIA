@@ -1,19 +1,9 @@
 //
-// Copyright (C) OpenSim Ltd.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see http://www.gnu.org/licenses/.
-//
+
 
 package inet.queueing.filter;
 
@@ -48,10 +38,10 @@ simple RedDropper extends PacketFilterBase
 {
     parameters:
         string collectionModule = default("");
-        double wq = default(0.002);  // weight of the current queue length in the averaged queue length
+        double wq = default(0.002);  // weight of the current queue length in the averaged queue length, in range [0.0, 1.0]
         double minth = default(5);  // minimum threshold for avg queue length
-        double maxth = default(50);  // maximum threshold for avg queue length (=buffer capacity)
-        double maxp = default(0.02);  // maximum value for pbs
+        double maxth = default(50);  // maximum threshold for avg queue length (=buffer capacity), in range (minth,packetCapacity]
+        double maxp = default(0.02);  // maximum value for pbs, in range [0.0, 1.0]
         double pkrate = default(150);  // average packet rate for calculations when queue is empty
         bool useEcn = default(false); // if enabled, packets are marked with ECN if applicable
         int packetCapacity = default(int(maxth)); // packets are dropped if queue length is greater

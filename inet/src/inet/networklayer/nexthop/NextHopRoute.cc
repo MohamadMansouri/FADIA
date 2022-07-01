@@ -1,22 +1,13 @@
 //
-// Copyright (C) 2012 Opensim Ltd.
+// Copyright (C) 2012 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-#include "inet/networklayer/nexthop/NextHopInterfaceData.h"
+
 #include "inet/networklayer/nexthop/NextHopRoute.h"
+
+#include "inet/networklayer/nexthop/NextHopInterfaceData.h"
 #include "inet/networklayer/nexthop/NextHopRoutingTable.h"
 
 namespace inet {
@@ -57,12 +48,12 @@ std::string NextHopRoute::str() const
 
 std::string NextHopRoute::detailedInfo() const
 {
-    return "";    //TODO
+    return ""; // TODO
 }
 
 bool NextHopRoute::equals(const IRoute& route) const
 {
-    return false;    //TODO
+    return false; // TODO
 }
 
 void NextHopRoute::changed(int fieldCode)
@@ -76,32 +67,32 @@ IRoutingTable *NextHopRoute::getRoutingTableAsGeneric() const
     return owner;
 }
 
-//---
+// ---
 
-#if 0    /*FIXME TODO!!!! */
+#if 0 /*FIXME TODO!!!! */
 
 std::string NextHopMulticastRoute::str() const
 {
-    return "";    //TODO
+    return ""; // TODO
 }
 
 std::string NextHopMulticastRoute::detailedInfo() const
 {
-    return "";    //TODO
+    return ""; // TODO
 }
 
-bool NextHopMulticastRoute::addChild(InterfaceEntry *ie, bool isLeaf)
+bool NextHopMulticastRoute::addChild(NetworkInterface *ie, bool isLeaf)
 {
-    //TODO:
+    // TODO
     children.push_back(Child());
     Child& child = children.back();
     child.ie = ie;
     child.isLeaf = isLeaf;
 }
 
-bool NextHopMulticastRoute::removeChild(InterfaceEntry *ie)
+bool NextHopMulticastRoute::removeChild(NetworkInterface *ie)
 {
-    //TODO:
+    // TODO
 }
 
 #endif /*0*/

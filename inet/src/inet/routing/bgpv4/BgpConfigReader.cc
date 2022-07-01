@@ -1,22 +1,12 @@
 //
 // Copyright (C) 2010 Helene Lageber
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-#include "inet/common/ModuleAccess.h"
 #include "inet/routing/bgpv4/BgpConfigReader.h"
+
+#include "inet/common/ModuleAccess.h"
 #include "inet/routing/bgpv4/BgpSession.h"
 
 namespace inet {
@@ -24,7 +14,7 @@ namespace inet {
 namespace bgp {
 
 BgpConfigReader::BgpConfigReader(cModule *bgpModule, IInterfaceTable *ift) :
-        bgpModule(bgpModule), ift(ift)
+    bgpModule(bgpModule), ift(ift)
 {
 }
 
@@ -87,7 +77,7 @@ void BgpConfigReader::loadConfigFromXML(cXMLElement *bgpConfig, BgpRouter *bgpRo
 
 void BgpConfigReader::loadTimerConfig(cXMLElementList& timerConfig, simtime_t *delayTab)
 {
-    for (auto & elem : timerConfig) {
+    for (auto& elem : timerConfig) {
         std::string nodeName = (elem)->getTagName();
         if (nodeName == "connectRetryTime") {
             delayTab[0] = (double)atoi((elem)->getNodeValue());
@@ -108,10 +98,10 @@ AsId BgpConfigReader::findMyAS(cXMLElementList& asList, int& outRouterPosition)
 {
     // find my own Ipv4 address in the configuration file and return the AS id under which it is configured
     // and also the 1 based position of the entry inside the AS config element
-    for (auto & elem : asList) {
+    for (auto& elem : asList) {
         cXMLElementList routerList = (elem)->getChildrenByTagName("Router");
         outRouterPosition = 1;
-        for (auto & routerList_routerListIt : routerList) {
+        for (auto& routerList_routerListIt : routerList) {
             Ipv4Address routerAddr = Ipv4Address((routerList_routerListIt)->getAttribute("interAddr"));
             for (int i = 0; i < ift->getNumInterfaces(); i++) {
                 if (ift->getInterface(i)->getProtocolData<Ipv4InterfaceData>()->getIPAddress() == routerAddr)
@@ -129,7 +119,7 @@ void BgpConfigReader::loadEbgpSessionConfig(cXMLElementList& ASConfig, cXMLEleme
     simtime_t saveStartDelay = delayTab[3];
     for (auto sessionListIt = sessionList.begin(); sessionListIt != sessionList.end(); sessionListIt++, delayTab[3] = saveStartDelay) {
         auto numRouters = (*sessionListIt)->getChildren();
-        if(numRouters.size() != 2)
+        if (numRouters.size() != 2)
             throw cRuntimeError("BGP Error: Number of routers is invalid for session ID : %s", (*sessionListIt)->getAttribute("id"));
 
         Ipv4Address routerAddr1 = Ipv4Address((*sessionListIt)->getFirstChild()->getAttribute("exterAddr"));
@@ -158,21 +148,21 @@ void BgpConfigReader::loadEbgpSessionConfig(cXMLElementList& ASConfig, cXMLEleme
         externalInfo.myAddr = myAddr;
         externalInfo.checkConnection = bgpModule->par("connectedCheck").boolValue();
         externalInfo.ebgpMultihop = bgpModule->par("ebgpMultihop").intValue();
-        if(externalInfo.ebgpMultihop < 1)
+        if (externalInfo.ebgpMultihop < 1)
             throw cRuntimeError("BGP Error: ebgpMultihop parameter must be >= 1");
-        else if(externalInfo.ebgpMultihop > 1) // if E-BGP multi-hop is enabled, then turn off checkConnection
+        else if (externalInfo.ebgpMultihop > 1) // if E-BGP multi-hop is enabled, then turn off checkConnection
             externalInfo.checkConnection = false;
 
-        for (auto & elem : ASConfig) {
+        for (auto& elem : ASConfig) {
             if (std::string(elem->getTagName()) == "Router") {
                 if (isInInterfaceTable(ift, Ipv4Address(elem->getAttribute("interAddr"))) != -1) {
-                    for (auto & entry : elem->getChildren()) {
-                        if(std::string(entry->getTagName()) == "Neighbor") {
+                    for (auto& entry : elem->getChildren()) {
+                        if (std::string(entry->getTagName()) == "Neighbor") {
                             const char *peer = entry->getAttribute("address");
-                            if(peer && *peer && peerAddr.equals(Ipv4Address(peer))) {
+                            if (peer && *peer && peerAddr.equals(Ipv4Address(peer))) {
                                 externalInfo.checkConnection = getBoolAttrOrPar(*entry, "connectedCheck");
                                 externalInfo.ebgpMultihop = getIntAttrOrPar(*entry, "ebgpMultihop");
-                                if(externalInfo.ebgpMultihop > 1) // if E-BGP multi-hop is enabled, then turn off checkConnection
+                                if (externalInfo.ebgpMultihop > 1) // if E-BGP multi-hop is enabled, then turn off checkConnection
                                     externalInfo.checkConnection = false;
                             }
                         }
@@ -190,7 +180,7 @@ void BgpConfigReader::loadEbgpSessionConfig(cXMLElementList& ASConfig, cXMLEleme
 std::vector<const char *> BgpConfigReader::findInternalPeers(cXMLElementList& ASConfig)
 {
     std::vector<const char *> routerInSameASList;
-    for (auto & elem : ASConfig) {
+    for (auto& elem : ASConfig) {
         std::string nodeName = elem->getTagName();
         if (nodeName == "Router") {
             Ipv4Address internalAddr = Ipv4Address(elem->getAttribute("interAddr"));
@@ -208,7 +198,7 @@ void BgpConfigReader::loadASConfig(cXMLElementList& ASConfig)
     // set the default values
     bgpRouter->setDefaultConfig();
 
-    for (auto & elem : ASConfig) {
+    for (auto& elem : ASConfig) {
         std::string nodeName = elem->getTagName();
         if (nodeName == "Router") {
             Ipv4Address internalAddr = Ipv4Address(elem->getAttribute("interAddr"));
@@ -217,18 +207,18 @@ void BgpConfigReader::loadASConfig(cXMLElementList& ASConfig)
                 bgpRouter->setRedistributeOspf(getStrAttrOrPar(*elem, "redistributeOspf"));
                 bgpRouter->setRedistributeRip(getBoolAttrOrPar(*elem, "redistributeRip"));
 
-                for (auto & entry : elem->getChildren()) {
+                for (auto& entry : elem->getChildren()) {
                     std::string nodeName = entry->getTagName();
                     if (nodeName == "Network") {
                         const char *address = entry->getAttribute("address");
-                        if(address && *address)
+                        if (address && *address)
                             bgpRouter->addToAdvertiseList(Ipv4Address(address));
                         else
                             throw cRuntimeError("BGP Error: attribute 'address' is mandatory in 'Network'");
                     }
-                    else if(nodeName == "Neighbor") {
+                    else if (nodeName == "Neighbor") {
                         const char *peer = entry->getAttribute("address");
-                        if(peer && *peer) {
+                        if (peer && *peer) {
                             bool nextHopSelf = getBoolAttrOrPar(*entry, "nextHopSelf");
                             bgpRouter->setNextHopSelf(Ipv4Address(peer), nextHopSelf);
 
@@ -244,7 +234,7 @@ void BgpConfigReader::loadASConfig(cXMLElementList& ASConfig)
             }
         }
         else if (nodeName == "DenyRoute" || nodeName == "DenyRouteIN" || nodeName == "DenyRouteOUT") {
-            BgpRoutingTableEntry *entry = new BgpRoutingTableEntry();     //FIXME Who will delete this entry?
+            BgpRoutingTableEntry *entry = new BgpRoutingTableEntry(); // FIXME Who will delete this entry?
             entry->setDestination(Ipv4Address((elem)->getAttribute("Address")));
             entry->setNetmask(Ipv4Address((elem)->getAttribute("Netmask")));
             bgpRouter->addToPrefixList(nodeName, entry);

@@ -1,18 +1,7 @@
 //
 // Copyright (C) 2006 Andras Babos and Andras Varga
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
 #include "inet/routing/ospfv2/router/Lsa.h"
@@ -31,7 +20,7 @@ bool operator<(const Ospfv2LsaHeader& leftLSA, const Ospfv2LsaHeader& rightLSA)
     else if (leftSequenceNumber < rightSequenceNumber)
         return true;
     else {
-        // TODO: checksum comparison should be added here
+        // TODO checksum comparison should be added here
 
         unsigned short leftAge = leftLSA.getLsAge();
         unsigned short rightAge = rightLSA.getLsAge();
@@ -76,22 +65,22 @@ bool operator==(const Ospfv2Options& leftOptions, const Ospfv2Options& rightOpti
 
 B calculateLSASize(const Ospfv2Lsa *lsa)
 {
-    switch(lsa->getHeader().getLsType()) {
+    switch (lsa->getHeader().getLsType()) {
         case Ospfv2LsaType::ROUTERLSA_TYPE: {
-            auto routerLsa = check_and_cast<const Ospfv2RouterLsa*>(lsa);
+            auto routerLsa = check_and_cast<const Ospfv2RouterLsa *>(lsa);
             return calculateLsaSize(*routerLsa);
         }
         case Ospfv2LsaType::NETWORKLSA_TYPE: {
-            auto networkLsa = check_and_cast<const Ospfv2NetworkLsa*>(lsa);
+            auto networkLsa = check_and_cast<const Ospfv2NetworkLsa *>(lsa);
             return calculateLsaSize(*networkLsa);
         }
         case Ospfv2LsaType::SUMMARYLSA_NETWORKS_TYPE:
         case Ospfv2LsaType::SUMMARYLSA_ASBOUNDARYROUTERS_TYPE: {
-            auto summaryLsa = check_and_cast<const Ospfv2SummaryLsa*>(lsa);
+            auto summaryLsa = check_and_cast<const Ospfv2SummaryLsa *>(lsa);
             return calculateLsaSize(*summaryLsa);
         }
         case Ospfv2LsaType::AS_EXTERNAL_LSA_TYPE: {
-            auto asExternalLsa = check_and_cast<const Ospfv2AsExternalLsa*>(lsa);
+            auto asExternalLsa = check_and_cast<const Ospfv2AsExternalLsa *>(lsa);
             return calculateLsaSize(*asExternalLsa);
         }
         default:
@@ -113,7 +102,7 @@ B calculateLsaSize(const Ospfv2RouterLsa& lsa)
 B calculateLsaSize(const Ospfv2NetworkLsa& lsa)
 {
     return OSPFv2_LSA_HEADER_LENGTH + OSPFv2_NETWORKLSA_MASK_LENGTH
-            + (OSPFv2_NETWORKLSA_ADDRESS_LENGTH * lsa.getAttachedRoutersArraySize());
+           + (OSPFv2_NETWORKLSA_ADDRESS_LENGTH * lsa.getAttachedRoutersArraySize());
 }
 
 B calculateLsaSize(const Ospfv2SummaryLsa& lsa)

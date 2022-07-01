@@ -1,22 +1,14 @@
 //
 // Copyright (C) 2016 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see http://www.gnu.org/licenses/.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-#include "inet/linklayer/ieee80211/mac/contract/IRtsPolicy.h"
+
 #include "inet/linklayer/ieee80211/mac/originator/NonQosRecoveryProcedure.h"
+
+#include "inet/common/stlutils.h"
+#include "inet/linklayer/ieee80211/mac/contract/IRtsPolicy.h"
 
 namespace inet {
 namespace ieee80211 {
@@ -70,8 +62,8 @@ void NonQosRecoveryProcedure::incrementStationLrc(StationRetryCounters *stationC
 
 void NonQosRecoveryProcedure::incrementCounter(const Ptr<const Ieee80211DataOrMgmtHeader>& header, std::map<SequenceControlField, int>& retryCounter)
 {
-    auto id = SequenceControlField(header->getSequenceNumber(), header->getFragmentNumber());
-    if (retryCounter.find(id) != retryCounter.end())
+    auto id = SequenceControlField(header->getSequenceNumber().get(), header->getFragmentNumber());
+    if (containsKey(retryCounter, id))
         retryCounter[id]++;
     else
         retryCounter.insert(std::make_pair(id, 1));
@@ -112,7 +104,7 @@ void NonQosRecoveryProcedure::ctsFrameReceived(StationRetryCounters *stationCoun
 //
 void NonQosRecoveryProcedure::ackFrameReceived(Packet *packet, const Ptr<const Ieee80211DataOrMgmtHeader>& ackedHeader, StationRetryCounters *stationCounters)
 {
-    auto id = SequenceControlField(ackedHeader->getSequenceNumber(), ackedHeader->getFragmentNumber());
+    auto id = SequenceControlField(ackedHeader->getSequenceNumber().get(), ackedHeader->getFragmentNumber());
     if (packet->getByteLength() >= rtsThreshold) {
         stationCounters->resetStationLongRetryCount();
         auto it = longRetryCounter.find(id);
@@ -126,10 +118,10 @@ void NonQosRecoveryProcedure::ackFrameReceived(Packet *packet, const Ptr<const I
             shortRetryCounter.erase(it);
     }
 
-//
-// The CW shall be reset to aCWmin after every successful attempt to transmit a frame containing
-// all or part of an MSDU or MMPDU
-//
+    //
+    // The CW shall be reset to aCWmin after every successful attempt to transmit a frame containing
+    // all or part of an MSDU or MMPDU
+    //
     resetContentionWindow();
 }
 
@@ -140,7 +132,7 @@ void NonQosRecoveryProcedure::ackFrameReceived(Packet *packet, const Ptr<const I
 void NonQosRecoveryProcedure::retryLimitReached(Packet *packet, const Ptr<const Ieee80211DataOrMgmtHeader>& header)
 {
     EV_WARN << "Retry limit reached for " << *packet << ".\n";
-    auto id = SequenceControlField(header->getSequenceNumber(), header->getFragmentNumber());
+    auto id = SequenceControlField(header->getSequenceNumber().get(), header->getFragmentNumber());
     if (packet->getByteLength() >= rtsThreshold) {
         auto it = longRetryCounter.find(id);
         if (it != longRetryCounter.end())
@@ -198,7 +190,6 @@ bool NonQosRecoveryProcedure::isRetryLimitReached(Packet *packet, const Ptr<cons
         return getRc(packet, failedHeader, shortRetryCounter) >= shortRetryLimit;
 }
 
-
 int NonQosRecoveryProcedure::getRetryCount(Packet *packet, const Ptr<const Ieee80211DataOrMgmtHeader>& header)
 {
     if (packet->getByteLength() >= rtsThreshold)
@@ -206,7 +197,6 @@ int NonQosRecoveryProcedure::getRetryCount(Packet *packet, const Ptr<const Ieee8
     else
         return getRc(packet, header, shortRetryCounter);
 }
-
 
 int NonQosRecoveryProcedure::getShortRetryCount(Packet *packet, const Ptr<const Ieee80211DataOrMgmtHeader>& dataOrMgmtHeader)
 {
@@ -243,11 +233,8 @@ bool NonQosRecoveryProcedure::isRtsFrameRetryLimitReached(Packet *packet, const 
 
 int NonQosRecoveryProcedure::getRc(Packet *packet, const Ptr<const Ieee80211DataOrMgmtHeader>& header, std::map<SequenceControlField, int>& retryCounter)
 {
-    auto count = retryCounter.find(SequenceControlField(header->getSequenceNumber(), header->getFragmentNumber()));
-    if (count != retryCounter.end())
-        return count->second;
-    else
-        return 0;
+    auto count = retryCounter.find(SequenceControlField(header->getSequenceNumber().get(), header->getFragmentNumber()));
+    return (count != retryCounter.end()) ? count->second : 0;
 }
 
 bool NonQosRecoveryProcedure::isMulticastFrame(const Ptr<const Ieee80211MacHeader>& header)
@@ -259,3 +246,4 @@ bool NonQosRecoveryProcedure::isMulticastFrame(const Ptr<const Ieee80211MacHeade
 
 } /* namespace ieee80211 */
 } /* namespace inet */
+

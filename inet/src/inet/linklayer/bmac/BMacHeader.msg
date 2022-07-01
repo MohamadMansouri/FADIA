@@ -1,18 +1,7 @@
 //
-// Copyright (C) 2012 Andras Varga
+// Copyright (C) 2012 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
 import inet.common.INETDefs;
@@ -54,7 +43,7 @@ class BMacHeaderBase extends FieldsChunk
 
 //
 // Control Frame for ~BMac. Frame size is configurable
-// in the MAC layer. 
+// in the MAC layer.
 //
 class BMacControlFrame extends BMacHeaderBase
 {
@@ -62,11 +51,10 @@ class BMacControlFrame extends BMacHeaderBase
 
 //
 // Dataframe header for ~BMac. Frame size is configurable
-// in the MAC layer. 
+// in the MAC layer.
 //
 class BMacDataFrameHeader extends BMacHeaderBase
 {
     long sequenceId; // Sequence Number to detect duplicate messages
     int networkProtocol = -1;
 }
-

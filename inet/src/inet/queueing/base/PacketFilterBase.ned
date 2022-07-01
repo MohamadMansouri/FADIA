@@ -1,19 +1,9 @@
 //
-// Copyright (C) OpenSim Ltd.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see http://www.gnu.org/licenses/.
-//
+
 
 package inet.queueing.base;
 
@@ -27,15 +17,46 @@ package inet.queueing.base;
 simple PacketFilterBase extends PacketProcessorBase
 {
     parameters:
+        bool backpressure = default(false);
         displayStringTextFormat = default("dropped %d/%p pk (%k/%l)"); // determines the text that is written on top of the submodule
+        @class(PacketFilterBase);
         @display("i=block/downarrow");
-        @signal[packetPushed](type=inet::Packet);
-        @signal[packetPopped](type=inet::Packet);
+        @signal[packetPushedIn](type=inet::Packet);
+        @signal[packetPushedOut](type=inet::Packet);
+        @signal[packetPulledIn](type=inet::Packet);
+        @signal[packetPulledOut](type=inet::Packet);
         @signal[packetDropped](type=inet::Packet);
-        @statistic[packetPushed](title="packets pushed"; record=count,sum(packetBytes),vector(packetBytes); interpolationmode=none);
-        @statistic[packetPopped](title="packets popped"; record=count,sum(packetBytes),vector(packetBytes); interpolationmode=none);
-        @statistic[packetDropped](title="packets dropped"; record=count,sum(packetBytes),vector(packetBytes); interpolationmode=none);
+        // the statistical value is the incoming packet
+        @statistic[incomingPackets](title="incoming packets"; source=merge(packetPushedIn, packetPulledIn); record=count; unit=pk);
+        // the statistical value is the length of the incoming packet
+        @statistic[incomingPacketLengths](title="incoming packet lengths"; source=packetLength(merge(packetPushedIn, packetPulledIn)); record=sum,histogram,vector; unit=b; interpolationmode=none);
+        // the statistical value is the data rate of the incoming packets
+        @statistic[incomingDataRate](title="incoming data rate"; source=throughput(merge(packetPushedIn, packetPulledIn)); record=vector; unit=bps; interpolationmode=linear);
+        // the statistical value is the outgoing packet
+        @statistic[outgoingPackets](title="outgoing packets"; source=merge(packetPushedOut, packetPulledOut); record=count; unit=pk);
+        // the statistical value is the length of the outgoing packet
+        @statistic[outgoingPacketLengths](title="outgoing packet lengths"; source=packetLength(merge(packetPushedOut, packetPulledOut)); record=sum,histogram,vector; unit=b; interpolationmode=none);
+        // the statistical value is the data rate of the outgoing packets
+        @statistic[outgoingDataRate](title="outgoing data rate"; source=throughput(merge(packetPushedOut, packetPulledOut)); record=vector; unit=bps; interpolationmode=linear);
+        // the statistical value is the dropped packet
+        @statistic[droppedPackets](title="dropped packets"; source=packetDropped; record=count; unit=pk);
+        // the statistical value is the length of the dropped packet
+        @statistic[droppedPacketLengths](title="dropped packet lengths"; source=packetLength(packetDropped); record=sum,histogram,vector; unit=b; interpolationmode=none);
+        // the statistical value is the data rate of the dropped packets
+        @statistic[droppedDataRate](title="dropped data rate"; source=throughput(packetDropped); record=vector; unit=bps; interpolationmode=linear);
+        // the statistical value is the flow specific length of the incoming packet
+        @statistic[flowIncomingPacketLengths](title="flow specific incoming packet lengths"; source=packetLength(demuxFlow(merge(packetPushedIn, packetPulledIn))); record=sum,histogram,vector; unit=b; interpolationmode=none);
+        // the statistical value is the flow specific data rate of the incoming packets
+        @statistic[flowIncomingDataRate](title="flow specific incoming data rate"; source=throughput(demuxFlow(merge(packetPushedIn, packetPulledIn))); record=vector; unit=bps; interpolationmode=linear);
+        // the statistical value is the flow specific length of the outgoing packet
+        @statistic[flowOutgoingPacketLengths](title="flow specific outgoing packet lengths"; source=packetLength(demuxFlow(merge(packetPushedOut, packetPulledOut))); record=sum,histogram,vector; unit=b; interpolationmode=none);
+        // the statistical value is the flow specific data rate of the outgoing packets
+        @statistic[flowOutgoingDataRate](title="flow specific outgoing data rate"; source=throughput(demuxFlow(merge(packetPushedOut, packetPulledOut))); record=vector; unit=bps; interpolationmode=linear);
+        // the statistical value is the flow specific length of the dropped packet
+        @statistic[flowDroppedPacketLengths](title="flow specific dropped packet lengths"; source=packetLength(demuxFlow(packetDropped)); record=sum,histogram,vector; unit=b; interpolationmode=none);
+        // the statistical value is the flow specific data rate of the dropped packets
+        @statistic[flowDroppedDataRate](title="flow specific dropped data rate"; source=throughput(demuxFlow(packetDropped)); record=vector; unit=bps; interpolationmode=linear);
     gates:
-        input in;
-        output out;
+        input in @labels(send,push,pull,pass,stream);
+        output out @labels(send,push,pull,pass,stream);
 }

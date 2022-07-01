@@ -1,19 +1,9 @@
 //
-// Copyright (C) OpenSim Ltd.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see http://www.gnu.org/licenses/.
-//
+
 
 #ifndef __INET_PACKETFILTER_H
 #define __INET_PACKETFILTER_H
@@ -27,12 +17,12 @@ namespace queueing {
 class INET_API PacketFilter : public PacketFilterBase
 {
   protected:
-    IPacketFilterFunction *packetFilterFunction;
+    IPacketFilterFunction *packetFilterFunction = nullptr;
 
   protected:
     virtual void initialize(int stage) override;
     virtual IPacketFilterFunction *createFilterFunction(const char *filterClass) const;
-    virtual bool matchesPacket(Packet *packet) override;
+    virtual bool matchesPacket(const Packet *packet) const override;
 
   public:
     virtual ~PacketFilter() { delete packetFilterFunction; }
@@ -41,5 +31,5 @@ class INET_API PacketFilter : public PacketFilterBase
 } // namespace queueing
 } // namespace inet
 
-#endif // ifndef __INET_PACKETFILTER_H
+#endif
 

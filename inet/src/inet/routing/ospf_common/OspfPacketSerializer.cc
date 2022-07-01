@@ -1,24 +1,17 @@
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+// Copyright (C) 2020 OpenSim Ltd.
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program.  If not, see http://www.gnu.org/licenses/.
-//
+
+
+#include "inet/routing/ospf_common/OspfPacketSerializer.h"
 
 #include "inet/common/packet/serializer/ChunkSerializerRegistry.h"
 #include "inet/routing/ospf_common/OspfPacketBase_m.h"
-#include "inet/routing/ospf_common/OspfPacketSerializer.h"
-#ifdef WITH_OSPFv2
+#ifdef INET_WITH_OSPFv2
 #include "inet/routing/ospfv2/Ospfv2PacketSerializer.h"
-#endif // #ifdef WITH_OSPFv2
+#endif // #ifdef INET_WITH_OSPFv2
 
 namespace inet {
 namespace ospf {
@@ -35,19 +28,19 @@ const Ptr<Chunk> OspfPacketSerializer::deserialize(MemoryInputStream& stream) co
     auto startPos = stream.getPosition();
     int ospfVer = stream.readUint8();
 
-    //TODO should register Ospfv<version>Serializer classes to OspfSerializer and deserializer choose a serializer class based on version field
+    // TODO should register Ospfv<version>Serializer classes to OspfSerializer and deserializer choose a serializer class based on version field
     switch (ospfVer) {
-#ifdef WITH_OSPFv2
+#ifdef INET_WITH_OSPFv2
         case 2:
             stream.seek(startPos);
             return ospfv2::Ospfv2PacketSerializer().deserialize(stream);
             break;
-#endif // #ifdef WITH_OSPFv2
-#ifdef WITH_OSPFv3
+#endif // #ifdef INET_WITH_OSPFv2
+#ifdef INET_WITH_OSPFv3
         case 3:
-            //TODO stream.seek(startPos);
-            //TODO return ospfv3::Ospfv3PacketSerializer().deserialize(stream);
-#endif // #ifdef WITH_OSPFv3
+            // TODO stream.seek(startPos);
+            // TODO return ospfv3::Ospfv3PacketSerializer().deserialize(stream);
+#endif // #ifdef INET_WITH_OSPFv3
         default: {
             auto ospfPacket = makeShared<OspfPacketBase>();
             ospfPacket->markIncorrect();

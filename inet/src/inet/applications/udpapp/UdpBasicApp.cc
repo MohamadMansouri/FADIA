@@ -1,23 +1,14 @@
 //
 // Copyright (C) 2000 Institut fuer Telematik, Universitaet Karlsruhe
-// Copyright (C) 2004,2011 Andras Varga
+// Copyright (C) 2004,2011 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-#include "inet/applications/base/ApplicationPacket_m.h"
+
 #include "inet/applications/udpapp/UdpBasicApp.h"
+
+#include "inet/applications/base/ApplicationPacket_m.h"
 #include "inet/common/ModuleAccess.h"
 #include "inet/common/TagBase_m.h"
 #include "inet/common/TimeTag_m.h"
@@ -38,7 +29,7 @@ UdpBasicApp::~UdpBasicApp()
 
 void UdpBasicApp::initialize(int stage)
 {
-    ApplicationBase::initialize(stage);
+    ClockUserModuleMixin::initialize(stage);
 
     if (stage == INITSTAGE_LOCAL) {
         numSent = 0;
@@ -52,9 +43,9 @@ void UdpBasicApp::initialize(int stage)
         stopTime = par("stopTime");
         packetName = par("packetName");
         dontFragment = par("dontFragment");
-        if (stopTime >= SIMTIME_ZERO && stopTime < startTime)
+        if (stopTime >= CLOCKTIME_ZERO && stopTime < startTime)
             throw cRuntimeError("Invalid startTime/stopTime parameters");
-        selfMsg = new cMessage("sendTimer");
+        selfMsg = new ClockEvent("sendTimer");
     }
 }
 
@@ -82,7 +73,7 @@ void UdpBasicApp::setSocketOptions()
     const char *multicastInterface = par("multicastInterface");
     if (multicastInterface[0]) {
         IInterfaceTable *ift = getModuleFromPar<IInterfaceTable>(par("interfaceTableModule"), this);
-        InterfaceEntry *ie = ift->findInterfaceByName(multicastInterface);
+        NetworkInterface *ie = ift->findInterfaceByName(multicastInterface);
         if (!ie)
             throw cRuntimeError("Wrong multicastInterface setting: no interface named \"%s\"", multicastInterface);
         socket.setMulticastOutputInterface(ie->getInterfaceId());
@@ -114,7 +105,7 @@ void UdpBasicApp::sendPacket()
     std::ostringstream str;
     str << packetName << "-" << numSent;
     Packet *packet = new Packet(str.str().c_str());
-    if(dontFragment)
+    if (dontFragment)
         packet->addTag<FragmentationReq>()->setDontFragment(true);
     const auto& payload = makeShared<ApplicationPacket>();
     payload->setChunkLength(B(par("messageLength")));
@@ -152,9 +143,9 @@ void UdpBasicApp::processStart()
         processSend();
     }
     else {
-        if (stopTime >= SIMTIME_ZERO) {
+        if (stopTime >= CLOCKTIME_ZERO) {
             selfMsg->setKind(STOP);
-            scheduleAt(stopTime, selfMsg);
+            scheduleClockEventAt(stopTime, selfMsg);
         }
     }
 }
@@ -162,14 +153,14 @@ void UdpBasicApp::processStart()
 void UdpBasicApp::processSend()
 {
     sendPacket();
-    simtime_t d = simTime() + par("sendInterval");
-    if (stopTime < SIMTIME_ZERO || d < stopTime) {
+    clocktime_t d = par("sendInterval");
+    if (stopTime < CLOCKTIME_ZERO || getClockTime() + d < stopTime) {
         selfMsg->setKind(SEND);
-        scheduleAt(d, selfMsg);
+        scheduleClockEventAfter(d, selfMsg);
     }
     else {
         selfMsg->setKind(STOP);
-        scheduleAt(stopTime, selfMsg);
+        scheduleClockEventAt(stopTime, selfMsg);
     }
 }
 
@@ -240,10 +231,10 @@ void UdpBasicApp::processPacket(Packet *pk)
 
 void UdpBasicApp::handleStartOperation(LifecycleOperation *operation)
 {
-    simtime_t start = std::max(startTime, simTime());
-    if ((stopTime < SIMTIME_ZERO) || (start < stopTime) || (start == stopTime && startTime == stopTime)) {
+    clocktime_t start = std::max(startTime, getClockTime());
+    if ((stopTime < CLOCKTIME_ZERO) || (start < stopTime) || (start == stopTime && startTime == stopTime)) {
         selfMsg->setKind(START);
-        scheduleAt(start, selfMsg);
+        scheduleClockEventAt(start, selfMsg);
     }
 }
 
@@ -256,8 +247,8 @@ void UdpBasicApp::handleStopOperation(LifecycleOperation *operation)
 
 void UdpBasicApp::handleCrashOperation(LifecycleOperation *operation)
 {
-    cancelEvent(selfMsg);
-    socket.destroy();         //TODO  in real operating systems, program crash detected by OS and OS closes sockets of crashed programs.
+    cancelClockEvent(selfMsg);
+    socket.destroy(); // TODO  in real operating systems, program crash detected by OS and OS closes sockets of crashed programs.
 }
 
 } // namespace inet

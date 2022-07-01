@@ -1,24 +1,14 @@
 //
 // Copyright (C) 2006 Andras Babos and Andras Varga
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
+
+#include "inet/routing/ospfv2/interface/Ospfv2InterfaceState.h"
 
 #include <map>
 
 #include "inet/routing/ospfv2/interface/Ospfv2Interface.h"
-#include "inet/routing/ospfv2/interface/Ospfv2InterfaceState.h"
 #include "inet/routing/ospfv2/interface/Ospfv2InterfaceStateBackup.h"
 #include "inet/routing/ospfv2/interface/Ospfv2InterfaceStateDesignatedRouter.h"
 #include "inet/routing/ospfv2/interface/Ospfv2InterfaceStateNotDesignatedRouter.h"
@@ -71,7 +61,7 @@ void Ospfv2InterfaceState::changeState(Ospfv2Interface *intf, Ospfv2InterfaceSta
                 intf->getArea()->floodLSA(routerLSA);
             }
         }
-        else {    // (lsa == nullptr) -> This must be the first time any interface is up...
+        else { // (lsa == nullptr) -> This must be the first time any interface is up...
             RouterLsa *newLSA = intf->getArea()->originateRouterLSA();
 
             shouldRebuildRoutingTable |= intf->getArea()->installRouterLSA(newLSA);
@@ -92,7 +82,7 @@ void Ospfv2InterfaceState::changeState(Ospfv2Interface *intf, Ospfv2InterfaceSta
             intf->getArea()->floodLSA(newLSA);
             delete newLSA;
         }
-        else {    // no neighbors on the network -> old NetworkLsa must be flushed
+        else { // no neighbors on the network -> old NetworkLsa must be flushed
             NetworkLsa *oldLSA = intf->getArea()->findNetworkLSA(intf->getAddressRange().address);
 
             if (oldLSA != nullptr) {
@@ -384,17 +374,17 @@ void Ospfv2InterfaceState::printElectionResult(const Ospfv2Interface *onInterfac
 {
     EV_DETAIL << "DR/BDR election is done for interface[" << static_cast<short>(onInterface->getIfIndex()) << "] ";
     switch (onInterface->getType()) {
-    case Ospfv2Interface::BROADCAST:
-        EV_DETAIL << "(Broadcast)";
-        break;
+        case Ospfv2Interface::BROADCAST:
+            EV_DETAIL << "(Broadcast)";
+            break;
 
-    case Ospfv2Interface::NBMA:
-        EV_DETAIL << "(NBMA)";
-        break;
+        case Ospfv2Interface::NBMA:
+            EV_DETAIL << "(NBMA)";
+            break;
 
-    default:
-        EV_DETAIL << "(Unknown)";
-        break;
+        default:
+            EV_DETAIL << "(Unknown)";
+            break;
     }
     EV_DETAIL << " (state: " << onInterface->getStateString(onInterface->getState()) << "):";
     EV_DETAIL << "\n";

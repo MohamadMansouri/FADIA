@@ -1,19 +1,9 @@
 //
 // Copyright (C) 2016 OpenSim Ltd.
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program.  If not, see http://www.gnu.org/licenses/.
-//
+
 
 #include "inet/linklayer/ieee80211/mac/channelaccess/Edca.h"
 
@@ -26,9 +16,9 @@ void Edca::initialize(int stage)
 {
     if (stage == INITSTAGE_LINK_LAYER) {
         numEdcafs = par("numEdcafs");
-        edcafs = new Edcaf*[numEdcafs];
+        edcafs = new Edcaf *[numEdcafs];
         for (int ac = 0; ac < numEdcafs; ac++) {
-            edcafs[ac] = check_and_cast<Edcaf*>(getSubmodule("edcaf", ac));
+            edcafs[ac] = check_and_cast<Edcaf *>(getSubmodule("edcaf", ac));
         }
         mgmtAndNonQoSRecoveryProcedure = check_and_cast<NonQosRecoveryProcedure *>(getSubmodule("mgmtAndNonQoSRecoveryProcedure"));
     }
@@ -51,7 +41,7 @@ AccessCategory Edca::mapTidToAc(Tid tid)
     }
 }
 
-Edcaf* Edca::getChannelOwner()
+Edcaf *Edca::getChannelOwner()
 {
     for (int ac = 0; ac < numEdcafs; ac++)
         if (edcafs[ac]->isOwning())
@@ -59,31 +49,30 @@ Edcaf* Edca::getChannelOwner()
     return nullptr;
 }
 
-std::vector<Edcaf*> Edca::getInternallyCollidedEdcafs()
+std::vector<Edcaf *> Edca::getInternallyCollidedEdcafs()
 {
-    std::vector<Edcaf*> collidedEdcafs;
+    std::vector<Edcaf *> collidedEdcafs;
     for (int ac = 0; ac < numEdcafs; ac++)
         if (edcafs[ac]->isInternalCollision())
             collidedEdcafs.push_back(edcafs[ac]);
     return collidedEdcafs;
 }
 
-void Edca::requestChannelAccess(AccessCategory ac, IChannelAccess::ICallback* callback)
+void Edca::requestChannelAccess(AccessCategory ac, IChannelAccess::ICallback *callback)
 {
     edcafs[ac]->requestChannel(callback);
 }
 
-void Edca::releaseChannelAccess(AccessCategory ac, IChannelAccess::ICallback* callback)
+void Edca::releaseChannelAccess(AccessCategory ac, IChannelAccess::ICallback *callback)
 {
     edcafs[ac]->releaseChannel(callback);
 }
 
 Edca::~Edca()
 {
-    for (int i = 0; i < numEdcafs; i++)
-        edcafs[i]->deleteModule();
     delete[] edcafs;
 }
 
 } // namespace ieee80211
 } // namespace inet
+

@@ -1,22 +1,13 @@
+//
 // Copyright (C) 2012 - 2013 Brno University of Technology (http://nes.fit.vutbr.cz/ansa)
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program.  If not, see http://www.gnu.org/licenses/.
-//
+
 
 /**
  * @file Igmpv3.h
- * @author Adam Malik(towdie13@gmail.com), Vladimir Vesely (ivesely@fit.vutbr.cz), Tamas Borbely (tomi@omnetpp.org)
+ * @author Adam Malik(towdie13@gmail.com), Vladimir Vesely (ivesely@fit.vutbr.cz)
  * @date 12.5.2013
  */
 
@@ -25,9 +16,10 @@
 
 #include <set>
 
-#include "inet/common/INETDefs.h"
+#include "inet/common/ModuleRefByPar.h"
 #include "inet/common/packet/Packet.h"
-#include "inet/networklayer/common/InterfaceEntry.h"
+#include "inet/common/stlutils.h"
+#include "inet/networklayer/common/NetworkInterface.h"
 #include "inet/networklayer/contract/ipv4/Ipv4Address.h"
 #include "inet/networklayer/ipv4/IgmpMessage.h"
 #include "inet/networklayer/ipv4/Ipv4InterfaceData.h"
@@ -82,15 +74,14 @@ class INET_API Igmpv3 : public cSimpleModule, protected cListener
 
     struct HostInterfaceData;
 
-    struct HostGroupData
-    {
+    struct HostGroupData {
         HostInterfaceData *parent;
         Ipv4Address groupAddr;
         FilterMode filter;
-        Ipv4AddressVector sourceAddressList;    // sorted
+        Ipv4AddressVector sourceAddressList; // sorted
         HostGroupState state;
-        cMessage *timer;    // for scheduling responses to Group-Specific and Group-and-Source-Specific Queries
-        Ipv4AddressVector queriedSources;    // saved from last Group-Specific or Group-and-Source-Specific Query; sorted
+        cMessage *timer; // for scheduling responses to Group-Specific and Group-and-Source-Specific Queries
+        Ipv4AddressVector queriedSources; // saved from last Group-Specific or Group-and-Source-Specific Query; sorted
 
         HostGroupData(HostInterfaceData *parent, Ipv4Address group);
         virtual ~HostGroupData();
@@ -99,29 +90,28 @@ class INET_API Igmpv3 : public cSimpleModule, protected cListener
 
     typedef std::map<Ipv4Address, HostGroupData *> GroupToHostDataMap;
 
-    struct HostInterfaceData
-    {
+    struct HostInterfaceData {
         Igmpv3 *owner;
-        InterfaceEntry *ie;
+        NetworkInterface *ie;
 //        int multicastRouterVersion;
         GroupToHostDataMap groups;
-        cMessage *generalQueryTimer;    // for scheduling responses to General Queries
+        cMessage *generalQueryTimer; // for scheduling responses to General Queries
 
-        HostInterfaceData(Igmpv3 *owner, InterfaceEntry *ie);
+        HostInterfaceData(Igmpv3 *owner, NetworkInterface *ie);
         virtual ~HostInterfaceData();
         HostGroupData *getOrCreateGroupData(Ipv4Address group);
         void deleteGroupData(Ipv4Address group);
         friend inline std::ostream& operator<<(std::ostream& out, const Igmpv3::HostInterfaceData& entry)
         {
-            for(auto& g : entry.groups) {
+            for (auto& g : entry.groups) {
                 out << "(groupAddress: " << g.second->groupAddr << " ";
                 out << "hostGroupState: " << Igmpv3::getHostGroupStateString(g.second->state) << " ";
                 out << "groupTimer: " << g.second->timer->getArrivalTime() << " ";
                 out << "queriedSources: ";
-                for(auto &entry : g.second->queriedSources)
+                for (auto& entry : g.second->queriedSources)
                     out << entry << ", ";
                 out << "sourceAddressList: ";
-                for(auto &entry : g.second->sourceAddressList)
+                for (auto& entry : g.second->sourceAddressList)
                     out << entry << ", ";
                 out << "filter: " << Igmpv3::getFilterModeString(g.second->filter) << ") ";
             }
@@ -133,8 +123,7 @@ class INET_API Igmpv3 : public cSimpleModule, protected cListener
     struct RouterInterfaceData;
     struct RouterGroupData;
 
-    struct SourceRecord
-    {
+    struct SourceRecord {
         RouterGroupData *parent;
         Ipv4Address sourceAddr;
         cMessage *sourceTimer;
@@ -145,19 +134,18 @@ class INET_API Igmpv3 : public cSimpleModule, protected cListener
 
     typedef std::map<Ipv4Address, SourceRecord *> SourceToSourceRecordMap;
 
-    struct RouterGroupData
-    {
+    struct RouterGroupData {
         RouterInterfaceData *parent;
         Ipv4Address groupAddr;
         FilterMode filter;
         RouterGroupState state;
         cMessage *timer;
-        SourceToSourceRecordMap sources;    // XXX should map source addresses to source timers
-                                            // i.e. map<Ipv4Address,cMessage*>
+        SourceToSourceRecordMap sources; // TODO should map source addresses to source timers
+                                         // i.e. map<Ipv4Address,cMessage*>
 
         RouterGroupData(RouterInterfaceData *parent, Ipv4Address group);
         virtual ~RouterGroupData();
-        bool hasSourceRecord(Ipv4Address source) { return sources.find(source) != sources.end(); }
+        bool hasSourceRecord(Ipv4Address source) { return containsKey(sources, source); }
         SourceRecord *createSourceRecord(Ipv4Address source);
         SourceRecord *getOrCreateSourceRecord(Ipv4Address source);
         void deleteSourceRecord(Ipv4Address source);
@@ -170,15 +158,14 @@ class INET_API Igmpv3 : public cSimpleModule, protected cListener
 
     typedef std::map<Ipv4Address, RouterGroupData *> GroupToRouterDataMap;
 
-    struct RouterInterfaceData
-    {
+    struct RouterInterfaceData {
         Igmpv3 *owner;
-        InterfaceEntry *ie;
+        NetworkInterface *ie;
         GroupToRouterDataMap groups;
         RouterState state;
         cMessage *generalQueryTimer;
 
-        RouterInterfaceData(Igmpv3 *owner, InterfaceEntry *ie);
+        RouterInterfaceData(Igmpv3 *owner, NetworkInterface *ie);
         virtual ~RouterInterfaceData();
         RouterGroupData *getOrCreateGroupData(Ipv4Address group);
         void deleteGroupData(Ipv4Address group);
@@ -186,10 +173,10 @@ class INET_API Igmpv3 : public cSimpleModule, protected cListener
         {
             out << "routerState: " << Igmpv3::getRouterStateString(entry.state) << " ";
             out << "queryTimer: " << entry.generalQueryTimer->getArrivalTime() << " ";
-            if(entry.groups.empty())
+            if (entry.groups.empty())
                 out << "(empty)";
             else {
-                for(auto& g : entry.groups) {
+                for (auto& g : entry.groups) {
                     out << "(groupAddress: " << g.second->groupAddr << " ";
                     out << "routerGroupState: " << Igmpv3::getRouterGroupStateString(g.second->state) << " ";
                     out << "timer: " << g.second->timer->getArrivalTime() << " ";
@@ -202,12 +189,12 @@ class INET_API Igmpv3 : public cSimpleModule, protected cListener
     };
 
   protected:
-    IRoutingTable *rt;
-    IInterfaceTable *ift;
+    ModuleRefByPar<IRoutingTable> rt;
+    ModuleRefByPar<IInterfaceTable> ift;
 
     bool enabled;
     int robustness;
-    double queryInterval; //TODO these should probably be simtime_t
+    double queryInterval; // TODO these should probably be simtime_t
     double queryResponseInterval;
     double groupMembershipInterval;
     double otherQuerierPresentInterval;
@@ -218,17 +205,17 @@ class INET_API Igmpv3 : public cSimpleModule, protected cListener
     double lastMemberQueryTime;
     double unsolicitedReportInterval;
 
-    //crcMode
+    // crcMode
     CrcMode crcMode = CRC_MODE_UNDEFINED;
 
     // group counters
     int numGroups = 0;
-    int numHostGroups  = 0;
-    int numRouterGroups  = 0;
+    int numHostGroups = 0;
+    int numRouterGroups = 0;
 
     // message counters
-    int numQueriesSent  = 0;
-    int numQueriesRecv  = 0;
+    int numQueriesSent = 0;
+    int numQueriesRecv = 0;
     int numGeneralQueriesSent = 0;
     int numGeneralQueriesRecv = 0;
     int numGroupSpecificQueriesSent = 0;
@@ -265,23 +252,23 @@ class INET_API Igmpv3 : public cSimpleModule, protected cListener
   protected:
     void addWatches();
 
-    virtual HostInterfaceData *createHostInterfaceData(InterfaceEntry *ie);
-    virtual RouterInterfaceData *createRouterInterfaceData(InterfaceEntry *ie);
-    virtual HostInterfaceData *getHostInterfaceData(InterfaceEntry *ie);
-    virtual RouterInterfaceData *getRouterInterfaceData(InterfaceEntry *ie);
+    virtual HostInterfaceData *createHostInterfaceData(NetworkInterface *ie);
+    virtual RouterInterfaceData *createRouterInterfaceData(NetworkInterface *ie);
+    virtual HostInterfaceData *getHostInterfaceData(NetworkInterface *ie);
+    virtual RouterInterfaceData *getRouterInterfaceData(NetworkInterface *ie);
     virtual void deleteHostInterfaceData(int interfaceId);
     virtual void deleteRouterInterfaceData(int interfaceId);
 
-    virtual void configureInterface(InterfaceEntry *ie);
+    virtual void configureInterface(NetworkInterface *ie);
 
     virtual void startTimer(cMessage *timer, double interval);
 
     virtual void sendGeneralQuery(RouterInterfaceData *interface, double maxRespTime);
     virtual void sendGroupSpecificQuery(RouterGroupData *group);
     virtual void sendGroupAndSourceSpecificQuery(RouterGroupData *group, const Ipv4AddressVector& sources);
-    virtual void sendGroupReport(InterfaceEntry *ie, const std::vector<GroupRecord>& records);
-    virtual void sendQueryToIP(Packet *msg, InterfaceEntry *ie, Ipv4Address dest);
-    virtual void sendReportToIP(Packet *msg, InterfaceEntry *ie, Ipv4Address dest);
+    virtual void sendGroupReport(NetworkInterface *ie, const std::vector<GroupRecord>& records);
+    virtual void sendQueryToIP(Packet *msg, NetworkInterface *ie, Ipv4Address dest);
+    virtual void sendReportToIP(Packet *msg, NetworkInterface *ie, Ipv4Address dest);
 
     virtual void processHostGeneralQueryTimer(cMessage *msg);
     virtual void processHostGroupQueryTimer(cMessage *msg);
@@ -293,7 +280,7 @@ class INET_API Igmpv3 : public cSimpleModule, protected cListener
     virtual void processQuery(Packet *msg);
     virtual void processReport(Packet *msg);
 
-    virtual void multicastSourceListChanged(InterfaceEntry *ie, Ipv4Address group, const Ipv4MulticastSourceList& sourceList);
+    virtual void multicastSourceListChanged(NetworkInterface *ie, Ipv4Address group, const Ipv4MulticastSourceList& sourceList);
 
   public:
     static void insertCrc(CrcMode crcMode, const Ptr<IgmpMessage>& igmpMsg, Packet *payload);
@@ -320,7 +307,7 @@ inline std::ostream& operator<<(std::ostream& out, const Ipv4AddressVector addre
     return out;
 }
 
-}    // namespace inet
+} // namespace inet
 
-#endif /* INET_IGMPV3_H */
+#endif
 

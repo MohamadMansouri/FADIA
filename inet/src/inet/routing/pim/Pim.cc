@@ -1,20 +1,11 @@
 //
 // Copyright (C) 2019 OpenSim Ltd.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License
-// as published by the Free Software Foundation; either version 3
-// of the License, or (at your option) any later version.
+// SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this program; if not, see <http://www.gnu.org/licenses/>.
-//
-// Authors: Zoltan Bojthe
+
+
+#include "inet/routing/pim/Pim.h"
 
 #include "inet/common/IProtocolRegistrationListener.h"
 #include "inet/common/ProtocolTag_m.h"
@@ -23,11 +14,11 @@
 #include "inet/networklayer/common/IpProtocolId_m.h"
 #include "inet/networklayer/common/L3AddressTag_m.h"
 #include "inet/networklayer/common/L3Tools.h"
-#include "inet/routing/pim/Pim.h"
 
 namespace inet {
 
 Define_Module(Pim);
+Define_Module(PimCrcInsertionHook);
 
 Pim::~Pim()
 {
@@ -43,6 +34,11 @@ void Pim::initialize(int stage)
     }
     else if (stage == INITSTAGE_TRANSPORT_LAYER) {
         if (crcMode == CRC_COMPUTED) {
+            cModuleType *moduleType = cModuleType::get("inet.routing.pim.PimCrcInsertionHook");
+            auto crcInsertion = check_and_cast<PimCrcInsertionHook *>(moduleType->create("crcInsertion", this));
+            crcInsertion->finalizeParameters();
+            crcInsertion->callInitialize();
+
             // For IPv6, the checksum also includes the IPv6 "pseudo-header",
             // as specified in RFC 2460, Section 8.1 [5].  This
             // "pseudo-header" is prepended to the PIM header for the purposes
@@ -51,16 +47,15 @@ void Pim::initialize(int stage)
             // except in Register messages where it is set to the length of
             // the PIM register header (8).  The Next Header value used in the
             // pseudo-header is 103.
-#ifdef WITH_IPv6
-            auto ipv6 = dynamic_cast<INetfilter *>(getModuleByPath("^.ipv6.ipv6"));
+#ifdef INET_WITH_IPv6
+            auto ipv6 = dynamic_cast<INetfilter *>(findModuleByPath("^.ipv6.ipv6"));
             if (ipv6 != nullptr)
-                ipv6->registerHook(0, &crcInsertion);
+                ipv6->registerHook(0, crcInsertion);
 #endif
         }
     }
     else if (stage == INITSTAGE_ROUTING_PROTOCOLS) {
-        registerService(Protocol::pim, nullptr, gate("networkLayerIn"));
-        registerProtocol(Protocol::pim, gate("networkLayerOut"), nullptr);
+        registerProtocol(Protocol::pim, gate("networkLayerOut"), gate("networkLayerIn"));
     }
 }
 
@@ -81,10 +76,12 @@ void Pim::handleCrashOperation(LifecycleOperation *operation)
 {
 }
 
-INetfilter::IHook::Result Pim::CrcInsertion::datagramPostRoutingHook(Packet *packet)
+INetfilter::IHook::Result PimCrcInsertionHook::datagramPostRoutingHook(Packet *packet)
 {
+    Enter_Method("datagramPostRoutingHook");
+
     if (packet->findTag<InterfaceInd>())
-        return ACCEPT;  // FORWARD
+        return ACCEPT; // FORWARD
     auto networkProtocol = packet->getTag<PacketProtocolTag>()->getProtocol();
     if (*networkProtocol == Protocol::ipv6) {
         const auto& networkHeader = getNetworkProtocolHeader(packet);
@@ -182,5 +179,5 @@ uint16_t Pim::computeCrc(const Protocol *networkProtocol, const L3Address& srcAd
     return crc;
 }
 
-}    // namespace inet
+} // namespace inet
 
