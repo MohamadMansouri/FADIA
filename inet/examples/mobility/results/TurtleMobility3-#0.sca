@@ -1,0 +1,85 @@
+version 3
+run TurtleMobility3-0-20220630-16:11:51-65520
+attr configname TurtleMobility3
+attr datetime 20220630-16:11:51
+attr datetimef 20220630-161151
+attr experiment TurtleMobility3
+attr inifile omnetpp.ini
+attr iterationvars ""
+attr iterationvarsd ""
+attr iterationvarsf ""
+attr measurement ""
+attr network MobileNetwork
+attr processid 65520
+attr repetition 0
+attr replication #0
+attr resultdir results
+attr runnumber 0
+attr seedset 0
+config image-path ../../images
+config network MobileNetwork
+config description "random waypoint"
+config *.numHosts 2
+config **.host*.mobility.typename TurtleMobility
+config **.host*.mobility.turtleScript "xmldoc(\"turtle.xml\", \"movements//movement[@id='3']\")"
+config sim-time-limit 10day
+config *.numHosts 2
+config **.constraintAreaMinX 0m
+config **.constraintAreaMinY 0m
+config **.constraintAreaMinZ 0m
+config **.constraintAreaMaxX 600m
+config **.constraintAreaMaxY 400m
+config **.constraintAreaMaxZ 0m
+config **.updateInterval 0.1s
+config **.mobility.initFromDisplayString false
+
+par MobileNetwork.host[0].mobility typename "\"inet.mobility.single.TurtleMobility\""
+par MobileNetwork.host[0].mobility subjectModule "\"^\""
+par MobileNetwork.host[0].mobility coordinateSystemModule "\"\""
+par MobileNetwork.host[0].mobility displayStringTextFormat "\"p: %p\\nv: %v\""
+attr mutable ""
+par MobileNetwork.host[0].mobility updateDisplayString true
+par MobileNetwork.host[0].mobility constraintAreaMinX 0m
+attr unit m
+par MobileNetwork.host[0].mobility constraintAreaMinY 0m
+attr unit m
+par MobileNetwork.host[0].mobility constraintAreaMinZ 0m
+attr unit m
+par MobileNetwork.host[0].mobility constraintAreaMaxX 600m
+attr unit m
+par MobileNetwork.host[0].mobility constraintAreaMaxY 400m
+attr unit m
+par MobileNetwork.host[0].mobility constraintAreaMaxZ 0m
+attr unit m
+par MobileNetwork.host[0].mobility updateInterval 0.1s
+attr unit s
+par MobileNetwork.host[0].mobility faceForward true
+par MobileNetwork.host[0].mobility turtleScript "<movement id=\"3\">...</movement> at /home/mmrota/Projects/fadia-simulation/inet/examples/mobility//turtle.xml:25"
+par MobileNetwork.host[0] typename "\"inet.examples.mobility.MobileHost\""
+par MobileNetwork.host[1].mobility typename "\"inet.mobility.single.TurtleMobility\""
+par MobileNetwork.host[1].mobility subjectModule "\"^\""
+par MobileNetwork.host[1].mobility coordinateSystemModule "\"\""
+par MobileNetwork.host[1].mobility displayStringTextFormat "\"p: %p\\nv: %v\""
+attr mutable ""
+par MobileNetwork.host[1].mobility updateDisplayString true
+par MobileNetwork.host[1].mobility constraintAreaMinX 0m
+attr unit m
+par MobileNetwork.host[1].mobility constraintAreaMinY 0m
+attr unit m
+par MobileNetwork.host[1].mobility constraintAreaMinZ 0m
+attr unit m
+par MobileNetwork.host[1].mobility constraintAreaMaxX 600m
+attr unit m
+par MobileNetwork.host[1].mobility constraintAreaMaxY 400m
+attr unit m
+par MobileNetwork.host[1].mobility constraintAreaMaxZ 0m
+attr unit m
+par MobileNetwork.host[1].mobility updateInterval 0.1s
+attr unit s
+par MobileNetwork.host[1].mobility faceForward true
+par MobileNetwork.host[1].mobility turtleScript "<movement id=\"3\">...</movement> at /home/mmrota/Projects/fadia-simulation/inet/examples/mobility//turtle.xml:25"
+par MobileNetwork.host[1] typename "\"inet.examples.mobility.MobileHost\""
+par MobileNetwork typename "\"inet.examples.mobility.MobileNetwork\""
+par MobileNetwork numHosts 2
+par MobileNetwork hasVisualizer false
+

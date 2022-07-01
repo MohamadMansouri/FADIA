@@ -1,0 +1,73 @@
+file 6869 1656598321                                            
+version 3
+run TurtleMobility3-0-20220630-16:11:51-65520
+attr configname TurtleMobility3
+attr datetime 20220630-16:11:51
+attr datetimef 20220630-161151
+attr experiment TurtleMobility3
+attr inifile omnetpp.ini
+attr iterationvars ""
+attr iterationvarsd ""
+attr iterationvarsf ""
+attr measurement ""
+attr network MobileNetwork
+attr processid 65520
+attr repetition 0
+attr replication #0
+attr resultdir results
+attr runnumber 0
+attr seedset 0
+config image-path ../../images
+config network MobileNetwork
+config description "random waypoint"
+config *.numHosts 2
+config **.host*.mobility.typename TurtleMobility
+config **.host*.mobility.turtleScript "xmldoc(\"turtle.xml\", \"movements//movement[@id='3']\")"
+config sim-time-limit 10day
+config *.numHosts 2
+config **.constraintAreaMinX 0m
+config **.constraintAreaMinY 0m
+config **.constraintAreaMinZ 0m
+config **.constraintAreaMaxX 600m
+config **.constraintAreaMaxY 400m
+config **.constraintAreaMaxZ 0m
+config **.updateInterval 0.1s
+config **.mobility.initFromDisplayString false
+
+vector 0 MobileNetwork.host[0] coordX:vector ETV
+attr interpolationmode linear
+attr recordingmode vector
+attr source xCoord(mobilityPos(mobilityStateChanged))
+attr title "coord X"
+vector 1 MobileNetwork.host[0] coordY:vector ETV
+attr interpolationmode linear
+attr recordingmode vector
+attr source yCoord(mobilityPos(mobilityStateChanged))
+attr title "coord Y"
+vector 2 MobileNetwork.host[0] coordZ:vector ETV
+attr interpolationmode linear
+attr recordingmode vector
+attr source zCoord(mobilityPos(mobilityStateChanged))
+attr title "coord Z"
+vector 3 MobileNetwork.host[1] coordX:vector ETV
+attr interpolationmode linear
+attr recordingmode vector
+attr source xCoord(mobilityPos(mobilityStateChanged))
+attr title "coord X"
+vector 4 MobileNetwork.host[1] coordY:vector ETV
+attr interpolationmode linear
+attr recordingmode vector
+attr source yCoord(mobilityPos(mobilityStateChanged))
+attr title "coord Y"
+vector 5 MobileNetwork.host[1] coordZ:vector ETV
+attr interpolationmode linear
+attr recordingmode vector
+attr source zCoord(mobilityPos(mobilityStateChanged))
+attr title "coord Z"
+0	2102 980 0 75 0 3.8 40 329.28810138255 477.85366699929 16068.552584828 6535848.0785299
+1	3082 980 0 75 0 3.8 40 180.98824662361 237.13784655556 8390.5966635493 1771607.1168037
+2	4062 423 0 75 0 3.8 40 0 0 0 0
+3	4485 980 0 75 0 3.8 40 374.13821783848 442.43208113385 16297.259047799 6657109.1409545
+4	5465 980 0 75 0 3.8 40 208.39210144741 258.35764603689 9359.9777219809 2199378.9576013
+5	6445 423 0 75 0 3.8 40 0 0 0 0
+
